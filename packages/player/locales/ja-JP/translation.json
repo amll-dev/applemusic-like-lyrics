@@ -9,6 +9,13 @@
       "editMusicOverrideMessage": "曲のカバレッジ情報を編集する",
       "exitLyricPage": "歌詞ページを出る"
     },
+    "audioQuality": {
+      "title": null,
+      "codec": null,
+      "channels": null,
+      "sampleRate": null,
+      "sampleFormat": null
+    },
     "qualityTag": {
       "lossless": null,
       "hires": null
@@ -25,6 +32,22 @@
       "tip": null,
       "supportText": null,
       "noResults": null
+    }
+  },
+  "<0>音频解码信息</0>": null,
+  "common": {
+    "dialog": {
+      "close": null,
+      "cancel": "キャンセル",
+      "confirm": "確認",
+      "filter": {
+        "js": null,
+        "all": null
+      },
+      "save": "セーブ"
+    },
+    "page": {
+      "back": "戻る"
     }
   },
   "extension": {
@@ -46,21 +69,6 @@
     "dialog": {
       "title": "新プレイリストを作成する",
       "namePlaceholder": "プレイリスト名"
-    }
-  },
-  "common": {
-    "dialog": {
-      "cancel": "キャンセル",
-      "confirm": "確認",
-      "close": null,
-      "filter": {
-        "js": null,
-        "all": null
-      },
-      "save": "セーブ"
-    },
-    "page": {
-      "back": "戻る"
     }
   },
   "playbar": {
@@ -114,6 +122,10 @@
           "success": null
         },
         "label": null
+      },
+      "cover": {
+        "changeCoverToAuto": null,
+        "uploadCoverImage": null
       },
       "totalMusicLabel": null,
       "playAll": null,
