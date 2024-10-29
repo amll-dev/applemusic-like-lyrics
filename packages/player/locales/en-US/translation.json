@@ -9,6 +9,13 @@
       "editMusicOverrideMessage": "Edit Track Override Data",
       "exitLyricPage": "Exit Lyrics Page"
     },
+    "audioQuality": {
+      "title": null,
+      "codec": null,
+      "channels": null,
+      "sampleRate": null,
+      "sampleFormat": null
+    },
     "qualityTag": {
       "lossless": "Lossless",
       "hires": "Hi-Res Lossless"
@@ -25,6 +32,22 @@
       "tip": "Type your search keywords above, and click on a suggestion to import the lyrics into the database directly.",
       "supportText": "AMLL TTML DB is a free and open-source lyrics' database built by the AMLL community. Want to contribute your lyrics to AMLL TTML DB? Head over to the <1>GitHub repository</1> to learn more on how to submit!",
       "noResults": "No results."
+    }
+  },
+  "<0>音频解码信息</0>": null,
+  "common": {
+    "dialog": {
+      "close": "Close",
+      "cancel": "Cancel",
+      "confirm": "Confirm",
+      "filter": {
+        "js": "JavaScript files (*.js)",
+        "all": "All files (*.*)"
+      },
+      "save": "Save"
+    },
+    "page": {
+      "back": "Back"
     }
   },
   "extension": {
@@ -46,21 +69,6 @@
     "dialog": {
       "title": "New Playlist",
       "namePlaceholder": "Playlist Title"
-    }
-  },
-  "common": {
-    "dialog": {
-      "cancel": "Cancel",
-      "confirm": "Confirm",
-      "close": "Close",
-      "filter": {
-        "js": "JavaScript files (*.js)",
-        "all": "All files (*.*)"
-      },
-      "save": "Save"
-    },
-    "page": {
-      "back": "Back"
     }
   },
   "playbar": {
@@ -114,6 +122,10 @@
           "success": "{count, plural, other {#}} song(s) added"
         },
         "label": "Add Music From Disk"
+      },
+      "cover": {
+        "changeCoverToAuto": null,
+        "uploadCoverImage": null
       },
       "totalMusicLabel": "{count, plural, other {#}} song(s)",
       "playAll": "Play All",
