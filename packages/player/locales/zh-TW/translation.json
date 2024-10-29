@@ -9,6 +9,13 @@
       "editMusicOverrideMessage": "編輯歌曲覆蓋訊息",
       "exitLyricPage": "退出歌詞介面"
     },
+    "audioQuality": {
+      "title": null,
+      "codec": null,
+      "channels": null,
+      "sampleRate": null,
+      "sampleFormat": null
+    },
     "qualityTag": {
       "lossless": "保真壓縮",
       "hires": "高解析度保真壓縮"
@@ -25,6 +32,22 @@
       "tip": "在上方輸入搜尋關鍵字，點選候選項即可將歌詞內容直接匯入歌詞資料。",
       "supportText": "AMLL TTML DB 是由 AMLL 社群愛好者們一同建立的開源無版權歌詞資料庫，想為 AMLL TTML DB 貢獻歌詞嗎？前往<1>GitHub 倉庫</1>即可了解提交歌詞流程！",
       "noResults": "無結果"
+    }
+  },
+  "<0>音频解码信息</0>": null,
+  "common": {
+    "dialog": {
+      "close": "關閉",
+      "cancel": "取消",
+      "confirm": "確認",
+      "filter": {
+        "js": "JavaScript 檔案 (*.js)",
+        "all": "全部檔案 (*.*)"
+      },
+      "save": "儲存"
+    },
+    "page": {
+      "back": "返回"
     }
   },
   "extension": {
@@ -46,21 +69,6 @@
     "dialog": {
       "title": "新建歌單",
       "namePlaceholder": "歌單名稱"
-    }
-  },
-  "common": {
-    "dialog": {
-      "cancel": "取消",
-      "confirm": "確認",
-      "close": "關閉",
-      "filter": {
-        "js": "JavaScript 檔案 (*.js)",
-        "all": "全部檔案 (*.*)"
-      },
-      "save": "儲存"
-    },
-    "page": {
-      "back": "返回"
     }
   },
   "playbar": {
@@ -114,6 +122,10 @@
           "success": "已全部添加 {count, plural, other {#}} 首歌曲"
         },
         "label": "添加本地歌曲"
+      },
+      "cover": {
+        "changeCoverToAuto": null,
+        "uploadCoverImage": null
       },
       "totalMusicLabel": "{count, plural, other {#}} 首歌曲",
       "playAll": "播放全部",
