@@ -9,6 +9,13 @@
       "editMusicOverrideMessage": "Chỉnh sửa thông tin bài hát",
       "exitLyricPage": "Thoát lời bài hát"
     },
+    "audioQuality": {
+      "title": null,
+      "codec": null,
+      "channels": null,
+      "sampleRate": null,
+      "sampleFormat": null
+    },
     "qualityTag": {
       "lossless": null,
       "hires": null
@@ -25,6 +32,22 @@
       "tip": null,
       "supportText": null,
       "noResults": null
+    }
+  },
+  "<0>音频解码信息</0>": null,
+  "common": {
+    "dialog": {
+      "close": null,
+      "cancel": "Hủy bỏ",
+      "confirm": "Xác nhận",
+      "filter": {
+        "js": null,
+        "all": null
+      },
+      "save": "Lưu"
+    },
+    "page": {
+      "back": "Quay lại"
     }
   },
   "extension": {
@@ -46,21 +69,6 @@
     "dialog": {
       "title": "Tạo playlist mới",
       "namePlaceholder": "Tên playlist"
-    }
-  },
-  "common": {
-    "dialog": {
-      "cancel": "Hủy bỏ",
-      "confirm": "Xác nhận",
-      "close": null,
-      "filter": {
-        "js": null,
-        "all": null
-      },
-      "save": "Lưu"
-    },
-    "page": {
-      "back": "Quay lại"
     }
   },
   "playbar": {
@@ -114,6 +122,10 @@
           "success": "Đã thêm tất cả {count, plural, other {#}} bài hát"
         },
         "label": "Thêm bài hát từ bộ nhớ"
+      },
+      "cover": {
+        "changeCoverToAuto": null,
+        "uploadCoverImage": null
       },
       "totalMusicLabel": "{count, plural, other {#}} bài hát",
       "playAll": "Phát tất cả",
