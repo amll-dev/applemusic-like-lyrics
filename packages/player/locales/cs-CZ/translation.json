@@ -9,6 +9,13 @@
       "editMusicOverrideMessage": null,
       "exitLyricPage": null
     },
+    "audioQuality": {
+      "title": null,
+      "codec": null,
+      "channels": null,
+      "sampleRate": null,
+      "sampleFormat": null
+    },
     "qualityTag": {
       "lossless": null,
       "hires": null
@@ -25,6 +32,22 @@
       "tip": null,
       "supportText": null,
       "noResults": null
+    }
+  },
+  "<0>音频解码信息</0>": null,
+  "common": {
+    "dialog": {
+      "close": null,
+      "cancel": null,
+      "confirm": null,
+      "filter": {
+        "js": null,
+        "all": null
+      },
+      "save": null
+    },
+    "page": {
+      "back": null
     }
   },
   "extension": {
@@ -46,21 +69,6 @@
     "dialog": {
       "title": null,
       "namePlaceholder": null
-    }
-  },
-  "common": {
-    "dialog": {
-      "cancel": null,
-      "confirm": null,
-      "close": null,
-      "filter": {
-        "js": null,
-        "all": null
-      },
-      "save": null
-    },
-    "page": {
-      "back": null
     }
   },
   "playbar": {
@@ -114,6 +122,10 @@
           "success": null
         },
         "label": null
+      },
+      "cover": {
+        "changeCoverToAuto": null,
+        "uploadCoverImage": null
       },
       "totalMusicLabel": null,
       "playAll": null,
