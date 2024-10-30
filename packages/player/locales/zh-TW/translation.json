@@ -10,11 +10,11 @@
       "exitLyricPage": "退出歌詞介面"
     },
     "audioQuality": {
-      "title": null,
-      "codec": null,
-      "channels": null,
-      "sampleRate": null,
-      "sampleFormat": null
+      "title": "音訊解碼資訊",
+      "codec": "音訊解碼器",
+      "channels": "音訊通道數量",
+      "sampleRate": "取樣率",
+      "sampleFormat": "取樣格式"
     },
     "qualityTag": {
       "lossless": "保真壓縮",
@@ -123,8 +123,8 @@
         "label": "添加本地歌曲"
       },
       "cover": {
-        "changeCoverToAuto": null,
-        "uploadCoverImage": null
+        "changeCoverToAuto": "更換成自動封面",
+        "uploadCoverImage": "上傳封面圖片"
       },
       "totalMusicLabel": "{count, plural, other {#}} 首歌曲",
       "playAll": "播放全部",
