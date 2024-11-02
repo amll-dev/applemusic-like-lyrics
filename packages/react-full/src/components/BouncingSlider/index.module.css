@@ -27,4 +27,8 @@
 			opacity: 0.4;
 		}
 	}
+
+	& > svg{
+		opacity: 0.5;
+	}
 }
