@@ -1,5 +1,4 @@
 .audioQualityTag {
-	height: 25px;
 	overflow: hidden;
 }
 
@@ -49,13 +48,13 @@
 
 		border-image-source: url(audio_quality_tag.svg);
 		border-image-slice: 15 fill;
-		border-image-width: 10px;
+		border-image-width: 8.5px;
 		opacity: 0.2;
 	}
 }
 
 .commonTagText {
-	font-family: "SF Pro Display", "Pingfang SC";
+	font-family: "SF Pro Text", "Pingfang SC";
 	font-size: 11px;
 	font-weight: 500;
 	letter-spacing: 0.01809em;
