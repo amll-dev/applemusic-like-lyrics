@@ -9,58 +9,18 @@
       "editMusicOverrideMessage": "Chỉnh sửa thông tin bài hát",
       "exitLyricPage": "Thoát lời bài hát"
     },
-    "audioQuality": {
-      "title": null,
-      "codec": null,
-      "channels": null,
-      "sampleRate": null,
-      "sampleFormat": null
-    },
-    "qualityTag": {
-      "lossless": null,
-      "hires": null
-    },
     "openMenuViaRightClick": "Hãy nhấp chuột phải vào bất kỳ chỗ nào trên trang lời bài hát để mở Menu!",
     "buttonForDisplayOnly": "Nút này chỉ dùng để hiển thị, hiện tại không có chức năng thực tế ",
-    "loadAudioError": "Lỗi tải âm thanh từ tệp {error}",
-    "ttmlImportDialog": {
-      "openButtonLabel": null,
-      "title": null,
-      "searchInput": {
-        "placeholder": null
-      },
-      "tip": null,
-      "supportText": null,
-      "noResults": null
-    }
+    "loadAudioError": "Lỗi tải âm thanh từ tệp {error}"
   },
   "common": {
     "dialog": {
-      "close": null,
       "cancel": "Hủy bỏ",
       "confirm": "Xác nhận",
-      "filter": {
-        "js": null,
-        "all": null
-      },
       "save": "Lưu"
     },
     "page": {
       "back": "Quay lại"
-    }
-  },
-  "extension": {
-    "inject": {
-      "error": {
-        "calloutText": null,
-        "toastText": null
-      }
-    },
-    "error": {
-      "invaildPluginFile": null,
-      "missingDependency": null,
-      "missingMetadata": null,
-      "pluginIdConflict": null
     }
   },
   "newPlaylist": {
@@ -68,11 +28,6 @@
     "dialog": {
       "title": "Tạo playlist mới",
       "namePlaceholder": "Tên playlist"
-    }
-  },
-  "playbar": {
-    "playlist": {
-      "title": null
     }
   },
   "ws-protocol": {
@@ -113,7 +68,6 @@
       },
       "addLocalMusic": {
         "filterName": "Tệp âm thanh",
-        "allFiles": null,
         "toast": {
           "parsingMusicMetadata": "Đang phân tích siêu dữ liệu âm nhạc để thêm bài hát ({current, plural, other {#}} / {total, plural, other {#}})",
           "partiallyFailed": "Đã thêm {succeed, plural, other {#}} bài hát, trong đó {errored, plural, other {#}} bài hát thất bại khi thêm",
@@ -121,10 +75,6 @@
           "success": "Đã thêm tất cả {count, plural, other {#}} bài hát"
         },
         "label": "Thêm bài hát từ bộ nhớ"
-      },
-      "cover": {
-        "changeCoverToAuto": null,
-        "uploadCoverImage": null
       },
       "totalMusicLabel": "{count, plural, other {#}} bài hát",
       "playAll": "Phát tất cả",
@@ -176,15 +126,6 @@
           },
           "label": "Loại thành phần điều khiển phát",
           "description": "Thông tin bài hát"
-        },
-        "verticalCoverLayout": {
-          "menu": {
-            "auto": null,
-            "forceNormal": null,
-            "forceImmersive": null
-          },
-          "label": null,
-          "description": null
         },
         "subtitle": "Kiểu thông tin bài hát",
         "showMusicName": {
@@ -241,10 +182,6 @@
         }
       },
       "lyricBackground": {
-        "menu": {
-          "meshGradientRenderer": null,
-          "pixiRenderer": null
-        },
         "subtitle": "Nền của lời bài hát",
         "backgroundRenderer": {
           "label": " Nền mờ dần"
@@ -328,21 +265,5 @@
         "noClients": "Không có kết nối máy khách nào"
       }
     }
-  },
-  "settings": {
-    "extension": {
-      "safetyWarning": null,
-      "wipWarning": null,
-      "install": {
-        "title": null
-      },
-      "installPlugins": null,
-      "openPluginDirectory": null,
-      "tab": null
-    },
-    "player": {
-      "tab": null
-    }
-  },
-  "name": null
+  }
 }

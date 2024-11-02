@@ -9,13 +9,6 @@
       "editMusicOverrideMessage": "Edit Track Override Data",
       "exitLyricPage": "Exit Lyrics Page"
     },
-    "audioQuality": {
-      "title": null,
-      "codec": null,
-      "channels": null,
-      "sampleRate": null,
-      "sampleFormat": null
-    },
     "qualityTag": {
       "lossless": "Lossless",
       "hires": "Hi-Res Lossless"
@@ -121,10 +114,6 @@
           "success": "{count, plural, other {#}} song(s) added"
         },
         "label": "Add Music From Disk"
-      },
-      "cover": {
-        "changeCoverToAuto": null,
-        "uploadCoverImage": null
       },
       "totalMusicLabel": "{count, plural, other {#}} song(s)",
       "playAll": "Play All",
@@ -343,6 +332,5 @@
     "player": {
       "tab": "AMLL Player Settings"
     }
-  },
-  "name": null
+  }
 }
