@@ -30,20 +30,11 @@
       "namePlaceholder": "Tên playlist"
     }
   },
-  "ws-protocol": {
-    "toast": {
-      "switchSongNotSupported": "Không thể chuyển bài hát trong chế độ WS Protocol",
-      "pauseOrPlaySongNotSupported": "Không thể tạm dừng/tiếp tục phát nhạc trong chế độ WS Protocol",
-      "seekNotSupported": "Không thể thay đổi tiến độ phát trong chế độ WS Protocol",
-      "changeVolumeNotSupported": "Không thể thay đổi âm lượng trong chế độ WS Protocol"
-    }
-  },
   "page": {
-    "amll-dev": {
-      "title": "Trang phát triển Apple Music Like Lyrics",
-      "warning": "Nội dung này chỉ dùng cho mục đích phát triển và thử nghiệm, chỉ dành cho tác giả sử dụng, việc sử dụng tùy tiện có thể gây ra những tình huống không lường trước được!"
-    },
     "main": {
+      "playlistMenu": {
+        "delete": "Xóa danh sách phát"
+      },
       "updateAvailableTag": "Có bản cập nhật khả dụng",
       "menu": {
         "enterWSProtocolMode": "Vào chế độ WS Protocol",
@@ -52,9 +43,6 @@
         "settings": "Cài đặt"
       },
       "noPlaylistTip": "Không có danh sách phát, hãy tạo một danh sách mới!",
-      "playlistMenu": {
-        "delete": "Xóa danh sách phát"
-      },
       "loadingPlaylist": "Đang tải danh sách bài hát"
     },
     "playlist": {
@@ -79,6 +67,10 @@
       "totalMusicLabel": "{count, plural, other {#}} bài hát",
       "playAll": "Phát tất cả",
       "shufflePlayAll": "Phát ngẫu nhiên"
+    },
+    "amll-dev": {
+      "title": "Trang phát triển Apple Music Like Lyrics",
+      "warning": "Nội dung này chỉ dùng cho mục đích phát triển và thử nghiệm, chỉ dành cho tác giả sử dụng, việc sử dụng tùy tiện có thể gây ra những tình huống không lường trước được!"
     },
     "settings": {
       "others": {
@@ -264,6 +256,14 @@
         "connectedClients": "Các máy khách đã kết nối",
         "noClients": "Không có kết nối máy khách nào"
       }
+    }
+  },
+  "ws-protocol": {
+    "toast": {
+      "switchSongNotSupported": "Không thể chuyển bài hát trong chế độ WS Protocol",
+      "pauseOrPlaySongNotSupported": "Không thể tạm dừng/tiếp tục phát nhạc trong chế độ WS Protocol",
+      "seekNotSupported": "Không thể thay đổi tiến độ phát trong chế độ WS Protocol",
+      "changeVolumeNotSupported": "Không thể thay đổi âm lượng trong chế độ WS Protocol"
     }
   }
 }
