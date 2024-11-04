@@ -77,7 +77,13 @@
   },
   "page": {
     "main": {
+      "playlistCard": {
+        "songCount": "{songAmount} 首歌曲",
+        "createTime": "建立於 {createTime}"
+      },
       "playlistMenu": {
+        "play": "播放此清單",
+        "playShuffled": "以亂序播放此清單",
         "delete": "刪除"
       },
       "updateAvailableTag": "有可用更新",
@@ -121,6 +127,29 @@
     "amll-dev": {
       "title": "Apple Music Like Lyrics 開發者頁面",
       "warning": "這裡的東西用於開發調試用途，僅供作者方便之用，隨便使用可能有意想不到的情況出現！（頁面內容僅中文）"
+    },
+    "search": {
+      "filter": {
+        "placeholder": "搜尋歌單、歌名、歌手等資訊……",
+        "songName": "歌曲名 : {keyword}",
+        "artistName": "歌手名 : {keyword}",
+        "albumName": "專輯名 : {keyword}",
+        "playlistName": "播放清單名 : {keyword}",
+        "lyricContent": "歌詞內容 : {keyword}",
+        "candidate": {
+          "songName": "歌曲名 包含 {keyword}",
+          "artistName": "歌手名 包含 {keyword}",
+          "albumName": "專輯名 包含 {keyword}",
+          "playlistName": "播放清單名稱 包含 {keyword}",
+          "lyricContent": "歌詞內容 包含 {keyword}"
+        }
+      },
+      "placeholder": "搜尋歌曲、歌手、專輯、歌詞、播放清單等資訊",
+      "searchSongResultAmount": "搜尋到 {amount} 首歌曲",
+      "noSongResult": "無歌曲結果",
+      "searchingPlaylist": "搜尋播放清單中",
+      "noPlaylistResult": "無播放清單結果",
+      "searchPlaylistResultAmount": "搜尋到 {amount} 個播放清單"
     },
     "settings": {
       "others": {
@@ -205,6 +234,7 @@
         "lyricPlayerImplementation": {
           "menu": {
             "dom": "DOM",
+            "dom-slim": "DOM（閹割版）",
             "canvas": "Canvas"
           },
           "label": "歌詞播放器實現",
