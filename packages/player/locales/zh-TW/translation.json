@@ -75,20 +75,11 @@
       "title": "當前播放列表"
     }
   },
-  "ws-protocol": {
-    "toast": {
-      "switchSongNotSupported": "WS Protocol 模式下無法切換歌曲",
-      "pauseOrPlaySongNotSupported": "WS Protocol 模式下無法暫停 / 繼續播放音樂",
-      "seekNotSupported": "WS Protocol 模式下無法修改播放進度",
-      "changeVolumeNotSupported": "WS Protocol 模式下無法修改音量大小"
-    }
-  },
   "page": {
-    "amll-dev": {
-      "title": "Apple Music Like Lyrics 開發者頁面",
-      "warning": "這裡的東西用於開發調試用途，僅供作者方便之用，隨便使用可能有意想不到的情況出現！（頁面內容僅中文）"
-    },
     "main": {
+      "playlistMenu": {
+        "delete": "刪除"
+      },
       "updateAvailableTag": "有可用更新",
       "menu": {
         "enterWSProtocolMode": "進入 WS Protocol 模式",
@@ -97,9 +88,6 @@
         "settings": "設定"
       },
       "noPlaylistTip": "沒有播放清單，快去新建一個吧！",
-      "playlistMenu": {
-        "delete": "刪除"
-      },
       "loadingPlaylist": "載入歌單中"
     },
     "playlist": {
@@ -129,6 +117,10 @@
       "totalMusicLabel": "{count, plural, other {#}} 首歌曲",
       "playAll": "播放全部",
       "shufflePlayAll": "隨機播放"
+    },
+    "amll-dev": {
+      "title": "Apple Music Like Lyrics 開發者頁面",
+      "warning": "這裡的東西用於開發調試用途，僅供作者方便之用，隨便使用可能有意想不到的情況出現！（頁面內容僅中文）"
     },
     "settings": {
       "others": {
@@ -327,6 +319,14 @@
         "connectedClients": "已連線的客戶端",
         "noClients": "無"
       }
+    }
+  },
+  "ws-protocol": {
+    "toast": {
+      "switchSongNotSupported": "WS Protocol 模式下無法切換歌曲",
+      "pauseOrPlaySongNotSupported": "WS Protocol 模式下無法暫停 / 繼續播放音樂",
+      "seekNotSupported": "WS Protocol 模式下無法修改播放進度",
+      "changeVolumeNotSupported": "WS Protocol 模式下無法修改音量大小"
     }
   },
   "error": {
