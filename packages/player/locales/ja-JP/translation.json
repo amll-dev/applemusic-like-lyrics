@@ -27,18 +27,11 @@
       "namePlaceholder": "プレイリスト名"
     }
   },
-  "ws-protocol": {
-    "toast": {
-      "switchSongNotSupported": "WS プロトコル・モードで曲の切り替えができない",
-      "seekNotSupported": "WS プロトコル・モードでは、再生の進行状況を変更することはできません。",
-      "changeVolumeNotSupported": "WS プロトコル・モードでは音量を変更できない"
-    }
-  },
   "page": {
-    "amll-dev": {
-      "title": "Apple Music Like Lyrics 開発者ページ"
-    },
     "main": {
+      "playlistMenu": {
+        "delete": "削除"
+      },
       "updateAvailableTag": "アップデートが可能",
       "menu": {
         "enterWSProtocolMode": "WS プロトコル・モードに入る",
@@ -47,9 +40,6 @@
         "settings": "設定"
       },
       "noPlaylistTip": "プレイリストがない！",
-      "playlistMenu": {
-        "delete": "削除"
-      },
       "loadingPlaylist": "プレイリストを読み込んでいます"
     },
     "playlist": {
@@ -60,6 +50,16 @@
           "removeFromPlaylist": "プレイリストから削除"
         }
       }
+    },
+    "amll-dev": {
+      "title": "Apple Music Like Lyrics 開発者ページ"
+    }
+  },
+  "ws-protocol": {
+    "toast": {
+      "switchSongNotSupported": "WS プロトコル・モードで曲の切り替えができない",
+      "seekNotSupported": "WS プロトコル・モードでは、再生の進行状況を変更することはできません。",
+      "changeVolumeNotSupported": "WS プロトコル・モードでは音量を変更できない"
     }
   }
 }
