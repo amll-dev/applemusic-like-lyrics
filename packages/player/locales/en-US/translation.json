@@ -68,20 +68,11 @@
       "title": "Current Playlist"
     }
   },
-  "ws-protocol": {
-    "toast": {
-      "switchSongNotSupported": "Unable to switch tracks under WS Protocol mode.",
-      "pauseOrPlaySongNotSupported": "Unable to pause / resume in WS Protocol mode.",
-      "seekNotSupported": "Unable to modify playing progress under WS Protocol mode.",
-      "changeVolumeNotSupported": "Unable to modify volume under WS Protocol mode."
-    }
-  },
   "page": {
-    "amll-dev": {
-      "title": "Apple Music Like Lyrics Developer Page",
-      "warning": "This page is for develop usage only, use it at your own risk! (Chinese only)"
-    },
     "main": {
+      "playlistMenu": {
+        "delete": "Delete"
+      },
       "updateAvailableTag": "Update available",
       "menu": {
         "enterWSProtocolMode": "Start WS Protocol mode",
@@ -90,9 +81,6 @@
         "settings": "Settings"
       },
       "noPlaylistTip": "Nothing is here, try to create something?",
-      "playlistMenu": {
-        "delete": "Delete"
-      },
       "loadingPlaylist": "Loading playlist"
     },
     "playlist": {
@@ -118,6 +106,10 @@
       "totalMusicLabel": "{count, plural, other {#}} song(s)",
       "playAll": "Play All",
       "shufflePlayAll": "Shuffle"
+    },
+    "amll-dev": {
+      "title": "Apple Music Like Lyrics Developer Page",
+      "warning": "This page is for develop usage only, use it at your own risk! (Chinese only)"
     },
     "settings": {
       "others": {
@@ -316,6 +308,14 @@
         "connectedClients": "Connected client(s)",
         "noClients": "No clients connected"
       }
+    }
+  },
+  "ws-protocol": {
+    "toast": {
+      "switchSongNotSupported": "Unable to switch tracks under WS Protocol mode.",
+      "pauseOrPlaySongNotSupported": "Unable to pause / resume in WS Protocol mode.",
+      "seekNotSupported": "Unable to modify playing progress under WS Protocol mode.",
+      "changeVolumeNotSupported": "Unable to modify volume under WS Protocol mode."
     }
   },
   "settings": {
