@@ -25,13 +25,13 @@ Although the goal of this project is not to imitate it completely, it will polis
 
 </div>
 
-## AMLL 生态及源码结构
+## AMLL Ecology and source code structure
 
-### 主要模块
+### Main modules
 
--   [![AMLL-Core](https://img.shields.io/badge/Core-%233178c6?label=Apple%20Music-like%20Lyrics&labelColor=%23FB5C74)](./packages/core/README.md)：AMLL 核心组件库，以 DOM 原生方式编写，提供歌词显示组件和动态流体背景组件
--   [![AMLL-React](https://img.shields.io/badge/React-%23149eca?label=Apple%20Music-like%20Lyrics&labelColor=%23FB5C74)](./packages/react/README.md)：AMLL React 绑定，提供 React 组件形式的歌词显示组件和动态流体背景组件
--   [![AMLL-Vue](https://img.shields.io/badge/Vue-%2342d392?label=Apple%20Music-like%20Lyrics&labelColor=%23FB5C74)](./packages/vue/README.md)：AMLL Vue 绑定，提供 Vue 组件形式的歌词显示组件和动态流体背景组件
+-   [![AMLL-Core](https://img.shields.io/badge/Core-%233178c6?label=Apple%20Music-like%20Lyrics&labelColor=%23FB5C74)](./packages/core/README.md)：AMLL Core Component Library，以 DOM Written natively，Provides a lyric display component and a dynamic fluid background component
+-   [![AMLL-React](https://img.shields.io/badge/React-%23149eca?label=Apple%20Music-like%20Lyrics&labelColor=%23FB5C74)](./packages/react/README.md)：AMLL React bind**，Provision React Lyrics in the form of components display components and dynamic fluid background components
+-   [![AMLL-Vue](https://img.shields.io/badge/Vue-%2342d392?label=Apple%20Music-like%20Lyrics&labelColor=%23FB5C74)](./packages/vue/README.md)：AMLL Vue bind，Provision Vue Lyrics in the form of components display components and dynamic fluid background components
 -   [![AMLL-Lyric](https://img.shields.io/badge/Lyric-%23FB8C84?label=Apple%20Music-like%20Lyrics&labelColor=%23FB5C74)](./packages/lyric/README.md)：AMLL 歌词解析模块，提供对 LyRiC, YRC, QRC, Lyricify Syllable 各种歌词格式的解析和序列化支持
 
 ### 外部工具
@@ -44,15 +44,15 @@ Although the goal of this project is not to imitate it completely, it will polis
 
 ![AMLL Player Preview](https://github.com/user-attachments/assets/2b93b28f-7f79-4092-a0a5-bc7c66e731a9)
 
-## 浏览器兼容性提醒
+## Browser compatibility alerts
 
-本组件框架最低要求使用以下浏览器或更新版本：
+This component framework requires the following browsers or newer versions at a minimum：
 
 -   Chromuim/Edge 91+
 -   Firefox 100+
 -   Safari 9.1+
 
-完整呈现组件所有效果需要使用以下浏览器或更新版本：
+The following browser or newer version is required to render all effects of the component：
 
 -   Chromuim 120+
 -   Firefox 100+
