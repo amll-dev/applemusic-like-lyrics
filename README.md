@@ -87,7 +87,7 @@ yarn lerna run build --scope "@applemusic-like-lyrics/*" # 发行构建
 -   [woshizja/sound-processor](https://github.com/woshizja/sound-processor)
 -   There are also many frameworks and libraries that are used by AMLL, thank you very much!
 
-### 特别鸣谢
+### Special thanks to you
 
 <div align="center">
 <image src="https://resources.jetbrains.com/storage/products/company/brand/logos/jb_beam.svg"></image>
