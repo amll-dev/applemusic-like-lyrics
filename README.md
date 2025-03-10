@@ -32,13 +32,12 @@ Although the goal of this project is not to imitate it completely, it will polis
 -   [![AMLL-Core](https://img.shields.io/badge/Core-%233178c6?label=Apple%20Music-like%20Lyrics&labelColor=%23FB5C74)](./packages/core/README.md)：AMLL Core Component Library，以 DOM Written natively，Provides a lyric display component and a dynamic fluid background component
 -   [![AMLL-React](https://img.shields.io/badge/React-%23149eca?label=Apple%20Music-like%20Lyrics&labelColor=%23FB5C74)](./packages/react/README.md)：AMLL React bind**，Provision React Lyrics in the form of components display components and dynamic fluid background components
 -   [![AMLL-Vue](https://img.shields.io/badge/Vue-%2342d392?label=Apple%20Music-like%20Lyrics&labelColor=%23FB5C74)](./packages/vue/README.md)：AMLL Vue bind，Provision Vue Lyrics in the form of components display components and dynamic fluid background components
--   [![AMLL-Lyric](https://img.shields.io/badge/Lyric-%23FB8C84?label=Apple%20Music-like%20Lyrics&labelColor=%23FB5C74)](./packages/lyric/README.md)：AMLL 歌词解析模块，提供对 LyRiC, YRC, QRC, Lyricify Syllable 各种歌词格式的解析和序列化支持
+-   [![AMLL-Lyric](https://img.shields.io/badge/Lyric-%23FB8C84?label=Apple%20Music-like%20Lyrics&labelColor=%23FB5C74)](./packages/lyric/README.md)：AMLL The lyrics parsing module provides parsing and serialization support for various lyric formats of LyRiC, YRC, QRC, Lyricify Syllable
+### External tools
 
-### 外部工具
-
--   [AMLL Player](./packages/player/README.md)：AMLL 外置播放器，提供独立的外置歌词播放器，并通过独有的 WebSocket 协议与 AMLL 任意实现了协议的程序进行通信展示歌词
--   [AMLL TTML Tool](https://github.com/Steve-xmh/amll-ttml-tool)： AMLL TTML 编辑器，提供对 TTML 格式歌词的编辑支持，并使用 AMLL Core 进行实时预览
--   [AMLL TTML Database](https://github.com/Steve-xmh/amll-ttml-db)： AMLL TTML 数据库，提供 TTML 歌词存储仓库，以让各类歌词播放器可以使用由社区制作的 TTML 逐词歌词
+-   [AMLL Player](./packages/player/README.md)：AMLL External Player provides an independent external lyrics player, and communicates with AMLL's programs that implement any protocol through the unique WebSocket protocol to display lyrics
+-   [AMLL TTML Tool](https://github.com/Steve-xmh/amll-ttml-tool)： AMLL TTML Editor with editing support for lyrics in TTML format and real-time preview using AMLL Core
+-   [AMLL TTML Database](https://github.com/Steve-xmh/amll-ttml-db)： AMLL TTML database, which provides a TTML lyrics repository so that all kinds of lyric players can use community-made TTML word-for-word lyrics
 
 ## AMLL Player Preview Gallery
 
@@ -58,27 +57,27 @@ The following browser or newer version is required to render all effects of the 
 -   Firefox 100+
 -   Safari 15.4+
 
-参考链接：
+Reference Links：
 
 -   [https://caniuse.com/mdn-css_properties_mask-image](https://caniuse.com/mdn-css_properties_mask-image)
 -   [https://caniuse.com/mdn-css_properties_mix-blend-mode_plus-lighter](https://caniuse.com/mdn-css_properties_mix-blend-mode_plus-lighter)
 
-## 性能配置参考
+## Performance configuration reference
 
-经过性能基准测试，五年内的主流 CPU 处理器均可以以 30FPS 正常带动歌词组件，但如果需要 60FPS 流畅运行，请确保 CPU 频率至少为 3.0Ghz 或以上。如果需要 144FPS 以上流畅运行，请确保 CPU 频率至少为 4.2Ghz 或以上。
+PERFORMANCE BENCHMARKS HAVE SHOWN THAT ALL MAJOR CPU PROCESSORS WITHIN FIVE YEARS CAN DRIVE THE LYRICS COMPONENT AT 30FPS, BUT IF YOU WANT TO RUN SMOOTHLY AT 60FPS, MAKE SURE THE CPU FREQUENCY IS AT LEAST 3.0Ghz OR ABOVE. If you need smooth operation above 144FPS, make sure the CPU frequency is at least 4.2Ghz or above.
 
-GPU 性能在以下状况下能够以预期尺寸下满 60 帧运行：
+GPU performance is capable of running at full 60 fps at the expected size under the following conditions:
 
--   `1080p (1920x1080)`: NVIDIA GTX 10 系列及以上
--   `2160p (3840x2160)`: NVIDIA RTX 2070 及以上
+-   `1080p (1920x1080)`: NVIDIA GTX 10 series and above
+-   `2160p (3840x2160)`: NVIDIA RTX 2070 and above
 
-## 代码贡献
+## Code contributions
 
-由于作者精力有限，已经无力处理大家使用过程中产生的问题，所以关闭了 Issues 板块，但是欢迎任何对代码有积极贡献的 Pull Request！
+Due to the author's limited energy, he is no longer able to deal with the problems that arise during the use of the code, so the Issues section is closed, but any pull requests that contribute positively to the code are welcome!
 
-## 开发/构建/打包流程
+## Development/build/packaging process
 
-安装好 `yarn`, `rustc`, `wasm-pack`，克隆本仓库到任意文件夹后在终端输入以下指令即可构建：
+Install it `yarn`, `rustc`, `wasm-pack`，Clone the repository into any folder and enter the following command in the terminal to build it:：
 
 ```bash
 yarn
@@ -86,16 +85,16 @@ yarn lerna run build:dev --scope "@applemusic-like-lyrics/*" # 开发构建
 yarn lerna run build --scope "@applemusic-like-lyrics/*" # 发行构建
 ```
 
-## 鸣谢
+## Acknowledgement
 
 -   [woshizja/sound-processor](https://github.com/woshizja/sound-processor)
--   还有很多被 AMLL 使用的框架和库，非常感谢！
+-   There are also many frameworks and libraries that are used by AMLL, thank you very much!
 
 ### 特别鸣谢
 
 <div align="center">
 <image src="https://resources.jetbrains.com/storage/products/company/brand/logos/jb_beam.svg"></image>
 <div>
-感谢 <a href=https://jb.gg/OpenSourceSupport>JetBrains</a> 系列开发工具为 AMLL 项目提供的大力支持
+thank <a href=https://jb.gg/OpenSourceSupport>JetBrains</a> A series of development tools to support the AMLL project
 </div>
 </div>
