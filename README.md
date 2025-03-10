@@ -6,9 +6,6 @@ English / [简体中文](./README-CN.md)
 
 </div>
 
-> [!WARNING]
-> English readme is still under construction!
-
 <div align=center>
 
 A lyric player component library aims to look similar to iPad version of Apple Music. Also with[ DOM](./packages/core/README.md),[ React ](./packages/react/README.md)and[ Vue ](./packages/react/README.md)bindings. [Also there's a local player based on it!](./packages/player/README.md)
