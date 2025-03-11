@@ -36,7 +36,9 @@ Although the goal of this project is not to imitate it completely, it will polis
 ### External tools
 
 -   [AMLL Player](./packages/player/README.md)：AMLL External Player provides an independent external lyrics player, and communicates with AMLL's programs that implement any protocol through the unique WebSocket protocol to display lyrics
+
 -   [AMLL TTML Tool](https://github.com/Steve-xmh/amll-ttml-tool)： AMLL TTML Editor with editing support for lyrics in TTML format and real-time preview using AMLL Core
+  
 -   [AMLL TTML Database](https://github.com/Steve-xmh/amll-ttml-db)： AMLL TTML database, which provides a TTML lyrics repository so that all kinds of lyric players can use community-made TTML word-for-word lyrics
 
 ## AMLL Player Preview Gallery
