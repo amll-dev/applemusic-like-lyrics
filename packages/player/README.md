@@ -1,6 +1,6 @@
 # AMLL Player
 
-English / [简体中文](./packages/player/README-CN.md)
+English / [简体中文](/packages/player/README-CN.md)
 
 An independent lyrics page player that obtains audio playback information through local music files/WebSocket Server.
 
