@@ -15,11 +15,11 @@
 	},
 	"dependencies": {
 		"@applemusic-like-lyrics/core": "workspace:^",
+		"@applemusic-like-lyrics/fft": "workspace:^",
 		"@applemusic-like-lyrics/lyric": "workspace:^",
 		"@applemusic-like-lyrics/react": "workspace:^",
 		"@applemusic-like-lyrics/react-full": "workspace:^",
 		"@applemusic-like-lyrics/ws-protocol": "workspace:^",
-		"@applemusic-like-lyrics/fft": "workspace:^",
 		"@dnd-kit/core": "^6.1.0",
 		"@iconify/icons-fluent": "^1.2.38",
 		"@iconify/icons-ic": "^1.2.13",
@@ -79,7 +79,7 @@
 		"eslint-plugin-react-compiler": "19.0.0-beta-a7bf2bd-20241110",
 		"i18next-parser": "^9.0.2",
 		"typescript": "^5.7.3",
-		"vite": "^5.4.11",
+		"vite": "^6.2.2",
 		"vite-plugin-babel": "^1.2.0",
 		"vite-plugin-i18next-loader": "^2.0.14"
 	}
