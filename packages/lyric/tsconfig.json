@@ -1,14 +1,8 @@
 {
-	"include": [
-		"./src/types.d.ts"
-	],
+	"include": ["./pkg/*.d.ts", "./src/types.d.ts"],
 	"compilerOptions": {
 		"target": "ESNext",
-		"lib": [
-			"ESNext",
-			"DOM",
-			"DOM.Iterable"
-		],
+		"lib": ["ESNext", "DOM", "DOM.Iterable"],
 		"module": "ESNext",
 		"strict": true,
 		"noEmit": true,

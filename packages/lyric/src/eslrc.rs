@@ -10,11 +10,11 @@
 //! ```
 //!
 
-use nom::{bytes::complete::take_until1, IResult};
+use nom::{IResult, bytes::complete::take_until1};
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
 
-use crate::{utils::process_lyrics, LyricLine};
+use crate::{LyricLine, utils::process_lyrics};
 
 pub fn parse_line(src: &str) -> IResult<&str, LyricLine<'_>> {
     let (mut src, mut start_time) = crate::lrc::parse_time(src)?;

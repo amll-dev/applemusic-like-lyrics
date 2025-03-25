@@ -13,20 +13,19 @@
     "@applemusic-like-lyrics/core": "workspace:^",
     "@applemusic-like-lyrics/react": "workspace:^",
     "@applemusic-like-lyrics/react-full": "workspace:^",
-    "@astrojs/react": "^4.1.5",
-    "@astrojs/starlight": "^0.30.4",
-    "@types/react": "^18.3.12",
-    "@types/react-dom": "^18.3.1",
-    "astro": "^5.0.2",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "sharp": "^0.32.5"
+    "@astrojs/react": "^4.2.1",
+    "@astrojs/starlight": "^0.32.4",
+    "@types/react": "^19.0.12",
+    "@types/react-dom": "^19.0.4",
+    "astro": "^5.5.4",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "sharp": "^0.33.5"
   },
   "devDependencies": {
-    "starlight-typedoc": "^0.18.0",
-    "typedoc": "^0.26.11",
+    "typedoc": "^0.28.1",
     "typedoc-plugin-mark-react-functional-components": "^0.2.2",
-    "typedoc-plugin-markdown": "^4.2.10",
-    "typedoc-plugin-vue": "^1.3.0"
+    "typedoc-plugin-markdown": "^4.6.0",
+    "typedoc-plugin-vue": "^1.5.0"
   }
 }

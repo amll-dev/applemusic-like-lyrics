@@ -1,5 +1,5 @@
 ---
-import { Aside } from "@astrojs/starlight/components";
+import { Aside, Card, LinkButton } from "@astrojs/starlight/components";
 import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro";
 import { AMLLPreview } from "../components/AMLLPreview";
 import "../styles/index.css";
@@ -26,9 +26,39 @@ import "../styles/index.css";
 	template: "splash",
 }} lang="zh-CN">
 		<div style="height: max(500px, 50vh);">
+			<style scoped>
+				:root[data-theme="light"] {
+					--amll-lp-color: black;
+				}
+			</style>
 			<AMLLPreview client:only="react" />
 		</div>
 		<Aside type="caution">
 			本文档仍在编写当中！内容尚未完成！
 		</Aside>
+		<Card title="AMLL Core 核心库" icon="seti:javascript">
+			<p>AMLL Core 是类苹果歌词的核心库，提供了歌词播放器的核心功能。</p>
+			<LinkButton href="/applemusic-like-lyrics/guides/core/introduction">了解更多</LinkButton>
+			<LinkButton href="/applemusic-like-lyrics/reference/core" variant="secondary">API 文档</LinkButton>
+		</Card>
+		<Card title="AMLL React 绑定" icon="seti:react">
+			<p>AMLL React 提供了对 Core 核心库的 React 绑定，可以更方便地使用歌词组件。</p>
+			<LinkButton href="/applemusic-like-lyrics/guides/react/introduction">了解更多</LinkButton>
+			<LinkButton href="/applemusic-like-lyrics/reference/react" variant="secondary">API 文档</LinkButton>
+		</Card>
+		<Card title="AMLL React Full 组件库" icon="seti:react">
+			<p>AMLL React Full 组件库进一步提供了更多用于拼装出类 Apple Music 风格的页面组件。</p>
+			<LinkButton href="/applemusic-like-lyrics/guides/react-full/introduction">了解更多</LinkButton>
+			<LinkButton href="/applemusic-like-lyrics/reference/react-full" variant="secondary">API 文档</LinkButton>
+		</Card>
+		<Card title="AMLL Vue 绑定" icon="seti:vue">
+			<p>AMLL Vue 提供了对 Core 核心库的 Vue 绑定，可以更方便地使用歌词组件。</p>
+			<LinkButton href="/applemusic-like-lyrics/guides/vue/introduction">了解更多</LinkButton>
+			<LinkButton href="/applemusic-like-lyrics/reference/vue" variant="secondary">API 文档</LinkButton>
+		</Card>
+		<Card title="AMLL Lyric 歌词解析库" icon="seti:vue">
+			<p>支持非常多数目的歌词格式解析和导出，使用 Rust 编写并编译到 WASM 以供使用！</p>
+			<LinkButton href="/applemusic-like-lyrics/guides/lyric/introduction">了解更多</LinkButton>
+			<LinkButton href="/applemusic-like-lyrics/reference/lyric" variant="secondary">API 文档</LinkButton>
+		</Card>
 </StarlightPage>

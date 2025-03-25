@@ -1,13 +1,13 @@
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
 
-use crate::{utils::process_lyrics, LyricLine, LyricWord};
+use crate::{LyricLine, LyricWord, utils::process_lyrics};
 
 use std::fmt::Write;
 use std::{borrow::Cow, str::FromStr};
 
+use nom::{IResult, character::complete::line_ending};
 use nom::{bytes::complete::*, combinator::opt, multi::many1};
-use nom::{character::complete::line_ending, IResult};
 
 #[inline]
 pub fn parse_time(src: &str) -> IResult<&str, u64> {
@@ -21,7 +21,7 @@ pub fn parse_time(src: &str) -> IResult<&str, u64> {
             return IResult::Err(nom::Err::Error(nom::error::Error::new(
                 src,
                 nom::error::ErrorKind::Digit,
-            )))
+            )));
         }
     };
 
@@ -34,7 +34,7 @@ pub fn parse_time(src: &str) -> IResult<&str, u64> {
             return IResult::Err(nom::Err::Error(nom::error::Error::new(
                 src,
                 nom::error::ErrorKind::Digit,
-            )))
+            )));
         }
     };
 

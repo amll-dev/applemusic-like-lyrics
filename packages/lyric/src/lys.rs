@@ -3,13 +3,13 @@
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
 
-use crate::{utils::process_lyrics, LyricLine, LyricWord};
+use crate::{LyricLine, LyricWord, utils::process_lyrics};
 
 use std::fmt::Write;
 use std::{borrow::Cow, str::FromStr};
 
+use nom::{IResult, character::complete::line_ending};
 use nom::{bytes::complete::*, combinator::opt, multi::many0};
-use nom::{character::complete::line_ending, IResult};
 
 fn process_time<'a>(
     src: &'a str,
@@ -22,7 +22,7 @@ fn process_time<'a>(
             return Err(nom::Err::Error(nom::error::Error {
                 input: src,
                 code: nom::error::ErrorKind::Digit,
-            }))
+            }));
         }
     };
     let duration = match u64::from_str(duration) {
@@ -31,7 +31,7 @@ fn process_time<'a>(
             return Err(nom::Err::Error(nom::error::Error {
                 input: src,
                 code: nom::error::ErrorKind::Digit,
-            }))
+            }));
         }
     };
 

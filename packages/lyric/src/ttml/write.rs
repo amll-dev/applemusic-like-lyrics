@@ -3,7 +3,7 @@ use wasm_bindgen::prelude::*;
 
 use std::io::Cursor;
 
-use quick_xml::{events::*, Writer};
+use quick_xml::{Writer, events::*};
 
 use super::TTMLLyric;
 

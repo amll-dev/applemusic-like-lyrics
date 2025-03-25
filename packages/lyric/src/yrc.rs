@@ -1,13 +1,13 @@
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
 
-use crate::{utils::process_lyrics, LyricLine, LyricWord};
+use crate::{LyricLine, LyricWord, utils::process_lyrics};
 
 use std::fmt::Write;
 use std::{borrow::Cow, str::FromStr};
 
+use nom::{IResult, character::complete::line_ending};
 use nom::{bytes::complete::*, combinator::opt, multi::many0, sequence::pair};
-use nom::{character::complete::line_ending, IResult};
 
 fn process_time<'a>(
     src: &'a str,
@@ -62,8 +62,8 @@ pub fn parse_words(src: &str) -> IResult<&str, Vec<LyricWord<'_>>> {
     let words = words
         .into_iter()
         .map(|x| LyricWord {
-            start_time: x.0 .0,
-            end_time: x.0 .0 + x.0 .1,
+            start_time: x.0.0,
+            end_time: x.0.0 + x.0.1,
             word: Cow::Borrowed(x.1),
         })
         .collect();

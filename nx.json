@@ -13,6 +13,7 @@
   },
   "targetDefaults": {
     "fmt": {
+      "cache": true,
       "dependsOn": [
         "^fmt"
       ],
@@ -21,14 +22,21 @@
       ]
     },
     "build": {
-      "dependsOn": ["^build", "fmt"],
+      "cache": true,
+      "dependsOn": [
+        "^build",
+        "fmt"
+      ],
       "outputs": [
         "{projectRoot}/dist",
         "{projectRoot}/pkg"
       ]
     },
     "build:dev": {
-      "dependsOn": ["^build:dev"],
+      "cache": true,
+      "dependsOn": [
+        "^build:dev"
+      ],
       "outputs": [
         "{projectRoot}/dist",
         "{projectRoot}/pkg"

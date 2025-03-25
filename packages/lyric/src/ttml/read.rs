@@ -2,7 +2,7 @@
 use wasm_bindgen::prelude::*;
 
 use quick_xml::{
-    events::{attributes::AttrError, BytesStart, Event},
+    events::{BytesStart, Event, attributes::AttrError},
     *,
 };
 use std::{borrow::Cow, io::BufRead};
@@ -199,7 +199,7 @@ pub fn parse_ttml<'a>(data: impl BufRead) -> std::result::Result<TTMLLyric<'a>, 
                                             _ => {}
                                         },
                                         Err(err) => {
-                                            return Err(TTMLError::XmlAttrError(read_len, err))
+                                            return Err(TTMLError::XmlAttrError(read_len, err));
                                         }
                                     }
                                 }

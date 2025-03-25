@@ -78,7 +78,7 @@
 		"babel-plugin-react-compiler": "19.0.0-beta-a7bf2bd-20241110",
 		"eslint-plugin-react-compiler": "19.0.0-beta-a7bf2bd-20241110",
 		"i18next-parser": "^9.0.2",
-		"typescript": "^5.7.3",
+		"typescript": "^5.8.2",
 		"vite": "^6.2.2",
 		"vite-plugin-babel": "^1.2.0",
 		"vite-plugin-i18next-loader": "^2.0.14"

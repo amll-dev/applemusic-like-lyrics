@@ -1,13 +1,13 @@
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
 
-use crate::{utils::process_lyrics, LyricLine, LyricWord};
+use crate::{LyricLine, LyricWord, utils::process_lyrics};
 
 use std::fmt::Write;
 use std::{borrow::Cow, str::FromStr};
 
 use nom::{
-    bytes::complete::*, character::complete::line_ending, combinator::opt, multi::many0, IResult,
+    IResult, bytes::complete::*, character::complete::line_ending, combinator::opt, multi::many0,
 };
 
 fn process_time<'a>(

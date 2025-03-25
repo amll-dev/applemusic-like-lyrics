@@ -32,7 +32,12 @@ export const ToggleIconButton: FC<
 	);
 });
 
-const PREBUILT_ICONS_MAP: Record<PrebuiltToggleIconButtonType, [FC, FC]> = {
+type IconComponent = typeof lyricsOffIcon;
+
+const PREBUILT_ICONS_MAP: Record<
+	PrebuiltToggleIconButtonType,
+	[IconComponent, IconComponent]
+> = {
 	[PrebuiltToggleIconButtonType.Lyrics]: [lyricsOffIcon, lyricsOnIcon],
 	[PrebuiltToggleIconButtonType.Playlist]: [playlistOffIcon, playlistOnIcon],
 	[PrebuiltToggleIconButtonType.Repeat]: [repeatOffIcon, repeatOnNormalIcon],
