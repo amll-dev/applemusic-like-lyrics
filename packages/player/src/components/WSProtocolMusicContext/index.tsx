@@ -222,6 +222,10 @@ export const WSProtocolMusicContext: FC = () => {
 			const payload = evt.payload;
 
 			switch (payload.type) {
+				case "ping": {
+					sendWSMessage("pong");
+					break;
+				}
 				case "setMusicInfo": {
 					store.set(musicIdAtom, payload.value.musicId);
 					store.set(musicNameAtom, payload.value.musicName);

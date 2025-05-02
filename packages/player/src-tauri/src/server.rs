@@ -3,13 +3,14 @@ use std::{sync::RwLock as StdRwLock, time::Duration};
 
 use async_std::net::{TcpListener, TcpStream};
 use async_std::sync::RwLock as AsyncRwLock;
-use async_std::task::{block_on, JoinHandle};
-use async_tungstenite::tungstenite::Message;
+use async_std::task::{JoinHandle, block_on};
 use async_tungstenite::WebSocketStream;
+use async_tungstenite::tungstenite::Message;
 use futures::prelude::*;
 use futures::stream::SplitSink;
 use tauri::{AppHandle, Emitter};
 use tracing::*;
+use ws_protocol::Body;
 
 type Connections = Arc<AsyncRwLock<Vec<SplitSink<WebSocketStream<TcpStream>, Message>>>>;
 type ConnectionAddrs = Arc<StdRwLock<HashSet<SocketAddr>>>;
@@ -117,7 +118,15 @@ impl AMLLWebSocketServer {
         let mut read = read.try_filter(|x| future::ready(x.is_binary()));
 
         while let Some(Ok(data)) = read.next().await {
-            if let Ok(body) = ws_protocol::parse_body(&data.into_data()) {
+            let data = data.into_data();
+            trace!("WebSocket 客户端 {addr} 发送原始数据: {data:?}");
+            if let Ok(body) = ws_protocol::parse_body(&data) {
+                match &body {
+                    Body::OnAudioData { .. } => {}
+                    _ => {
+                        trace!("WebSocket 客户端 {addr} 解析到原始数据: {body:?}");
+                    }
+                }
                 app.emit("on-ws-protocol-client-body", body)?;
             }
         }

@@ -14,8 +14,8 @@ use symphonia::core::io::{MediaSource, MediaSourceStream, MediaSourceStreamOptio
 use symphonia::core::{errors::Error as DecodeError, units::Time};
 use tokio::{
     sync::{
-        mpsc::{error::TryRecvError, UnboundedReceiver, UnboundedSender},
         Mutex, RwLock,
+        mpsc::{UnboundedReceiver, UnboundedSender, error::TryRecvError},
     },
     task::{AbortHandle, JoinHandle},
 };
@@ -25,8 +25,8 @@ use utils::read_audio_info;
 use crate::*;
 
 use super::{
-    audio_quality::AudioQuality, fft_player::FFTPlayer, output::AudioOutputSender,
-    AudioThreadMessage, SongData,
+    AudioThreadMessage, SongData, audio_quality::AudioQuality, fft_player::FFTPlayer,
+    output::AudioOutputSender,
 };
 
 #[derive(Debug, Default, Clone, PartialEq)]
@@ -431,7 +431,7 @@ impl AudioPlayer {
                         .await?;
                     emitter.ret_none(msg).await?;
                 }
-                AudioThreadMessage::ResumeOrPauseAudio {} => {
+                AudioThreadMessage::ResumeOrPauseAudio => {
                     self.is_playing = !self.is_playing;
                     if self.is_playing {
                         info!("开始继续播放歌曲！");
@@ -448,7 +448,7 @@ impl AudioPlayer {
                     }
                     emitter.ret_none(msg).await?;
                 }
-                AudioThreadMessage::PrevSong { .. } => {
+                AudioThreadMessage::PrevSong => {
                     if self.playlist.is_empty() {
                         warn!("无法播放歌曲，尚未设置播放列表！");
                     } else {
@@ -466,7 +466,7 @@ impl AudioPlayer {
 
                     emitter.ret_none(msg).await?;
                 }
-                AudioThreadMessage::NextSong { .. } => {
+                AudioThreadMessage::NextSong => {
                     self.is_playing = true;
                     if self.playlist.is_empty() {
                         warn!("无法播放歌曲，尚未设置播放列表！");
@@ -480,7 +480,7 @@ impl AudioPlayer {
 
                     emitter.ret_none(msg).await?;
                 }
-                AudioThreadMessage::NextSongGapless { .. } => {
+                AudioThreadMessage::NextSongGapless => {
                     self.is_playing = true;
                     if self.playlist.is_empty() {
                         warn!("无法播放歌曲，尚未设置播放列表！");
@@ -1118,7 +1118,7 @@ impl AudioPlayer {
                             _ => {}
                         },
                         Err(TryRecvError::Disconnected) => {
-                            break 'play_loop Err(anyhow::anyhow!("已断开音频线程通道"))
+                            break 'play_loop Err(anyhow::anyhow!("已断开音频线程通道"));
                         }
                         Err(TryRecvError::Empty) => break 'recv_loop,
                     }
@@ -1136,11 +1136,11 @@ impl AudioPlayer {
                         }
                         ErrorKind::WouldBlock => continue,
                         _ => {
-                            break 'play_loop Err(anyhow::anyhow!("读取数据块发生 IO 错误: {err}"))
+                            break 'play_loop Err(anyhow::anyhow!("读取数据块发生 IO 错误: {err}"));
                         }
                     },
                     Err(err) => {
-                        break 'play_loop Err(anyhow::anyhow!("读取数据块发生其他错误: {err}"))
+                        break 'play_loop Err(anyhow::anyhow!("读取数据块发生其他错误: {err}"));
                     }
                 };
                 match decoder.decode(&packet) {
