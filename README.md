@@ -26,7 +26,7 @@ Although the goal of this project is not to imitate it completely, it will polis
 
 ### Main modules
 
--   [![AMLL-Core](https://img.shields.io/badge/Core-%233178c6?label=Apple%20Music-like%20Lyrics&labelColor=%23FB5C74)](./packages/core/README.md)：AMLL Core Component Library，以 DOM Written natively，Provides a lyric display component and a dynamic fluid background component
+-   [![AMLL-Core](https://img.shields.io/badge/Core-%233178c6?label=Apple%20Music-like%20Lyrics&labelColor=%23FB5C74)](./packages/core/README.md)：AMLL Core Component Library，**** DOM Written natively，Provides a lyric display component and a dynamic fluid background component
 
 -   [![AMLL-React](https://img.shields.io/badge/React-%23149eca?label=Apple%20Music-like%20Lyrics&labelColor=%23FB5C74)](./packages/react/README.md)：AMLL React bind**，Provision React Lyrics in the form of components display components and dynamic fluid background components
 
