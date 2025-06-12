@@ -5,7 +5,7 @@ use quick_xml::{
     events::{BytesStart, Event, attributes::AttrError},
     *,
 };
-use std::{borrow::Cow, io::BufRead};
+use std::{borrow::Cow, collections::HashMap, io::BufRead};
 use thiserror::Error;
 
 use crate::{LyricLine, LyricWord};
@@ -150,6 +150,12 @@ pub fn parse_ttml<'a>(data: impl BufRead) -> std::result::Result<TTMLLyric<'a>, 
     let mut result = TTMLLyric::default();
     let mut read_len = 0;
     let mut main_agent = Vec::new();
+
+    // 用于存储 Apple Music 格式的翻译
+    let mut itunes_translations: HashMap<Vec<u8>, Vec<u8>> = HashMap::new();
+    let mut in_itunes_metadata = false;
+    let mut in_itunes_translation = false;
+
     loop {
         match reader.read_event_into(&mut buf) {
             Ok(Event::Eof) => break,
@@ -161,6 +167,34 @@ pub fn parse_ttml<'a>(data: impl BufRead) -> std::result::Result<TTMLLyric<'a>, 
                 //     status
                 // );
                 match attr_name.as_ref() {
+                    b"iTunesMetadata" => {
+                        if let CurrentStatus::InMetadata = status {
+                            in_itunes_metadata = true;
+                        }
+                    }
+                    b"translation" => {
+                        if in_itunes_metadata {
+                            in_itunes_translation = true;
+                        }
+                    }
+                    b"text" if in_itunes_translation => {
+                        let mut key: Option<Vec<u8>> = None;
+                        for attr in e.attributes() {
+                            match attr {
+                                Ok(a) if a.key.as_ref() == b"for" => {
+                                    key = Some(a.value.into_owned());
+                                }
+                                _ => {}
+                            }
+                        }
+                        if let Some(k) = key {
+                            if let Ok(Event::Text(text_event)) = reader.read_event_into(&mut Vec::new()) {
+                                if let Ok(unescaped_text) = text_event.unescape() {
+                                    itunes_translations.insert(k, unescaped_text.into_owned().into_bytes());
+                                }
+                            }
+                        }
+                    }
                     b"tt" => {
                         if let CurrentStatus::None = status {
                             status = CurrentStatus::InTtml;
@@ -271,7 +305,28 @@ pub fn parse_ttml<'a>(data: impl BufRead) -> std::result::Result<TTMLLyric<'a>, 
                         if let CurrentStatus::InDiv = status {
                             status = CurrentStatus::InP;
                             let mut new_line = LyricLine::default();
+                            
+                            // 在配置行信息时，检查是否有 itunes:key 并查找翻译
+                            let mut itunes_key: Option<Vec<u8>> = None;
+                            for attr in e.attributes() {
+                                if let Ok(a) = attr {
+                                    if a.key.as_ref() == b"itunes:key" {
+                                        itunes_key = Some(a.value.into_owned());
+                                        break; // 找到 key 就退出
+                                    }
+                                }
+                            }
+
                             configure_lyric_line(&e, read_len, &main_agent, &mut new_line)?;
+
+                            if let Some(key) = itunes_key {
+                                if let Some(translation_text) = itunes_translations.get(&key) {
+                                    if let Ok(s) = std::str::from_utf8(translation_text) {
+                                        new_line.translated_lyric = Cow::Owned(s.to_string());
+                                    }
+                                }
+                            }
+
                             result.lines.push(new_line);
                         } else {
                             return Err(TTMLError::UnexpectedPElement(read_len));
@@ -373,6 +428,16 @@ pub fn parse_ttml<'a>(data: impl BufRead) -> std::result::Result<TTMLLyric<'a>, 
                 //     status
                 // );
                 match attr_name.as_ref() {
+                    b"iTunesMetadata" => {
+                        if in_itunes_metadata {
+                            in_itunes_metadata = false;
+                        }
+                    }
+                    b"translation" => {
+                        if in_itunes_translation {
+                            in_itunes_translation = false;
+                        }
+                    }
                     b"tt" => {
                         if let CurrentStatus::InTtml = status {
                             status = CurrentStatus::None;
@@ -450,13 +515,17 @@ pub fn parse_ttml<'a>(data: impl BufRead) -> std::result::Result<TTMLLyric<'a>, 
                         CurrentStatus::InTranslationSpan => {
                             status = CurrentStatus::InP;
                             // TODO: 尽可能借用而不克隆
-                            result
+                            // 只有在没有 Apple Music 样式翻译时才使用内嵌翻译
+                            let current_line = result
                                 .lines
                                 .iter_mut()
                                 .rev()
                                 .find(|x| !x.is_bg)
-                                .unwrap()
-                                .translated_lyric = str_buf.clone().into();
+                                .unwrap();
+
+                            if current_line.translated_lyric.is_empty() {
+                                current_line.translated_lyric = str_buf.clone().into();
+                            }
                             str_buf.clear();
                         }
                         CurrentStatus::InRomanSpan => {
