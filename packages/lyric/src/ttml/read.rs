@@ -28,6 +28,8 @@ enum CurrentStatus {
     InBody,
     InHead,
     InMetadata,
+    InITunesMetadata,
+    InITunesTranslation,
     InTtml,
 }
 
@@ -153,8 +155,6 @@ pub fn parse_ttml<'a>(data: impl BufRead) -> std::result::Result<TTMLLyric<'a>, 
 
     // 用于存储 Apple Music 格式的翻译
     let mut itunes_translations: HashMap<Vec<u8>, Vec<u8>> = HashMap::new();
-    let mut in_itunes_metadata = false;
-    let mut in_itunes_translation = false;
 
     loop {
         match reader.read_event_into(&mut buf) {
@@ -169,28 +169,30 @@ pub fn parse_ttml<'a>(data: impl BufRead) -> std::result::Result<TTMLLyric<'a>, 
                 match attr_name.as_ref() {
                     b"iTunesMetadata" => {
                         if let CurrentStatus::InMetadata = status {
-                            in_itunes_metadata = true;
+                            status = CurrentStatus::InITunesMetadata;
                         }
                     }
                     b"translation" => {
-                        if in_itunes_metadata {
-                            in_itunes_translation = true;
+                        if let CurrentStatus::InITunesMetadata = status {
+                            status = CurrentStatus::InITunesTranslation;
                         }
                     }
-                    b"text" if in_itunes_translation => {
-                        let mut key: Option<Vec<u8>> = None;
-                        for attr in e.attributes() {
-                            match attr {
-                                Ok(a) if a.key.as_ref() == b"for" => {
-                                    key = Some(a.value.into_owned());
+                    b"text" => {
+                        if let CurrentStatus::InITunesTranslation = status {
+                            let mut key: Option<Vec<u8>> = None;
+                            for attr in e.attributes() {
+                                match attr {
+                                    Ok(a) if a.key.as_ref() == b"for" => {
+                                        key = Some(a.value.into_owned());
+                                    }
+                                    _ => {}
                                 }
-                                _ => {}
                             }
-                        }
-                        if let Some(k) = key {
-                            if let Ok(Event::Text(text_event)) = reader.read_event_into(&mut Vec::new()) {
-                                if let Ok(unescaped_text) = text_event.unescape() {
-                                    itunes_translations.insert(k, unescaped_text.into_owned().into_bytes());
+                            if let Some(k) = key {
+                                if let Ok(Event::Text(text_event)) = reader.read_event_into(&mut Vec::new()) {
+                                    if let Ok(unescaped_text) = text_event.unescape() {
+                                        itunes_translations.insert(k, unescaped_text.into_owned().into_bytes());
+                                    }
                                 }
                             }
                         }
@@ -308,12 +310,10 @@ pub fn parse_ttml<'a>(data: impl BufRead) -> std::result::Result<TTMLLyric<'a>, 
                             
                             // 在配置行信息时，检查是否有 itunes:key 并查找翻译
                             let mut itunes_key: Option<Vec<u8>> = None;
-                            for attr in e.attributes() {
-                                if let Ok(a) = attr {
-                                    if a.key.as_ref() == b"itunes:key" {
-                                        itunes_key = Some(a.value.into_owned());
-                                        break; // 找到 key 就退出
-                                    }
+                            for a in e.attributes().flatten() {
+                                if a.key.as_ref() == b"itunes:key" {
+                                    itunes_key = Some(a.value.into_owned());
+                                    break; // 找到 key 就退出
                                 }
                             }
 
@@ -429,13 +429,13 @@ pub fn parse_ttml<'a>(data: impl BufRead) -> std::result::Result<TTMLLyric<'a>, 
                 // );
                 match attr_name.as_ref() {
                     b"iTunesMetadata" => {
-                        if in_itunes_metadata {
-                            in_itunes_metadata = false;
+                        if let CurrentStatus::InITunesMetadata = status {
+                            status = CurrentStatus::InMetadata;
                         }
                     }
                     b"translation" => {
-                        if in_itunes_translation {
-                            in_itunes_translation = false;
+                        if let CurrentStatus::InITunesTranslation = status {
+                            status = CurrentStatus::InITunesMetadata;
                         }
                     }
                     b"tt" => {
