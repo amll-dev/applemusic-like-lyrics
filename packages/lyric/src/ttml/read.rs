@@ -573,6 +573,35 @@ pub fn parse_ttml<'a>(data: impl BufRead) -> std::result::Result<TTMLLyric<'a>, 
                 //     status
                 // );
             }
+            Ok(Event::GeneralRef(e)) => {
+                if let Ok(entity_name) = e.decode() {
+                    let decoded_char = match entity_name.as_ref() {
+                        "amp" => '&',
+                        "lt" => '<',
+                        "gt" => '>',
+                        "quot" => '"',
+                        "apos" => '\'',
+                        // 应该在此处记录一个警告
+                        _ => '\0',
+                    };
+
+                    if decoded_char != '\0' {
+                        // 处于各类 span 内部时，才将解码后的字符追加到 str_buf
+                        match status {
+                            CurrentStatus::InSpan
+                            | CurrentStatus::InTranslationSpan
+                            | CurrentStatus::InRomanSpan
+                            | CurrentStatus::InSpanInBackgroundSpan
+                            | CurrentStatus::InTranslationSpanInBackgroundSpan
+                            | CurrentStatus::InRomanSpanInBackgroundSpan => {
+                                str_buf.push(decoded_char);
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+            }
+
             Ok(Event::Text(e)) => match e.decode() {
                 Ok(txt) => {
                     // println!("  text: {:?}", txt);
@@ -799,4 +828,23 @@ fn test_timestamp() {
         parse_timestamp("10.24".as_bytes()),
         Ok(("".as_bytes(), 10240))
     );
+}
+
+#[test]
+fn test_parse_ttml_with_entities() {
+    const TTML_WITH_ENTITIES: &str = r#"<tt><body><div><p begin="0" end="5"><span begin="0" end="5">Test: &lt; &gt; &amp; &quot; &apos;</span></p></div></body></tt>"#;
+
+    let result = parse_ttml(TTML_WITH_ENTITIES.as_bytes());
+
+    assert!(result.is_ok(), "解析TTML应该成功");
+    let ttml_lyric = result.unwrap();
+
+    assert_eq!(ttml_lyric.lines.len(), 1, "应该解析出一行歌词");
+    let line = &ttml_lyric.lines[0];
+
+    assert_eq!(line.words.len(), 1, "该行歌词应该包含一个音节");
+    let word = &line.words[0];
+
+    let expected_text = "Test: < > & \" '";
+    assert_eq!(word.word, expected_text, "实体引用没有被正确解码");
 }
