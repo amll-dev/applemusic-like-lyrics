@@ -252,7 +252,7 @@ export const lyricBackgroundRendererAtom = atom<{
  */
 export const cssBackgroundPropertyAtom = atomWithStorage(
 	"amll-player.cssBackgroundProperty",
-	"#111111",
+	"#000000", // 将默认值从 #111111 修改为 #000000
 );
 
 /**
