@@ -30,6 +30,11 @@ enum CurrentStatus {
     InMetadata,
     InITunesMetadata,
     InITunesTranslation,
+    InITunesTranslations,
+    InITunesTransliterations,
+    InITunesTranslationText,
+    InITunesTransliterationText,
+
     InTtml,
 }
 
@@ -155,6 +160,12 @@ pub fn parse_ttml<'a>(data: impl BufRead) -> std::result::Result<TTMLLyric<'a>, 
 
     // 用于存储 Apple Music 格式的翻译
     let mut itunes_translations: HashMap<Vec<u8>, Vec<u8>> = HashMap::new();
+    // 用于存储音译
+    let mut itunes_transliterations: HashMap<Vec<u8>, Vec<u8>> = HashMap::new();
+    // 用于存储 for="L_ID"
+    let mut current_itunes_key: Option<Vec<u8>> = None;
+    // 用于拼接 <span/> 内的文本
+    let mut current_itunes_text_buffer = String::with_capacity(128);
 
     loop {
         match reader.read_event_into(&mut buf) {
@@ -172,9 +183,21 @@ pub fn parse_ttml<'a>(data: impl BufRead) -> std::result::Result<TTMLLyric<'a>, 
                             status = CurrentStatus::InITunesMetadata;
                         }
                     }
+                    b"translations" => {
+                        if let CurrentStatus::InITunesMetadata = status {
+                            status = CurrentStatus::InITunesTranslations;
+                        }
+                    }
+                    b"transliterations" => {
+                        if let CurrentStatus::InITunesMetadata = status {
+                            status = CurrentStatus::InITunesTransliterations;
+                        }
+                    }
                     b"translation" => {
                         if let CurrentStatus::InITunesMetadata = status {
                             status = CurrentStatus::InITunesTranslation;
+                        } else if let CurrentStatus::InITunesTranslations = status {
+                            // 等待 <text>
                         }
                     }
                     b"text" => {
@@ -188,15 +211,36 @@ pub fn parse_ttml<'a>(data: impl BufRead) -> std::result::Result<TTMLLyric<'a>, 
                                     _ => {}
                                 }
                             }
-                            if let Some(k) = key {
-                                if let Ok(Event::Text(text_event)) =
+                            if let Some(k) = key
+                                && let Ok(Event::Text(text_event)) =
                                     reader.read_event_into(&mut Vec::new())
-                                {
-                                    if let Ok(unescaped_text) = text_event.decode() {
-                                        itunes_translations
-                                            .insert(k, unescaped_text.into_owned().into_bytes());
+                                && let Ok(unescaped_text) = text_event.decode()
+                            {
+                                itunes_translations
+                                    .insert(k, unescaped_text.into_owned().into_bytes());
+                            }
+                        } else if matches!(
+                            status,
+                            CurrentStatus::InITunesTranslations
+                                | CurrentStatus::InITunesTransliterations
+                        ) {
+                            current_itunes_key = None;
+                            for attr in e.attributes() {
+                                match attr {
+                                    Ok(a) if a.key.as_ref() == b"for" => {
+                                        current_itunes_key = Some(a.value.into_owned());
+                                        break;
                                     }
+                                    _ => {}
                                 }
+                            }
+                            if current_itunes_key.is_some() {
+                                if status == CurrentStatus::InITunesTranslations {
+                                    status = CurrentStatus::InITunesTranslationText;
+                                } else {
+                                    status = CurrentStatus::InITunesTransliterationText;
+                                }
+                                current_itunes_text_buffer.clear();
                             }
                         }
                     }
@@ -272,20 +316,20 @@ pub fn parse_ttml<'a>(data: impl BufRead) -> std::result::Result<TTMLLyric<'a>, 
                                     Err(err) => return Err(TTMLError::XmlAttrError(read_len, err)),
                                 }
                             }
-                            if let Ok(meta_key) = std::str::from_utf8(&meta_key) {
-                                if let Ok(meta_value) = std::str::from_utf8(&meta_value) {
-                                    let meta_key = Cow::Borrowed(meta_key);
-                                    let meta_value = Cow::Borrowed(meta_value);
-                                    if let Some(values) =
-                                        result.metadata.iter_mut().find(|x| x.0 == meta_key)
-                                    {
-                                        values.1.push(Cow::Owned(meta_value.into_owned()));
-                                    } else {
-                                        result.metadata.push((
-                                            Cow::Owned(meta_key.into_owned()),
-                                            vec![Cow::Owned(meta_value.into_owned())],
-                                        ));
-                                    }
+                            if let Ok(meta_key) = std::str::from_utf8(&meta_key)
+                                && let Ok(meta_value) = std::str::from_utf8(&meta_value)
+                            {
+                                let meta_key = Cow::Borrowed(meta_key);
+                                let meta_value = Cow::Borrowed(meta_value);
+                                if let Some(values) =
+                                    result.metadata.iter_mut().find(|x| x.0 == meta_key)
+                                {
+                                    values.1.push(Cow::Owned(meta_value.into_owned()));
+                                } else {
+                                    result.metadata.push((
+                                        Cow::Owned(meta_key.into_owned()),
+                                        vec![Cow::Owned(meta_value.into_owned())],
+                                    ));
                                 }
                             }
                         } else {
@@ -322,11 +366,16 @@ pub fn parse_ttml<'a>(data: impl BufRead) -> std::result::Result<TTMLLyric<'a>, 
 
                             configure_lyric_line(&e, read_len, &main_agent, &mut new_line)?;
 
-                            if let Some(key) = itunes_key {
-                                if let Some(translation_text) = itunes_translations.get(&key) {
-                                    if let Ok(s) = std::str::from_utf8(translation_text) {
-                                        new_line.translated_lyric = Cow::Owned(s.to_string());
-                                    }
+                            if let Some(key) = &itunes_key {
+                                if let Some(translation_text) = itunes_translations.get(key)
+                                    && let Ok(s) = std::str::from_utf8(translation_text)
+                                {
+                                    new_line.translated_lyric = Cow::Owned(s.to_string());
+                                }
+                                if let Some(transliteration_text) = itunes_transliterations.get(key)
+                                    && let Ok(s) = std::str::from_utf8(transliteration_text)
+                                {
+                                    new_line.roman_lyric = Cow::Owned(s.to_string());
                                 }
                             }
 
@@ -413,6 +462,8 @@ pub fn parse_ttml<'a>(data: impl BufRead) -> std::result::Result<TTMLLyric<'a>, 
                                 result.lines.last_mut().unwrap().words.push(new_word);
                             }
                         }
+                        CurrentStatus::InITunesTranslationText
+                        | CurrentStatus::InITunesTransliterationText => {}
                         _ => return Err(TTMLError::UnexpectedSpanElement(read_len)),
                     },
                     _ => {}
@@ -436,8 +487,32 @@ pub fn parse_ttml<'a>(data: impl BufRead) -> std::result::Result<TTMLLyric<'a>, 
                             status = CurrentStatus::InMetadata;
                         }
                     }
+                    b"text" => {
+                        if let Some(key) = current_itunes_key.take() {
+                            if status == CurrentStatus::InITunesTranslationText {
+                                itunes_translations
+                                    .insert(key, current_itunes_text_buffer.clone().into_bytes());
+                                status = CurrentStatus::InITunesTranslations;
+                            } else if status == CurrentStatus::InITunesTransliterationText {
+                                itunes_transliterations
+                                    .insert(key, current_itunes_text_buffer.clone().into_bytes());
+
+                                status = CurrentStatus::InITunesTransliterations;
+                            }
+                        }
+                    }
                     b"translation" => {
                         if let CurrentStatus::InITunesTranslation = status {
+                            status = CurrentStatus::InITunesMetadata;
+                        }
+                    }
+                    b"translations" => {
+                        if let CurrentStatus::InITunesTranslations = status {
+                            status = CurrentStatus::InITunesMetadata;
+                        }
+                    }
+                    b"transliterations" => {
+                        if let CurrentStatus::InITunesTransliterations = status {
                             status = CurrentStatus::InITunesMetadata;
                         }
                     }
@@ -563,6 +638,8 @@ pub fn parse_ttml<'a>(data: impl BufRead) -> std::result::Result<TTMLLyric<'a>, 
                                 .roman_lyric = str_buf.clone().into();
                             str_buf.clear();
                         }
+                        CurrentStatus::InITunesTranslationText
+                        | CurrentStatus::InITunesTransliterationText => {}
                         _ => return Err(TTMLError::UnexpectedSpanElement(read_len)),
                     },
                     _ => {}
@@ -601,7 +678,6 @@ pub fn parse_ttml<'a>(data: impl BufRead) -> std::result::Result<TTMLLyric<'a>, 
                     }
                 }
             }
-
             Ok(Event::Text(e)) => match e.decode() {
                 Ok(txt) => {
                     // println!("  text: {:?}", txt);
@@ -639,6 +715,10 @@ pub fn parse_ttml<'a>(data: impl BufRead) -> std::result::Result<TTMLLyric<'a>, 
                         | CurrentStatus::InTranslationSpanInBackgroundSpan
                         | CurrentStatus::InRomanSpanInBackgroundSpan => {
                             str_buf.push_str(&txt);
+                        }
+                        CurrentStatus::InITunesTranslationText
+                        | CurrentStatus::InITunesTransliterationText => {
+                            current_itunes_text_buffer.push_str(&txt);
                         }
                         _ => {}
                     }
@@ -791,17 +871,26 @@ pub fn parse_timestamp(input: &[u8]) -> IResult<&[u8], u64> {
                     Ok((input, time))
                 }
             }
-            Err(_) => match (parse_minutes_or_seconds, opt(parse_fraction), eof).parse(input) {
-                Ok((input, result)) => {
-                    let time = result.0 * 1000;
-                    if let Some(frac) = result.1 {
-                        Ok((input, time + frac))
-                    } else {
-                        Ok((input, time))
+            Err(_) => {
+                match (
+                    parse_minutes_or_seconds,
+                    opt(parse_fraction),
+                    opt(tag("s")),
+                    eof,
+                )
+                    .parse(input)
+                {
+                    Ok((input, result)) => {
+                        let time = result.0 * 1000;
+                        if let Some(frac) = result.1 {
+                            Ok((input, time + frac))
+                        } else {
+                            Ok((input, time))
+                        }
                     }
+                    Err(err) => Err(err),
                 }
-                Err(err) => Err(err),
-            },
+            }
         },
     }
 }
@@ -847,4 +936,30 @@ fn test_parse_ttml_with_entities() {
 
     let expected_text = "Test: < > & \" '";
     assert_eq!(word.word, expected_text, "实体引用没有被正确解码");
+}
+
+#[test]
+fn test_parse_apple_music_word_by_word_lyrics() {
+    const TTML_EXAMPLE: &str = r##"<tt xmlns="http://www.w3.org/ns/ttml" xmlns:itunes="http://music.apple.com/lyric-ttml-internal" xml:lang="ja"><head><metadata><iTunesMetadata xmlns="http://music.apple.com/lyric-ttml-internal"><translations><translation type="replacement" xml:lang="en"><text for="L1"><span xmlns="http://www.w3.org/ns/ttml">This</span> <span xmlns="http://www.w3.org/ns/ttml">is</span></text><text for="L2"><span xmlns="http://www.w3.org/ns/ttml">a test</span></text></translation></translations><transliterations><transliteration xml:lang="ja-Latn"><text for="L1"><span xmlns="http://www.w3.org/ns/ttml">ko</span><span xmlns="http://www.w3.org/ns/ttml">re</span><span xmlns="http://www.w3.org/ns/ttml">wa</span></text><text for="L2"><span xmlns="http://www.w3.org/ns/ttml">tesuto</span></text></transliteration></transliterations></iTunesMetadata></metadata></head><body><div><p begin="10s" end="12s" itunes:key="L1"><span begin="10s" end="12s">これは</span></p><p begin="13s" end="15s" itunes:key="L2"><span begin="13s" end="15s">テスト</span></p><p begin="16s" end="18s" itunes:key="L3"><span begin="16s" end="18s">未翻译行</span></p></div></body></tt>"##;
+
+    let result = parse_ttml(TTML_EXAMPLE.as_bytes());
+
+    let ttml_lyric = result.unwrap();
+
+    assert_eq!(ttml_lyric.lines.len(), 3, "应该解析出三行歌词");
+
+    let line1 = &ttml_lyric.lines[0];
+    assert_eq!(line1.words[0].word, "これは", "第一行原文不匹配");
+    assert_eq!(line1.translated_lyric, "This is", "第一行逐字翻译拼接错误");
+    assert_eq!(line1.roman_lyric, "korewa", "第一行逐字音译拼接错误");
+
+    let line2 = &ttml_lyric.lines[1];
+    assert_eq!(line2.words[0].word, "テスト", "第二行原文不匹配");
+    assert_eq!(line2.translated_lyric, "a test", "第二行逐字翻译拼接错误");
+    assert_eq!(line2.roman_lyric, "tesuto", "第二行逐字音译拼接错误");
+
+    let line3 = &ttml_lyric.lines[2];
+    assert_eq!(line3.words[0].word, "未翻译行", "第三行原文不匹配");
+    assert!(line3.translated_lyric.is_empty(), "第三行不应有翻译");
+    assert!(line3.roman_lyric.is_empty(), "第三行不应有音译");
 }
