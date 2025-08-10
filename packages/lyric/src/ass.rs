@@ -37,8 +37,16 @@ pub fn stringify_ass(lines: &[LyricLine]) -> String {
 
     for line in lines {
         result.push_str("Dialogue: 0,");
-        let start_time = line.words.iter().map(|x| x.start_time).min();
-        let end_time = line.words.iter().map(|x| x.end_time).max();
+
+        // 防止开始时间为 0 的空格影响行开始时间的计算
+        let timed_words: Vec<_> = line
+            .words
+            .iter()
+            .filter(|word| word.end_time > word.start_time)
+            .collect();
+        let start_time = timed_words.iter().map(|x| x.start_time).min();
+        let end_time = timed_words.iter().map(|x| x.end_time).max();
+
         if start_time.is_none() || end_time.is_none() {
             continue;
         }
@@ -57,14 +65,33 @@ pub fn stringify_ass(lines: &[LyricLine]) -> String {
             result.push_str("-bg");
         }
         result.push_str(",0,0,0,,");
+        let mut previous_word_end_time = start_time;
+
         for word in &line.words {
-            let duration = word.end_time.saturating_sub(word.start_time) / 10;
-            result.push_str("{\\k");
-            write!(&mut result, "{duration}").unwrap();
-            result.push('}');
+            if word.start_time >= word.end_time {
+                result.push_str(&word.word);
+                continue;
+            }
+
+            if word.start_time > previous_word_end_time {
+                let gap_duration_cs =
+                    (word.start_time.saturating_sub(previous_word_end_time) + 5) / 10;
+                if gap_duration_cs > 0 {
+                    write!(&mut result, "{{\\k{}}}", gap_duration_cs).unwrap();
+                }
+            }
+
+            let word_duration_cs = (word.end_time.saturating_sub(word.start_time) + 5) / 10;
+            if word_duration_cs > 0 {
+                write!(&mut result, "{{\\k{}}}", word_duration_cs).unwrap();
+            }
+
             result.push_str(&word.word);
+
+            previous_word_end_time = word.end_time;
         }
         result.push('\n');
+
         if !line.translated_lyric.is_empty() {
             result.push_str("Dialogue: 0,");
             write_timestamp(&mut result, start_time);
