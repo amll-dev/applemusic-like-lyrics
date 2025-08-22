@@ -1,7 +1,6 @@
-import { atom, type Atom } from "jotai";
+import { type Atom, atom } from "jotai";
+import { onCycleRepeatModeAtom, onToggleShuffleAtom } from "./callbacks";
 import { musicPlayingPositionAtom } from "./dataAtoms";
-import { invoke } from "@tauri-apps/api/core";
-import { toast } from "react-toastify";
 
 /**
  * 定义了通用的重复播放模式枚举。
@@ -29,35 +28,16 @@ export const isRepeatEnabledAtom = atom<boolean>(false);
  * 切换随机播放的动作。
  */
 export const toggleShuffleActionAtom = atom(null, (get) => {
-	const currentShuffleState = get(isShuffleActiveAtom);
-	const newShuffleState = !currentShuffleState;
-
-	invoke("control_external_media", {
-		payload: { type: "setShuffle", is_active: newShuffleState },
-	}).catch((err) => {
-		console.error("设置随机播放失败:", err);
-		toast.error("设置随机播放失败");
-	});
+	const callback = get(onToggleShuffleAtom);
+	callback.onEmit?.();
 });
 
 /**
  * 切换重复模式的动作。
  */
 export const cycleRepeatModeActionAtom = atom(null, (get) => {
-	const currentRepeatMode = get(repeatModeAtom);
-	const nextMode =
-		currentRepeatMode === RepeatMode.Off
-			? RepeatMode.All
-			: currentRepeatMode === RepeatMode.All
-				? RepeatMode.One
-				: RepeatMode.Off;
-
-	invoke("control_external_media", {
-		payload: { type: "setRepeatMode", mode: nextMode },
-	}).catch((err) => {
-		console.error("设置循环模式失败:", err);
-		toast.error("设置循环模式失败");
-	});
+	const callback = get(onCycleRepeatModeAtom);
+	callback.onEmit?.();
 });
 
 /**
