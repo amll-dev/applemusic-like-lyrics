@@ -1,75 +1,75 @@
 import { FFTPlayer } from "@applemusic-like-lyrics/fft";
+import {
+	fftDataAtom,
+	fftDataRangeAtom,
+	isLyricPageOpenedAtom,
+	musicAlbumNameAtom,
+	musicArtistsAtom,
+	musicCoverAtom,
+	musicDurationAtom,
+	musicNameAtom,
+	musicPlayingAtom,
+	musicPlayingPositionAtom,
+	musicVolumeAtom,
+	onChangeVolumeAtom,
+	onClickControlThumbAtom,
+	onLyricLineClickAtom,
+	onPlayOrResumeAtom,
+	onRequestNextSongAtom,
+	onRequestOpenMenuAtom,
+	onRequestPrevSongAtom,
+	onSeekPositionAtom,
+} from "@applemusic-like-lyrics/react-full";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { useAtomValue, useSetAtom, useStore } from "jotai";
 import { type FC, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
-import { FFTToLowPassContext } from "../LocalMusicContext/index.tsx";
 import { useWsLyrics } from "../../../hooks/useWsLyrics.ts";
 import {
-	isLyricPageOpenedAtom,
-	onPlayOrResumeAtom,
-	musicPlayingAtom,
-	onRequestNextSongAtom,
-	onRequestPrevSongAtom,
-	onChangeVolumeAtom,
-	onSeekPositionAtom,
-	onLyricLineClickAtom,
-	onClickControlThumbAtom,
-	onRequestOpenMenuAtom,
-	fftDataAtom,
-	musicNameAtom,
-	musicArtistsAtom,
-	musicAlbumNameAtom,
-	musicDurationAtom,
-	musicPlayingPositionAtom,
-	musicCoverAtom,
-	musicVolumeAtom,
-	fftDataRangeAtom,
-} from "@applemusic-like-lyrics/react-full";
-import {
-	musicContextModeAtom,
 	enableWsLyricsInSmtcModeAtom,
 	MusicContextMode,
+	musicContextModeAtom,
 } from "../../states/appAtoms.ts";
 import {
 	RepeatMode,
-	smtcSessionsAtom,
-	smtcShuffleStateAtom,
-	smtcRepeatModeAtom,
-	smtcCanPlayAtom,
 	smtcCanPauseAtom,
+	smtcCanPlayAtom,
 	smtcCanSkipNextAtom,
 	smtcCanSkipPreviousAtom,
+	smtcRepeatModeAtom,
+	smtcSessionsAtom,
+	smtcShuffleStateAtom,
 	smtcTextConversionModeAtom,
 	TextConversionMode,
 } from "../../states/smtcAtoms.ts";
+import { FFTToLowPassContext } from "../LocalMusicContext/index.tsx";
 
 type SmtcEvent =
 	| {
-		type: "trackChanged";
-		data: {
-			title: string | null;
-			artist: string | null;
-			albumTitle: string | null;
-			durationMs: number | null;
-			positionMs: number | null;
-			isPlaying: boolean | null;
-			isShuffleActive: boolean | null;
-			repeatMode: RepeatMode | null;
-			canPlay: boolean | null;
-			canPause: boolean | null;
-			canSkipNext: boolean | null;
-			canSkipPrevious: boolean | null;
-			coverData: string | null;
-			coverDataHash: number | null;
-		};
-	}
+			type: "trackChanged";
+			data: {
+				title: string | null;
+				artist: string | null;
+				albumTitle: string | null;
+				durationMs: number | null;
+				positionMs: number | null;
+				isPlaying: boolean | null;
+				isShuffleActive: boolean | null;
+				repeatMode: RepeatMode | null;
+				canPlay: boolean | null;
+				canPause: boolean | null;
+				canSkipNext: boolean | null;
+				canSkipPrevious: boolean | null;
+				coverData: string | null;
+				coverDataHash: number | null;
+			};
+	  }
 	| {
-		type: "sessionsChanged";
-		data: { sessionId: string; displayName: string }[];
-	}
+			type: "sessionsChanged";
+			data: { sessionId: string; displayName: string }[];
+	  }
 	| { type: "selectedSessionVanished"; data: string }
 	| { type: "error"; data: string }
 	| { type: "audioData"; data: number[] }
@@ -174,7 +174,7 @@ export const SystemListenerMusicContext: FC = () => {
 		);
 
 		return () => {
-			const doNothing = toEmit(() => { });
+			const doNothing = toEmit(() => {});
 			store.set(onPlayOrResumeAtom, doNothing);
 			store.set(onRequestNextSongAtom, doNothing);
 			store.set(onRequestPrevSongAtom, doNothing);
@@ -282,7 +282,9 @@ export const SystemListenerMusicContext: FC = () => {
 					});
 				}
 
-				const savedConversionMode = localStorage.getItem("saved_smtc_text_conversion_mode") as TextConversionMode | null;
+				const savedConversionMode = localStorage.getItem(
+					"saved_smtc_text_conversion_mode",
+				) as TextConversionMode | null;
 
 				if (
 					savedConversionMode &&
@@ -318,6 +320,23 @@ export const SystemListenerMusicContext: FC = () => {
 			invoke("control_external_media", {
 				payload: { type: "stopAudioVisualization" },
 			});
+
+			store.set(musicNameAtom, "");
+			store.set(musicArtistsAtom, []);
+			store.set(musicAlbumNameAtom, "");
+			store.set(musicDurationAtom, 0);
+			store.set(musicPlayingPositionAtom, 0);
+			store.set(musicPlayingAtom, false);
+			store.set(musicCoverAtom, "");
+			store.set(musicVolumeAtom, 1);
+
+			store.set(smtcShuffleStateAtom, false);
+			store.set(smtcRepeatModeAtom, RepeatMode.Off);
+			store.set(smtcCanPlayAtom, false);
+			store.set(smtcCanPauseAtom, false);
+			store.set(smtcCanSkipNextAtom, false);
+			store.set(smtcCanSkipPreviousAtom, false);
+			setSmtcSessions([]);
 		};
 	}, [musicContextMode, store, t, setSmtcSessions]);
 

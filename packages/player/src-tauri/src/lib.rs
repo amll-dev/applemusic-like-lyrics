@@ -144,19 +144,19 @@ async fn read_local_music_metadata(
 
     let mut music_info: MusicInfo = audio_info.into();
 
-    if let Some(file_path_ref) = file_path.as_path() {
-        if music_info.lyric.is_empty() {
-            const LYRIC_FILE_EXTENSIONS: &[&str] = &["ttml", "lys", "yrc", "qrc", "eslrc", "lrc"];
-            for ext in LYRIC_FILE_EXTENSIONS {
-                let lyric_file_path = file_path_ref.with_extension(ext);
-                if lyric_file_path.exists() {
-                    if let Ok(lyric) = fs.read_to_string(&lyric_file_path) {
-                        music_info.lyric_format = ext.to_string();
-                        music_info.lyric = lyric;
-                        break;
-                    } else {
-                        warn!("歌词文件存在但读取失败: {}", lyric_file_path.display());
-                    }
+    if let Some(file_path_ref) = file_path.as_path()
+        && music_info.lyric.is_empty()
+    {
+        const LYRIC_FILE_EXTENSIONS: &[&str] = &["ttml", "lys", "yrc", "qrc", "eslrc", "lrc"];
+        for ext in LYRIC_FILE_EXTENSIONS {
+            let lyric_file_path = file_path_ref.with_extension(ext);
+            if lyric_file_path.exists() {
+                if let Ok(lyric) = fs.read_to_string(&lyric_file_path) {
+                    music_info.lyric_format = ext.to_string();
+                    music_info.lyric = lyric;
+                    break;
+                } else {
+                    warn!("歌词文件存在但读取失败: {}", lyric_file_path.display());
                 }
             }
         }

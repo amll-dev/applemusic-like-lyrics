@@ -1,13 +1,12 @@
 use anyhow::{Context, Result};
 use base64::{Engine, engine::general_purpose::STANDARD};
-use crossbeam_channel::Receiver;
 use serde::{Deserialize, Serialize};
 use smtc_suite::{
     MediaCommand as SmtcControlCommandInternal, MediaUpdate, NowPlayingInfo as SmtcNowPlayingInfo,
     SmtcSessionInfo as SuiteSmtcSessionInfo,
 };
-use std::thread;
 use tauri::{AppHandle, Emitter, Runtime};
+use tokio::sync::mpsc::{Receiver, Sender};
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
@@ -119,17 +118,18 @@ impl From<SmtcNowPlayingInfo> for FrontendNowPlayingInfo {
 }
 
 pub struct ExternalMediaControllerState {
-    pub smtc_command_tx:
-        std::sync::Arc<std::sync::Mutex<crossbeam_channel::Sender<SmtcControlCommandInternal>>>,
+    pub smtc_command_tx: Sender<SmtcControlCommandInternal>,
 }
 
 impl ExternalMediaControllerState {
-    pub fn send_smtc_command(&self, command: SmtcControlCommandInternal) -> anyhow::Result<()> {
-        let guard = self
-            .smtc_command_tx
-            .lock()
-            .map_err(|e| anyhow::anyhow!("SMTC 命令通道的 Mutex 锁已毒化：{}", e))?;
-        guard.send(command).context("发送命令到 SMTC 监听线程失败")
+    pub async fn send_smtc_command(
+        &self,
+        command: SmtcControlCommandInternal,
+    ) -> anyhow::Result<()> {
+        self.smtc_command_tx
+            .send(command)
+            .await
+            .context("发送命令到 SMTC 监听线程失败")
     }
 }
 
@@ -212,7 +212,10 @@ pub async fn control_external_media(
         }
     };
 
-    state.send_smtc_command(command).map_err(|e| e.to_string())
+    state
+        .send_smtc_command(command)
+        .await
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -221,62 +224,69 @@ pub async fn request_smtc_update(
 ) -> Result<(), String> {
     state
         .send_smtc_command(SmtcControlCommandInternal::RequestUpdate)
+        .await
         .map_err(|e| e.to_string())
 }
 
 pub fn start_listener<R: Runtime>(app_handle: AppHandle<R>) -> ExternalMediaControllerState {
-    let controller = match smtc_suite::MediaManager::start() {
+    let (controller, update_rx) = match smtc_suite::MediaManager::start() {
         Ok(c) => c,
-        Err(e) => {
-            let (smtc_tx, _) = crossbeam_channel::unbounded();
+        Err(_e) => {
+            let (smtc_tx, _) = tokio::sync::mpsc::channel(1);
             return ExternalMediaControllerState {
-                smtc_command_tx: std::sync::Arc::new(std::sync::Mutex::new(smtc_tx)),
+                smtc_command_tx: smtc_tx,
             };
         }
     };
 
-    let update_rx_crossbeam = controller.update_rx;
-    let smtc_command_tx_crossbeam = controller.command_tx;
+    let smtc_command_tx = controller.command_tx;
 
     let app_handle_receiver = app_handle.clone();
-    thread::Builder::new()
-        .name("smtc-event-receiver".into())
-        .spawn(move || {
-            event_receiver_loop(app_handle_receiver, update_rx_crossbeam);
-        })
-        .expect("创建 smtc-event-receiver 线程失败");
+    tauri::async_runtime::spawn(async move {
+        event_receiver_loop(app_handle_receiver, update_rx).await;
+    });
 
-    if smtc_command_tx_crossbeam
-        .send(SmtcControlCommandInternal::SetHighFrequencyProgressUpdates(
-            true,
-        ))
-        .is_err()
-    {}
+    let initial_command_tx = smtc_command_tx.clone();
+    tauri::async_runtime::spawn(async move {
+        let _ = initial_command_tx
+            .send(SmtcControlCommandInternal::SetHighFrequencyProgressUpdates(
+                true,
+            ))
+            .await;
+    });
 
-    ExternalMediaControllerState {
-        smtc_command_tx: std::sync::Arc::new(std::sync::Mutex::new(smtc_command_tx_crossbeam)),
-    }
+    ExternalMediaControllerState { smtc_command_tx }
 }
 
-fn event_receiver_loop<R: Runtime>(app_handle: AppHandle<R>, update_rx: Receiver<MediaUpdate>) {
-    for update in update_rx {
+async fn event_receiver_loop<R: Runtime>(
+    app_handle: AppHandle<R>,
+    mut update_rx: Receiver<MediaUpdate>,
+) {
+    while let Some(update) = update_rx.recv().await {
         let event_to_emit = match update {
             MediaUpdate::TrackChanged(info) | MediaUpdate::TrackChangedForced(info) => {
                 let dto = parse_apple_music_field(info.into());
-                SmtcEvent::TrackChanged(dto)
+                Some(SmtcEvent::TrackChanged(dto))
             }
-            MediaUpdate::SessionsChanged(sessions) => SmtcEvent::SessionsChanged(
+            MediaUpdate::SessionsChanged(sessions) => Some(SmtcEvent::SessionsChanged(
                 sessions.into_iter().map(SmtcSessionInfo::from).collect(),
-            ),
-            MediaUpdate::AudioData(bytes) => SmtcEvent::AudioData(bytes),
-            MediaUpdate::Error(e) => SmtcEvent::Error(e),
+            )),
+            MediaUpdate::AudioData(bytes) => Some(SmtcEvent::AudioData(bytes)),
+            MediaUpdate::Error(e) => Some(SmtcEvent::Error(e)),
             MediaUpdate::VolumeChanged {
                 volume, is_muted, ..
-            } => SmtcEvent::VolumeChanged { volume, is_muted },
-            MediaUpdate::SelectedSessionVanished(id) => SmtcEvent::SelectedSessionVanished(id),
+            } => Some(SmtcEvent::VolumeChanged { volume, is_muted }),
+            MediaUpdate::SelectedSessionVanished(id) => {
+                Some(SmtcEvent::SelectedSessionVanished(id))
+            }
+            MediaUpdate::Diagnostic(_) => None,
         };
 
-        if let Err(e) = app_handle.emit("smtc_update", event_to_emit) {}
+        if let Some(event) = event_to_emit
+            && let Err(_e) = app_handle.emit("smtc_update", event)
+        {
+            break;
+        }
     }
 }
 

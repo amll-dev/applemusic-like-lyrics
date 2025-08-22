@@ -1,40 +1,40 @@
 import { FFTPlayer } from "@applemusic-like-lyrics/fft";
 import { parseTTML } from "@applemusic-like-lyrics/lyric";
+import {
+	fftDataAtom,
+	fftDataRangeAtom,
+	hideLyricViewAtom,
+	isLyricPageOpenedAtom,
+	musicAlbumNameAtom,
+	musicArtistsAtom,
+	musicCoverAtom,
+	musicDurationAtom,
+	musicIdAtom,
+	musicLyricLinesAtom,
+	musicNameAtom,
+	musicPlayingAtom,
+	musicPlayingPositionAtom,
+	musicVolumeAtom,
+	onChangeVolumeAtom,
+	onClickControlThumbAtom,
+	onLyricLineClickAtom,
+	onPlayOrResumeAtom,
+	onRequestNextSongAtom,
+	onRequestPrevSongAtom,
+	onSeekPositionAtom,
+} from "@applemusic-like-lyrics/react-full";
 import { Channel, invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { useAtomValue, useSetAtom, useStore } from "jotai";
 import { type FC, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
+import {
+	wsProtocolConnectedAddrsAtom,
+	wsProtocolListenAddrAtom,
+} from "../../states/appAtoms.ts";
 import { emitAudioThread } from "../../utils/player.ts";
 import { FFTToLowPassContext } from "../LocalMusicContext/index.tsx";
-import {
-	fftDataRangeAtom,
-	fftDataAtom,
-	musicNameAtom,
-	musicAlbumNameAtom,
-	musicCoverAtom,
-	musicArtistsAtom,
-	onRequestNextSongAtom,
-	onRequestPrevSongAtom,
-	onPlayOrResumeAtom,
-	musicPlayingAtom,
-	onSeekPositionAtom,
-	onLyricLineClickAtom,
-	onChangeVolumeAtom,
-	musicIdAtom,
-	musicDurationAtom,
-	musicPlayingPositionAtom,
-	musicVolumeAtom,
-	hideLyricViewAtom,
-	musicLyricLinesAtom,
-	isLyricPageOpenedAtom,
-	onClickControlThumbAtom,
-} from "@applemusic-like-lyrics/react-full";
-import {
-	wsProtocolListenAddrAtom,
-	wsProtocolConnectedAddrsAtom,
-} from "../../states/appAtoms.ts";
 
 interface WSProtocolMusicContextProps {
 	isLyricOnly?: boolean;
@@ -348,7 +348,7 @@ export const WSProtocolMusicContext: FC<WSProtocolMusicContextProps> = ({
 
 			invoke("ws_close_connection");
 
-			const doNothing = { onEmit: () => { } };
+			const doNothing = { onEmit: () => {} };
 			store.set(onRequestNextSongAtom, doNothing);
 			store.set(onRequestPrevSongAtom, doNothing);
 			store.set(onPlayOrResumeAtom, doNothing);
@@ -371,9 +371,18 @@ export const WSProtocolMusicContext: FC<WSProtocolMusicContextProps> = ({
 				store.set(musicDurationAtom, 0);
 				store.set(musicPlayingPositionAtom, 0);
 				store.set(musicPlayingAtom, false);
+				store.set(musicLyricLinesAtom, []);
+				store.set(musicVolumeAtom, 1);
 			}
 		};
-	}, [wsProtocolListenAddr, setConnectedAddrs, store, t, isLyricOnly, setIsLyricPageOpened]);
+	}, [
+		wsProtocolListenAddr,
+		setConnectedAddrs,
+		store,
+		t,
+		isLyricOnly,
+		setIsLyricPageOpened,
+	]);
 
 	if (isLyricOnly) {
 		return null;

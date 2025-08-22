@@ -34,7 +34,13 @@ impl AMLLWebSocketServer {
         if let Some(task) = self.server_handle.take() {
             task.abort();
         }
-        self.connections.write().await.clear();
+        let mut conns = self.connections.write().await;
+        for (addr, conn_sink) in conns.iter_mut() {
+            if let Err(e) = conn_sink.close().await {
+                warn!("断开和 {} 的 WebSocket 连接失败:{:?}", addr, e);
+            }
+        }
+        conns.clear();
         info!("WebSocket 服务器已关闭");
     }
 
