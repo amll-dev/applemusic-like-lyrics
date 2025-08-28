@@ -32,6 +32,7 @@ pub struct LyricWord {
     pub start_time: u64,
     pub end_time: u64,
     pub word: NullString,
+    pub roman_word: NullString,
 }
 
 #[binrw]

@@ -412,7 +412,7 @@ export class LyricLineEl extends LyricLineBase {
 				this.splittedWords.push(realWord);
 			} else {
 				// 普通显示（可能含音译）
-				if (word.romanWord.trim().length > 0) {
+				if (word.romanWord && word.romanWord.trim().length > 0) {
 					const wordEl = document.createElement("div");
 					const romanWordEl = document.createElement("div");
 					wordEl.innerText = word.word;
@@ -488,7 +488,7 @@ export class LyricLineEl extends LyricLineBase {
 				charEls.push(charEl);
 				mainWordEl.appendChild(charEl);
 			}
-			if (chunk.romanWord.trim().length > 0) {
+			if (chunk.romanWord && chunk.romanWord.trim().length > 0) {
 				const romanWordEl = document.createElement("div");
 				romanWordEl.innerText = chunk.romanWord;
 				romanWordEl.classList.add(styles.romanWord);
@@ -505,7 +505,7 @@ export class LyricLineEl extends LyricLineBase {
 				),
 			);
 		} else {
-			if (chunk.romanWord.trim().length > 0) {
+			if (chunk.romanWord && chunk.romanWord.trim().length > 0) {
 				const wordEl = document.createElement("div");
 				const romanWordEl = document.createElement("div");
 				wordEl.innerText = chunk.word;
