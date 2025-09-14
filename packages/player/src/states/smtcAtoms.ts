@@ -1,8 +1,6 @@
+import { invoke } from "@tauri-apps/api/core";
 import { atom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
-import { invoke } from "@tauri-apps/api/core";
-import { musicPlayingPositionAtom } from "@applemusic-like-lyrics/react-full";
-import { musicContextModeAtom, MusicContextMode } from "./appAtoms";
 
 // ==================================================================
 //                            类型定义
@@ -97,24 +95,24 @@ export const smtcTimeOffsetAtom = atomWithStorage(
 // ==================================================================
 
 /**
- * SMTC 控制能力：是否可以开始播放。
+ * 各个 SMTC 控制能力。
  */
-export const smtcCanPlayAtom = atom<boolean>(true);
+export const SmtcControls = {
+	CAN_PLAY: 1 << 0,
+	CAN_PAUSE: 1 << 1,
+	CAN_SKIP_NEXT: 1 << 2,
+	CAN_SKIP_PREVIOUS: 1 << 3,
+	CAN_SEEK: 1 << 4,
+	CAN_CHANGE_SHUFFLE: 1 << 5,
+	CAN_CHANGE_REPEAT: 1 << 6,
+} as const;
+
+export type SmtcControlsType = number;
 
 /**
- * SMTC 控制能力：是否可以暂停播放。
+ * 当前会话可用的的控制能力。
  */
-export const smtcCanPauseAtom = atom<boolean>(true);
-
-/**
- * SMTC 控制能力：是否可以跳到下一首。
- */
-export const smtcCanSkipNextAtom = atom<boolean>(true);
-
-/**
- * SMTC 控制能力：是否可以跳到上一首。
- */
-export const smtcCanSkipPreviousAtom = atom<boolean>(true);
+export const smtcControlsAtom = atom<SmtcControlsType>(0);
 
 // ==================================================================
 //                        SMTC 派生/写入状态
@@ -144,21 +142,4 @@ export const onClickSmtcRepeatAtom = atom(null, (get) => {
 	invoke("control_external_media", {
 		payload: { type: "setRepeatMode", mode: nextMode },
 	}).catch(console.error);
-});
-
-/**
- * 一个派生 Atom，用于获取经过时间偏移校准后的播放进度。
- * 它会根据当前的播放模式，决定是否应用偏移量。
- */
-export const correctedMusicPlayingPositionAtom = atom((get) => {
-	const originalPosition = get(musicPlayingPositionAtom);
-	const mode = get(musicContextModeAtom);
-
-	if (mode === MusicContextMode.SystemListener) {
-		const offset = get(smtcTimeOffsetAtom);
-		const correctedPosition = originalPosition - offset;
-		return Math.max(0, correctedPosition);
-	}
-
-	return originalPosition;
 });

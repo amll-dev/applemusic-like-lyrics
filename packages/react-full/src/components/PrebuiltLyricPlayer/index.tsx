@@ -91,7 +91,6 @@ import {
 	verticalCoverLayoutAtom,
 } from "../../states/configAtoms";
 import {
-	correctedMusicPlayingPositionAtom,
 	cycleRepeatModeActionAtom,
 	isShuffleActiveAtom,
 	RepeatMode,
@@ -109,6 +108,7 @@ import {
 	musicLyricLinesAtom,
 	musicNameAtom,
 	musicPlayingAtom,
+	musicPlayingPositionAtom,
 	musicQualityTagAtom,
 	musicVolumeAtom,
 } from "../../states/dataAtoms";
@@ -225,7 +225,7 @@ const PrebuiltMediaButtons: FC<{
 };
 
 const TimeLabel: FC<{ isRemaining?: boolean }> = ({ isRemaining }) => {
-	const currentPosition = useAtomValue(correctedMusicPlayingPositionAtom);
+	const currentPosition = useAtomValue(musicPlayingPositionAtom);
 	const duration = useAtomValue(musicDurationAtom);
 	const time = useMemo(
 		() =>
@@ -248,7 +248,7 @@ const TotalDurationLabel: FC = () => {
 const PrebuiltProgressBar: FC<{ disabled?: boolean }> = React.memo(
 	({ disabled }) => {
 		const musicDuration = useAtomValue(musicDurationAtom);
-		const musicPosition = useAtomValue(correctedMusicPlayingPositionAtom);
+		const musicPosition = useAtomValue(musicPlayingPositionAtom);
 		const musicQualityTag = useAtomValue(musicQualityTagAtom);
 		const onClickAudioQualityTag = useAtomValue(
 			onClickAudioQualityTagAtom,
@@ -320,7 +320,7 @@ const PrebuiltCoreLyricPlayer: FC<{
 	const musicIsPlaying = useAtomValue(musicPlayingAtom);
 	const lyricLines = useAtomValue(musicLyricLinesAtom);
 	const isLyricPageOpened = useAtomValue(isLyricPageOpenedAtom);
-	const musicPlayingPosition = useAtomValue(correctedMusicPlayingPositionAtom);
+	const musicPlayingPosition = useAtomValue(musicPlayingPositionAtom);
 
 	const lyricFontFamily = useAtomValue(lyricFontFamilyAtom);
 	const lyricFontWeight = useAtomValue(lyricFontWeightAtom);

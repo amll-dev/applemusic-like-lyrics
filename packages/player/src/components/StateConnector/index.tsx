@@ -2,26 +2,27 @@ import {
 	isRepeatEnabledAtom,
 	isShuffleActiveAtom,
 	isShuffleEnabledAtom,
-	musicPlayingPositionAtom,
 	onCycleRepeatModeAtom,
 	onToggleShuffleAtom,
-	positionSourceAtom,
 	RepeatMode,
 	repeatModeAtom,
 } from "@applemusic-like-lyrics/react-full";
 import { invoke } from "@tauri-apps/api/core";
-import { useAtom, useSetAtom } from "jotai";
+import { useAtom, useSetAtom, useStore } from "jotai";
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
-
 import { MusicContextMode, musicContextModeAtom } from "../../states/appAtoms";
 import {
-	correctedMusicPlayingPositionAtom as smtcCorrectedPositionAtom,
+	SmtcControls,
+	smtcControlsAtom,
 	smtcRepeatModeAtom,
 	smtcShuffleStateAtom,
 } from "../../states/smtcAtoms";
 
 export const StateConnector = () => {
+	const store = useStore();
+	const { t } = useTranslation();
 	const [mode] = useAtom(musicContextModeAtom);
 	const [isSmtcShuffleOn] = useAtom(smtcShuffleStateAtom);
 	const [smtcRepeat] = useAtom(smtcRepeatModeAtom);
@@ -54,22 +55,23 @@ export const StateConnector = () => {
 		setUiRepeatEnabled,
 	]);
 
-	const setPositionSource = useSetAtom(positionSourceAtom);
-
-	useEffect(() => {
-		if (mode === MusicContextMode.SystemListener) {
-			setPositionSource(smtcCorrectedPositionAtom);
-		} else {
-			setPositionSource(musicPlayingPositionAtom);
-		}
-	}, [mode, setPositionSource]);
-
 	const setOnToggleShuffle = useSetAtom(onToggleShuffleAtom);
 	const setOnCycleRepeat = useSetAtom(onCycleRepeatModeAtom);
 
 	useEffect(() => {
 		setOnToggleShuffle({
 			onEmit: () => {
+				const controls = store.get(smtcControlsAtom);
+				if (!(controls & SmtcControls.CAN_CHANGE_SHUFFLE)) {
+					toast.info(
+						t(
+							"amll.systemListener.shuffleNotAvailable",
+							"当前应用不支持切换随机播放",
+						),
+					);
+					return;
+				}
+
 				const currentShuffleState = isSmtcShuffleOn;
 				const newShuffleState = !currentShuffleState;
 
@@ -84,6 +86,17 @@ export const StateConnector = () => {
 
 		setOnCycleRepeat({
 			onEmit: () => {
+				const controls = store.get(smtcControlsAtom);
+				if (!(controls & SmtcControls.CAN_CHANGE_REPEAT)) {
+					toast.info(
+						t(
+							"amll.systemListener.repeatNotAvailable",
+							"当前应用不支持切换循环模式",
+						),
+					);
+					return;
+				}
+
 				const currentRepeatMode = smtcRepeat;
 				const nextMode =
 					currentRepeatMode === RepeatMode.Off
@@ -100,7 +113,14 @@ export const StateConnector = () => {
 				});
 			},
 		});
-	}, [setOnToggleShuffle, setOnCycleRepeat, isSmtcShuffleOn, smtcRepeat]);
+	}, [
+		store,
+		t,
+		setOnToggleShuffle,
+		setOnCycleRepeat,
+		isSmtcShuffleOn,
+		smtcRepeat,
+	]);
 
 	return null;
 };

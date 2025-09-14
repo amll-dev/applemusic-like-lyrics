@@ -49,13 +49,14 @@ amll-player-core = { path = "../../player-core" }
 ws-protocol = { path = "../../ws-protocol" }
 tauri-plugin-http = "2"
 rodio = "0.20.1"
+bitflags = "2.9.4"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 objc2 = "^0.6"
 objc2-avf-audio = "^0.3"
 
 [target.'cfg(target_os = "windows")'.dependencies]
-smtc-suite = "2"
+smtc-suite = { git = "https://github.com/apoint123/smtc-suite", rev = "79520c61fdcedc981fc25cec9c633fdc00baedb2" }
 webview2-com = "0.38"
 
 [target.'cfg(target_os = "android")'.dependencies]

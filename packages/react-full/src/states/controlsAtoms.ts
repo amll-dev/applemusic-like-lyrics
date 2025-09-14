@@ -1,6 +1,5 @@
-import { type Atom, atom } from "jotai";
+import { atom } from "jotai";
 import { onCycleRepeatModeAtom, onToggleShuffleAtom } from "./callbacks";
-import { musicPlayingPositionAtom } from "./dataAtoms";
 
 /**
  * 定义了通用的重复播放模式枚举。
@@ -39,16 +38,3 @@ export const cycleRepeatModeActionAtom = atom(null, (get) => {
 	const callback = get(onCycleRepeatModeAtom);
 	callback.onEmit?.();
 });
-
-/**
- * 存储用于计算播放时间的源 Atom。
- * @internal
- */
-export const positionSourceAtom = atom<Atom<number>>(musicPlayingPositionAtom);
-
-/**
- * UI组件读取的、经过校准的播放时间。
- */
-export const correctedMusicPlayingPositionAtom = atom((get) =>
-	get(get(positionSourceAtom)),
-);

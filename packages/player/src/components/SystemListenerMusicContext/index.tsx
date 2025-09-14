@@ -22,7 +22,7 @@ import {
 } from "@applemusic-like-lyrics/react-full";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { useAtomValue, useSetAtom, useStore } from "jotai";
+import { useAtom, useAtomValue, useSetAtom, useStore } from "jotai";
 import { type FC, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
@@ -34,14 +34,14 @@ import {
 } from "../../states/appAtoms.ts";
 import {
 	RepeatMode,
-	smtcCanPauseAtom,
-	smtcCanPlayAtom,
-	smtcCanSkipNextAtom,
-	smtcCanSkipPreviousAtom,
+	SmtcControls,
+	type SmtcControlsType,
+	smtcControlsAtom,
 	smtcRepeatModeAtom,
 	smtcSessionsAtom,
 	smtcShuffleStateAtom,
 	smtcTextConversionModeAtom,
+	smtcTimeOffsetAtom,
 	TextConversionMode,
 } from "../../states/smtcAtoms.ts";
 import { FFTToLowPassContext } from "../LocalMusicContext/index.tsx";
@@ -58,10 +58,7 @@ type SmtcEvent =
 				isPlaying: boolean | null;
 				isShuffleActive: boolean | null;
 				repeatMode: RepeatMode | null;
-				canPlay: boolean | null;
-				canPause: boolean | null;
-				canSkipNext: boolean | null;
-				canSkipPrevious: boolean | null;
+				controls: SmtcControlsType | null;
 				coverData: string | null;
 				coverDataHash: number | null;
 			};
@@ -82,6 +79,7 @@ export const SystemListenerMusicContext: FC = () => {
 	const musicContextMode = useAtomValue(musicContextModeAtom);
 	const isWsLyricsEnabled = useAtomValue(enableWsLyricsInSmtcModeAtom);
 	const setIsLyricPageOpened = useSetAtom(isLyricPageOpenedAtom);
+	const [timeOffset] = useAtom(smtcTimeOffsetAtom);
 
 	const fftPlayer = useRef<FFTPlayer | undefined>(undefined);
 	const fftDataRange = useAtomValue(fftDataRangeAtom);
@@ -116,6 +114,24 @@ export const SystemListenerMusicContext: FC = () => {
 			onPlayOrResumeAtom,
 			toEmit(() => {
 				const isPlaying = store.get(musicPlayingAtom);
+				const controls = store.get(smtcControlsAtom);
+
+				if (isPlaying) {
+					if (!(controls & SmtcControls.CAN_PAUSE)) {
+						toast.info(
+							t("amll.systemListener.pauseNotAvailable", "当前应用不支持暂停"),
+						);
+						return;
+					}
+				} else {
+					if (!(controls & SmtcControls.CAN_PLAY)) {
+						toast.info(
+							t("amll.systemListener.playNotAvailable", "当前应用不支持播放"),
+						);
+						return;
+					}
+				}
+
 				invoke("control_external_media", {
 					payload: { type: isPlaying ? "pause" : "play" },
 				});
@@ -124,12 +140,32 @@ export const SystemListenerMusicContext: FC = () => {
 		store.set(
 			onRequestNextSongAtom,
 			toEmit(() => {
+				const controls = store.get(smtcControlsAtom);
+				if (!(controls & SmtcControls.CAN_SKIP_NEXT)) {
+					toast.info(
+						t(
+							"amll.systemListener.skipNextNotAvailable",
+							"当前应用不支持切换到下一首",
+						),
+					);
+					return;
+				}
 				invoke("control_external_media", { payload: { type: "skipNext" } });
 			}),
 		);
 		store.set(
 			onRequestPrevSongAtom,
 			toEmit(() => {
+				const controls = store.get(smtcControlsAtom);
+				if (!(controls & SmtcControls.CAN_SKIP_PREVIOUS)) {
+					toast.info(
+						t(
+							"amll.systemListener.skipPreviousNotAvailable",
+							"当前应用不支持切换到上一首",
+						),
+					);
+					return;
+				}
 				invoke("control_external_media", {
 					payload: { type: "skipPrevious" },
 				});
@@ -138,6 +174,7 @@ export const SystemListenerMusicContext: FC = () => {
 		store.set(
 			onChangeVolumeAtom,
 			toEmit((volume: number) => {
+				// TODO: 让smtc-suite传一些诊断信息过来
 				invoke("control_external_media", {
 					payload: { type: "setVolume", volume },
 				});
@@ -146,6 +183,13 @@ export const SystemListenerMusicContext: FC = () => {
 		store.set(
 			onSeekPositionAtom,
 			toEmit((time: number) => {
+				const controls = store.get(smtcControlsAtom);
+				if (!(controls & SmtcControls.CAN_SEEK)) {
+					toast.info(
+						t("amll.systemListener.seekNotAvailable", "当前应用不支持跳转进度"),
+					);
+					return;
+				}
 				invoke("control_external_media", {
 					payload: {
 						type: "seekTo",
@@ -154,10 +198,16 @@ export const SystemListenerMusicContext: FC = () => {
 				});
 			}),
 		);
-
 		store.set(
 			onLyricLineClickAtom,
 			toEmit((evt) => {
+				const controls = store.get(smtcControlsAtom);
+				if (!(controls & SmtcControls.CAN_SEEK)) {
+					toast.info(
+						t("amll.systemListener.seekNotAvailable", "当前应用不支持跳转进度"),
+					);
+					return;
+				}
 				invoke("control_external_media", {
 					payload: {
 						type: "seekTo",
@@ -184,7 +234,23 @@ export const SystemListenerMusicContext: FC = () => {
 			store.set(onClickControlThumbAtom, doNothing);
 			store.set(onRequestOpenMenuAtom, doNothing);
 		};
-	}, [store, setIsLyricPageOpened]);
+	}, [store, t, setIsLyricPageOpened]);
+
+	useEffect(() => {
+		if (musicContextMode !== MusicContextMode.SystemListener) {
+			return;
+		}
+
+		console.log(`设置偏移量: ${timeOffset}ms`);
+		invoke("control_external_media", {
+			payload: {
+				type: "setProgressOffset",
+				offset_ms: timeOffset,
+			},
+		}).catch((err) => {
+			console.warn(`设置时间轴偏移量失败:`, err);
+		});
+	}, [timeOffset, musicContextMode]);
 
 	useEffect(() => {
 		if (musicContextMode !== MusicContextMode.SystemListener) {
@@ -217,24 +283,14 @@ export const SystemListenerMusicContext: FC = () => {
 								smtcRepeatModeAtom,
 								newTrackInfo.repeatMode ?? RepeatMode.Off,
 							);
-							store.set(smtcCanPlayAtom, newTrackInfo.canPlay ?? false);
-							store.set(smtcCanPauseAtom, newTrackInfo.canPause ?? false);
-							store.set(smtcCanSkipNextAtom, newTrackInfo.canSkipNext ?? false);
-							store.set(
-								smtcCanSkipPreviousAtom,
-								newTrackInfo.canSkipPrevious ?? false,
-							);
+							store.set(smtcControlsAtom, newTrackInfo.controls ?? 0);
 
-							if (newTrackInfo.coverDataHash != null) {
-								if ("coverData" in newTrackInfo) {
-									if (newTrackInfo.coverData) {
-										store.set(
-											musicCoverAtom,
-											`data:image/png;base64,${newTrackInfo.coverData}`,
-										);
-									} else {
-										store.set(musicCoverAtom, "");
-									}
+							if ("coverData" in newTrackInfo) {
+								if (newTrackInfo.coverData) {
+									store.set(
+										musicCoverAtom,
+										`data:image/png;base64,${newTrackInfo.coverData}`,
+									);
 								}
 							}
 							break;
@@ -301,6 +357,19 @@ export const SystemListenerMusicContext: FC = () => {
 					});
 				}
 
+				const initialOffset = store.get(smtcTimeOffsetAtom);
+				if (initialOffset !== 0) {
+					console.log(`恢复之前设置的时间轴偏移量: ${initialOffset}ms`);
+					await invoke("control_external_media", {
+						payload: {
+							type: "setProgressOffset",
+							offset_ms: initialOffset,
+						},
+					}).catch((err) => {
+						console.warn(`恢复时间轴偏移量失败:`, err);
+					});
+				}
+
 				await invoke("control_external_media", {
 					payload: { type: "startAudioVisualization" },
 				});
@@ -332,10 +401,7 @@ export const SystemListenerMusicContext: FC = () => {
 
 			store.set(smtcShuffleStateAtom, false);
 			store.set(smtcRepeatModeAtom, RepeatMode.Off);
-			store.set(smtcCanPlayAtom, false);
-			store.set(smtcCanPauseAtom, false);
-			store.set(smtcCanSkipNextAtom, false);
-			store.set(smtcCanSkipPreviousAtom, false);
+			store.set(smtcControlsAtom, 0);
 			setSmtcSessions([]);
 		};
 	}, [musicContextMode, store, t, setSmtcSessions]);

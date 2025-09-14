@@ -1,9 +1,9 @@
 use anyhow::{Context, Result};
 use base64::{Engine, engine::general_purpose::STANDARD};
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize, Serializer, de};
 use smtc_suite::{
-    MediaCommand as SmtcControlCommandInternal, MediaUpdate, NowPlayingInfo as SmtcNowPlayingInfo,
-    SmtcSessionInfo as SuiteSmtcSessionInfo,
+    MediaCommand as SmtcMediaCommand, MediaUpdate, NowPlayingInfo as SmtcNowPlayingInfo,
+    PlaybackStatus, SmtcSessionInfo as SuiteSmtcSessionInfo,
 };
 use tauri::{AppHandle, Emitter, Runtime};
 use tokio::sync::mpsc::{Receiver, Sender};
@@ -63,6 +63,7 @@ pub enum MediaCommand {
     StartAudioVisualization,
     StopAudioVisualization,
     SetHighFrequencyProgressUpdates { enabled: bool },
+    SetProgressOffset { offset_ms: i64 },
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
@@ -84,33 +85,69 @@ pub struct FrontendNowPlayingInfo {
     pub is_playing: Option<bool>,
     pub is_shuffle_active: Option<bool>,
     pub repeat_mode: Option<RepeatMode>,
-    pub can_play: Option<bool>,
-    pub can_pause: Option<bool>,
-    pub can_skip_next: Option<bool>,
-    pub can_skip_previous: Option<bool>,
+    pub controls: Option<FrontendControls>,
     pub cover_data: Option<String>,
     pub cover_data_hash: Option<u64>,
 }
 
+use bitflags::bitflags;
+bitflags! {
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+    pub struct FrontendControls: u8 {
+        const CAN_PLAY            = 1 << 0;
+        const CAN_PAUSE           = 1 << 1;
+        const CAN_SKIP_NEXT       = 1 << 2;
+        const CAN_SKIP_PREVIOUS   = 1 << 3;
+        const CAN_SEEK            = 1 << 4;
+        const CAN_CHANGE_SHUFFLE  = 1 << 5;
+        const CAN_CHANGE_REPEAT   = 1 << 6;
+    }
+}
+
+impl Serialize for FrontendControls {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_u8(self.bits())
+    }
+}
+
+impl<'de> Deserialize<'de> for FrontendControls {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let bits = u8::deserialize(deserializer)?;
+        Self::from_bits(bits).ok_or_else(|| de::Error::custom("无效的bit"))
+    }
+}
+
 impl From<SmtcNowPlayingInfo> for FrontendNowPlayingInfo {
     fn from(info: SmtcNowPlayingInfo) -> Self {
+        let is_playing = info.playback_status.map(|s| match s {
+            PlaybackStatus::Playing => true,
+            PlaybackStatus::Paused | PlaybackStatus::Stopped => false,
+        });
+
+        let controls = info
+            .controls
+            .map(|c| FrontendControls::from_bits_truncate(c.bits()));
+
         Self {
             title: info.title,
             artist: info.artist,
             album_title: info.album_title,
             duration_ms: info.duration_ms,
             position_ms: info.position_ms,
-            is_playing: info.is_playing,
+            is_playing,
             is_shuffle_active: info.is_shuffle_active,
             repeat_mode: info.repeat_mode.map(|m| match m {
                 smtc_suite::RepeatMode::Off => RepeatMode::Off,
                 smtc_suite::RepeatMode::One => RepeatMode::One,
                 smtc_suite::RepeatMode::All => RepeatMode::All,
             }),
-            can_play: info.can_play,
-            can_pause: info.can_pause,
-            can_skip_next: info.can_skip_next,
-            can_skip_previous: info.can_skip_previous,
+            controls,
             cover_data: info.cover_data.map(|bytes| STANDARD.encode(bytes)),
             cover_data_hash: info.cover_data_hash,
         }
@@ -118,14 +155,11 @@ impl From<SmtcNowPlayingInfo> for FrontendNowPlayingInfo {
 }
 
 pub struct ExternalMediaControllerState {
-    pub smtc_command_tx: Sender<SmtcControlCommandInternal>,
+    pub smtc_command_tx: Sender<SmtcMediaCommand>,
 }
 
 impl ExternalMediaControllerState {
-    pub async fn send_smtc_command(
-        &self,
-        command: SmtcControlCommandInternal,
-    ) -> anyhow::Result<()> {
+    pub async fn send_smtc_command(&self, command: SmtcMediaCommand) -> anyhow::Result<()> {
         self.smtc_command_tx
             .send(command)
             .await
@@ -145,7 +179,7 @@ pub async fn control_external_media(
             } else {
                 session_id
             };
-            SmtcControlCommandInternal::SelectSession(target_id)
+            SmtcMediaCommand::SelectSession(target_id)
         }
         MediaCommand::SetTextConversion { mode } => {
             let suite_mode = match mode {
@@ -169,46 +203,41 @@ pub async fn control_external_media(
                     smtc_suite::TextConversionMode::HongKongToSimplified
                 }
             };
-            SmtcControlCommandInternal::SetTextConversion(suite_mode)
+            SmtcMediaCommand::SetTextConversion(suite_mode)
         }
-        MediaCommand::SetShuffle { is_active } => SmtcControlCommandInternal::Control(
-            smtc_suite::SmtcControlCommand::SetShuffle(is_active),
-        ),
+        MediaCommand::SetShuffle { is_active } => {
+            SmtcMediaCommand::Control(smtc_suite::SmtcControlCommand::SetShuffle(is_active))
+        }
         MediaCommand::SetRepeatMode { mode } => {
             let suite_mode = match mode {
                 RepeatMode::Off => smtc_suite::RepeatMode::Off,
                 RepeatMode::One => smtc_suite::RepeatMode::One,
                 RepeatMode::All => smtc_suite::RepeatMode::All,
             };
-            SmtcControlCommandInternal::Control(smtc_suite::SmtcControlCommand::SetRepeatMode(
-                suite_mode,
-            ))
+            SmtcMediaCommand::Control(smtc_suite::SmtcControlCommand::SetRepeatMode(suite_mode))
         }
-        MediaCommand::Play => {
-            SmtcControlCommandInternal::Control(smtc_suite::SmtcControlCommand::Play)
-        }
-        MediaCommand::Pause => {
-            SmtcControlCommandInternal::Control(smtc_suite::SmtcControlCommand::Pause)
-        }
+        MediaCommand::Play => SmtcMediaCommand::Control(smtc_suite::SmtcControlCommand::Play),
+        MediaCommand::Pause => SmtcMediaCommand::Control(smtc_suite::SmtcControlCommand::Pause),
         MediaCommand::SkipNext => {
-            SmtcControlCommandInternal::Control(smtc_suite::SmtcControlCommand::SkipNext)
+            SmtcMediaCommand::Control(smtc_suite::SmtcControlCommand::SkipNext)
         }
         MediaCommand::SkipPrevious => {
-            SmtcControlCommandInternal::Control(smtc_suite::SmtcControlCommand::SkipPrevious)
+            SmtcMediaCommand::Control(smtc_suite::SmtcControlCommand::SkipPrevious)
         }
         MediaCommand::SeekTo { time_ms } => {
-            SmtcControlCommandInternal::Control(smtc_suite::SmtcControlCommand::SeekTo(time_ms))
+            SmtcMediaCommand::Control(smtc_suite::SmtcControlCommand::SeekTo(time_ms))
         }
         MediaCommand::SetVolume { volume } => {
             let clamped_volume = volume.clamp(0.0, 1.0);
-            SmtcControlCommandInternal::Control(smtc_suite::SmtcControlCommand::SetVolume(
-                clamped_volume,
-            ))
+            SmtcMediaCommand::Control(smtc_suite::SmtcControlCommand::SetVolume(clamped_volume))
         }
-        MediaCommand::StartAudioVisualization => SmtcControlCommandInternal::StartAudioCapture,
-        MediaCommand::StopAudioVisualization => SmtcControlCommandInternal::StopAudioCapture,
+        MediaCommand::StartAudioVisualization => SmtcMediaCommand::StartAudioCapture,
+        MediaCommand::StopAudioVisualization => SmtcMediaCommand::StopAudioCapture,
         MediaCommand::SetHighFrequencyProgressUpdates { enabled } => {
-            SmtcControlCommandInternal::SetHighFrequencyProgressUpdates(enabled)
+            SmtcMediaCommand::SetHighFrequencyProgressUpdates(enabled)
+        }
+        MediaCommand::SetProgressOffset { offset_ms } => {
+            SmtcMediaCommand::SetProgressOffset(offset_ms)
         }
     };
 
@@ -223,7 +252,7 @@ pub async fn request_smtc_update(
     state: tauri::State<'_, ExternalMediaControllerState>,
 ) -> Result<(), String> {
     state
-        .send_smtc_command(SmtcControlCommandInternal::RequestUpdate)
+        .send_smtc_command(SmtcMediaCommand::RequestUpdate)
         .await
         .map_err(|e| e.to_string())
 }
@@ -249,9 +278,7 @@ pub fn start_listener<R: Runtime>(app_handle: AppHandle<R>) -> ExternalMediaCont
     let initial_command_tx = smtc_command_tx.clone();
     tauri::async_runtime::spawn(async move {
         let _ = initial_command_tx
-            .send(SmtcControlCommandInternal::SetHighFrequencyProgressUpdates(
-                true,
-            ))
+            .send(SmtcMediaCommand::SetHighFrequencyProgressUpdates(true))
             .await;
     });
 
@@ -264,8 +291,8 @@ async fn event_receiver_loop<R: Runtime>(
 ) {
     while let Some(update) = update_rx.recv().await {
         let event_to_emit = match update {
-            MediaUpdate::TrackChanged(info) | MediaUpdate::TrackChangedForced(info) => {
-                let dto = parse_apple_music_field(info.into());
+            MediaUpdate::TrackChanged(info) => {
+                let dto: FrontendNowPlayingInfo = info.into();
                 Some(SmtcEvent::TrackChanged(dto))
             }
             MediaUpdate::SessionsChanged(sessions) => Some(SmtcEvent::SessionsChanged(
@@ -288,18 +315,4 @@ async fn event_receiver_loop<R: Runtime>(
             break;
         }
     }
-}
-
-fn parse_apple_music_field(mut info: FrontendNowPlayingInfo) -> FrontendNowPlayingInfo {
-    if let Some(original_artist_field) = info.artist.take() {
-        if let Some((artist, album)) = original_artist_field.split_once(" — ") {
-            info.artist = Some(artist.trim().to_string());
-            if info.album_title.as_deref().unwrap_or("").is_empty() {
-                info.album_title = Some(album.trim().to_string());
-            }
-        } else {
-            info.artist = Some(original_artist_field);
-        }
-    }
-    info
 }
