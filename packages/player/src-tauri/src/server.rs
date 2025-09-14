@@ -105,17 +105,10 @@ impl AMLLWebSocketServer {
 
         let mut v2_msg: Option<Message> = None;
         match data.clone() {
-            ws_protocol::Body::OnAudioData { data } => {
-                let mut v2_data = Vec::with_capacity(data.len() + 1);
-                v2_data.push(0x01);
-                v2_data.extend(data);
-                v2_msg = Some(Message::Binary(v2_data.into()));
-            }
-            ws_protocol::Body::SetMusicAlbumCoverImageData { data } => {
-                let mut v2_data = Vec::with_capacity(data.len() + 1);
-                v2_data.push(0x02);
-                v2_data.extend(data);
-                v2_msg = Some(Message::Binary(v2_data.into()));
+            ws_protocol::Body::OnAudioData { .. }
+            | ws_protocol::Body::SetMusicAlbumCoverImageData { .. } => {
+                warn!("不应该发送音频和封面二进制数据");
+                return;
             }
             body => {
                 if let Ok(json_body) = Self::convert_body_to_jsonbody(body)
