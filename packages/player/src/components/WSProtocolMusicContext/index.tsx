@@ -170,6 +170,7 @@ export const WSProtocolMusicContext: FC<WSProtocolMusicContextProps> = ({
 			startTime: number;
 			endTime: number;
 			word: string;
+			romanWord: string;
 		}
 		interface WSLyricLine {
 			startTime: number;

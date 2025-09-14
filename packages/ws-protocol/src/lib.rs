@@ -26,12 +26,15 @@ pub struct Artist {
 
 #[binrw]
 #[brw(little)]
-#[derive(Deserialize, Serialize, PartialEq, Debug, Clone)]
+#[derive(Deserialize, Serialize, PartialEq, Debug, Clone, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct LyricWord {
     pub start_time: u64,
     pub end_time: u64,
     pub word: NullString,
+    #[brw(ignore)]
+    #[serde(default)]
+    pub roman_word: NullString,
 }
 
 #[binrw]
@@ -136,6 +139,51 @@ pub enum Body {
     SetVolume { volume: f64 },
     #[brw(magic(17u16))]
     SeekPlayProgress { progress: u64 },
+}
+
+#[derive(Deserialize, Serialize, PartialEq, Debug, Clone)]
+#[serde(rename_all = "camelCase", tag = "type", content = "value")]
+pub enum JsonBody {
+    InitializeV2,
+    Ping,
+    Pong,
+    #[serde(rename_all = "camelCase")]
+    SetMusicInfo {
+        music_id: String,
+        music_name: String,
+        album_id: String,
+        album_name: String,
+        artists: Vec<Artist>,
+        duration: u64,
+    },
+    #[serde(rename_all = "camelCase")]
+    SetMusicAlbumCoverImageURI {
+        img_url: String,
+    },
+    OnPlayProgress {
+        progress: u64,
+    },
+    OnVolumeChanged {
+        volume: f64,
+    },
+    OnPaused,
+    OnResumed,
+    SetLyric {
+        data: Vec<LyricLine>,
+    },
+    SetLyricFromTTML {
+        data: String,
+    },
+    Pause,
+    Resume,
+    ForwardSong,
+    BackwardSong,
+    SetVolume {
+        volume: f64,
+    },
+    SeekPlayProgress {
+        progress: u64,
+    },
 }
 
 pub fn parse_body(body: &[u8]) -> anyhow::Result<Body> {
