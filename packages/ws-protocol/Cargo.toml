@@ -10,27 +10,31 @@ license = "GPL-3.0"
 [lib]
 crate-type = ["cdylib", "rlib"]
 
-[features]
-default = ["console_error_panic_hook"]
-
 [dependencies]
-serde = { version = "^1.0", features = ["derive"] }
-binrw = "^0.14"
-serde_bytes = "^0.11"
-anyhow = "^1.0"
+anyhow = "1.0"
+binrw = "0.15"
+serde = { version = "1.0", features = ["derive"] }
+serde_bytes = "0.11"
+serde_with = { version = "3.14", features = ["base64"] }
+tracing = { version = "0.1", optional = true }
 
 [dev-dependencies]
-serde_json = "^1.0"
-tungstenite = "^0.26"
+serde_json = "1.0"
+tungstenite = "0.27"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-wasm-bindgen = { version = "^0.2" }
-serde-wasm-bindgen = { version = "^0.6" }
-console_error_panic_hook = { version = "^0.1", optional = true }
-wee_alloc = { version = "^0.4", optional = true }
+console_error_panic_hook = { version = "0.1", optional = true }
+js-sys = "0.3"
+serde-wasm-bindgen = "0.6"
+wasm-bindgen = "0.2"
+wee_alloc = { version = "0.4", optional = true }
 
 [target.'cfg(target_arch = "wasm32")'.dev-dependencies]
-wasm-bindgen-test = "^0.3"
+wasm-bindgen-test = "0.3"
+
+[features]
+default = ["console_error_panic_hook"]
+tracing = ["dep:tracing"]
 
 [package.metadata.wasm-pack.profile.release]
-wasm-opt = false
+wasm-opt = true

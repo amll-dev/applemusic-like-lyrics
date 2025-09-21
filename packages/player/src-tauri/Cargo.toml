@@ -46,7 +46,7 @@ tauri-plugin-os = { version = "2" }
 tauri-plugin-shell = { version = "2" }
 
 amll-player-core = { path = "../../player-core" }
-ws-protocol = { path = "../../ws-protocol" }
+ws-protocol = { path = "../../ws-protocol", features = ["tracing"] }
 tauri-plugin-http = "2"
 rodio = "0.20.1"
 bitflags = "2.9.4"

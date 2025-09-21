@@ -32,19 +32,81 @@ export const StateConnector = () => {
 	const setUiShuffleEnabled = useSetAtom(isShuffleEnabledAtom);
 	const setUiRepeatEnabled = useSetAtom(isRepeatEnabledAtom);
 
+	const setOnToggleShuffle = useSetAtom(onToggleShuffleAtom);
+	const setOnCycleRepeat = useSetAtom(onCycleRepeatModeAtom);
+
 	useEffect(() => {
 		const isSmtcMode = mode === MusicContextMode.SystemListener;
 
 		if (isSmtcMode) {
 			setUiIsShuffleActive(isSmtcShuffleOn);
 			setUiRepeatMode(smtcRepeat);
-		} else {
-			setUiIsShuffleActive(false);
-			setUiRepeatMode(RepeatMode.Off);
+			setUiShuffleEnabled(true);
+			setUiRepeatEnabled(true);
+
+			setOnToggleShuffle({
+				onEmit: () => {
+					const controls = store.get(smtcControlsAtom);
+					if (!(controls & SmtcControls.CAN_CHANGE_SHUFFLE)) {
+						toast.info(
+							t(
+								"amll.systemListener.shuffleNotAvailable",
+								"当前应用不支持切换随机播放",
+							),
+						);
+						return;
+					}
+
+					const currentShuffleState = isSmtcShuffleOn;
+					const newShuffleState = !currentShuffleState;
+
+					invoke("control_external_media", {
+						payload: { type: "setShuffle", is_active: newShuffleState },
+					}).catch((err) => {
+						console.error("设置随机播放失败:", err);
+						toast.error("设置随机播放失败");
+					});
+				},
+			});
+
+			setOnCycleRepeat({
+				onEmit: () => {
+					const controls = store.get(smtcControlsAtom);
+					if (!(controls & SmtcControls.CAN_CHANGE_REPEAT)) {
+						toast.info(
+							t(
+								"amll.systemListener.repeatNotAvailable",
+								"当前应用不支持切换循环模式",
+							),
+						);
+						return;
+					}
+
+					const currentRepeatMode = smtcRepeat;
+					const nextMode =
+						currentRepeatMode === RepeatMode.Off
+							? RepeatMode.All
+							: currentRepeatMode === RepeatMode.All
+								? RepeatMode.One
+								: RepeatMode.Off;
+
+					invoke("control_external_media", {
+						payload: { type: "setRepeatMode", mode: nextMode },
+					}).catch((err) => {
+						console.error("设置循环模式失败:", err);
+						toast.error("设置循环模式失败");
+					});
+				},
+			});
 		}
 
-		setUiShuffleEnabled(isSmtcMode);
-		setUiRepeatEnabled(isSmtcMode);
+		return () => {
+			if (!isSmtcMode) {
+				const doNothing = { onEmit: () => {} };
+				setOnToggleShuffle(doNothing);
+				setOnCycleRepeat(doNothing);
+			}
+		};
 	}, [
 		mode,
 		isSmtcShuffleOn,
@@ -53,73 +115,10 @@ export const StateConnector = () => {
 		setUiRepeatMode,
 		setUiShuffleEnabled,
 		setUiRepeatEnabled,
-	]);
-
-	const setOnToggleShuffle = useSetAtom(onToggleShuffleAtom);
-	const setOnCycleRepeat = useSetAtom(onCycleRepeatModeAtom);
-
-	useEffect(() => {
-		setOnToggleShuffle({
-			onEmit: () => {
-				const controls = store.get(smtcControlsAtom);
-				if (!(controls & SmtcControls.CAN_CHANGE_SHUFFLE)) {
-					toast.info(
-						t(
-							"amll.systemListener.shuffleNotAvailable",
-							"当前应用不支持切换随机播放",
-						),
-					);
-					return;
-				}
-
-				const currentShuffleState = isSmtcShuffleOn;
-				const newShuffleState = !currentShuffleState;
-
-				invoke("control_external_media", {
-					payload: { type: "setShuffle", is_active: newShuffleState },
-				}).catch((err) => {
-					console.error("设置随机播放失败:", err);
-					toast.error("设置随机播放失败");
-				});
-			},
-		});
-
-		setOnCycleRepeat({
-			onEmit: () => {
-				const controls = store.get(smtcControlsAtom);
-				if (!(controls & SmtcControls.CAN_CHANGE_REPEAT)) {
-					toast.info(
-						t(
-							"amll.systemListener.repeatNotAvailable",
-							"当前应用不支持切换循环模式",
-						),
-					);
-					return;
-				}
-
-				const currentRepeatMode = smtcRepeat;
-				const nextMode =
-					currentRepeatMode === RepeatMode.Off
-						? RepeatMode.All
-						: currentRepeatMode === RepeatMode.All
-							? RepeatMode.One
-							: RepeatMode.Off;
-
-				invoke("control_external_media", {
-					payload: { type: "setRepeatMode", mode: nextMode },
-				}).catch((err) => {
-					console.error("设置循环模式失败:", err);
-					toast.error("设置循环模式失败");
-				});
-			},
-		});
-	}, [
-		store,
-		t,
 		setOnToggleShuffle,
 		setOnCycleRepeat,
-		isSmtcShuffleOn,
-		smtcRepeat,
+		store,
+		t,
 	]);
 
 	return null;
