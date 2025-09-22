@@ -1,20 +1,13 @@
 {
+	"extends": "../../tsconfig.base.json",
 	"include": ["./src/**/*.ts", "./src/**/*.tsx"],
-	"exclude": ["./src/test.tsx", "./src/test-prebuilt.tsx"],
+	"exclude": ["./src/test*"],
 	"compilerOptions": {
-		"target": "ESNext",
-		"lib": ["ESNext", "DOM", "DOM.Iterable"],
-		"module": "ESNext",
-		"jsx": "react-jsx",
-		"types": [],
-		"strict": true,
-		"moduleResolution": "bundler",
-		"resolveJsonModule": true,
-		"strictNullChecks": true,
-		"downlevelIteration": true,
-		"allowSyntheticDefaultImports": true,
-		"allowJs": false,
-		"skipLibCheck": true,
-		"noEmit": true
+		"noEmit": false,
+		"emitDeclarationOnly": true,
+		"declaration": true,
+		"declarationMap": true,
+		"outDir": "./dist",
+		"composite": true
 	}
 }

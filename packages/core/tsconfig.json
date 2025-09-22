@@ -1,21 +1,14 @@
 {
+	"extends": "../../tsconfig.base.json",
 	"include": ["./src/**/*.ts"],
 	"compilerOptions": {
-		"target": "ESNext",
-		"lib": ["ESNext", "DOM", "DOM.Iterable"],
-		"module": "ESNext",
-		"types": ["vite-plugin-glsl/ext"],
-		"strict": true,
-		"moduleResolution": "bundler",
-		"resolveJsonModule": true,
-		"strictNullChecks": true,
-		"downlevelIteration": true,
-		"allowSyntheticDefaultImports": true,
-		"allowImportingTsExtensions": true,
-		"noEmit": true,
-		"allowJs": false,
-		"stripInternal": true,
-		"noImplicitOverride": true,
-		"skipLibCheck": true
+		"noEmit": false,
+		"emitDeclarationOnly": true,
+		"declaration": true,
+		"declarationMap": true,
+		"outDir": "./dist",
+		"composite": true,
+		"jsx": "preserve",
+		"types": ["vite-plugin-glsl/ext"]
 	}
 }

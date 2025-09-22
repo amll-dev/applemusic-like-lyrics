@@ -16,3 +16,5 @@ target/
 .nx
 .idea
 .vscode/
+*.tsbuildinfo
+.million/

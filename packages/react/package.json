@@ -7,8 +7,13 @@
 		"directory": "packages/react",
 		"type": "git"
 	},
-	"type": "module",
 	"license": "GPL-3.0",
+	"nx": {
+		"tags": [
+			"library"
+		]
+	},
+	"type": "module",
 	"files": [
 		"dist/**/*.js",
 		"dist/**/*.ts",
@@ -36,27 +41,27 @@
 	"devDependencies": {
 		"@applemusic-like-lyrics/lyric": "workspace:^",
 		"@biomejs/biome": "catalog:",
-		"@pixi/app": "^7.4.3",
-		"@pixi/core": "^7.4.3",
-		"@pixi/display": "^7.4.3",
-		"@pixi/filter-blur": "^7.4.3",
-		"@pixi/filter-color-matrix": "^7.4.3",
-		"@pixi/sprite": "^7.4.3",
-		"@types/react": "^19.0.12",
-		"@types/react-dom": "^19.0.4",
-		"@vitejs/plugin-react": "^4.3.4",
-		"react": "^19.0.0",
-		"react-dom": "^19.0.0",
-		"typedoc": "^0.28.1",
-		"typedoc-plugin-markdown": "^4.6.0",
-		"typescript": "^5.8.2",
-		"vite": "^6.2.3",
-		"vite-plugin-dts": "^4.5.3"
+		"@types/react": "catalog:",
+		"@types/react-dom": "catalog:",
+		"@vitejs/plugin-react": "catalog:",
+		"react": "catalog:",
+		"react-dom": "catalog:",
+		"typedoc": "catalog:",
+		"typedoc-plugin-markdown": "catalog:",
+		"typescript": "catalog:",
+		"vite": "catalog:",
+		"vite-plugin-dts": "catalog:"
 	},
 	"dependencies": {
 		"@applemusic-like-lyrics/core": "workspace:^"
 	},
 	"peerDependencies": {
+		"@pixi/app": "*",
+		"@pixi/core": "*",
+		"@pixi/display": "*",
+		"@pixi/filter-blur": "*",
+		"@pixi/filter-color-matrix": "*",
+		"@pixi/sprite": "*",
 		"react": "*",
 		"react-dom": "*"
 	}

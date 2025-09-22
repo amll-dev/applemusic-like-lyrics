@@ -6,6 +6,11 @@
 	"description": "一个歌词解析/生成模块，着重于歌词内容解析，支持多种格式",
 	"version": "0.2.4",
 	"license": "GPL-3.0",
+	"nx": {
+		"tags": [
+			"library"
+		]
+	},
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/Steve-xmh/applemusic-like-lyrics"

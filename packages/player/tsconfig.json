@@ -1,31 +1,14 @@
 {
+	"extends": "../../tsconfig.base.json",
 	"compilerOptions": {
-		"target": "ES2020",
 		"useDefineForClassFields": true,
-		"lib": ["DOM", "DOM.Iterable", "ESNext"],
-		"module": "ESNext",
-		"skipLibCheck": true,
-
-		/* Bundler mode */
-		"moduleResolution": "bundler",
-		"allowImportingTsExtensions": true,
-		"resolveJsonModule": true,
 		"isolatedModules": true,
-		"noEmit": true,
-		"jsx": "react-jsx",
-
-		/* Linting */
-		"strict": true,
-		"noUnusedLocals": true,
-		"noUnusedParameters": true,
-		"noFallthroughCasesInSwitch": true,
-		"paths": {
-			"@applemusic-like-lyrics/core": ["../core/src"],
-			"@applemusic-like-lyrics/react": ["../react/src"],
-			"@applemusic-like-lyrics/react-full": ["../react-full/src"],
-			"@applemusic-like-lyrics/states": ["../states/src"]
-		}
+		"composite": true
 	},
-	"include": ["src", "../react-full/src/utils/duration.ts"],
-	"references": [{ "path": "./tsconfig.node.json" }]
+	"include": ["src", "hooks"],
+	"references": [
+		{ "path": "../core" },
+		{ "path": "../react" },
+		{ "path": "../react-full" }
+	]
 }

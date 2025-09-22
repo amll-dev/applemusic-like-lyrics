@@ -1,31 +1,26 @@
 {
-  "name": "applemusic-like-lyrics",
-  "private": true,
-  "license": "GPL-3.0",
-  "devDependencies": {
+	"name": "applemusic-like-lyrics",
+	"private": true,
+	"license": "GPL-3.0",
+	"devDependencies": {
 		"@biomejs/biome": "catalog:",
-    "lerna": "^8.2.3",
-    "nx": "^21.2.1",
-    "typescript": "^5.8.3"
-  },
-  "scripts": {
-    "build:libs": "lerna run build --scope \"*/react-full\" --scope \"*/vue\" --scope \"*/lyric\" --scope \"*/ws-protocol\""
-  },
-  "packageManager": "pnpm@10.13.1",
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@applemusic-like-lyrics/lyric",
-      "@biomejs/biome",
-      "@parcel/watcher",
-      "@swc/core",
-      "esbuild",
-      "nx",
-      "sharp"
-    ],
-    "overrides": {
-      "jotai": "2.12.5",
-      "@types/react": "19.1.8",
-      "@tauri-apps/plugin-updater": "2.9.0"
-    }
-  }
+		"lerna": "^8.2.4",
+		"nx": "^21.5.3",
+		"typescript": "catalog:"
+	},
+	"scripts": {
+		"build:libs": "nx run-many --target=build --projects=tag:library"
+	},
+	"packageManager": "pnpm@10.17.0",
+	"pnpm": {
+		"onlyBuiltDependencies": [
+			"@applemusic-like-lyrics/lyric",
+			"@biomejs/biome",
+			"@parcel/watcher",
+			"@swc/core",
+			"esbuild",
+			"nx",
+			"sharp"
+		]
+	}
 }
