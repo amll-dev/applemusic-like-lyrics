@@ -4931,7 +4931,7 @@ checksum = "67b1b7a3b5fe4f1376887184045fcf45c69e92af734b7aaddc05fb777b6fbd03"
 [[package]]
 name = "smtc-suite"
 version = "2.5.1"
-source = "git+https://github.com/apoint123/smtc-suite?rev=79520c61fdcedc981fc25cec9c633fdc00baedb2#79520c61fdcedc981fc25cec9c633fdc00baedb2"
+source = "git+https://github.com/apoint123/smtc-suite?rev=c7a9662a3b889b6184323a2330ad714763b62d36#c7a9662a3b889b6184323a2330ad714763b62d36"
 dependencies = [
  "bitflags 2.9.4",
  "cbindgen",

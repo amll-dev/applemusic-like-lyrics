@@ -56,7 +56,7 @@ objc2 = "^0.6"
 objc2-avf-audio = "^0.3"
 
 [target.'cfg(target_os = "windows")'.dependencies]
-smtc-suite = { git = "https://github.com/apoint123/smtc-suite", rev = "79520c61fdcedc981fc25cec9c633fdc00baedb2" }
+smtc-suite = { git = "https://github.com/apoint123/smtc-suite", rev = "c7a9662a3b889b6184323a2330ad714763b62d36" }
 webview2-com = "0.38"
 
 [target.'cfg(target_os = "android")'.dependencies]
