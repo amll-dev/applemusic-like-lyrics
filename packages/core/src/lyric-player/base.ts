@@ -476,7 +476,7 @@ export abstract class LyricPlayerBase
 		}
 
 		this.hasDuetLine = this.processedLines.some((line) => line.isDuet);
-		
+
 		// 将行开始时间提早最多一秒
 		for (let i = this.processedLines.length - 1; i >= 0; i--) {
 			const line = this.processedLines[i];
@@ -762,7 +762,7 @@ export abstract class LyricPlayerBase
 				}
 			} else {
 				if (hasBuffered) {
-					targetOpacity = 0.85;
+					targetOpacity = 1.0;
 				} else {
 					targetOpacity = this.isNonDynamic ? 0.2 : 1;
 				}
