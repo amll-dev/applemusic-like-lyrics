@@ -83,7 +83,7 @@
 	will-change: transform;
 	justify-self: center;
 
-	mix-blend-mode: color-dodge;
+	mix-blend-mode: normal;
 	min-width: 0;
 	min-height: 0;
 	width: var(--horizontal-layout-max-width);
@@ -109,7 +109,7 @@
 
 	mask-image: linear-gradient(transparent, black 10%, black 90%, transparent);
 
-	mix-blend-mode: color-dodge;
+	mix-blend-mode: normal;
 	contain: paint;
 
 	@media screen and (max-width: 1600px),
@@ -121,7 +121,7 @@
 .bottomControls {
 	grid-column: 1 / 4;
 	grid-row: buttom-controls;
-	mix-blend-mode: color-dodge;
+	mix-blend-mode: normal;
 
 	display: flex;
 	flex-direction: row-reverse;
