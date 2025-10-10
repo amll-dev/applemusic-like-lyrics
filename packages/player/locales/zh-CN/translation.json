@@ -8,7 +8,9 @@
 			"toggleLyrics": "显示歌词",
 			"editMusicOverrideMessage": "编辑歌曲覆盖信息",
 			"exitLyricPage": "退出歌词页面",
-			"play": "播放"
+			"play": "播放",
+			"openRecorder": "打开捕获面板",
+			"openScreenshotTool": "打开截图工具"
 		},
 		"audioQuality": {
 			"title": "音频解码信息",
@@ -40,6 +42,7 @@
 		}
 	},
 	"common": {
+		"settings": "设置",
 		"dialog": {
 			"close": "关闭",
 			"cancel": "取消",
@@ -72,6 +75,7 @@
 		"buttonLabel": "新建播放列表",
 		"dialog": {
 			"title": "新建歌单",
+			"name": "歌单名称",
 			"namePlaceholder": "歌单名称"
 		}
 	},

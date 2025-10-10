@@ -20,8 +20,8 @@ import { atom, useAtomValue, useStore } from "jotai";
 import type { FC } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { extensionDirAtom, extensionMetaAtom } from "../../states/extension.ts";
-import { restartApp } from "../../utils/player.ts";
 import { ExtensionLoadResult } from "../../states/extensionsAtoms.ts";
+import { restartApp } from "../../utils/player.ts";
 
 const requireRestartAtom = atom(false);
 
@@ -138,13 +138,17 @@ export const ExtensionTab: FC = () => {
 						/>
 						{meta.loadResult === ExtensionLoadResult.Loadable && (
 							<Flex flexGrow="1" direction="column" justify="center">
-								<Text weight="bold">{t("name", meta.id, { ns: meta.id })}</Text>
+								<Text weight="bold">
+									{t("name", meta.id, { ns: meta.id as any })}
+								</Text>
 								<Text size="2">{meta.id}</Text>
 							</Flex>
 						)}
 						{meta.loadResult === ExtensionLoadResult.Disabled && (
 							<Flex flexGrow="1" direction="column" justify="center">
-								<Text weight="bold">{t("name", meta.id, { ns: meta.id })}</Text>
+								<Text weight="bold">
+									{t("name", meta.id, { ns: meta.id as any })}
+								</Text>
 								<Text size="2">{meta.id}</Text>
 							</Flex>
 						)}

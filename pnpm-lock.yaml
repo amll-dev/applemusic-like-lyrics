@@ -396,6 +396,9 @@ importers:
       '@types/stats.js':
         specifier: ^0.17.4
         version: 0.17.4
+      '@types/w3c-image-capture':
+        specifier: ^1.0.11
+        version: 1.0.11
       '@vitejs/plugin-react':
         specifier: 'catalog:'
         version: 5.0.3(vite@7.1.7(@types/node@24.5.2)(lightningcss@1.30.1)(sass@1.93.0)(yaml@2.8.1))
@@ -3769,6 +3772,12 @@ packages:
 
   '@types/unist@3.0.3':
     resolution: {integrity: sha512-ko/gIFJRv177XgZsZcBwnqJN5x/Gien8qNOn0D5bQU/zAzVf9Zt3BlcUiLqhV9y4ARk0GbT3tnUiPNgnTXzc/Q==}
+
+  '@types/w3c-image-capture@1.0.11':
+    resolution: {integrity: sha512-g3BsmP29VsaaB9M2Hp0IJ8W/WatH0NzM6GV6Awdaqex5wjCcScdDa58ctX0al+ixQLDfIxplu+xOaLNA/u66bg==}
+
+  '@types/webrtc@0.0.47':
+    resolution: {integrity: sha512-l4G2skp32Q7ENiocokNhIHG6dKfws9ALJ04zW+ZZ97LMe6G+yqs/E8qsJLZJELGcdUDgEWvi2jg7KSP5TpJxeg==}
 
   '@ungap/structured-clone@1.3.0':
     resolution: {integrity: sha512-WmoN8qaIAo7WTYWbAZuG8PYEhn5fkz7dZrqTBZ7dtt//lL2Gwms1IcnQ5yHqjDfX8Ft5j4YzDM23f87zBfDe9g==}
@@ -11726,6 +11735,12 @@ snapshots:
   '@types/unist@2.0.11': {}
 
   '@types/unist@3.0.3': {}
+
+  '@types/w3c-image-capture@1.0.11':
+    dependencies:
+      '@types/webrtc': 0.0.47
+
+  '@types/webrtc@0.0.47': {}
 
   '@ungap/structured-clone@1.3.0': {}
 

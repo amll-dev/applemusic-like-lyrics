@@ -1,14 +1,15 @@
+import resources from "virtual:i18next-loader";
 import i18n from "i18next";
 import ICU from "i18next-icu";
 import { initReactI18next } from "react-i18next";
-import resources from "virtual:i18next-loader";
+
+type ResourcesType = typeof resources;
 
 declare module "i18next" {
 	// Extend CustomTypeOptions
 	interface CustomTypeOptions {
-		resources: {
-			translation: typeof resources;
-		};
+		defaultNS: "translation";
+		resources: ResourcesType["zh-CN"];
 	}
 }
 
@@ -19,6 +20,7 @@ i18n
 		resources,
 		debug: import.meta.env.DEV,
 		fallbackLng: "zh-CN",
+		defaultNS: "translation",
 		interpolation: {
 			escapeValue: false, // react already safes from xss
 		},

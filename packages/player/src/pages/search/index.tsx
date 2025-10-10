@@ -15,7 +15,7 @@ import {
 } from "@radix-ui/themes";
 import { useLiveQuery } from "dexie-react-hooks";
 import { atom, useAtom } from "jotai";
-import { type FC, type HTMLProps, useCallback, useRef } from "react";
+import { type ButtonHTMLAttributes, type FC, useCallback, useRef } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { AppContainer } from "../../components/AppContainer/index.tsx";
 import { PlaylistCard } from "../../components/PlaylistCard/index.tsx";
@@ -26,7 +26,7 @@ import styles from "./index.module.css";
 const FilterButton: FC<
 	{
 		label: string;
-	} & HTMLProps<HTMLButtonElement>
+	} & ButtonHTMLAttributes<HTMLButtonElement>
 > = ({ label, ...props }) => {
 	return (
 		<button className={styles.filterButton} {...props}>
@@ -268,7 +268,7 @@ export const Component: FC = () => {
 										"page.search.searchSongResultAmount",
 										"搜索到 {amount} 首歌曲",
 										{
-											amount: playlistsSearchResult.length,
+											amount: songsSearchResult.length,
 										},
 									)}
 								</Text>

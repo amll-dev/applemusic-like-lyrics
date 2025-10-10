@@ -1,4 +1,4 @@
-import { type FC, useMemo } from "react";
+import { type CSSProperties, type FC, useMemo } from "react";
 
 // 没啥用
 export const LinearBlurOverlay: FC<{
@@ -9,7 +9,7 @@ export const LinearBlurOverlay: FC<{
 	const styles = useMemo(() => {
 		const filters = [];
 		for (let blurLevel = 0.5; blurLevel <= radius; blurLevel *= 1.5) {
-			const styles: Partial<CSSStyleDeclaration> = {};
+			const styles: CSSProperties = {};
 			styles.backdropFilter = `blur(${blurLevel}px)`;
 			filters.push(styles);
 		}

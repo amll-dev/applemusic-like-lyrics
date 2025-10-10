@@ -8,15 +8,50 @@ import {
 	parseTTML,
 	parseYrc,
 } from "@applemusic-like-lyrics/lyric";
+import {
+	AudioQualityType,
+	currentPlaylistAtom,
+	currentPlaylistMusicIndexAtom,
+	fftDataAtom,
+	fftDataRangeAtom,
+	hideLyricViewAtom,
+	isLyricPageOpenedAtom,
+	lowFreqVolumeAtom,
+	type MusicQualityState,
+	musicAlbumNameAtom,
+	musicArtistsAtom,
+	musicCoverAtom,
+	musicCoverIsVideoAtom,
+	musicDurationAtom,
+	musicIdAtom,
+	musicLyricLinesAtom,
+	musicNameAtom,
+	musicPlayingAtom,
+	musicPlayingPositionAtom,
+	musicQualityAtom,
+	musicQualityTagAtom,
+	musicVolumeAtom,
+	onChangeVolumeAtom,
+	onClickControlThumbAtom,
+	onClickLeftFunctionButtonAtom,
+	onClickRightFunctionButtonAtom,
+	onLyricLineClickAtom,
+	onPlayOrResumeAtom,
+	onRequestNextSongAtom,
+	onRequestOpenMenuAtom,
+	onRequestPrevSongAtom,
+	onSeekPositionAtom,
+} from "@applemusic-like-lyrics/react-full";
 import chalk from "chalk";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useAtomValue, useSetAtom, useStore } from "jotai";
+import md5 from "md5";
 import { type FC, useEffect, useLayoutEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import { db } from "../../dexie.ts";
+import { advanceLyricDynamicLyricTimeAtom } from "../../states/appAtoms.ts";
 import {
-	type AudioInfo,
 	type AudioQuality,
 	emitAudioThread,
 	emitAudioThreadRet,
@@ -24,42 +59,6 @@ import {
 	listenAudioThreadEvent,
 	type SongData,
 } from "../../utils/player.ts";
-import md5 from "md5";
-import {
-	fftDataRangeAtom,
-	fftDataAtom,
-	lowFreqVolumeAtom,
-	type MusicQualityState,
-	musicQualityAtom,
-	musicQualityTagAtom,
-	AudioQualityType,
-	musicIdAtom,
-	musicLyricLinesAtom,
-	hideLyricViewAtom,
-	onRequestNextSongAtom,
-	onRequestPrevSongAtom,
-	onPlayOrResumeAtom,
-	onClickControlThumbAtom,
-	isLyricPageOpenedAtom,
-	onSeekPositionAtom,
-	onLyricLineClickAtom,
-	onChangeVolumeAtom,
-	onRequestOpenMenuAtom,
-	onClickLeftFunctionButtonAtom,
-	onClickRightFunctionButtonAtom,
-	musicNameAtom,
-	musicAlbumNameAtom,
-	musicArtistsAtom,
-	musicPlayingPositionAtom,
-	musicDurationAtom,
-	musicCoverAtom,
-	musicCoverIsVideoAtom,
-	currentPlaylistAtom,
-	currentPlaylistMusicIndexAtom,
-	musicPlayingAtom,
-	musicVolumeAtom,
-} from "@applemusic-like-lyrics/react-full";
-import { advanceLyricDynamicLyricTimeAtom } from "../../states/appAtoms.ts";
 
 export const FFTToLowPassContext: FC = () => {
 	const store = useStore();

@@ -3,7 +3,7 @@ import "@radix-ui/themes/styles.css";
 import { platform, version } from "@tauri-apps/plugin-os";
 import classNames from "classnames";
 import { atom, useAtomValue, useStore } from "jotai";
-import { StrictMode, Suspense, lazy, useEffect, useLayoutEffect } from "react";
+import { lazy, StrictMode, Suspense, useEffect, useLayoutEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { RouterProvider } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
@@ -19,26 +19,26 @@ import { SystemListenerMusicContext } from "./components/SystemListenerMusicCont
 import { UpdateContext } from "./components/UpdateContext/index.tsx";
 import { WSProtocolMusicContext } from "./components/WSProtocolMusicContext/index.tsx";
 import "./i18n";
-import { router } from "./router.tsx";
-import { invoke } from "@tauri-apps/api/core";
-import { StatsComponent } from "./components/StatsComponent/index.tsx";
 import {
 	isLyricPageOpenedAtom,
+	LyricSizePreset,
 	lyricSizePresetAtom,
 	onClickAudioQualityTagAtom,
-	LyricSizePreset,
 } from "@applemusic-like-lyrics/react-full";
+import { invoke } from "@tauri-apps/api/core";
+import { StateConnector } from "./components/StateConnector/index.tsx";
+import { StatsComponent } from "./components/StatsComponent/index.tsx";
+import { router } from "./router.tsx";
 import {
-	showStatJSFrameAtom,
-	musicContextModeAtom,
+	DarkMode,
+	darkModeAtom,
 	displayLanguageAtom,
 	isDarkThemeAtom,
-	darkModeAtom,
-	DarkMode,
 	MusicContextMode,
+	musicContextModeAtom,
+	showStatJSFrameAtom,
 } from "./states/appAtoms.ts";
 import { audioQualityDialogOpenedAtom } from "./states/smtcAtoms.ts";
-import { StateConnector } from "./components/StateConnector/index.tsx";
 
 const ExtensionContext = lazy(() => import("./components/ExtensionContext"));
 const AMLLWrapper = lazy(() => import("./components/AMLLWrapper"));
@@ -127,7 +127,6 @@ function App() {
 			case LyricSizePreset.Huge:
 				fontSizeFormula = "max(max(8vh, 4vw), 20px)";
 				break;
-			case LyricSizePreset.Medium:
 			default:
 				fontSizeFormula = "max(max(5vh, 2.5vw), 14px)";
 				break;

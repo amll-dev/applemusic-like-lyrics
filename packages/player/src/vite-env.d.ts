@@ -12,7 +12,40 @@ declare module "virtual:git-metadata-plugin" {
 }
 
 declare module "virtual:i18next-loader" {
-	const resources: typeof import("../locales/zh-CN/translation.json");
+	const translation: typeof import("../locales/zh-CN/translation.json");
+	const resources: {
+		"af-ZA": { translation: typeof translation };
+		"ar-SA": { translation: typeof translation };
+		"ca-ES": { translation: typeof translation };
+		"cs-CZ": { translation: typeof translation };
+		"da-DK": { translation: typeof translation };
+		"de-DE": { translation: typeof translation };
+		"el-GR": { translation: typeof translation };
+		"en-US": { translation: typeof translation };
+		"es-ES": { translation: typeof translation };
+		"fi-FI": { translation: typeof translation };
+		"fr-FR": { translation: typeof translation };
+		"he-IL": { translation: typeof translation };
+		"hu-HU": { translation: typeof translation };
+		"it-IT": { translation: typeof translation };
+		"ja-JP": { translation: typeof translation };
+		"ko-KR": { translation: typeof translation };
+		"nl-NL": { translation: typeof translation };
+		"no-NO": { translation: typeof translation };
+		"pl-PL": { translation: typeof translation };
+		"pt-BR": { translation: typeof translation };
+		"pt-PT": { translation: typeof translation };
+		"ro-RO": { translation: typeof translation };
+		"ru-RU": { translation: typeof translation };
+		"sr-SP": { translation: typeof translation };
+		"sv-SE": { translation: typeof translation };
+		"tr-TR": { translation: typeof translation };
+		"uk-UA": { translation: typeof translation };
+		"vi-VN": { translation: typeof translation };
+		"zh-CN": { translation: typeof translation };
+		"zh-HK": { translation: typeof translation };
+		"zh-TW": { translation: typeof translation };
+	};
 	export default resources;
 }
 

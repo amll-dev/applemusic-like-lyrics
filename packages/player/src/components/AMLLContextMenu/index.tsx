@@ -1,11 +1,3 @@
-import { ContextMenu } from "@radix-ui/themes";
-import { invoke } from "@tauri-apps/api/core";
-import { getCurrentWindow } from "@tauri-apps/api/window";
-import { useAtom, useAtomValue, useSetAtom } from "jotai";
-import type { FC } from "react";
-import { Trans } from "react-i18next";
-import { router } from "../../router.tsx";
-
 import {
 	hideLyricViewAtom,
 	isLyricPageOpenedAtom,
@@ -14,6 +6,13 @@ import {
 	onRequestNextSongAtom,
 	onRequestPrevSongAtom,
 } from "@applemusic-like-lyrics/react-full";
+import { ContextMenu } from "@radix-ui/themes";
+import { invoke } from "@tauri-apps/api/core";
+import { getCurrentWindow } from "@tauri-apps/api/window";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
+import type { FC } from "react";
+import { Trans } from "react-i18next";
+import { router } from "../../router.tsx";
 import { recordPanelOpenedAtom } from "../../states/appAtoms.ts";
 
 export const AMLLContextMenuContent: FC = () => {
@@ -79,7 +78,9 @@ export const AMLLContextMenuContent: FC = () => {
 					invoke("open_screenshot_window");
 				}}
 			>
-				<Trans i18nKey="amll.contextMenu.openRecorder">打开截图工具</Trans>
+				<Trans i18nKey="amll.contextMenu.openScreenshotTool">
+					打开截图工具
+				</Trans>
 			</ContextMenu.Item>
 			<ContextMenu.Separator />
 			<ContextMenu.Item
