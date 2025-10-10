@@ -21,8 +21,6 @@
 
 .controls {
 	justify-content: space-between;
-	width: calc(100% + 16px);
-	margin-left: -8px;
 }
 
 .bigControls {
@@ -30,63 +28,51 @@
 	padding-bottom: 0;
 }
 
-.songMediaButton {
-	height: 10vh;
+.songMediaButton,
+.songMediaPlayButton {
+	width: 18%;
+	aspect-ratio: 1 / 1;
+}
 
-	@media screen and (max-height: 768px),
-	(max-width: 1200px) {
-		height: 8vh;
+.songMediaButton > svg {
+	scale: 3;
+	transition: scale 0.3s;
+
+	@media screen and (max-height: 1080px) {
+		scale: 2;
 	}
 
-	&>svg {
-		scale: 3;
-		transition: scale 0.3s;
+	@media screen and (max-height: 768px) {
+		scale: 1.5;
+	}
 
-		@media screen and (max-height: 1080px) {
-			scale: 2;
-		}
+	@media screen and (max-height: 512px) {
+		scale: 1;
+	}
 
-		@media screen and (max-height: 768px) {
-			scale: 1.5;
-		}
-
-		@media screen and (max-height: 512px) {
-			scale: 1;
-		}
-
-		@media screen and (max-width: 480px) {
-			scale: 0.5;
-		}
+	@media screen and (max-width: 480px) {
+		scale: 0.5;
 	}
 }
 
-.songMediaPlayButton {
-	height: 10vh;
+.songMediaPlayButton > svg {
+	scale: 2;
+	transition: scale 0.3s;
 
-	@media screen and (max-height: 768px),
-	(max-width: 1200px) {
-		height: 8vh;
+	@media screen and (max-height: 1080px) {
+		scale: 1.1;
 	}
 
-	&>svg {
-		scale: 2;
-		transition: scale 0.3s;
+	@media screen and (max-height: 768px) {
+		scale: 0.8;
+	}
 
-		@media screen and (max-height: 1080px) {
-			scale: 1.1;
-		}
+	@media screen and (max-height: 512px) {
+		scale: 0.5;
+	}
 
-		@media screen and (max-height: 768px) {
-			scale: 0.8;
-		}
-
-		@media screen and (max-height: 512px) {
-			scale: 0.5;
-		}
-
-		@media screen and (max-width: 480px) {
-			scale: 0.5;
-		}
+	@media screen and (max-width: 480px) {
+		scale: 0.5;
 	}
 }
 
