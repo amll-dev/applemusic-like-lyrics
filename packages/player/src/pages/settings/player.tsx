@@ -1,3 +1,45 @@
+import { branch, commit } from "virtual:git-metadata-plugin";
+import {
+	CanvasLyricPlayer,
+	DomLyricPlayer,
+	DomSlimLyricPlayer,
+	MeshGradientRenderer,
+	PixiRenderer,
+} from "@applemusic-like-lyrics/core";
+import {
+	cssBackgroundPropertyAtom,
+	enableLyricLineBlurEffectAtom,
+	enableLyricLineScaleEffectAtom,
+	enableLyricLineSpringAnimationAtom,
+	enableLyricRomanLineAtom,
+	enableLyricSwapTransRomanLineAtom,
+	enableLyricTranslationLineAtom,
+	fftDataRangeAtom,
+	type LyricBackgroundRenderer,
+	LyricPlayerImplementation,
+	type LyricPlayerImplementationObject,
+	LyricSizePreset,
+	type LyricSizePresetValue,
+	lyricBackgroundFPSAtom,
+	lyricBackgroundRendererAtom,
+	lyricBackgroundRenderScaleAtom,
+	lyricBackgroundStaticModeAtom,
+	lyricFontFamilyAtom,
+	lyricFontWeightAtom,
+	lyricLetterSpacingAtom,
+	lyricPlayerImplementationAtom,
+	lyricSizePresetAtom,
+	lyricWordFadeWidthAtom,
+	PlayerControlsType,
+	playerControlsTypeAtom,
+	showBottomControlAtom,
+	showMusicAlbumAtom,
+	showMusicArtistsAtom,
+	showMusicNameAtom,
+	showVolumeControlAtom,
+	VerticalCoverLayout,
+	verticalCoverLayoutAtom,
+} from "@applemusic-like-lyrics/react-full";
 import {
 	Box,
 	Button,
@@ -15,7 +57,7 @@ import {
 } from "@radix-ui/themes";
 import { getVersion } from "@tauri-apps/api/app";
 import { invoke } from "@tauri-apps/api/core";
-import { type WritableAtom, atom, useAtom, useAtomValue } from "jotai";
+import { atom, useAtom, useAtomValue, type WritableAtom } from "jotai";
 import { loadable } from "jotai/utils";
 import React, {
 	type FC,
@@ -28,66 +70,25 @@ import React, {
 } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
-import { branch, commit } from "virtual:git-metadata-plugin";
 import { router } from "../../router.tsx";
-import { restartApp } from "../../utils/player.ts";
-import styles from "./index.module.css";
-
 import {
-	CanvasLyricPlayer,
-	DomLyricPlayer,
-	DomSlimLyricPlayer,
-	MeshGradientRenderer,
-	PixiRenderer,
-} from "@applemusic-like-lyrics/core";
-import {
-	lyricFontFamilyAtom,
-	enableLyricTranslationLineAtom,
-	enableLyricRomanLineAtom,
-	enableLyricSwapTransRomanLineAtom,
-	lyricPlayerImplementationAtom,
-	lyricSizePresetAtom,
-	LyricSizePreset,
-	type LyricSizePresetValue,
-	enableLyricLineBlurEffectAtom,
-	enableLyricLineScaleEffectAtom,
-	enableLyricLineSpringAnimationAtom,
-	lyricWordFadeWidthAtom,
-	fftDataRangeAtom,
-	playerControlsTypeAtom,
-	verticalCoverLayoutAtom,
-	PlayerControlsType,
-	VerticalCoverLayout,
-	showMusicNameAtom,
-	showMusicArtistsAtom,
-	showMusicAlbumAtom,
-	showVolumeControlAtom,
-	showBottomControlAtom,
-	lyricBackgroundRendererAtom,
-	lyricBackgroundFPSAtom,
-	lyricBackgroundRenderScaleAtom,
-	lyricBackgroundStaticModeAtom,
-	cssBackgroundPropertyAtom,
-	lyricFontWeightAtom,
-	lyricLetterSpacingAtom,
-	LyricPlayerImplementation,
-} from "@applemusic-like-lyrics/react-full";
-import {
-	darkModeAtom,
-	DarkMode,
 	advanceLyricDynamicLyricTimeAtom,
+	DarkMode,
+	darkModeAtom,
+	enableWsLyricsInSmtcModeAtom,
 	showStatJSFrameAtom,
 	updateInfoAtom,
-	enableWsLyricsInSmtcModeAtom,
 } from "../../states/appAtoms.ts";
 import {
-	smtcSessionsAtom,
-	smtcSelectedSessionIdAtom,
-	smtcTextConversionModeAtom,
 	type SmtcSession,
-	TextConversionMode,
+	smtcSelectedSessionIdAtom,
+	smtcSessionsAtom,
+	smtcTextConversionModeAtom,
 	smtcTimeOffsetAtom,
+	TextConversionMode,
 } from "../../states/smtcAtoms.ts";
+import { restartApp } from "../../utils/player.ts";
+import styles from "./index.module.css";
 
 const SettingEntry: FC<
 	PropsWithChildren<{ label: string; description?: string }>
@@ -108,7 +109,7 @@ const SettingEntry: FC<
 };
 
 const NumberSettings: FC<
-	{ configAtom: WritableAtom<number, [any], void> } & React.ComponentProps<
+	{ configAtom: WritableAtom<number, [number], void> } & React.ComponentProps<
 		typeof SettingEntry
 	> &
 		Omit<React.ComponentProps<typeof TextField.Root>, "value" | "onChange">
@@ -127,7 +128,7 @@ const NumberSettings: FC<
 };
 
 const SwitchSettings: FC<
-	{ configAtom: WritableAtom<boolean, [any], void> } & React.ComponentProps<
+	{ configAtom: WritableAtom<boolean, [boolean], void> } & React.ComponentProps<
 		typeof SettingEntry
 	> &
 		Omit<SwitchProps, "value" | "onChange">
@@ -284,7 +285,7 @@ function SliderSettings<T extends number | number[]>({
 	configAtom,
 	children,
 	...rest
-}: PropsWithChildren<{ configAtom: WritableAtom<T, [any], void> }> &
+}: PropsWithChildren<{ configAtom: WritableAtom<T, [T], void> }> &
 	React.ComponentProps<typeof SettingEntry> &
 	Omit<SliderProps, "value" | "onValueChange">): ReactNode {
 	const [value, setValue] = useAtom(configAtom);
@@ -292,8 +293,8 @@ function SliderSettings<T extends number | number[]>({
 		<SettingEntry label={label} description={description}>
 			<Slider
 				value={typeof value === "number" ? [value] : value}
-				onValueChange={(v: any) =>
-					typeof value === "number" ? setValue(v[0]) : setValue(v)
+				onValueChange={(v: number[]) =>
+					typeof value === "number" ? setValue(v[0] as T) : setValue(v as T)
 				}
 				{...rest}
 			/>
@@ -308,23 +309,25 @@ const GeneralSettings = () => {
 
 	const supportedLanguagesMenu = useMemo(() => {
 		function collectLocaleKey(
-			root: any,
+			root: Record<string, unknown>,
 			result = new Set<string>(),
 			currentKey = "",
 		): Set<string> {
 			for (const key in root) {
-				if (typeof root[key] === "object") {
+				const value = root[key];
+				if (typeof value === "object" && value !== null) {
 					collectLocaleKey(
-						root[key],
+						value as Record<string, unknown>,
 						result,
 						currentKey ? `${currentKey}.${key}` : key,
 					);
-				} else if (typeof root[key] === "string" && root[key]) {
+				} else if (typeof value === "string" && value) {
 					result.add(currentKey ? `${currentKey}.${key}` : key);
 				}
 			}
 			return result;
 		}
+
 		const originalLocaleKeyNum = collectLocaleKey(
 			i18n.options.resources?.["zh-CN"] ?? {},
 		).size;
@@ -400,7 +403,7 @@ const GeneralSettings = () => {
 				label={t("page.settings.general.theme.label", "界面主题")}
 				description={t(
 					"page.settings.general.theme.description",
-					"不太稳定，建议设置后重启以正确应用主题样式",
+					"选择应用的外观主题",
 				)}
 			>
 				<Select.Root value={mode} onValueChange={(v) => setMode(v as DarkMode)}>
@@ -485,7 +488,10 @@ const LyricAppearanceSettings = () => {
 		],
 		[t],
 	);
-	const getLyricPlayerString = (value: { lyricPlayer?: any }): string => {
+
+	const getLyricPlayerString = (
+		value: LyricPlayerImplementationObject,
+	): string => {
 		if (!value || !value.lyricPlayer) return LyricPlayerImplementation.Dom;
 		if (value.lyricPlayer === DomLyricPlayer)
 			return LyricPlayerImplementation.Dom;
@@ -495,8 +501,9 @@ const LyricAppearanceSettings = () => {
 			return LyricPlayerImplementation.Canvas;
 		return LyricPlayerImplementation.Dom;
 	};
+
 	const handleLyricPlayerChange = (selectedString: string) => {
-		let implementationObject;
+		let implementationObject: LyricPlayerImplementationObject;
 		switch (selectedString) {
 			case LyricPlayerImplementation.DomSlim:
 				implementationObject = { lyricPlayer: DomSlimLyricPlayer };
@@ -504,12 +511,15 @@ const LyricAppearanceSettings = () => {
 			case LyricPlayerImplementation.Canvas:
 				implementationObject = { lyricPlayer: CanvasLyricPlayer };
 				break;
-			case LyricPlayerImplementation.Dom:
 			default:
 				implementationObject = { lyricPlayer: DomLyricPlayer };
 				break;
 		}
 		setLyricPlayerImplValue(implementationObject);
+		localStorage.setItem(
+			"amll-react-full.lyricPlayerImplementation",
+			selectedString,
+		);
 	};
 	const [lyricSize, setLyricSize] = useAtom(lyricSizePresetAtom);
 
@@ -907,15 +917,19 @@ const LyricBackgroundSettings = () => {
 		],
 		[t],
 	);
-	const getBackgroundRendererString = (value: { renderer?: any }): string => {
+
+	const getBackgroundRendererString = (
+		value: LyricBackgroundRenderer,
+	): string => {
 		if (typeof value.renderer === "string" && value.renderer === "css-bg")
 			return "css-bg";
 		if (value.renderer === MeshGradientRenderer) return "mesh";
 		if (value.renderer === PixiRenderer) return "pixi";
 		return "mesh";
 	};
+
 	const handleBackgroundRendererChange = (selectedString: string) => {
-		let rendererObject;
+		let rendererObject: LyricBackgroundRenderer;
 		switch (selectedString) {
 			case "mesh":
 				rendererObject = { renderer: MeshGradientRenderer };
@@ -923,12 +937,15 @@ const LyricBackgroundSettings = () => {
 			case "pixi":
 				rendererObject = { renderer: PixiRenderer };
 				break;
-			case "css-bg":
 			default:
 				rendererObject = { renderer: "css-bg" };
 				break;
 		}
 		setBackgroundRendererValue(rendererObject);
+		localStorage.setItem(
+			"amll-react-full.lyricBackgroundRenderer",
+			selectedString,
+		);
 	};
 
 	return (
@@ -1083,8 +1100,7 @@ const AboutSettings = () => {
 				</Trans>
 			</Text>
 			<Suspense>
-				{/* biome-ignore lint/complexity/useOptionalChain: <explanation> */}
-				{updateInfo && updateInfo.available && (
+				{updateInfo && (
 					<>
 						<Separator size="4" my="3" />
 						<div id="updater">
@@ -1116,7 +1132,7 @@ const AboutSettings = () => {
 										"正在更新，完成后将会自动重启，请稍后……",
 									),
 								);
-								let contentLength: number | undefined = undefined;
+								let contentLength: number | undefined;
 								let receivedLength = 0;
 								function getProgressSizeText() {
 									const rec = `${(receivedLength / 1024 / 1024).toFixed(2)} MiB`;

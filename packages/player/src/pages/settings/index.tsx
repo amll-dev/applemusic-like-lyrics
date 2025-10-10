@@ -3,12 +3,12 @@ import {
 	Component1Icon,
 	DesktopIcon,
 	GearIcon,
+	HamburgerMenuIcon,
 	InfoCircledIcon,
 	MagicWandIcon,
 	MixerHorizontalIcon,
 	QuestionMarkCircledIcon,
 	TextAlignJustifyIcon,
-	HamburgerMenuIcon,
 } from "@radix-ui/react-icons";
 import {
 	Box,
@@ -21,6 +21,7 @@ import {
 	Tooltip,
 } from "@radix-ui/themes";
 import { platform } from "@tauri-apps/plugin-os";
+import type { Namespace } from "i18next";
 import { atom, useAtom, useAtomValue } from "jotai";
 import {
 	type FC,
@@ -28,14 +29,14 @@ import {
 	Suspense,
 	useEffect,
 	useMemo,
-	useState,
 	useRef,
+	useState,
 } from "react";
 import { useTranslation } from "react-i18next";
-import { ExtensionTab } from "./extension.tsx";
-import { PlayerSettingsTab } from "./player.tsx";
 import { loadedExtensionAtom } from "../../states/extensionsAtoms.ts";
+import { ExtensionTab } from "./extension.tsx";
 import styles from "./index.module.css";
+import { PlayerSettingsTab } from "./player.tsx";
 
 const currentPageAtom = atom("player.general");
 
@@ -65,7 +66,7 @@ const SidebarButton: FC<{
 	return (
 		<Button
 			variant="soft"
-			color={isActive ? ("accent" as any) : "gray"}
+			color={isActive ? "iris" : "gray"}
 			onClick={onClick}
 			style={{ justifyContent: "flex-start", cursor: "pointer" }}
 			size="3"
@@ -159,6 +160,7 @@ const SidebarContent: FC<{ onNavigate: (pageId: string) => void }> = ({
 			/>
 			{loadedExtensions.map((extension) => {
 				const id = extension.extensionMeta.id;
+				const extensionName = i18n.getFixedT(null, id as Namespace)("name", id);
 				return (
 					<SidebarButton
 						key={`extension.${id}`}
@@ -167,9 +169,10 @@ const SidebarContent: FC<{ onNavigate: (pageId: string) => void }> = ({
 								src={String(extension.context.extensionMeta.icon)}
 								width="20"
 								height="20"
+								alt={extensionName}
 							/>
 						}
-						label={i18n.getFixedT(null, id as any)("name", id)}
+						label={extensionName}
 						isActive={currentPage === `extension.${id}`}
 						onClick={() => onNavigate(`extension.${id}`)}
 					/>
@@ -183,7 +186,6 @@ export const Component: FC = () => {
 	const [currentPage, setCurrentPage] = useAtom(currentPageAtom);
 	const loadedExtensions = useAtomValue(loadedExtensionsWithSettingsAtom);
 	const { t } = useTranslation();
-	const os = usePlatform();
 
 	const buttonContainerRef = useRef<HTMLDivElement>(null);
 

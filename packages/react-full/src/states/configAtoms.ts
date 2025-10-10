@@ -1,8 +1,14 @@
+import {
+	CanvasLyricPlayer,
+	DomLyricPlayer,
+	DomSlimLyricPlayer,
+	type LyricPlayerBase,
+	MeshGradientRenderer,
+	PixiRenderer,
+} from "@applemusic-like-lyrics/core";
+import type { BackgroundRenderProps } from "@applemusic-like-lyrics/react";
 import { atom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
-
-import type { LyricPlayerBase } from "@applemusic-like-lyrics/core";
-import type { BackgroundRenderProps } from "@applemusic-like-lyrics/react";
 
 // ==================================================================
 //                            类型定义
@@ -64,18 +70,34 @@ export type LyricSizePresetValue =
 //                        歌词效果配置
 // ==================================================================
 
-/**
- * 歌词播放组件的实现类型。
- * 允许在运行时动态替换底层的歌词渲染引擎（如 DOM, Canvas）。
- * 由于存储的是类构造函数，需要应用层特殊处理持久化。
- */
-export const lyricPlayerImplementationAtom = atom<{
+export type LyricPlayerImplementationObject = {
 	lyricPlayer?: {
 		new (
 			...args: ConstructorParameters<typeof LyricPlayerBase>
 		): LyricPlayerBase;
 	};
-}>({ lyricPlayer: undefined });
+};
+
+const getInitialPlayerImplementation = (): LyricPlayerImplementationObject => {
+	const savedImpl = localStorage.getItem(
+		"amll-react-full.lyricPlayerImplementation",
+	);
+	switch (savedImpl) {
+		case LyricPlayerImplementation.DomSlim:
+			return { lyricPlayer: DomSlimLyricPlayer };
+		case LyricPlayerImplementation.Canvas:
+			return { lyricPlayer: CanvasLyricPlayer };
+		default:
+			return { lyricPlayer: DomLyricPlayer };
+	}
+};
+
+/**
+ * 歌词播放组件的实现类型
+ */
+export const lyricPlayerImplementationAtom = atom(
+	getInitialPlayerImplementation(),
+);
 
 /**
  * 是否启用歌词行模糊效果。性能影响：高。
@@ -238,14 +260,30 @@ export const showBottomControlAtom = atomWithStorage(
 //                        歌词背景配置
 // ==================================================================
 
+export type LyricBackgroundRenderer = {
+	renderer?: BackgroundRenderProps["renderer"] | string;
+};
+
+const getInitialBackgroundRenderer = (): LyricBackgroundRenderer => {
+	const savedRenderer = localStorage.getItem(
+		"amll-react-full.lyricBackgroundRenderer",
+	);
+	switch (savedRenderer) {
+		case "pixi":
+			return { renderer: PixiRenderer };
+		case "css-bg":
+			return { renderer: "css-bg" };
+		default:
+			return { renderer: MeshGradientRenderer };
+	}
+};
+
 /**
  * 配置所使用的歌词背景渲染器。
- * 可以是预设的渲染器名称字符串，也可以是实现了渲染器接口的对象。
- * 需要应用层特殊处理持久化。
  */
-export const lyricBackgroundRendererAtom = atom<{
-	renderer?: BackgroundRenderProps["renderer"] | string;
-}>({ renderer: undefined });
+export const lyricBackgroundRendererAtom = atom<LyricBackgroundRenderer>(
+	getInitialBackgroundRenderer(),
+);
 
 /**
  * 当背景渲染器设置为纯色或CSS背景时，使用此值。

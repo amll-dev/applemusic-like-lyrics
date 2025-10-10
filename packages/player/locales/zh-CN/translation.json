@@ -197,7 +197,7 @@
 				"subtitle": "常规",
 				"theme": {
 					"label": "界面主题",
-					"description": "不太稳定，建议设置后重启以正确应用主题样式",
+					"description": "选择应用的外观主题",
 					"auto": "自动",
 					"light": "浅色",
 					"dark": "深色"
