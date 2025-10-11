@@ -44,13 +44,16 @@ import {
 } from "@applemusic-like-lyrics/react-full";
 import chalk from "chalk";
 import { useLiveQuery } from "dexie-react-hooks";
-import { useAtomValue, useSetAtom, useStore } from "jotai";
+import { useAtom, useAtomValue, useSetAtom, useStore } from "jotai";
 import md5 from "md5";
-import { type FC, useEffect, useLayoutEffect } from "react";
+import { type FC, useEffect, useLayoutEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import { db } from "../../dexie.ts";
-import { advanceLyricDynamicLyricTimeAtom } from "../../states/appAtoms.ts";
+import {
+	advanceLyricDynamicLyricTimeAtom,
+	enableMediaControlsAtom,
+} from "../../states/appAtoms.ts";
 import {
 	type AudioQuality,
 	emitAudioThread,
@@ -526,6 +529,8 @@ const LyricContext: FC = () => {
 export const LocalMusicContext: FC = () => {
 	const store = useStore();
 	const { t } = useTranslation();
+	const firstPlay = useRef(true);
+	const [musicPlaying, setMusicPlaying] = useAtom(musicPlayingAtom);
 
 	const syncMusicInfo = async (data: any) => {
 		if (!data || !data.musicInfo) {
@@ -603,6 +608,16 @@ export const LocalMusicContext: FC = () => {
 		}
 	};
 
+	useEffect(() => {
+		if (musicPlaying && firstPlay.current) {
+			firstPlay.current = false;
+			const mediaControlsEnabled = store.get(enableMediaControlsAtom);
+			if (mediaControlsEnabled) {
+				emitAudioThread("setMediaControlsEnabled", { enabled: true });
+			}
+		}
+	}, [musicPlaying, store]);
+
 	const processAndSetPlaylist = async (playlistData: SongData[]) => {
 		if (!playlistData || playlistData.length === 0) {
 			store.set(currentPlaylistAtom, []);
@@ -642,9 +657,15 @@ export const LocalMusicContext: FC = () => {
 		});
 		const toEmit = <T,>(onEmit: T) => ({ onEmit });
 
+		store.set(
+			onPlayOrResumeAtom,
+			toEmit(() => {
+				emitAudioThread("resumeOrPauseAudio");
+			}),
+		);
+
 		store.set(onRequestNextSongAtom, toEmitThread("nextSong"));
 		store.set(onRequestPrevSongAtom, toEmitThread("prevSong"));
-		store.set(onPlayOrResumeAtom, toEmitThread("resumeOrPauseAudio"));
 		store.set(
 			onClickControlThumbAtom,
 			toEmit(() => {
@@ -713,7 +734,7 @@ export const LocalMusicContext: FC = () => {
 
 				case "syncStatus": {
 					const status = evtData.data;
-					store.set(musicPlayingAtom, status.isPlaying);
+					setMusicPlaying(status.isPlaying);
 					store.set(musicVolumeAtom, status.volume);
 					store.set(currentPlaylistMusicIndexAtom, status.currentPlayIndex);
 

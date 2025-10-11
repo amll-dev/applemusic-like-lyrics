@@ -39,7 +39,7 @@ pub struct AudioPlayer {
     current_position: Arc<RwLock<f64>>,
 
     current_audio_quality: Arc<RwLock<AudioQuality>>,
-    play_pos_sx: UnboundedSender<bool>,
+    play_pos_sx: UnboundedSender<(bool, f64)>,
     tasks: Vec<JoinHandle<()>>,
     media_state_manager: Option<Arc<MediaStateManager>>,
     media_state_rx: Option<UnboundedReceiver<MediaStateMessage>>,
@@ -92,6 +92,7 @@ impl AudioPlayer {
         let (evt_sender, evt_receiver) = tokio::sync::mpsc::unbounded_channel();
         let (msg_sender, msg_receiver) = tokio::sync::mpsc::unbounded_channel();
         let sink = Arc::new(Sink::try_new(&handle).expect("无法创建音频 Sink"));
+        sink.pause();
 
         let current_audio_info = Arc::new(RwLock::new(AudioInfo::default()));
         let current_position = Arc::new(RwLock::new(0.0));
@@ -100,50 +101,79 @@ impl AudioPlayer {
 
         let mut tasks = Vec::new();
 
+        let (media_state_manager, media_state_rx) = match MediaStateManager::new() {
+            Ok((manager, ms_rx)) => (Some(Arc::new(manager)), Some(ms_rx)),
+            Err(err) => {
+                tracing::warn!("初始化媒体状态管理器时出错：{err:?}");
+                (None, None)
+            }
+        };
+
         let position_writer = current_position.clone();
         let audio_info_reader = current_audio_info.clone();
         let msg_sender_clone = msg_sender.clone();
         let emitter_pos = AudioPlayerEventEmitter::new(evt_sender.clone());
-        let (play_pos_sx, mut play_pos_rx) = tokio::sync::mpsc::unbounded_channel::<bool>();
+        let (play_pos_sx, mut play_pos_rx) = tokio::sync::mpsc::unbounded_channel::<(bool, f64)>();
+        let media_state_manager_clone = media_state_manager.clone();
 
         tasks.push(tokio::task::spawn(async move {
-            let mut time_it = tokio::time::interval(Duration::from_secs_f64(1. / 10.));
+            let mut time_it = tokio::time::interval(Duration::from_secs(1));
+            let mut ui_time_it = tokio::time::interval(Duration::from_millis(16));
+
             let mut is_playing = false;
             let mut base_time = 0.0;
             let mut inst = Instant::now();
             let mut track_ended_sent = false;
 
             loop {
-                if let Ok(new_state) = play_pos_rx.try_recv() {
-                    is_playing = new_state;
-                    base_time = *position_writer.read().await;
+                if let Ok((new_is_playing, new_base_time)) = play_pos_rx.try_recv() {
+                    is_playing = new_is_playing;
+                    base_time = new_base_time;
                     inst = Instant::now();
                     track_ended_sent = false;
-                }
-
-                if is_playing {
-                    let duration = audio_info_reader.read().await.duration;
-                    if duration > 0.0 {
-                        let current_pos = base_time + inst.elapsed().as_secs_f64();
-                        *position_writer.write().await = current_pos;
-
-                        let _ = emitter_pos
-                            .emit(AudioThreadEvent::PlayPosition {
-                                position: current_pos,
-                            })
-                            .await;
-
-                        if current_pos >= duration && !track_ended_sent {
-                            track_ended_sent = true;
-                            let _ = msg_sender_clone.send(AudioThreadEventMessage::new(
-                                "".into(),
-                                Some(AudioThreadMessage::NextSong),
-                            ));
-                        }
+                    *position_writer.write().await = base_time;
+                    if is_playing
+                        && let Some(manager) = &media_state_manager_clone
+                        && let Err(e) = manager.set_position(base_time)
+                    {
+                        tracing::warn!("更新 SMTC 进度失败: {e:?}");
                     }
                 }
 
-                time_it.tick().await;
+                tokio::select! {
+                    _ = ui_time_it.tick() => {
+                        if is_playing {
+                            let duration = audio_info_reader.read().await.duration;
+                            if duration > 0.0 {
+                                let current_pos = base_time + inst.elapsed().as_secs_f64();
+                                *position_writer.write().await = current_pos;
+
+                                let _ = emitter_pos
+                                    .emit(AudioThreadEvent::PlayPosition {
+                                        position: current_pos,
+                                    })
+                                    .await;
+
+                                if current_pos >= duration && !track_ended_sent {
+                                    track_ended_sent = true;
+                                    let _ = msg_sender_clone.send(AudioThreadEventMessage::new(
+                                        "".into(),
+                                        Some(AudioThreadMessage::NextSong),
+                                    ));
+                                }
+                            }
+                        }
+                    }
+                    _ = time_it.tick() => {
+                        if is_playing
+                             && let Some(manager) = &media_state_manager_clone {
+                                let current_pos = *position_writer.read().await;
+                                if let Err(e) = manager.set_position(current_pos) {
+                                    tracing::warn!("更新 SMTC 进度失败: {e:?}");
+                                }
+                            }
+                    }
+                }
             }
         }));
 
@@ -170,14 +200,6 @@ impl AudioPlayer {
                 }
             }
         }));
-
-        let (media_state_manager, media_state_rx) = match MediaStateManager::new() {
-            Ok((manager, ms_rx)) => (Some(Arc::new(manager)), Some(ms_rx)),
-            Err(err) => {
-                tracing::warn!("初始化媒体状态管理器时出错：{err:?}");
-                (None, None)
-            }
-        };
 
         Self {
             evt_sender,
@@ -212,38 +234,34 @@ impl AudioPlayer {
         AudioPlayerEventEmitter::new(self.evt_sender.clone())
     }
 
+    async fn update_media_manager_metadata(&self) -> anyhow::Result<()> {
+        if let Some(manager) = self.media_state_manager.as_ref() {
+            let audio_info = self.current_audio_info.read().await;
+            manager.set_title(&audio_info.name)?;
+            manager.set_artist(&audio_info.artist)?;
+            manager.set_duration(audio_info.duration)?;
+            if let Some(cover_data) = &audio_info.cover {
+                manager.set_cover_image(cover_data)?;
+            } else {
+                manager.set_cover_image(&[] as &[u8])?;
+            }
+            manager.update()?;
+        }
+        Ok(())
+    }
+
+    async fn update_media_manager_playback_state(&self, is_playing: bool) -> anyhow::Result<()> {
+        if let Some(manager) = self.media_state_manager.as_ref() {
+            manager.set_playing(is_playing)?;
+        }
+        Ok(())
+    }
+
     async fn sync_ui(&self) -> anyhow::Result<()> {
         let audio_info = self.current_audio_info.read().await.clone();
         let position = *self.current_position.read().await;
         let is_playing = !self.sink.is_paused();
         let quality = self.current_audio_quality.read().await.clone();
-
-        if let Some(manager) = self.media_state_manager.as_ref() {
-            if let Err(e) = manager.set_playing(is_playing) {
-                tracing::warn!("更新 SMTC 播放状态失败: {:?}", e);
-            }
-            if let Err(e) = manager.set_title(&audio_info.name) {
-                tracing::warn!("更新 SMTC 标题失败: {:?}", e);
-            }
-            if let Err(e) = manager.set_artist(&audio_info.artist) {
-                tracing::warn!("更新 SMTC 艺术家失败: {:?}", e);
-            }
-            if let Err(e) = manager.set_duration(audio_info.duration) {
-                tracing::warn!("更新 SMTC 时长失败: {:?}", e);
-            }
-            if let Err(e) = manager.set_position(position) {
-                tracing::warn!("更新 SMTC 进度失败: {:?}", e);
-            }
-            if let Some(cover_data) = &audio_info.cover {
-                if let Err(e) = manager.set_cover_image(cover_data) {
-                    tracing::warn!("更新 SMTC 封面失败: {:?}", e);
-                }
-            }
-
-            if let Err(e) = manager.update() {
-                tracing::warn!("提交SMTC更新失败: {:?}", e);
-            }
-        }
 
         let status_event = AudioThreadEvent::SyncStatus {
             music_id: self
@@ -341,11 +359,15 @@ impl AudioPlayer {
             match data {
                 AudioThreadMessage::ResumeAudio => {
                     self.sink.play();
-                    let _ = self.play_pos_sx.send(true);
+                    let current_pos = *self.current_position.read().await;
+                    let _ = self.play_pos_sx.send((true, current_pos));
+                    self.update_media_manager_playback_state(true).await?;
                 }
                 AudioThreadMessage::PauseAudio => {
                     self.sink.pause();
-                    let _ = self.play_pos_sx.send(false);
+                    let current_pos = *self.current_position.read().await;
+                    let _ = self.play_pos_sx.send((false, current_pos));
+                    self.update_media_manager_playback_state(false).await?;
                 }
                 AudioThreadMessage::ResumeOrPauseAudio => {
                     let is_paused = self.sink.is_paused();
@@ -354,12 +376,13 @@ impl AudioPlayer {
                     } else {
                         self.sink.pause();
                     }
-                    let _ = self.play_pos_sx.send(is_paused);
+                    let current_pos = *self.current_position.read().await;
+                    let _ = self.play_pos_sx.send((is_paused, current_pos));
+                    self.update_media_manager_playback_state(is_paused).await?;
                 }
                 AudioThreadMessage::SeekAudio { position } => {
-                    *self.current_position.write().await = *position;
                     let _ = self.sink.try_seek(Duration::from_secs_f64(*position));
-                    let _ = self.play_pos_sx.send(!self.sink.is_paused());
+                    let _ = self.play_pos_sx.send((!self.sink.is_paused(), *position));
                 }
                 AudioThreadMessage::SetVolume { volume } => {
                     self.volume = volume.clamp(0.0, 1.0);
@@ -408,6 +431,13 @@ impl AudioPlayer {
                         .write()
                         .unwrap()
                         .set_freq_range(*from_freq, *to_freq);
+                }
+                AudioThreadMessage::SetMediaControlsEnabled { enabled } => {
+                    if let Some(manager) = self.media_state_manager.as_ref()
+                        && let Err(e) = manager.set_enabled(*enabled)
+                    {
+                        warn!("设置媒体控制启用状态失败: {e:?}");
+                    }
                 }
                 _ => {}
             }
@@ -466,13 +496,16 @@ impl AudioPlayer {
         })
         .await??;
 
-        *self.current_position.write().await = 0.0;
         *self.current_audio_info.write().await = info;
         *self.current_audio_quality.write().await = quality;
 
         self.sink.append(source);
+        self.update_media_manager_metadata().await?;
 
-        let _ = self.play_pos_sx.send(!self.sink.is_paused());
+        let is_playing = !self.sink.is_paused();
+        self.update_media_manager_playback_state(is_playing).await?;
+
+        let _ = self.play_pos_sx.send((is_playing, 0.0));
         self.sync_ui().await?;
 
         Ok(())

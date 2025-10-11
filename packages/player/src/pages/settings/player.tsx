@@ -75,6 +75,7 @@ import {
 	advanceLyricDynamicLyricTimeAtom,
 	DarkMode,
 	darkModeAtom,
+	enableMediaControlsAtom,
 	enableWsLyricsInSmtcModeAtom,
 	showStatJSFrameAtom,
 	updateInfoAtom,
@@ -1058,6 +1059,17 @@ const OthersSettings = () => {
 					"可以看到帧率、帧时间、内存占用（仅 Chromuim 系）等信息，对性能影响较小。",
 				)}
 				configAtom={showStatJSFrameAtom}
+			/>
+			<SwitchSettings
+				label={t(
+					"page.settings.smtc.enableMediaControls.label",
+					"启用内置播放器的媒体控件",
+				)}
+				description={t(
+					"page.settings.smtc.enableMediaControls.description",
+					"目前只支持 Windows 的 SMTC",
+				)}
+				configAtom={enableMediaControlsAtom}
 			/>
 			<Button my="2" onClick={() => restartApp()}>
 				<Trans i18nKey="page.settings.others.restartProgram">重启程序</Trans>

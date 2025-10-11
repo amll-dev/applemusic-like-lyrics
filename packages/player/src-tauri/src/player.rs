@@ -21,6 +21,19 @@ pub async fn local_player_send_msg(msg: AudioThreadEventMessage<AudioThreadMessa
     }
 }
 
+#[tauri::command]
+pub async fn set_media_controls_enabled(enabled: bool) {
+    if let Some(handler) = &*PLAYER_HANDLER.read().await {
+        let msg = AudioThreadMessage::SetMediaControlsEnabled { enabled };
+        if let Err(err) = handler.send_anonymous(msg).await {
+            warn!(
+                "failed to send SetMediaControlsEnabled msg to local player: {:?}",
+                err
+            );
+        }
+    }
+}
+
 pub fn init_local_player<R: Runtime>(app: AppHandle<R>) {
     tauri::async_runtime::spawn(async move {
         local_player_main(app).await;

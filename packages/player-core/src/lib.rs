@@ -54,9 +54,13 @@ pub enum AudioThreadMessage {
     #[serde(rename_all = "camelCase")]
     ResumeOrPauseAudio,
     #[serde(rename_all = "camelCase")]
-    SeekAudio { position: f64 },
+    SeekAudio {
+        position: f64,
+    },
     #[serde(rename_all = "camelCase")]
-    JumpToSong { song_index: usize },
+    JumpToSong {
+        song_index: usize,
+    },
     #[serde(rename_all = "camelCase")]
     PrevSong,
     #[serde(rename_all = "camelCase")]
@@ -64,21 +68,37 @@ pub enum AudioThreadMessage {
     #[serde(rename_all = "camelCase")]
     NextSongGapless,
     #[serde(rename_all = "camelCase")]
-    SetPlaylist { songs: Vec<SongData> },
+    SetPlaylist {
+        songs: Vec<SongData>,
+    },
     #[serde(rename_all = "camelCase")]
-    SetVolume { volume: f64 },
+    SetVolume {
+        volume: f64,
+    },
     #[serde(rename_all = "camelCase")]
-    SetVolumeRelative { volume: f64 },
+    SetVolumeRelative {
+        volume: f64,
+    },
     #[serde(rename_all = "camelCase")]
-    SetAudioOutput { name: String },
+    SetAudioOutput {
+        name: String,
+    },
     #[serde(rename_all = "camelCase")]
-    SetFFT { enabled: bool },
+    SetFFT {
+        enabled: bool,
+    },
     #[serde(rename_all = "camelCase")]
-    SetFFTRange { from_freq: f32, to_freq: f32 },
+    SetFFTRange {
+        from_freq: f32,
+        to_freq: f32,
+    },
     #[serde(rename_all = "camelCase")]
     SyncStatus,
     #[serde(rename_all = "camelCase")]
     Close,
+    SetMediaControlsEnabled {
+        enabled: bool,
+    },
 }
 
 pub type AudioPlayerEventSender =

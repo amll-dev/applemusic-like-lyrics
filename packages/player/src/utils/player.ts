@@ -71,6 +71,9 @@ export type AudioThreadMessageMap = {
 		fromFreq: number;
 		toFreq: number;
 	};
+	setMediaControlsEnabled: {
+		enabled: boolean;
+	};
 	syncStatus: {};
 	close: {};
 };

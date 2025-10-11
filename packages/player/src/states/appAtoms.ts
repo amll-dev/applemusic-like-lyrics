@@ -1,6 +1,7 @@
+import { invoke } from "@tauri-apps/api/core";
+import type { Update } from "@tauri-apps/plugin-updater";
 import { atom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
-import type { Update } from "@tauri-apps/plugin-updater";
 
 // ==================================================================
 //                            类型定义
@@ -66,6 +67,25 @@ export const musicContextModeAtom = atomWithStorage(
 export const advanceLyricDynamicLyricTimeAtom = atomWithStorage(
 	"amll-player.advanceLyricDynamicLyricTimeAtom",
 	false,
+);
+
+/**
+ * 是否启用系统的媒体控件功能，例如 Windows 的 SMTC
+ * @default true
+ */
+const enableMediaControlsInternalAtom = atomWithStorage(
+	"amll-player.enableMediaControls",
+	true,
+);
+
+export const enableMediaControlsAtom = atom(
+	(get) => get(enableMediaControlsInternalAtom),
+	(_get, set, enabled: boolean) => {
+		set(enableMediaControlsInternalAtom, enabled);
+		invoke("set_media_controls_enabled", { enabled }).catch((err) => {
+			console.error("设置媒体控件的启用状态失败", err);
+		});
+	},
 );
 
 /**

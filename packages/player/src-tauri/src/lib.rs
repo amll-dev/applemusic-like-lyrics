@@ -349,6 +349,7 @@ pub fn run() {
             open_screenshot_window,
             screen_capture::take_screenshot,
             player::local_player_send_msg,
+            player::set_media_controls_enabled,
             read_local_music_metadata,
             restart_app,
             #[cfg(target_os = "windows")]

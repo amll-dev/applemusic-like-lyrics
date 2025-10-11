@@ -47,13 +47,18 @@ impl MediaStateManagerWindowsBackend {
 }
 
 impl super::MediaStateManagerBackend for MediaStateManagerWindowsBackend {
+    fn set_enabled(&self, enabled: bool) -> anyhow::Result<()> {
+        self.smtc.SetIsEnabled(enabled)?;
+        Ok(())
+    }
+
     fn new() -> anyhow::Result<(Self, UnboundedReceiver<MediaStateMessage>)> {
         let (sx, rx) = tokio::sync::mpsc::unbounded_channel();
         let mp = windows::Media::Playback::MediaPlayer::new()?;
         mp.CommandManager()?.SetIsEnabled(false)?;
 
         let smtc = mp.SystemMediaTransportControls()?;
-        smtc.SetIsEnabled(true)?;
+        smtc.SetIsEnabled(false)?;
         smtc.SetIsPlayEnabled(true)?;
         smtc.SetIsPauseEnabled(true)?;
         smtc.SetIsNextEnabled(true)?;
