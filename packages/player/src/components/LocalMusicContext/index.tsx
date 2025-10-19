@@ -834,7 +834,7 @@ function processAudioQuality(
 		const sampleRate = definiteQuality.sampleRate;
 		const bitsPerSample = definiteQuality.bitsPerSample;
 
-		if (sampleRate >= 96000 || bitsPerSample >= 24) {
+		if (sampleRate >= 96000 && bitsPerSample >= 24) {
 			return {
 				...definiteQuality,
 				type: AudioQualityType.HiResLossless,
