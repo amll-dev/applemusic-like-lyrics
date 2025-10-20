@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - full-refractor
+      - dev
 
 jobs:
   deploy-docs:
