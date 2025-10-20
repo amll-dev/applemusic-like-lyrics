@@ -36,6 +36,20 @@ unsafe impl Send for MediaStateManagerMacOSBackend {}
 unsafe impl Sync for MediaStateManagerMacOSBackend {}
 
 impl MediaStateManagerBackend for MediaStateManagerMacOSBackend {
+    fn set_enabled(&self, enabled: bool) -> anyhow::Result<()> {
+        unsafe {
+            self.cmd_ctr.playCommand().setEnabled(enabled);
+            self.cmd_ctr.pauseCommand().setEnabled(enabled);
+            self.cmd_ctr.togglePlayPauseCommand().setEnabled(enabled);
+            self.cmd_ctr.nextTrackCommand().setEnabled(enabled);
+            self.cmd_ctr.previousTrackCommand().setEnabled(enabled);
+            self.cmd_ctr
+                .changePlaybackPositionCommand()
+                .setEnabled(enabled);
+        }
+        Ok(())
+    }
+
     fn new() -> anyhow::Result<(Self, UnboundedReceiver<MediaStateMessage>)> {
         let (sender, receiver) = tokio::sync::mpsc::unbounded_channel();
         let np_info_ctr = unsafe { MPNowPlayingInfoCenter::defaultCenter() };
