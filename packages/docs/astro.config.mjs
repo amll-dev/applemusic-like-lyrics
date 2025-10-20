@@ -129,9 +129,13 @@ export default defineConfig({
 					lang: "en",
 				},
 			},
-			social: {
-				github: "https://github.com/Steve-xmh/applemusic-like-lyrics",
-			},
+			social: [
+				{
+					icon: "github",
+					label: "GitHub",
+					href: "https://github.com/Steve-xmh/applemusic-like-lyrics",
+				},
+			],
 			plugins: [
 				{
 					name: "typedoc",
