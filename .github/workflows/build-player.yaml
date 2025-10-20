@@ -72,7 +72,7 @@ jobs:
       - name: 安装 Rust 工具链
         uses: dtolnay/rust-toolchain@v1
         with:
-          toolchain: 1.88.0
+          toolchain: stable
           targets: |
             wasm32-unknown-unknown,${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || (matrix.platform == 'windows-latest' && matrix.arch == 'aarch64') && 'aarch64-pc-windows-msvc' || '' }}
 
@@ -100,7 +100,7 @@ jobs:
       - name: 安装 wasm-pack
         uses: jetli/wasm-pack-action@v0.4.0
         with:
-          version: 'v0.13.1'
+          version: "v0.13.1"
       - name: 构建 AMLL Full React 包
         run: |
           pnpm i --frozen-lockfile --ignore-scripts
@@ -158,12 +158,12 @@ jobs:
       - name: 安装 Rust 工具链
         uses: dtolnay/rust-toolchain@v1
         with:
-          toolchain: 1.88.0
+          toolchain: stable
           targets: "x86_64-unknown-linux-gnu,x86_64-linux-android,i686-linux-android,aarch64-linux-android,arm-linux-androideabi,armv7-linux-androideabi,thumbv7neon-linux-androideabi"
       - name: 安装 wasm-pack
         uses: jetli/wasm-pack-action@v0.4.0
         with:
-          version: 'v0.13.1'
+          version: "v0.13.1"
       - name: 安装 wasm32 目标
         run: rustup target add wasm32-unknown-unknown
       - name: 安装 sccache
@@ -175,6 +175,10 @@ jobs:
           echo "ACTIONS_CACHE_URL=${{ env.ACTIONS_CACHE_URL }}" >> $GITHUB_ENV
           echo "ACTIONS_RUNTIME_TOKEN=${{ env.ACTIONS_RUNTIME_TOKEN }}" >> $GITHUB_ENV
         shell: bash
+      - name: 设置 Android SDK/NDK
+        uses: android-actions/setup-android@v3
+      - name: 安装 NDK
+        run: sdkmanager --install "ndk;27.2.12479018"
       - name: 构建 AMLL Full React 包
         run: |
           pnpm i --frozen-lockfile --ignore-scripts
