@@ -2,7 +2,7 @@ use anyhow::{Context, Result};
 use base64::{Engine, engine::general_purpose::STANDARD};
 use serde::{Deserialize, Deserializer, Serialize, Serializer, de};
 use smtc_suite::{
-    MediaCommand as SmtcMediaCommand, MediaUpdate, NowPlayingInfo as SmtcNowPlayingInfo,
+    MediaCommand as SmtcMediaCommand, MediaType, MediaUpdate, NowPlayingInfo as SmtcNowPlayingInfo,
     PlaybackStatus, SmtcSessionInfo as SuiteSmtcSessionInfo,
 };
 use tauri::{AppHandle, Emitter, Runtime};
@@ -80,6 +80,11 @@ pub struct FrontendNowPlayingInfo {
     pub title: Option<String>,
     pub artist: Option<String>,
     pub album_title: Option<String>,
+    pub album_artist: Option<String>,
+    pub genres: Option<Vec<String>>,
+    pub track_number: Option<u32>,
+    pub album_track_count: Option<u32>,
+    pub media_type: Option<MediaType>,
     pub duration_ms: Option<u64>,
     pub position_ms: Option<u64>,
     pub is_playing: Option<bool>,
@@ -138,6 +143,11 @@ impl From<SmtcNowPlayingInfo> for FrontendNowPlayingInfo {
             title: info.title,
             artist: info.artist,
             album_title: info.album_title,
+            album_artist: info.album_artist,
+            genres: info.genres,
+            track_number: info.track_number,
+            album_track_count: info.album_track_count,
+            media_type: info.media_type,
             duration_ms: info.duration_ms,
             position_ms: info.position_ms,
             is_playing,
@@ -292,7 +302,7 @@ async fn event_receiver_loop<R: Runtime>(
     while let Some(update) = update_rx.recv().await {
         let event_to_emit = match update {
             MediaUpdate::TrackChanged(info) => {
-                let dto: FrontendNowPlayingInfo = info.into();
+                let dto: FrontendNowPlayingInfo = (*info).into();
                 Some(SmtcEvent::TrackChanged(dto))
             }
             MediaUpdate::SessionsChanged(sessions) => Some(SmtcEvent::SessionsChanged(

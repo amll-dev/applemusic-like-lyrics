@@ -103,7 +103,7 @@ impl Iterator for SymphoniaDecoder {
 }
 
 impl Source for SymphoniaDecoder {
-    fn current_frame_len(&self) -> Option<usize> {
+    fn current_span_len(&self) -> Option<usize> {
         None
     }
     fn channels(&self) -> u16 {

@@ -33,15 +33,21 @@ import {
 	musicContextModeAtom,
 } from "../../states/appAtoms.ts";
 import {
+	MediaType,
 	RepeatMode,
 	SmtcControls,
 	type SmtcControlsType,
+	smtcAlbumArtistAtom,
+	smtcAlbumTrackCountAtom,
 	smtcControlsAtom,
+	smtcGenresAtom,
+	smtcMediaTypeAtom,
 	smtcRepeatModeAtom,
 	smtcSessionsAtom,
 	smtcShuffleStateAtom,
 	smtcTextConversionModeAtom,
 	smtcTimeOffsetAtom,
+	smtcTrackNumberAtom,
 	TextConversionMode,
 } from "../../states/smtcAtoms.ts";
 import { FFTToLowPassContext } from "../LocalMusicContext/index.tsx";
@@ -53,6 +59,11 @@ type SmtcEvent =
 				title: string | null;
 				artist: string | null;
 				albumTitle: string | null;
+				albumArtist: string | null;
+				genres: string[] | null;
+				trackNumber: number | null;
+				albumTrackCount: number | null;
+				mediaType: MediaType | null;
 				durationMs: number | null;
 				positionMs: number | null;
 				isPlaying: boolean | null;
@@ -272,6 +283,20 @@ export const SystemListenerMusicContext: FC = () => {
 								{ name: newTrackInfo.artist ?? "未知艺术家", id: "unknown" },
 							]);
 							store.set(musicAlbumNameAtom, newTrackInfo.albumTitle ?? "");
+							store.set(smtcAlbumArtistAtom, newTrackInfo.albumArtist ?? "");
+							store.set(smtcGenresAtom, newTrackInfo.genres ?? []);
+							store.set(
+								smtcTrackNumberAtom,
+								newTrackInfo.trackNumber ?? undefined,
+							);
+							store.set(
+								smtcAlbumTrackCountAtom,
+								newTrackInfo.albumTrackCount ?? undefined,
+							);
+							store.set(
+								smtcMediaTypeAtom,
+								newTrackInfo.mediaType ?? MediaType.Unknown,
+							);
 							store.set(musicDurationAtom, newTrackInfo.durationMs ?? 0);
 							store.set(musicPlayingPositionAtom, newTrackInfo.positionMs ?? 0);
 							store.set(musicPlayingAtom, newTrackInfo.isPlaying ?? false);
@@ -402,6 +427,11 @@ export const SystemListenerMusicContext: FC = () => {
 			store.set(smtcShuffleStateAtom, false);
 			store.set(smtcRepeatModeAtom, RepeatMode.Off);
 			store.set(smtcControlsAtom, 0);
+			store.set(smtcAlbumArtistAtom, "");
+			store.set(smtcGenresAtom, []);
+			store.set(smtcTrackNumberAtom, undefined);
+			store.set(smtcAlbumTrackCountAtom, undefined);
+			store.set(smtcMediaTypeAtom, MediaType.Unknown);
 			setSmtcSessions([]);
 		};
 	}, [musicContextMode, store, t, setSmtcSessions]);

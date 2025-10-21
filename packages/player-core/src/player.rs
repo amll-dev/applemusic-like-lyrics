@@ -13,7 +13,7 @@ use crate::{
     *,
 };
 use anyhow::{Context, anyhow};
-use rodio::{OutputStreamHandle, Sink, Source};
+use rodio::{OutputStream, Sink, Source};
 use std::sync::RwLock as StdRwLock;
 use symphonia_core::io::MediaSourceStream;
 use tokio::sync::RwLock;
@@ -29,7 +29,7 @@ pub struct AudioPlayer {
     msg_sender: AudioPlayerMessageSender,
     msg_receiver: AudioPlayerMessageReceiver,
     sink: Arc<Sink>,
-    stream_handle: OutputStreamHandle,
+    stream_handle: OutputStream,
     volume: f64,
     playlist: Vec<SongData>,
     playlist_inited: bool,
@@ -88,10 +88,11 @@ pub type LocalSongLoaderFn = Box<dyn Fn(String) -> LocalSongLoaderReturn + Send 
 pub struct AudioPlayerConfig {}
 
 impl AudioPlayer {
-    pub fn new(_config: AudioPlayerConfig, handle: OutputStreamHandle) -> Self {
+    pub fn new(_config: AudioPlayerConfig, handle: OutputStream) -> Self {
         let (evt_sender, evt_receiver) = tokio::sync::mpsc::unbounded_channel();
         let (msg_sender, msg_receiver) = tokio::sync::mpsc::unbounded_channel();
-        let sink = Arc::new(Sink::try_new(&handle).expect("无法创建音频 Sink"));
+        let sink = Arc::new(Sink::connect_new(&handle.mixer()));
+
         sink.pause();
 
         let current_audio_info = Arc::new(RwLock::new(AudioInfo::default()));
@@ -454,7 +455,7 @@ impl AudioPlayer {
         if clear_sink {
             self.sink.stop();
             self.fft_player.write().unwrap().clear();
-            self.sink = Arc::new(Sink::try_new(&self.stream_handle)?);
+            self.sink = Arc::new(Sink::connect_new(&self.stream_handle.mixer()));
             self.sink.set_volume(self.volume as f32);
         }
         let song_data = self.current_song.clone().context("没有当前歌曲可播放")?;

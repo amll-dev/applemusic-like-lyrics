@@ -90,6 +90,28 @@ export const smtcTimeOffsetAtom = atomWithStorage(
 	0,
 );
 
+export enum MediaType {
+	Unknown = "unknown",
+	Music = "music",
+	Video = "video",
+	Image = "image",
+}
+
+export const smtcMediaTypeAtom = atom<MediaType>(MediaType.Unknown);
+
+export const smtcAlbumArtistAtom = atom<string>("");
+
+/**
+ * SMTC 会话中的流派
+ *
+ * 部分应用可能会使用这个字段传递歌曲 ID
+ */
+export const smtcGenresAtom = atom<string[]>([]);
+
+export const smtcTrackNumberAtom = atom<number | undefined>(undefined);
+
+export const smtcAlbumTrackCountAtom = atom<number | undefined>(undefined);
+
 // ==================================================================
 //                        SMTC 控制能力
 // ==================================================================

@@ -4,14 +4,14 @@
 	"license": "GPL-3.0",
 	"devDependencies": {
 		"@biomejs/biome": "catalog:",
-		"lerna": "^8.2.4",
-		"nx": "^21.5.3",
+		"lerna": "^9.0.0",
+		"nx": "^21.6.5",
 		"typescript": "catalog:"
 	},
 	"scripts": {
 		"build:libs": "nx run-many --target=build --projects=tag:library"
 	},
-	"packageManager": "pnpm@10.17.0",
+	"packageManager": "pnpm@10.18.3",
 	"pnpm": {
 		"onlyBuiltDependencies": [
 			"@applemusic-like-lyrics/lyric",

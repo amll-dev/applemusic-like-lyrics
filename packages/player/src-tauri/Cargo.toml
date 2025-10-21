@@ -34,7 +34,7 @@ tokio = { version = "^1", features = [
     "sync",
     "time",
 ] }
-tokio-tungstenite = "0.27"
+tokio-tungstenite = "0.28"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
@@ -48,15 +48,15 @@ tauri-plugin-shell = { version = "2" }
 amll-player-core = { path = "../../player-core" }
 ws-protocol = { path = "../../ws-protocol", features = ["tracing"] }
 tauri-plugin-http = "2"
-rodio = "0.20.1"
-bitflags = "2.9.4"
+rodio = "0.21"
+bitflags = "2.10"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 objc2 = "^0.6"
 objc2-avf-audio = "^0.3"
 
 [target.'cfg(target_os = "windows")'.dependencies]
-smtc-suite = { git = "https://github.com/apoint123/smtc-suite", rev = "c7a9662a3b889b6184323a2330ad714763b62d36" }
+smtc-suite = { git = "https://github.com/apoint123/smtc-suite", rev = "56671238ea0bb05328d8b780adf1c960e666d763" }
 webview2-com = "0.38"
 
 [target.'cfg(target_os = "android")'.dependencies]

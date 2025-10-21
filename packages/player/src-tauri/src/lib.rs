@@ -2,7 +2,7 @@ use crate::server::AMLLWebSocketServer;
 use amll_player_core::AudioInfo;
 use anyhow::Context;
 use anyhow::anyhow;
-use rodio::OutputStream;
+use rodio::OutputStreamBuilder;
 use serde::*;
 use serde_json::Value;
 use std::fs::File;
@@ -360,15 +360,11 @@ pub fn run() {
         ])
         .setup(|app| {
             info!("正在初始化音频输出流...");
-            let (_stream, stream_handle) =
-                OutputStream::try_default().expect("无法创建默认的音频输出流");
-
-            app.manage(stream_handle);
-
-            std::mem::forget(_stream);
+            let stream =
+                OutputStreamBuilder::open_default_stream().expect("无法创建默认的音频输出流");
             info!("音频输出流初始化成功。");
 
-            player::init_local_player(app.handle().clone());
+            player::init_local_player(app.handle().clone(), stream);
 
             #[cfg(target_os = "windows")]
             {

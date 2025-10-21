@@ -3,8 +3,8 @@ use std::sync::LazyLock;
 use amll_player_core::AudioThreadEventMessage;
 use amll_player_core::AudioThreadMessage;
 use amll_player_core::{AudioPlayer, AudioPlayerConfig, AudioPlayerHandle};
-use rodio::OutputStreamHandle;
-use tauri::{AppHandle, Emitter, Manager, Runtime};
+use rodio::OutputStream;
+use tauri::{AppHandle, Emitter, Runtime};
 use tokio::sync::RwLock;
 use tracing::error;
 use tracing::warn;
@@ -34,15 +34,14 @@ pub async fn set_media_controls_enabled(enabled: bool) {
     }
 }
 
-pub fn init_local_player<R: Runtime>(app: AppHandle<R>) {
+pub fn init_local_player<R: Runtime>(app: AppHandle<R>, stream: OutputStream) {
     tauri::async_runtime::spawn(async move {
-        local_player_main(app).await;
+        local_player_main(app, stream).await;
     });
 }
 
-async fn local_player_main<R: Runtime>(app: AppHandle<R>) {
-    let handle = app.state::<OutputStreamHandle>().inner().clone();
-    let player = AudioPlayer::new(AudioPlayerConfig {}, handle);
+async fn local_player_main<R: Runtime>(app: AppHandle<R>, stream: OutputStream) {
+    let player = AudioPlayer::new(AudioPlayerConfig {}, stream);
     let handler = player.handler();
     PLAYER_HANDLER.write().await.replace(handler);
     let app_clone = app.clone();

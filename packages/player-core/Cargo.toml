@@ -14,8 +14,8 @@ cpal = "^0.16"
 futures = "0.3"
 md5 = "^0.8"
 rb = "^0.4"
-ringbuf = "^0.3"
-rubato = "^0.15"
+ringbuf = "^0.4"
+rubato = "^0.16"
 arrayvec = "^0.7"
 segmap = "0.1"
 serde = { version = "^1.0", features = ["derive"] }
@@ -34,7 +34,7 @@ tracing = "0.1"
 easer = "0.3.0"
 dispatch = "0.2.0"
 tauri = "2.6.2"
-rodio = { version = "0.20", features = ["symphonia"] }
+rodio = { version = "0.21", features = ["symphonia"] }
 symphonia-core = "0.5.4"
 
 [dependencies.ffmpeg-next]
