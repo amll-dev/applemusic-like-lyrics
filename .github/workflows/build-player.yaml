@@ -62,19 +62,52 @@ jobs:
         name: 克隆仓库
         with:
           fetch-depth: 0 # 为了正确生成开发版本号码
+
       - name: 安装 PNPM
         uses: pnpm/action-setup@v4
+
       - name: 安装 Node.js
         uses: actions/setup-node@v4
         with:
           node-version: lts/*
           cache: pnpm
+
       - name: 安装 Rust 工具链
         uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: stable
           targets: |
             wasm32-unknown-unknown,${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || (matrix.platform == 'windows-latest' && matrix.arch == 'aarch64') && 'aarch64-pc-windows-msvc' || '' }}
+
+      - name: 安装 vcpkg (Windows)
+        if: matrix.platform == 'windows-latest'
+        run: |
+          git clone https://github.com/microsoft/vcpkg.git D:/vcpkg
+          D:/vcpkg/bootstrap-vcpkg.bat
+          D:/vcpkg/vcpkg integrate install
+        shell: cmd
+
+      - name: 使用 vcpkg 安装 FFmpeg (Windows)
+        if: matrix.platform == 'windows-latest'
+        run: |
+          $VCPKG_ROOT = "D:/vcpkg"
+          if ("${{ matrix.arch }}" -eq "aarch64") {
+            ./vcpkg install ffmpeg:arm64-windows-static-md
+          } else {
+            ./vcpkg install ffmpeg:x64-windows-static-md
+          }
+        working-directory: D:/vcpkg
+        shell: powershell
+
+      - name: 设置 vcpkg 环境变量 (Windows)
+        if: matrix.platform == 'windows-latest'
+        run: |
+          echo "VCPKG_ROOT=D:/vcpkg" >> $GITHUB_ENV
+        shell: bash
+
+      - name: 安装 FFmpeg (macOS)
+        if: matrix.platform == 'macos-latest'
+        run: brew install ffmpeg
 
       - name: 安装 sccache
         uses: mozilla-actions/sccache-action@v0.0.9
@@ -86,30 +119,36 @@ jobs:
           echo "ACTIONS_CACHE_URL=${{ env.ACTIONS_CACHE_URL }}" >> $GITHUB_ENV
           echo "ACTIONS_RUNTIME_TOKEN=${{ env.ACTIONS_RUNTIME_TOKEN }}" >> $GITHUB_ENV
         shell: bash
+
       # macOS 自带的 Xcode LLVM 不支持 WASM 目标
       - name: "macOS: 安装 LLVM 和 Clang"
         uses: KyleMayes/install-llvm-action@v2
         if: matrix.platform == 'macos-latest'
         with:
           version: "15"
+
       - name: 安装 Tauri 所需系统依赖（仅 Linux）
         if: matrix.platform == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libasound2-dev libappindicator3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+          sudo apt-get install -y libasound2-dev libappindicator3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libavcodec-dev libavformat-dev libavutil-dev libswresample-dev
+
       - name: 安装 wasm-pack
         uses: jetli/wasm-pack-action@v0.4.0
         with:
           version: "v0.13.1"
+
       - name: 构建 AMLL Full React 包
         run: |
           pnpm i --frozen-lockfile --ignore-scripts
           pnpm nx build player
         env:
           AMLL_GITHUB_IS_ACTION: true
+
       - name: 生成开发构建版本号
         run: |
           node ./packages/player/scripts/gen-dev-version.mjs
+
       - name: 构建 AMLL Player 程序并发布自动构建
         uses: tauri-apps/tauri-action@v0
         with:
@@ -130,6 +169,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+
       - name: 上传产物到 Action Artifact
         uses: actions/upload-artifact@v4
         with:

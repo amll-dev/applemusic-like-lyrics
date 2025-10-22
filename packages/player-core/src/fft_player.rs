@@ -1,25 +1,17 @@
-#![allow(unused)]
-
-use std::{cell::Cell, collections::VecDeque, time::Instant};
-
 use spectrum_analyzer::*;
-use symphonia::core::audio::*;
-
-use super::resampler::FastFixedOutResampler;
+use std::{collections::VecDeque, time::Instant};
 
 /// 一个接收音频 PCM 数据并转换成频谱的伪播放结构
 /// 该结构会将传入的音频数据转换为单通道音频数据，然后进行频谱分析
 pub struct FFTPlayer {
     last_fft_time: Instant,
-    fft_spec: SignalSpec,
     result_buf: [f32; 2048],
     pcm_queue: VecDeque<f32>,
-    fft_duration: usize,
-    resampler: Option<FastFixedOutResampler<f32>>,
     freq_range: (f32, f32),
 }
 
 // numpy.interp()
+#[allow(unused)]
 fn vec_interp(src: &[f32], dst: &mut [f32]) {
     if src.is_empty() {
         dst.fill(0.0);
@@ -59,11 +51,8 @@ impl FFTPlayer {
     pub fn new() -> Self {
         Self {
             last_fft_time: Instant::now(),
-            fft_spec: SignalSpec::new(0, Channels::empty()),
             result_buf: [0.0; 2048],
             pcm_queue: VecDeque::with_capacity(4096),
-            fft_duration: 0,
-            resampler: None,
             freq_range: (80.0, 2000.0),
         }
     }
@@ -78,6 +67,10 @@ impl FFTPlayer {
 
     pub fn set_freq_range(&mut self, start_freq: f32, end_freq: f32) {
         self.freq_range = (start_freq, end_freq);
+    }
+
+    pub fn push_samples(&mut self, samples: &[f32]) {
+        self.pcm_queue.extend(samples);
     }
 
     pub fn read(&mut self, buf: &mut [f32]) -> bool {
@@ -133,42 +126,6 @@ impl FFTPlayer {
                 eprintln!("FFT error: {:?}", e);
                 false
             }
-        }
-    }
-
-    /// 将解码后的音频数据压入播放器
-    /// 务必在添加数据后及时通过 `read` 方法读取频谱数据
-    pub fn push_data(&mut self, decoded: &AudioBufferRef) {
-        if decoded.frames() == 0 {
-            return;
-        }
-
-        let should_reset_fft = self.resampler.is_none()
-            || self.fft_duration != decoded.capacity()
-            || &self.fft_spec != decoded.spec();
-
-        if should_reset_fft {
-            self.fft_spec = *decoded.spec();
-            self.fft_duration = decoded.capacity();
-
-            let resampler = FastFixedOutResampler::new_fast_fixed(
-                self.fft_spec,
-                44100,
-                1,
-                decoded.capacity() as _,
-            );
-
-            self.resampler = Some(resampler);
-
-            self.pcm_queue.clear();
-        }
-
-        let rsp = self.resampler.as_mut().unwrap();
-
-        rsp.resample(decoded);
-
-        while let Some(buf) = rsp.flush() {
-            self.pcm_queue.extend(buf.iter().copied());
         }
     }
 }

@@ -6,12 +6,10 @@ use self::audio_quality::AudioQuality;
 use serde::*;
 
 mod audio_quality;
+mod ffmpeg_decoder;
 mod fft_player;
 mod media_state;
-mod output;
 mod player;
-mod resampler;
-mod symphonia_decoder;
 pub mod utils;
 pub use player::*;
 

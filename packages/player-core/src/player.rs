@@ -1,21 +1,19 @@
 use std::{
     fmt::Debug,
     fs::File,
-    sync::Arc,
+    sync::{Arc, RwLock as StdRwLock},
     time::{Duration, Instant},
 };
 
 use super::fft_player::FFTPlayer;
 use crate::{
     audio_quality::AudioQuality,
+    ffmpeg_decoder::FFmpegDecoder,
     media_state::{MediaStateManager, MediaStateManagerBackend, MediaStateMessage},
-    symphonia_decoder::SymphoniaDecoder,
     *,
 };
 use anyhow::{Context, anyhow};
 use rodio::{OutputStream, Sink, Source};
-use std::sync::RwLock as StdRwLock;
-use symphonia_core::io::MediaSourceStream;
 use tokio::sync::RwLock;
 use tokio::{
     sync::mpsc::{UnboundedReceiver, UnboundedSender},
@@ -467,30 +465,30 @@ impl AudioPlayer {
         let (info, quality, source) = tokio::task::spawn_blocking({
             let path_clone = file_path.clone();
             let fft_player_clone = self.fft_player.clone();
-            move || -> anyhow::Result<(AudioInfo, AudioQuality, SymphoniaDecoder)> {
-                let (info, quality) = {
-                    let src = File::open(&path_clone)
-                        .with_context(|| format!("读取元数据时无法打开文件: {}", path_clone))?;
-                    let mss = MediaSourceStream::new(Box::new(src), Default::default());
-                    let mut probed = symphonia::default::get_probe().format(
-                        &Default::default(),
-                        mss,
-                        &Default::default(),
-                        &Default::default(),
-                    )?;
+            move || -> anyhow::Result<(AudioInfo, AudioQuality, FFmpegDecoder)> {
+                let mut input_ctx = ffmpeg_next::format::input(&path_clone)
+                    .with_context(|| format!("读取元数据时无法打开文件: {}", path_clone))?;
+                let mut info = crate::utils::read_audio_info(&mut input_ctx);
+                let audio_stream = input_ctx
+                    .streams()
+                    .best(ffmpeg_next::media::Type::Audio)
+                    .context("找不到有效的音频流")?;
 
-                    let info = crate::utils::read_audio_info(&mut probed);
-                    let quality = if let Some(track) = probed.format.default_track() {
-                        let registry = symphonia::default::get_codecs();
-                        AudioQuality::from_codec_and_track(registry, track)
-                    } else {
-                        AudioQuality::default()
-                    };
+                let audio_stream_index = audio_stream.index();
 
-                    (info, quality)
-                };
+                let time_base = audio_stream.time_base();
+                let duration = audio_stream.duration();
+                info.duration = duration as f64 * time_base.0 as f64 / time_base.1 as f64;
 
-                let source = SymphoniaDecoder::new(&path_clone, fft_player_clone)?;
+                let decoder_ctx = ffmpeg_next::codec::context::Context::from_parameters(
+                    audio_stream.parameters(),
+                )?;
+                let decoder = decoder_ctx.decoder().audio()?;
+
+                let quality = crate::audio_quality::AudioQuality::from_ffmpeg_decoder(&decoder);
+
+                let source =
+                    FFmpegDecoder::new(input_ctx, decoder, fft_player_clone, audio_stream_index)?;
 
                 Ok((info, quality, source))
             }

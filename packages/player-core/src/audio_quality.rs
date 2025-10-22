@@ -1,5 +1,5 @@
+use ffmpeg_next as ffmpeg;
 use serde::*;
-use symphonia::core::{codecs::*, formats::Track, sample::SampleFormat};
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Default, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -13,39 +13,37 @@ pub struct AudioQuality {
 }
 
 impl AudioQuality {
-    pub fn from_codec_and_track(registry: &CodecRegistry, track: &Track) -> Self {
-        let desc = registry.get_codec(track.codec_params.codec);
+    pub fn from_ffmpeg_decoder(decoder: &ffmpeg::decoder::Audio) -> Self {
+        let sample_format_str = match decoder.format() {
+            ffmpeg::format::Sample::U8(_) => "u8",
+            ffmpeg::format::Sample::I16(_) => "i16",
+            ffmpeg::format::Sample::I32(_) => "i32",
+            ffmpeg::format::Sample::I64(_) => "i64",
+            ffmpeg::format::Sample::F32(_) => "f32",
+            ffmpeg::format::Sample::F64(_) => "f64",
+            _ => "unknown",
+        };
+
+        let bits_per_sample = match decoder.format() {
+            ffmpeg::format::Sample::U8(_) => Some(8),
+            ffmpeg::format::Sample::I16(_) => Some(16),
+            ffmpeg::format::Sample::I32(_) => Some(32),
+            ffmpeg::format::Sample::I64(_) => Some(64),
+            ffmpeg::format::Sample::F32(_) => Some(32),
+            ffmpeg::format::Sample::F64(_) => Some(64),
+            _ => None,
+        };
+
         Self {
-            sample_rate: track.codec_params.sample_rate as _,
-            bits_per_coded_sample: track.codec_params.bits_per_coded_sample,
-            bits_per_sample: track.codec_params.bits_per_sample,
-            channels: track.codec_params.channels.map(|x| x.count() as _),
-            codec: if let Some(desc) = desc {
-                desc.short_name
-            } else {
-                "unknown"
-            }
-            .to_string(),
-            sample_format: match track.codec_params.sample_format {
-                Some(SampleFormat::U8) => "u8",
-                Some(SampleFormat::U16) => "u16",
-                Some(SampleFormat::U24) => "u24",
-                Some(SampleFormat::U32) => "u32",
-                Some(SampleFormat::S8) => "i8",
-                Some(SampleFormat::S16) => "i16",
-                Some(SampleFormat::S24) => "i24",
-                Some(SampleFormat::S32) => "i32",
-                Some(SampleFormat::F32) => "f32",
-                Some(SampleFormat::F64) => "f64",
-                _ => match track.codec_params.bits_per_sample {
-                    Some(8) => "u8",
-                    Some(16) => "i16",
-                    Some(24) => "i24",
-                    Some(32) => "i32",
-                    _ => "unknown",
-                },
-            }
-            .to_string(),
+            sample_rate: Some(decoder.rate()),
+            bits_per_coded_sample: None,
+            bits_per_sample,
+            channels: Some(decoder.channels() as u32),
+            codec: decoder
+                .codec()
+                .map(|c| c.name().to_string())
+                .unwrap_or_else(|| "unknown".to_string()),
+            sample_format: sample_format_str.to_string(),
         }
     }
 }

@@ -26,7 +26,6 @@ crossbeam-channel = "0.5.15"
 futures = "0.3.28"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-symphonia = { version = "^0.5", features = ["all", "opt-simd"] }
 tokio = { version = "^1", features = [
     "rt-multi-thread",
     "macros",
@@ -51,6 +50,10 @@ tauri-plugin-http = "2"
 rodio = "0.21"
 bitflags = "2.10"
 
+[dependencies.ffmpeg-next]
+version = "8"
+features = ["static"]
+
 [target.'cfg(target_os = "macos")'.dependencies]
 objc2 = "^0.6"
 objc2-avf-audio = "^0.3"
@@ -70,8 +73,6 @@ tauri-plugin-updater = { version = "2" }
 # this feature is used for production builds or when `devPath` points to the filesystem
 # DO NOT REMOVE!!
 custom-protocol = ["tauri/custom-protocol"]
-
-ffmpeg-backend = ["amll-player-core/ffmpeg"]
 
 [profile.dev.package."*"]
 opt-level = 1

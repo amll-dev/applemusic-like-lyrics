@@ -5,7 +5,6 @@ edition = "2024"
 
 [features]
 default = []
-ffmpeg = ["ffmpeg-next"]
 
 [dependencies]
 anyhow = "^1.0"
@@ -15,13 +14,11 @@ futures = "0.3"
 md5 = "^0.8"
 rb = "^0.4"
 ringbuf = "^0.4"
-rubato = "^0.16"
 arrayvec = "^0.7"
 segmap = "0.1"
 serde = { version = "^1.0", features = ["derive"] }
 serde_json = "^1.0"
 spectrum-analyzer = "1.5"
-symphonia = { version = "^0.5", features = ["all-formats", "all-codecs"] }
 tempfile = "^3.8"
 tokio = { version = "^1", features = [
     "time",
@@ -34,16 +31,11 @@ tracing = "0.1"
 easer = "0.3.0"
 dispatch = "0.2.0"
 tauri = "2.6.2"
-rodio = { version = "0.21", features = ["symphonia"] }
-symphonia-core = "0.5.4"
+rodio = { version = "0.21", features = [] }
 
 [dependencies.ffmpeg-next]
-optional = true
-# version = "7.1.0"
-git = "https://github.com/Steve-xmh/rust-ffmpeg.git"
-branch = "patch-1"
-default-features = false
-features = ["codec", "format"]
+version = "8"
+features = ["static"]
 
 [target.'cfg(target_os = "windows")'.dependencies]
 tempfile = "^3"
