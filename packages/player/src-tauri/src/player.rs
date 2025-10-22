@@ -35,8 +35,13 @@ pub async fn set_media_controls_enabled(enabled: bool) {
 }
 
 pub fn init_local_player<R: Runtime>(app: AppHandle<R>, stream: OutputStream) {
-    tauri::async_runtime::spawn(async move {
-        local_player_main(app, stream).await;
+    std::thread::spawn(move || {
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .expect("创建 Tokio 运行时失败");
+
+        runtime.block_on(local_player_main(app, stream));
     });
 }
 
