@@ -2,7 +2,6 @@ use crate::server::AMLLWebSocketServer;
 use amll_player_core::AudioInfo;
 use anyhow::Context;
 use ffmpeg_next as ffmpeg;
-use rodio::OutputStreamBuilder;
 use serde::*;
 use serde_json::Value;
 use std::net::SocketAddr;
@@ -351,12 +350,7 @@ pub fn run() {
             reset_window_theme,
         ])
         .setup(|app| {
-            info!("正在初始化音频输出流...");
-            let stream =
-                OutputStreamBuilder::open_default_stream().expect("无法创建默认的音频输出流");
-            info!("音频输出流初始化成功。");
-
-            player::init_local_player(app.handle().clone(), stream);
+            player::init_local_player(app.handle().clone());
 
             #[cfg(target_os = "windows")]
             {

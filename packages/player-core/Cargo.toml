@@ -38,6 +38,11 @@ version = "8"
 default-features = false
 features = ["codec", "format", "software-resampling", "static"]
 
+[target.'cfg(target_os = "android")'.dependencies.ffmpeg-next]
+version = "8"
+default-features = false
+features = ["codec", "format", "software-resampling", "build"]
+
 [target.'cfg(target_os = "windows")'.dependencies]
 tempfile = "^3"
 

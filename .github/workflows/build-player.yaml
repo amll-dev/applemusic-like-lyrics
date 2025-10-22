@@ -129,20 +129,9 @@ jobs:
         with:
           version: "15"
 
-      - name: 安装 FFmpeg 依赖并配置环境 (macOS)
+      - name: 安装 FFmpeg 依赖 (macOS)
         if: matrix.platform == 'macos-latest'
-        run: |
-          echo "SDKROOT=$(xcrun --sdk macosx --show-sdk-path)" >> $GITHUB_ENV
-          brew install ffmpeg pkg-config yasm nasm
-          if [[ "${{ matrix.arch }}" == "x86_64" || "${{ matrix.arch }}" == "universal" ]]; then
-            arch -x86_64 brew install ffmpeg pkg-config yasm nasm
-          fi
-
-          if [[ "${{ matrix.arch }}" == "x86_64" ]]; then
-            echo "PKG_CONFIG_PATH=/usr/local/opt/ffmpeg/lib/pkgconfig" >> $GITHUB_ENV
-            echo "LDFLAGS=-L/usr/local/opt/ffmpeg/lib" >> $GITHUB_ENV
-            echo "CPPFLAGS=-I/usr/local/opt/ffmpeg/include" >> $GITHUB_ENV
-          fi
+        run: brew install ffmpeg pkg-config yasm nasm
 
       - name: 安装 Tauri 和 FFmpeg 所需系统依赖（仅 Linux）
         if: matrix.platform == 'ubuntu-latest'
@@ -236,6 +225,10 @@ jobs:
           echo "ACTIONS_CACHE_URL=${{ env.ACTIONS_CACHE_URL }}" >> $GITHUB_ENV
           echo "ACTIONS_RUNTIME_TOKEN=${{ env.ACTIONS_RUNTIME_TOKEN }}" >> $GITHUB_ENV
         shell: bash
+      - name: 安装 FFmpeg 所需系统依赖
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential pkg-config yasm nasm git
       - name: 设置 Android SDK/NDK
         uses: android-actions/setup-android@v3
       - name: 安装 NDK

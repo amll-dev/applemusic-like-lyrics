@@ -4,6 +4,7 @@ use amll_player_core::AudioThreadEventMessage;
 use amll_player_core::AudioThreadMessage;
 use amll_player_core::{AudioPlayer, AudioPlayerConfig, AudioPlayerHandle};
 use rodio::OutputStream;
+use rodio::OutputStreamBuilder;
 use tauri::{AppHandle, Emitter, Runtime};
 use tokio::sync::RwLock;
 use tracing::error;
@@ -34,8 +35,9 @@ pub async fn set_media_controls_enabled(enabled: bool) {
     }
 }
 
-pub fn init_local_player<R: Runtime>(app: AppHandle<R>, stream: OutputStream) {
+pub fn init_local_player<R: Runtime>(app: AppHandle<R>) {
     std::thread::spawn(move || {
+        let stream = OutputStreamBuilder::open_default_stream().expect("无法创建默认的音频输出流");
         let runtime = tokio::runtime::Builder::new_current_thread()
             .enable_all()
             .build()
