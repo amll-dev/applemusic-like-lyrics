@@ -129,9 +129,20 @@ jobs:
         with:
           version: "15"
 
-      - name: 安装 FFmpeg 依赖 (macOS)
+      - name: 安装 FFmpeg 依赖并配置环境 (macOS)
         if: matrix.platform == 'macos-latest'
-        run: brew install pkg-config yasm nasm
+        run: |
+          echo "SDKROOT=$(xcrun --sdk macosx --show-sdk-path)" >> $GITHUB_ENV
+          brew install ffmpeg pkg-config yasm nasm
+          if [[ "${{ matrix.arch }}" == "x86_64" || "${{ matrix.arch }}" == "universal" ]]; then
+            arch -x86_64 brew install ffmpeg pkg-config yasm nasm
+          fi
+
+          if [[ "${{ matrix.arch }}" == "x86_64" ]]; then
+            echo "PKG_CONFIG_PATH=/usr/local/opt/ffmpeg/lib/pkgconfig" >> $GITHUB_ENV
+            echo "LDFLAGS=-L/usr/local/opt/ffmpeg/lib" >> $GITHUB_ENV
+            echo "CPPFLAGS=-I/usr/local/opt/ffmpeg/include" >> $GITHUB_ENV
+          fi
 
       - name: 安装 Tauri 和 FFmpeg 所需系统依赖（仅 Linux）
         if: matrix.platform == 'ubuntu-latest'
