@@ -35,26 +35,32 @@ jobs:
             args: ""
             name: linux
             arch: x86_64
+            features: "--features ffmpeg-next/build" # ffmpeg-next 在 linux 上的支持比较好，可以直接构建
           - platform: windows-latest
             args: ""
             name: windows
             arch: x86_64
+            features: ""
           - platform: windows-latest
             args: "--target aarch64-pc-windows-msvc"
             name: windows
             arch: aarch64
+            features: ""
           - platform: macos-latest # arm64 二进制包
             args: "--target aarch64-apple-darwin"
             name: macOS
             arch: aarch64
+            features: ""
           - platform: macos-latest # x86 二进制包
             args: "--target x86_64-apple-darwin"
             name: macOS
             arch: x86_64
+            features: ""
           - platform: macos-latest # 通用二进制包
             args: "--target universal-apple-darwin"
             name: macOS
             arch: universal
+            features: ""
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -79,7 +85,7 @@ jobs:
           targets: |
             wasm32-unknown-unknown,${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || (matrix.platform == 'windows-latest' && matrix.arch == 'aarch64') && 'aarch64-pc-windows-msvc' || '' }}
 
-      - name: 安装 vcpkg (Windows)
+      - name: 安装 vcpkg
         if: matrix.platform == 'windows-latest'
         run: |
           git clone https://github.com/microsoft/vcpkg.git D:/vcpkg
@@ -87,7 +93,7 @@ jobs:
           D:/vcpkg/vcpkg integrate install
         shell: cmd
 
-      - name: 使用 vcpkg 安装 FFmpeg (Windows)
+      - name: 使用 vcpkg 安装 FFmpeg
         if: matrix.platform == 'windows-latest'
         run: |
           $VCPKG_ROOT = "D:/vcpkg"
@@ -99,15 +105,11 @@ jobs:
         working-directory: D:/vcpkg
         shell: powershell
 
-      - name: 设置 vcpkg 环境变量 (Windows)
+      - name: 设置 vcpkg 环境变量
         if: matrix.platform == 'windows-latest'
         run: |
           echo "VCPKG_ROOT=D:/vcpkg" >> $GITHUB_ENV
         shell: bash
-
-      - name: 安装 FFmpeg (macOS)
-        if: matrix.platform == 'macos-latest'
-        run: brew install ffmpeg
 
       - name: 安装 sccache
         uses: mozilla-actions/sccache-action@v0.0.9
@@ -127,11 +129,18 @@ jobs:
         with:
           version: "15"
 
-      - name: 安装 Tauri 所需系统依赖（仅 Linux）
+      - name: 安装 FFmpeg 依赖 (macOS)
+        if: matrix.platform == 'macos-latest'
+        run: brew install pkg-config yasm nasm
+
+      - name: 安装 Tauri 和 FFmpeg 所需系统依赖（仅 Linux）
         if: matrix.platform == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libasound2-dev libappindicator3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libavcodec-dev libavformat-dev libavutil-dev libswresample-dev
+          # tauri deps
+          sudo apt-get install -y libasound2-dev libappindicator3-dev libwebkit2gtk-4.1-dev librsvg2-dev patchelf
+          # ffmpeg deps
+          sudo apt-get install -y build-essential pkg-config yasm nasm git
 
       - name: 安装 wasm-pack
         uses: jetli/wasm-pack-action@v0.4.0
@@ -164,7 +173,7 @@ jobs:
 
             Latest commits (最新提交): ${{ github.event.head_commit.message }}
           prerelease: true
-          args: ${{ matrix.args }}
+          args: ${{ matrix.args }} ${{ matrix.features }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
@@ -178,6 +187,7 @@ jobs:
             packages/player/src-tauri/target/**/release/bundle/**/*
             packages/player/src-tauri/target/**/release/amll-player.exe
             packages/player/src-tauri/target/**/release/amll-player
+
   build-tauri-android:
     name: 构建 Tauri 安卓移动版本
     needs: clean-pre-release

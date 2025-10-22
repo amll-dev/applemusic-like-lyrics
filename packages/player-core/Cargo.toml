@@ -35,7 +35,8 @@ rodio = { version = "0.21", features = [] }
 
 [dependencies.ffmpeg-next]
 version = "8"
-features = ["static"]
+default-features = false
+features = ["codec", "format", "software-resampling", "static"]
 
 [target.'cfg(target_os = "windows")'.dependencies]
 tempfile = "^3"

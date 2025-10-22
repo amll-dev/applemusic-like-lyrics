@@ -52,7 +52,7 @@ bitflags = "2.10"
 
 [dependencies.ffmpeg-next]
 version = "8"
-features = ["static"]
+default-features = false
 
 [target.'cfg(target_os = "macos")'.dependencies]
 objc2 = "^0.6"
