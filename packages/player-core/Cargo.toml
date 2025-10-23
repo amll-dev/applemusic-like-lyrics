@@ -33,15 +33,15 @@ dispatch = "0.2.0"
 tauri = "2.6.2"
 rodio = { version = "0.21", features = [] }
 
-[dependencies.ffmpeg-next]
-version = "8"
-default-features = false
-features = ["codec", "format", "software-resampling", "static"]
-
-[target.'cfg(target_os = "android")'.dependencies.ffmpeg-next]
+[target.'cfg(not(target_os = "windows"))'.dependencies.ffmpeg-next]
 version = "8"
 default-features = false
 features = ["codec", "format", "software-resampling", "build"]
+
+[target.'cfg(target_os = "windows")'.dependencies.ffmpeg-next]
+version = "8"
+default-features = false
+features = ["codec", "format", "software-resampling", "static"]
 
 [target.'cfg(target_os = "windows")'.dependencies]
 tempfile = "^3"

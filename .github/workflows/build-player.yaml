@@ -35,32 +35,26 @@ jobs:
             args: ""
             name: linux
             arch: x86_64
-            features: "--features ffmpeg-next/build" # ffmpeg-next 在 linux 上的支持比较好，可以直接构建
           - platform: windows-latest
             args: ""
             name: windows
             arch: x86_64
-            features: ""
           - platform: windows-latest
             args: "--target aarch64-pc-windows-msvc"
             name: windows
             arch: aarch64
-            features: ""
           - platform: macos-latest # arm64 二进制包
             args: "--target aarch64-apple-darwin"
             name: macOS
             arch: aarch64
-            features: ""
           - platform: macos-latest # x86 二进制包
             args: "--target x86_64-apple-darwin"
             name: macOS
             arch: x86_64
-            features: ""
           - platform: macos-latest # 通用二进制包
             args: "--target universal-apple-darwin"
             name: macOS
             arch: universal
-            features: ""
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -131,7 +125,7 @@ jobs:
 
       - name: 安装 FFmpeg 依赖 (macOS)
         if: matrix.platform == 'macos-latest'
-        run: brew install ffmpeg pkg-config yasm nasm
+        run: brew install yasm nasm x264
 
       - name: 安装 Tauri 和 FFmpeg 所需系统依赖（仅 Linux）
         if: matrix.platform == 'ubuntu-latest'
@@ -173,7 +167,7 @@ jobs:
 
             Latest commits (最新提交): ${{ github.event.head_commit.message }}
           prerelease: true
-          args: ${{ matrix.args }} ${{ matrix.features }}
+          args: ${{ matrix.args }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
