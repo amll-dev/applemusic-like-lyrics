@@ -121,7 +121,7 @@ jobs:
         uses: KyleMayes/install-llvm-action@v2
         if: matrix.platform == 'macos-latest'
         with:
-          version: "15"
+          version: "20"
 
       - name: 安装 FFmpeg 依赖 (macOS)
         if: matrix.platform == 'macos-latest'
