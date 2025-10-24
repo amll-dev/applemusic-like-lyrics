@@ -54,6 +54,9 @@ bitflags = "2.10"
 version = "8"
 default-features = false
 
+[patch.crates-io]
+ffmpeg-sys-next = { git = "https://github.com/apoint123/rust-ffmpeg-sys" }
+
 [target.'cfg(target_os = "macos")'.dependencies]
 objc2 = "^0.6"
 objc2-avf-audio = "^0.3"
