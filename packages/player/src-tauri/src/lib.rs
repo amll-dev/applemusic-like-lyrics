@@ -118,7 +118,6 @@ async fn read_local_music_metadata(
         .to_path_buf();
 
     let audio_info = tokio::task::spawn_blocking(move || -> anyhow::Result<AudioInfo> {
-        ffmpeg::init().context("初始化 ffmpeg 失败")?;
         let mut input_ctx = ffmpeg::format::input(&path_clone)
             .with_context(|| format!("无法打开文件: {}", path_clone.display()))?;
         let mut info = amll_player_core::utils::read_audio_info(&mut input_ctx);
@@ -325,6 +324,8 @@ pub fn run() {
                 ..Default::default()
             })
     }
+
+    ffmpeg::init().expect("初始化 ffmpeg 失败");
 
     builder
         .plugin(tauri_plugin_dialog::init())

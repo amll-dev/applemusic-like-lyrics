@@ -1,25 +1,29 @@
 use std::{
     fmt::Debug,
     fs::File,
-    sync::{Arc, RwLock as StdRwLock},
+    sync::Arc,
     time::{Duration, Instant},
 };
 
 use super::fft_player::FFTPlayer;
 use crate::{
+    AudioPlayerEventReceiver, AudioPlayerEventSender, AudioPlayerMessageReceiver,
+    AudioPlayerMessageSender, AudioThreadEvent, AudioThreadEventMessage, AudioThreadMessage,
+    SongData,
     audio_quality::AudioQuality,
-    ffmpeg_decoder::FFmpegDecoder,
+    ffmpeg_decoder::{FFmpegDecoder, FFmpegDecoderHandle},
     media_state::{MediaStateManager, MediaStateManagerBackend, MediaStateMessage},
-    *,
 };
 use anyhow::{Context, anyhow};
+use parking_lot::RwLock as ParkingLotRwLock;
 use rodio::{OutputStream, Sink, Source};
-use tokio::sync::RwLock;
+use serde::{Deserialize, Serialize};
+use tokio::sync::RwLock as TokioRwLock;
 use tokio::{
     sync::mpsc::{UnboundedReceiver, UnboundedSender},
     task::JoinHandle,
 };
-use tracing::*;
+use tracing::{info, warn};
 
 pub struct AudioPlayer {
     evt_sender: AudioPlayerEventSender,
@@ -27,24 +31,26 @@ pub struct AudioPlayer {
     msg_sender: AudioPlayerMessageSender,
     msg_receiver: AudioPlayerMessageReceiver,
     sink: Arc<Sink>,
+    current_decoder_handle: Option<FFmpegDecoderHandle>,
     stream_handle: OutputStream,
     volume: f64,
     playlist: Vec<SongData>,
     playlist_inited: bool,
     current_play_index: usize,
     current_song: Option<SongData>,
-    current_audio_info: Arc<RwLock<AudioInfo>>,
-    current_position: Arc<RwLock<f64>>,
+    current_audio_info: Arc<TokioRwLock<AudioInfo>>,
+    current_position: Arc<TokioRwLock<f64>>,
 
-    current_audio_quality: Arc<RwLock<AudioQuality>>,
+    current_audio_quality: Arc<TokioRwLock<AudioQuality>>,
     play_pos_sx: UnboundedSender<(bool, f64)>,
     tasks: Vec<JoinHandle<()>>,
     media_state_manager: Option<Arc<MediaStateManager>>,
     media_state_rx: Option<UnboundedReceiver<MediaStateMessage>>,
-    fft_player: Arc<StdRwLock<FFTPlayer>>,
+    fft_player: Arc<ParkingLotRwLock<FFTPlayer>>,
 
     fft_broadcast_task: Option<JoinHandle<()>>,
-    decoding_task: Option<JoinHandle<()>>,
+    target_channels: u16,
+    target_sample_rate: u32,
 }
 
 #[derive(Default, Clone, Serialize, Deserialize)]
@@ -93,10 +99,16 @@ impl AudioPlayer {
 
         sink.pause();
 
-        let current_audio_info = Arc::new(RwLock::new(AudioInfo::default()));
-        let current_position = Arc::new(RwLock::new(0.0));
-        let current_audio_quality = Arc::new(RwLock::new(AudioQuality::default()));
-        let fft_player = Arc::new(StdRwLock::new(FFTPlayer::new()));
+        let stream_config = handle.config();
+        let target_channels = stream_config.channel_count();
+        let target_sample_rate = stream_config.sample_rate();
+
+        info!("音频输出设备 声道数:{target_channels}, 采样率:{target_sample_rate}");
+
+        let current_audio_info = Arc::new(TokioRwLock::new(AudioInfo::default()));
+        let current_position = Arc::new(TokioRwLock::new(0.0));
+        let current_audio_quality = Arc::new(TokioRwLock::new(AudioQuality::default()));
+        let fft_player = Arc::new(ParkingLotRwLock::new(FFTPlayer::new()));
 
         let mut tasks = Vec::new();
 
@@ -110,7 +122,6 @@ impl AudioPlayer {
 
         let position_writer = current_position.clone();
         let audio_info_reader = current_audio_info.clone();
-        let msg_sender_clone = msg_sender.clone();
         let emitter_pos = AudioPlayerEventEmitter::new(evt_sender.clone());
         let (play_pos_sx, mut play_pos_rx) = tokio::sync::mpsc::unbounded_channel::<(bool, f64)>();
         let media_state_manager_clone = media_state_manager.clone();
@@ -122,14 +133,12 @@ impl AudioPlayer {
             let mut is_playing = false;
             let mut base_time = 0.0;
             let mut inst = Instant::now();
-            let mut track_ended_sent = false;
 
             loop {
                 if let Ok((new_is_playing, new_base_time)) = play_pos_rx.try_recv() {
                     is_playing = new_is_playing;
                     base_time = new_base_time;
                     inst = Instant::now();
-                    track_ended_sent = false;
                     *position_writer.write().await = base_time;
                     if is_playing
                         && let Some(manager) = &media_state_manager_clone
@@ -144,7 +153,7 @@ impl AudioPlayer {
                         if is_playing {
                             let duration = audio_info_reader.read().await.duration;
                             if duration > 0.0 {
-                                let current_pos = base_time + inst.elapsed().as_secs_f64();
+                                let current_pos = (base_time + inst.elapsed().as_secs_f64()).min(duration);
                                 *position_writer.write().await = current_pos;
 
                                 let _ = emitter_pos
@@ -152,20 +161,12 @@ impl AudioPlayer {
                                         position: current_pos,
                                     })
                                     .await;
-
-                                if current_pos >= duration && !track_ended_sent {
-                                    track_ended_sent = true;
-                                    let _ = msg_sender_clone.send(AudioThreadEventMessage::new(
-                                        "".into(),
-                                        Some(AudioThreadMessage::NextSong),
-                                    ));
-                                }
                             }
                         }
                     }
                     _ = time_it.tick() => {
                         if is_playing
-                             && let Some(manager) = &media_state_manager_clone {
+                            && let Some(manager) = &media_state_manager_clone {
                                 let current_pos = *position_writer.read().await;
                                 if let Err(e) = manager.set_position(current_pos) {
                                     tracing::warn!("更新 SMTC 进度失败: {e:?}");
@@ -186,9 +187,12 @@ impl AudioPlayer {
                 interval.tick().await;
 
                 let data_to_send: Option<Vec<f32>> = {
-                    let mut player = fft_player_clone.write().unwrap();
-                    if player.has_data() && player.read(&mut fft_buffer) {
-                        Some(fft_buffer.clone())
+                    if let Some(mut player) = fft_player_clone.try_write() {
+                        if player.has_data() && player.read(&mut fft_buffer) {
+                            Some(fft_buffer.clone())
+                        } else {
+                            None
+                        }
                     } else {
                         None
                     }
@@ -207,6 +211,7 @@ impl AudioPlayer {
             msg_receiver,
             stream_handle: handle,
             sink,
+            current_decoder_handle: None,
             volume: 1.0,
             playlist: Vec::new(),
             playlist_inited: false,
@@ -221,7 +226,8 @@ impl AudioPlayer {
             media_state_rx,
             fft_player,
             fft_broadcast_task,
-            decoding_task: None,
+            target_channels,
+            target_sample_rate,
         }
     }
 
@@ -286,6 +292,8 @@ impl AudioPlayer {
         mut self,
         on_event: impl Fn(AudioThreadEventMessage<AudioThreadEvent>) + Send + 'static,
     ) {
+        let mut check_end_interval = tokio::time::interval(Duration::from_millis(50));
+
         loop {
             let media_state_fut = async {
                 if let Some(rx) = self.media_state_rx.as_mut() {
@@ -313,6 +321,17 @@ impl AudioPlayer {
                 evt = self.evt_receiver.recv() => {
                     if let Some(evt) = evt { on_event(evt); }
                     else { break; }
+                }
+                _ = check_end_interval.tick() => {
+                    if self.sink.empty() && !self.sink.is_paused() && self.current_song.is_some() {
+                        let _ = self.play_pos_sx.send((false, 0.0));
+                        if let Err(e) = self.msg_sender.send(AudioThreadEventMessage::new(
+                            "".into(),
+                            Some(AudioThreadMessage::NextSongGapless),
+                        )) {
+                            warn!("自动播放下一首失败：{e:?}");
+                        }
+                    }
                 }
             }
         }
@@ -380,8 +399,23 @@ impl AudioPlayer {
                     self.update_media_manager_playback_state(is_paused).await?;
                 }
                 AudioThreadMessage::SeekAudio { position } => {
-                    let _ = self.sink.try_seek(Duration::from_secs_f64(*position));
-                    let _ = self.play_pos_sx.send((!self.sink.is_paused(), *position));
+                    if let Some(handle) = &self.current_decoder_handle {
+                        let seek_pos = Duration::from_secs_f64(*position);
+
+                        if handle.seek(seek_pos).is_err() {
+                            warn!("发送跳转命令失败, 解码器可能已关闭");
+                        } else {
+                            let fft_player_clone = self.fft_player.clone();
+                            tokio::task::spawn_blocking(move || {
+                                fft_player_clone.write().clear();
+                            })
+                            .await?;
+                            let _ = self.play_pos_sx.send((true, *position));
+                            self.update_media_manager_playback_state(true).await?;
+                        }
+                    } else {
+                        warn!("找不到解码器句柄, 无法执行跳转");
+                    }
                 }
                 AudioThreadMessage::SetVolume { volume } => {
                     self.volume = volume.clamp(0.0, 1.0);
@@ -426,10 +460,12 @@ impl AudioPlayer {
                     self.playlist_inited = true;
                 }
                 AudioThreadMessage::SetFFTRange { from_freq, to_freq } => {
-                    self.fft_player
-                        .write()
-                        .unwrap()
-                        .set_freq_range(*from_freq, *to_freq);
+                    let fft_player_clone = self.fft_player.clone();
+                    let (from_freq, to_freq) = (*from_freq, *to_freq);
+                    tokio::task::spawn_blocking(move || {
+                        fft_player_clone.write().set_freq_range(from_freq, to_freq);
+                    })
+                    .await?;
                 }
                 AudioThreadMessage::SetMediaControlsEnabled { enabled } => {
                     if let Some(manager) = self.media_state_manager.as_ref()
@@ -447,53 +483,47 @@ impl AudioPlayer {
     }
 
     async fn start_playing_song(&mut self, clear_sink: bool) -> anyhow::Result<()> {
-        if let Some(handle) = self.decoding_task.take() {
-            handle.abort();
-        }
         if clear_sink {
             self.sink.stop();
-            self.fft_player.write().unwrap().clear();
+
+            let fft_player_clone = self.fft_player.clone();
+            tokio::task::spawn_blocking(move || {
+                fft_player_clone.write().clear();
+            })
+            .await?;
+
             self.sink = Arc::new(Sink::connect_new(&self.stream_handle.mixer()));
             self.sink.set_volume(self.volume as f32);
+            self.current_decoder_handle = None;
         }
+
         let song_data = self.current_song.clone().context("没有当前歌曲可播放")?;
         let file_path = match song_data {
             SongData::Local { file_path, .. } => file_path,
             _ => return Err(anyhow!("当前实现仅支持本地文件")),
         };
 
-        let (info, quality, source) = tokio::task::spawn_blocking({
-            let path_clone = file_path.clone();
-            let fft_player_clone = self.fft_player.clone();
-            move || -> anyhow::Result<(AudioInfo, AudioQuality, FFmpegDecoder)> {
-                let mut input_ctx = ffmpeg_next::format::input(&path_clone)
-                    .with_context(|| format!("读取元数据时无法打开文件: {}", path_clone))?;
-                let mut info = crate::utils::read_audio_info(&mut input_ctx);
-                let audio_stream = input_ctx
-                    .streams()
-                    .best(ffmpeg_next::media::Type::Audio)
-                    .context("找不到有效的音频流")?;
+        let target_channels = self.target_channels;
+        let target_sample_rate = self.target_sample_rate;
 
-                let audio_stream_index = audio_stream.index();
+        let fft_player_clone = self.fft_player.clone();
+        let file_path_clone = file_path.clone();
 
-                let time_base = audio_stream.time_base();
-                let duration = audio_stream.duration();
-                info.duration = duration as f64 * time_base.0 as f64 / time_base.1 as f64;
-
-                let decoder_ctx = ffmpeg_next::codec::context::Context::from_parameters(
-                    audio_stream.parameters(),
-                )?;
-                let decoder = decoder_ctx.decoder().audio()?;
-
-                let quality = crate::audio_quality::AudioQuality::from_ffmpeg_decoder(&decoder);
-
-                let source =
-                    FFmpegDecoder::new(input_ctx, decoder, fft_player_clone, audio_stream_index)?;
-
-                Ok((info, quality, source))
-            }
+        let source_result = tokio::task::spawn_blocking(move || {
+            FFmpegDecoder::new(
+                file_path_clone,
+                fft_player_clone,
+                target_channels,
+                target_sample_rate,
+            )
         })
-        .await??;
+        .await?;
+
+        let (source, handle) = source_result?;
+        self.current_decoder_handle = Some(handle);
+
+        let info = source.audio_info();
+        let quality = source.audio_quality();
 
         *self.current_audio_info.write().await = info;
         *self.current_audio_quality.write().await = quality;
@@ -515,9 +545,6 @@ impl Drop for AudioPlayer {
     fn drop(&mut self) {
         for task in &self.tasks {
             task.abort();
-        }
-        if let Some(handle) = self.decoding_task.take() {
-            handle.abort();
         }
         if let Some(handle) = self.fft_broadcast_task.take() {
             handle.abort();

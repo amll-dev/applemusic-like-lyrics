@@ -32,6 +32,7 @@ easer = "0.3.0"
 dispatch = "0.2.0"
 tauri = "2.6.2"
 rodio = { version = "0.21", features = [] }
+parking_lot = "0.12"
 
 [dependencies.ffmpeg-next]
 version = "8"
