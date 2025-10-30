@@ -316,6 +316,8 @@ impl AudioPlayer {
                 msg = media_state_fut => {
                     if let Some(msg) = msg {
                         self.on_media_state_msg(msg).await;
+                    } else {
+                        self.media_state_rx = None;
                     }
                 }
                 evt = self.evt_receiver.recv() => {
