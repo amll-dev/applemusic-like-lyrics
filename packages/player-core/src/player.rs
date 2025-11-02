@@ -140,6 +140,13 @@ impl AudioPlayer {
                     base_time = new_base_time;
                     inst = Instant::now();
                     *position_writer.write().await = base_time;
+
+                    let _ = emitter_pos
+                        .emit(AudioThreadEvent::PlayPosition {
+                            position: base_time,
+                        })
+                        .await;
+
                     if is_playing
                         && let Some(manager) = &media_state_manager_clone
                         && let Err(e) = manager.set_position(base_time)
@@ -412,8 +419,9 @@ impl AudioPlayer {
                                 fft_player_clone.write().clear();
                             })
                             .await?;
-                            let _ = self.play_pos_sx.send((true, *position));
-                            self.update_media_manager_playback_state(true).await?;
+                            let is_playing = !self.sink.is_paused();
+                            let _ = self.play_pos_sx.send((is_playing, *position));
+                            self.update_media_manager_playback_state(is_playing).await?;
                         }
                     } else {
                         warn!("找不到解码器句柄, 无法执行跳转");
