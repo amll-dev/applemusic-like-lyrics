@@ -82,12 +82,12 @@ export class CanvasLyricRenderer {
 
     // 渲染翻译
     if (config.showTranslation && line.translatedLyric) {
-      this.renderTranslation(ctx, line.translatedLyric, state.isActive);
+      this.renderTranslation(ctx, line, state.isActive);
     }
 
     // 渲染音译
     if (config.showRoman && line.romanLyric) {
-      this.renderRoman(ctx, line.romanLyric, state.isActive);
+      this.renderRoman(ctx, line, state.isActive);
     }
 
     // 恢复画布状态
@@ -274,12 +274,12 @@ export class CanvasLyricRenderer {
   /**
    * 渲染翻译文本
    * @param ctx Canvas上下文
-   * @param translation 翻译内容
+   * @param line 歌词行数据（用于判断对齐方式）
    * @param isActive 是否为激活行
    */
   private renderTranslation(
     ctx: CanvasRenderingContext2D,
-    translation: string,
+    line: LyricLine,
     isActive: boolean
   ): void {
     ctx.save();
@@ -288,11 +288,26 @@ export class CanvasLyricRenderer {
     const alphaValue: number = isActive ? 0.8 : 0.4;
     const alphaStr: string = alphaValue.toFixed(2);
     ctx.fillStyle = `rgba(153, 153, 153, ${alphaStr})`;
-    ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
 
-    const centerX: number = this.renderContext.width / 2;
-    ctx.fillText(translation, centerX, 30);
+    // 🎵 跟随主歌词对齐方式：
+    //   - 普通歌词：左对齐
+    //   - 对唱歌词：右对齐
+    const leftMargin: number = 40;
+    const rightMargin: number = 40;
+    let x: number;
+
+    if (line.isDuet) {
+      // 对唱：右对齐
+      ctx.textAlign = 'right';
+      x = this.renderContext.width - rightMargin;
+    } else {
+      // 普通：左对齐
+      ctx.textAlign = 'left';
+      x = leftMargin;
+    }
+
+    ctx.fillText(line.translatedLyric, x, 30);
 
     ctx.restore();
   }
@@ -300,12 +315,12 @@ export class CanvasLyricRenderer {
   /**
    * 渲染音译文本
    * @param ctx Canvas上下文
-   * @param roman 音译内容
+   * @param line 歌词行数据（用于判断对齐方式）
    * @param isActive 是否为激活行
    */
   private renderRoman(
     ctx: CanvasRenderingContext2D,
-    roman: string,
+    line: LyricLine,
     isActive: boolean
   ): void {
     ctx.save();
@@ -314,11 +329,26 @@ export class CanvasLyricRenderer {
     const alphaValue: number = isActive ? 0.6 : 0.3;
     const alphaStr: string = alphaValue.toFixed(2);
     ctx.fillStyle = `rgba(119, 119, 119, ${alphaStr})`;
-    ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
 
-    const centerX: number = this.renderContext.width / 2;
-    ctx.fillText(roman, centerX, 50);
+    // 🎵 跟随主歌词对齐方式：
+    //   - 普通歌词：左对齐
+    //   - 对唱歌词：右对齐
+    const leftMargin: number = 40;
+    const rightMargin: number = 40;
+    let x: number;
+
+    if (line.isDuet) {
+      // 对唱：右对齐
+      ctx.textAlign = 'right';
+      x = this.renderContext.width - rightMargin;
+    } else {
+      // 普通：左对齐
+      ctx.textAlign = 'left';
+      x = leftMargin;
+    }
+
+    ctx.fillText(line.romanLyric, x, 50);
 
     ctx.restore();
   }

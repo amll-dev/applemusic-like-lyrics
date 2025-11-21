@@ -1,112 +1,185 @@
 /**
  * 间奏动画管理器
- * 🎵 实现三个小白点依次跳动的动画效果
- * 不使用 setTimeout，而是基于帧更新的平滑动画
+ * 🎵 完整实现原版的所有间奏效果
+ * - 淡入淡出动画（fade in/out）
+ * - 呼吸动画（breathing scale animation）
+ * - 三个圆点的交错透明度（staggered dots opacity）
+ * - 结束前的缩小效果（scale shrink before end）
  */
 
 import { InterludeState } from '../models/LyricModels';
 
 /**
- * 单个圆点的动画状态
+ * easeInOutBack 缓动函数
+ * 创建一个带有"回弹"效果的缓动
  */
-class DotAnimState {
-  /** 当前动画进度 [0, 1] */
-  progress: number = 0;
-  /** 是否正在动画中 */
-  isAnimating: boolean = false;
-  /** 动画延迟（ms） */
-  delay: number = 0;
-  /** 已等待的时间（ms） */
-  delayTimer: number = 0;
+function easeInOutBack(x: number): number {
+  const c1: number = 1.70158;
+  const c2: number = c1 * 1.525;
+
+  return x < 0.5
+    ? (Math.pow(2 * x, 2) * ((c2 + 1) * 2 * x - c2)) / 2
+    : (Math.pow(2 * x - 2, 2) * ((c2 + 1) * (x * 2 - 2) + c2) + 2) / 2;
+}
+
+/**
+ * easeOutExpo 缓动函数
+ * 创建一个指数式的缓动效果
+ */
+function easeOutExpo(x: number): number {
+  return x === 1 ? 1 : 1 - Math.pow(2, -10 * x);
+}
+
+/**
+ * 限制数值在指定范围内
+ */
+function clamp(min: number, cur: number, max: number): number {
+  return Math.max(min, Math.min(cur, max));
 }
 
 export class InterludeAnimator {
   private state: InterludeState;
-  /** 每个圆点的动画状态 */
-  private dotStates: DotAnimState[] = [];
-  /** 单个圆点的动画时长（ms） */
-  private readonly animDuration: number = 500;
-  /** 圆点之间的延迟（ms） */
-  private readonly delayBetweenDots: number = 150;
-  /** 循环间隔（ms） */
-  private readonly loopInterval: number = 1500;
-  /** 总计时器 */
-  private totalTime: number = 0;
+  /** 当前时间（相对于整首歌曲的绝对时间，ms） */
+  private currentTime: number = 0;
+  /** 目标呼吸周期时长（ms） */
+  private readonly targetBreatheDuration: number = 1500;
+  /** 间奏开始时间（ms） */
+  private interludeStart: number = 0;
+  /** 间奏结束时间（ms） */
+  private interludeEnd: number = 0;
+  /** 间奏总时长（ms） */
+  private interludeDuration: number = 0;
 
   constructor(state: InterludeState) {
     this.state = state;
-    // 初始化三个圆点的动画状态
-    for (let i: number = 0; i < 3; i++) {
-      const dotState: DotAnimState = new DotAnimState();
-      dotState.delay = i * this.delayBetweenDots;  // 依次延迟
-      this.dotStates.push(dotState);
-    }
+  }
+
+  /**
+   * 设置间奏时间范围
+   * @param startTime 间奏开始时间（ms）
+   * @param endTime 间奏结束时间（ms）
+   * @param currentPlayTime 当前播放时间（ms）
+   */
+  setInterlude(startTime: number, endTime: number, currentPlayTime: number): void {
+    this.interludeStart = startTime;
+    this.interludeEnd = endTime;
+    this.interludeDuration = endTime - startTime;
+    this.currentTime = currentPlayTime;
+    this.state.visible = true;
+  }
+
+  /**
+   * 清除间奏状态
+   */
+  clearInterlude(): void {
+    this.state.visible = false;
+    this.state.dotOpacities = [0, 0, 0];
+    this.state.dotScales = [1.0, 1.0, 1.0];
   }
 
   /**
    * 更新动画
-   * @param deltaTimeMs 距离上一帧的时间（ms）
+   * @param currentPlayTime 当前播放时间（ms）
    */
-  update(deltaTimeMs: number): void {
+  update(currentPlayTime: number): void {
     if (!this.state.visible) {
-      this.reset();
       return;
     }
 
-    this.totalTime += deltaTimeMs;
+    this.currentTime = currentPlayTime;
 
-    // 遍历每个圆点，更新其动画状态
-    for (let i: number = 0; i < 3; i++) {
-      const dotState: DotAnimState = this.dotStates[i];
-      const cycleTime: number = this.totalTime % this.loopInterval;
-
-      // 处理延迟
-      if (cycleTime < dotState.delay) {
-        // 还在等待期，保持初始状态
-        dotState.isAnimating = false;
-        dotState.progress = 0;
-        this.state.dotScales[i] = 1.0;
-        this.state.dotOpacities[i] = 0.5;
-        continue;
-      }
-
-      // 计算动画进度
-      const animTime: number = cycleTime - dotState.delay;
-      if (animTime < this.animDuration) {
-        // 动画进行中
-        dotState.isAnimating = true;
-        dotState.progress = animTime / this.animDuration;
-
-        // 🎵 应用缓动函数：先快速放大，然后缓慢缩小
-        // 使用正弦函数创建平滑的跳动效果
-        const t: number = dotState.progress;
-        const easedProgress: number = Math.sin(t * Math.PI);  // [0, 1, 0]
-
-        // 缩放：1.0 → 1.4 → 1.0
-        this.state.dotScales[i] = 1.0 + easedProgress * 0.4;
-        // 透明度：0.5 → 1.0 → 0.5
-        this.state.dotOpacities[i] = 0.5 + easedProgress * 0.5;
-      } else {
-        // 动画完成，回到初始状态
-        dotState.isAnimating = false;
-        dotState.progress = 0;
-        this.state.dotScales[i] = 1.0;
-        this.state.dotOpacities[i] = 0.5;
-      }
+    // 检查是否超出间奏时间范围
+    if (this.currentTime < this.interludeStart || this.currentTime > this.interludeEnd) {
+      this.clearInterlude();
+      return;
     }
+
+    // 计算当前在间奏中的时长
+    const currentDuration: number = this.currentTime - this.interludeStart;
+
+    if (currentDuration > this.interludeDuration) {
+      // 超出时间，隐藏
+      this.clearInterlude();
+      return;
+    }
+
+    // 🎵 计算呼吸动画的周期
+    const breatheDuration: number = this.interludeDuration /
+      Math.ceil(this.interludeDuration / this.targetBreatheDuration);
+
+    // ========== 计算缩放 Scale ==========
+    let scale: number = 1.0;
+
+    // 1. 呼吸动画（正弦波振荡）
+    scale *= Math.sin(1.5 * Math.PI - (currentDuration / breatheDuration) * 2) / 20 + 1;
+
+    // 2. 初始放大效果（前2秒）
+    if (currentDuration < 2000) {
+      scale *= easeOutExpo(currentDuration / 2000);
+    }
+
+    // 3. 结束前的缩小效果（最后750ms）
+    if (this.interludeDuration - currentDuration < 750) {
+      scale *= 1 - easeInOutBack(
+        (750 - (this.interludeDuration - currentDuration)) / 750 / 2
+      );
+    }
+
+    // 4. 应用全局缩放系数
+    scale = Math.max(0, scale) * 0.7;
+
+    // ========== 计算全局透明度 Global Opacity ==========
+    let globalOpacity: number = 1.0;
+
+    // 1. 淡入效果（前1秒）
+    if (currentDuration < 500) {
+      globalOpacity = 0;  // 前500ms完全隐藏
+    } else if (currentDuration < 1000) {
+      globalOpacity *= (currentDuration - 500) / 500;  // 500-1000ms淡入
+    }
+
+    // 2. 淡出效果（最后375ms）
+    if (this.interludeDuration - currentDuration < 375) {
+      globalOpacity *= clamp(
+        0,
+        (this.interludeDuration - currentDuration) / 375,
+        1
+      );
+    }
+
+    // ========== 计算每个圆点的透明度（交错效果）==========
+    const dotsDuration: number = Math.max(0, this.interludeDuration - 750);
+
+    const dot0Opacity: number = clamp(
+      0.25,
+      ((currentDuration * 3) / dotsDuration) * 0.75,
+      1
+    );
+    const dot1Opacity: number = clamp(
+      0.25,
+      (((currentDuration - dotsDuration / 3) * 3) / dotsDuration) * 0.75,
+      1
+    );
+    const dot2Opacity: number = clamp(
+      0.25,
+      (((currentDuration - (dotsDuration / 3) * 2) * 3) / dotsDuration) * 0.75,
+      1
+    );
+
+    // ========== 应用到状态 ==========
+    this.state.dotScales = [scale, scale, scale];
+    this.state.dotOpacities = [
+      clamp(0, Math.max(0, globalOpacity * dot0Opacity), 1),
+      clamp(0, Math.max(0, globalOpacity * dot1Opacity), 1),
+      clamp(0, Math.max(0, globalOpacity * dot2Opacity), 1)
+    ];
   }
 
   /**
    * 重置动画到初始状态
    */
   reset(): void {
-    this.totalTime = 0;
-    this.dotStates.forEach((dotState: DotAnimState) => {
-      dotState.progress = 0;
-      dotState.isAnimating = false;
-      dotState.delayTimer = 0;
-    });
-    this.state.dotOpacities = [0.5, 0.5, 0.5];
-    this.state.dotScales = [1.0, 1.0, 1.0];
+    this.currentTime = 0;
+    this.clearInterlude();
   }
 }

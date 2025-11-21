@@ -71,7 +71,7 @@ export class LyricPlayerController {
     }
 
     // 🎵 更新间奏动画（三个小白点的跳动效果）
-    this.interludeAnimator.update(deltaTimeMs);
+    this.interludeAnimator.update(this.currentTime);
 
     // 🎵 更新逐行波动动画（带回弹的优雅效果）
     this.updateWaveAnimation(deltaTimeMs / 1000.0); // 转换为秒
@@ -227,10 +227,14 @@ export class LyricPlayerController {
 
       // 间隙超过4秒，显示间奏动画
       if (gap >= 4000) {
-        // 首次进入间奏状态，重置动画
+        // 首次进入间奏状态，设置间奏时间范围
         if (!this.interludeState.visible) {
           this.interludeState.visible = true;
-          this.interludeAnimator.reset();
+          this.interludeAnimator.setInterlude(
+            currentLine.endTime,
+            nextLine.startTime,
+            this.currentTime
+          );
         }
 
         this.interludeState.prevLineIndex = this.currentLineIndex;
@@ -290,34 +294,41 @@ export class LyricPlayerController {
       return;
     }
 
-    // 🌊 波动参数
+    // 🌊 波动参数（参考原版 base.ts calcLayout）
     const waveAmplitude: number = -15;  // 向上偏移15px
-    const propagationSpeed: number = 0.08;  // 传播速度（控制延迟效果）
+    const baseDelay: number = 0.05;  // 基础延迟（秒），参考原版
 
-    // 从当前行开始，向上和向下传播波动
+    // 从当前行开始，逐行传播波动
+    let delay: number = 0;
+    let decayingDelay: number = baseDelay;
+
     this.lineStates.forEach((state: LyricLineRenderState, index: number) => {
       // 计算距离当前行的距离
       const distance: number = Math.abs(index - currentIndex);
 
-      // 🎯 根据距离计算延迟和衰减
-      // 距离越远，延迟越大，幅度越小
-      const delay: number = distance * propagationSpeed;
-      const attenuation: number = Math.exp(-distance * 0.3);  // 指数衰减
-      const targetOffset: number = waveAmplitude * attenuation;
+      // 🎯 参考原版逻辑：
+      // - delay 从当前行开始累加
+      // - 越靠后的行延迟越大
+      // - 延迟递减（baseDelay /= 1.05）创造优雅的衰减效果
+      if (index >= currentIndex) {
+        // 当前行及之后的行
+        const attenuation: number = Math.exp(-distance * 0.3);  // 指数衰减
+        const targetOffset: number = waveAmplitude * attenuation;
 
-      // 设置目标偏移（会在update中平滑过渡）
-      // 使用延迟让波动依次传播
-      if (distance === 0) {
-        // 当前行：立即触发
-        state.waveTarget = targetOffset;
-        state.waveVelocity = 0;  // 重置速度
-      } else if (distance <= 5) {
-        // 附近的行：添加延迟效果
-        // 注意：这里使用setTimeout是为了创造延迟效果
-        // 在生产环境中，可以使用基于时间的延迟计数器
-        setTimeout(() => {
+        if (distance === 0) {
+          // 当前行：立即触发
           state.waveTarget = targetOffset;
-        }, delay * 1000);
+          state.waveVelocity = 0;
+          state.waveDelay = 0;
+          state.queuedWaveTarget = 0;
+        } else if (distance <= 8) {
+          // 附近的行：使用延迟队列
+          delay += decayingDelay;
+          decayingDelay /= 1.05;  // 逐渐减小延迟（原版逻辑）
+
+          state.queuedWaveTarget = targetOffset;
+          state.waveDelay = delay;
+        }
       }
     });
   }
@@ -334,6 +345,18 @@ export class LyricPlayerController {
     const threshold: number = 0.01;   // 停止阈值
 
     this.lineStates.forEach((state: LyricLineRenderState) => {
+      // 🕐 处理延迟队列（参考原版 Spring.update）
+      if (state.waveDelay > 0) {
+        state.waveDelay -= deltaTimeSec;
+        if (state.waveDelay <= 0) {
+          // 延迟时间到，应用队列中的目标值
+          state.waveTarget = state.queuedWaveTarget;
+          state.waveVelocity = 0;  // 重置速度
+          state.waveDelay = 0;
+          state.queuedWaveTarget = 0;
+        }
+      }
+
       // 计算弹簧力
       const displacement: number = state.waveOffset - state.waveTarget;
       const springForce: number = -stiffness * displacement;

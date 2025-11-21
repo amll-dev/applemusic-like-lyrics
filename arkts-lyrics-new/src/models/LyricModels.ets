@@ -130,6 +130,10 @@ export class LyricLineRenderState {
   waveTarget: number = 0;
   /** 波动动画速度 */
   waveVelocity: number = 0;
+  /** 延迟队列中的目标值 */
+  queuedWaveTarget: number = 0;
+  /** 延迟剩余时间（秒） */
+  waveDelay: number = 0;
   scaleRatio: number = 0.97;
   alphaValue: number = 0.2;
   blurRadius: number = 0;
