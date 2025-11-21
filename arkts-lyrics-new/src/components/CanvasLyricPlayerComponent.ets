@@ -64,22 +64,12 @@ export struct CanvasLyricPlayerComponent {
    * 组件即将出现
    */
   aboutToAppear(): void {
-    console.info('[LyricPlayer] ========================================');
-    console.info('[LyricPlayer] 🎬 aboutToAppear START');
-    console.info('[LyricPlayer] ========================================');
-    console.info('[LyricPlayer] 📊 Initial State:');
-    console.info('[LyricPlayer]   - Lyrics count:', this.lyricLines.length);
-    console.info('[LyricPlayer]   - Current time:', this.currentTime);
-    console.info('[LyricPlayer]   - Canvas size:', this.canvasWidth, 'x', this.canvasHeight);
-    console.info('[LyricPlayer]   - Canvas context:', this.canvasContext ? 'EXISTS' : 'NULL');
+    console.info('[LyricPlayer] 🎬 Initialize - Lyrics:', this.lyricLines.length);
 
     // 创建控制器
-    console.info('[LyricPlayer] 🔧 Creating controller...');
     this.controller = new LyricPlayerController(this.playerConfig);
-    console.info('[LyricPlayer] ✓ Controller created:', this.controller ? 'SUCCESS' : 'FAILED');
 
     // 创建渲染器
-    console.info('[LyricPlayer] 🔧 Creating renderer...');
     const renderContext: CanvasRenderContext = new CanvasRenderContext(
       this.canvasWidth,
       this.canvasHeight,
@@ -87,27 +77,19 @@ export struct CanvasLyricPlayerComponent {
     );
     this.renderer = new CanvasLyricRenderer(renderContext);
     this.renderer.setCanvasContext(this.canvasContext);
-    console.info('[LyricPlayer] ✓ Renderer created:', this.renderer ? 'SUCCESS' : 'FAILED');
 
-    // 🔥 关键：如果初始化时就有歌词数据，设置进控制器
+    // 如果初始化时就有歌词数据，设置进控制器
     if (this.controller && this.lyricLines.length > 0) {
-      console.info('[LyricPlayer] 🎵 Setting initial lyrics...');
       this.controller.setLyricLines(this.lyricLines);
-      console.info('[LyricPlayer] ✓ Lyrics set to controller');
-    } else {
-      console.warn('[LyricPlayer] ⚠️ No lyrics to set (count:', this.lyricLines.length, ')');
+      console.info('[LyricPlayer] ✓ Initial lyrics loaded:', this.lyricLines.length);
+    } else if (this.lyricLines.length === 0) {
+      console.warn('[LyricPlayer] ⚠️ No initial lyrics');
     }
 
     // 设置初始播放时间
     if (this.controller && this.currentTime > 0) {
-      console.info('[LyricPlayer] ⏱️ Setting initial time:', this.currentTime);
       this.controller.setCurrentTime(this.currentTime);
-      console.info('[LyricPlayer] ✓ Initial time set');
     }
-
-    console.info('[LyricPlayer] ========================================');
-    console.info('[LyricPlayer] 🎬 aboutToAppear END');
-    console.info('[LyricPlayer] ========================================');
   }
 
   /**
@@ -122,7 +104,6 @@ export struct CanvasLyricPlayerComponent {
    * 组件即将消失
    */
   aboutToDisappear(): void {
-    console.info('[LyricPlayer] 👋 aboutToDisappear');
     this.stopAnimator();
   }
 
@@ -135,30 +116,21 @@ export struct CanvasLyricPlayerComponent {
    * 🔥 通过 @Watch('onLyricLinesChanged') 自动触发
    */
   onLyricLinesChanged(): void {
-    console.info('[LyricPlayer] ========================================');
-    console.info('[LyricPlayer] 🔄 onLyricLinesChanged() TRIGGERED');
-    console.info('[LyricPlayer]   - New lyrics count:', this.lyricLines.length);
-    console.info('[LyricPlayer] ========================================');
+    console.info('[LyricPlayer] 🔄 Lyrics changed:', this.lyricLines.length);
 
     if (!this.controller) {
-      console.warn('[LyricPlayer] ⚠️ Controller not initialized yet');
+      console.warn('[LyricPlayer] ⚠️ Controller not ready');
       return;
     }
 
     if (this.lyricLines.length === 0) {
-      console.warn('[LyricPlayer] ⚠️ Lyrics array is empty');
+      console.warn('[LyricPlayer] ⚠️ Empty lyrics');
       return;
     }
 
-    // 重新设置歌词数据到控制器
-    console.info('[LyricPlayer] 📝 Setting new lyrics to controller...');
+    // 重新设置歌词数据到控制器并重绘
     this.controller.setLyricLines(this.lyricLines);
-    console.info('[LyricPlayer] ✓ Lyrics set successfully');
-
-    // 立即重绘
-    console.info('[LyricPlayer] 🎨 Calling drawFrame after lyrics change...');
     this.drawFrame();
-    console.info('[LyricPlayer] ========================================');
   }
 
   /**
@@ -247,62 +219,36 @@ export struct CanvasLyricPlayerComponent {
    * 绘制帧
    */
   private drawFrame(): void {
-    console.info('[LyricPlayer] ----------------------------------------');
-    console.info('[LyricPlayer] 🎨 drawFrame() CALLED');
-    console.info('[LyricPlayer] ----------------------------------------');
-
-    // 检查渲染器和控制器
-    console.info('[LyricPlayer] 🔍 Checking components:');
-    console.info('[LyricPlayer]   - renderer:', this.renderer ? 'EXISTS' : 'NULL');
-    console.info('[LyricPlayer]   - controller:', this.controller ? 'EXISTS' : 'NULL');
-    console.info('[LyricPlayer]   - canvasContext:', this.canvasContext ? 'EXISTS' : 'NULL');
-    console.info('[LyricPlayer]   - canvasWidth:', this.canvasWidth);
-    console.info('[LyricPlayer]   - canvasHeight:', this.canvasHeight);
-
     if (!this.renderer || !this.controller) {
-      console.error('[LyricPlayer] ❌ Cannot draw: renderer or controller is null!');
+      console.error('[LyricPlayer] ❌ Cannot draw: missing renderer/controller');
       return;
     }
 
     // 清空画布
-    console.info('[LyricPlayer] 🧹 Clearing canvas...');
     this.renderer.clear();
-    console.info('[LyricPlayer] ✓ Canvas cleared');
 
     // 获取状态
-    console.info('[LyricPlayer] 📊 Getting render states...');
     const lineStates: LyricLineRenderState[] = this.controller.getLineStates();
     const scrollOffset: number = this.controller.getScrollOffset();
     const config: LyricPlayerConfig = this.controller.getConfig();
-    console.info('[LyricPlayer]   - Line states count:', lineStates.length);
-    console.info('[LyricPlayer]   - Scroll offset:', scrollOffset);
-
-    // 创建渲染器配置
     const rendererConfig: RendererConfig = RendererConfig.fromPlayerConfig(config);
 
-    // 保存画布状态
+    // 保存画布状态并应用滚动偏移
     this.canvasContext.save();
-
-    // 应用滚动偏移
     this.canvasContext.translate(0, -scrollOffset);
 
     // 渲染每一行歌词
-    console.info('[LyricPlayer] 🖊️ Rendering lyric lines...');
     let renderedCount = 0;
-    lineStates.forEach((state: LyricLineRenderState, index: number) => {
+    lineStates.forEach((state: LyricLineRenderState) => {
       if (state.isInView) {
-        console.info('[LyricPlayer]   - Rendering line', index, ':', state.line.words.map(w => w.word).join(''));
-        // 🔥 使用 @Prop currentTime 而不是 private currentPlayTime
         this.renderer!.renderLine(state, this.currentTime, rendererConfig);
         renderedCount++;
       }
     });
-    console.info('[LyricPlayer] ✓ Rendered', renderedCount, 'lines');
 
     // 渲染间奏动画
     const interludeState: InterludeState = this.controller.getInterludeState();
     if (interludeState.visible) {
-      console.info('[LyricPlayer] 🎵 Rendering interlude animation');
       this.renderer!.renderInterlude(
         interludeState.positionY,
         interludeState.dotOpacities,
@@ -313,8 +259,10 @@ export struct CanvasLyricPlayerComponent {
     // 恢复画布状态
     this.canvasContext.restore();
 
-    console.info('[LyricPlayer] ✅ drawFrame() COMPLETE');
-    console.info('[LyricPlayer] ----------------------------------------');
+    // 只在渲染0行时输出警告
+    if (renderedCount === 0) {
+      console.warn('[LyricPlayer] ⚠️ Rendered 0 lines (total:', lineStates.length, ')');
+    }
   }
 
   /**
@@ -323,7 +271,7 @@ export struct CanvasLyricPlayerComponent {
    * @param height 新高度
    */
   private handleSizeChange(width: number, height: number): void {
-    console.info('[LyricPlayer] 📏 Size changed:', width, 'x', height);
+    console.info('[LyricPlayer] 📏 Size:', width.toFixed(0), 'x', height.toFixed(0));
 
     this.canvasWidth = width;
     this.canvasHeight = height;
@@ -331,7 +279,6 @@ export struct CanvasLyricPlayerComponent {
     // 更新控制器容器高度
     if (this.controller) {
       this.controller.setContainerHeight(height);
-      console.info('[LyricPlayer] ✓ Controller height updated');
     }
 
     // 重新创建渲染器
@@ -339,19 +286,14 @@ export struct CanvasLyricPlayerComponent {
       const newContext: CanvasRenderContext = new CanvasRenderContext(width, height, 1.0);
       this.renderer = new CanvasLyricRenderer(newContext);
       this.renderer.setCanvasContext(this.canvasContext);
-      console.info('[LyricPlayer] ✓ Renderer recreated');
     }
 
-    // 🔥 关键：如果有歌词数据，确保已设置到控制器
-    // 这解决了首次渲染黑屏的问题
+    // 如果有歌词数据，确保已设置到控制器
     if (this.controller && this.lyricLines.length > 0) {
-      console.info('[LyricPlayer] 🔄 Re-setting lyrics after size change');
       this.controller.setLyricLines(this.lyricLines);
     }
 
-    // 🔥 关键：立即绘制一次（参考华为官方做法）
-    // 确保在获得有效尺寸后立即显示内容
-    console.info('[LyricPlayer] 🎨 Drawing initial frame after size change...');
+    // 立即绘制
     this.drawFrame();
   }
 
@@ -362,43 +304,16 @@ export struct CanvasLyricPlayerComponent {
         .height('100%')
         .backgroundColor('#000000')
         .onReady(() => {
-          console.info('[LyricPlayer] ========================================');
-          console.info('[LyricPlayer] 🎨 Canvas.onReady() TRIGGERED');
-          console.info('[LyricPlayer] ========================================');
-          console.info('[LyricPlayer] 🔍 Canvas state:');
-          console.info('[LyricPlayer]   - canvasContext:', this.canvasContext ? 'EXISTS' : 'NULL');
-          console.info('[LyricPlayer]   - renderer:', this.renderer ? 'EXISTS' : 'NULL');
-          console.info('[LyricPlayer]   - canvasWidth:', this.canvasWidth);
-          console.info('[LyricPlayer]   - canvasHeight:', this.canvasHeight);
-
-          // Canvas准备就绪
+          // Canvas准备就绪，设置上下文
           if (this.renderer) {
-            console.info('[LyricPlayer] 🔄 Setting canvas context to renderer...');
             this.renderer.setCanvasContext(this.canvasContext);
-            console.info('[LyricPlayer] ✓ Canvas context set');
-          } else {
-            console.warn('[LyricPlayer] ⚠️ Renderer is null, cannot set canvas context');
           }
-
-          console.info('[LyricPlayer] 🎨 Calling drawFrame from onReady...');
           this.drawFrame();
-          console.info('[LyricPlayer] ========================================');
         })
         .onAreaChange((_oldArea: Area, newArea: Area) => {
-          console.info('[LyricPlayer] ========================================');
-          console.info('[LyricPlayer] 📐 Canvas.onAreaChange() TRIGGERED');
-          console.info('[LyricPlayer] ========================================');
-
-          // 尺寸变化
           const width: number = newArea.width as number;
           const height: number = newArea.height as number;
-
-          console.info('[LyricPlayer] 📏 Area change details:');
-          console.info('[LyricPlayer]   - Old area:', _oldArea.width, 'x', _oldArea.height);
-          console.info('[LyricPlayer]   - New area:', width, 'x', height);
-
           this.handleSizeChange(width, height);
-          console.info('[LyricPlayer] ========================================');
         })
     }
     .width('100%')

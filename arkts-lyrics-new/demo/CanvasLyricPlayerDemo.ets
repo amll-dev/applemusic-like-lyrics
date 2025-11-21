@@ -134,15 +134,13 @@ struct CanvasLyricPlayerDemoPage {
    * 🔥 注意：歌词数据已在 @State 声明时初始化，不需要在这里再次设置
    */
   aboutToAppear(): void {
-    console.info('[Demo] 🎬 aboutToAppear');
-    console.info('[Demo] ✓ Lyrics already loaded:', this.lyrics.length, 'lines');
+    console.info('[Demo] 🎬 Loaded', this.lyrics.length, 'lyrics');
   }
 
   /**
    * 组件即将消失
    */
   aboutToDisappear(): void {
-    console.info('[Demo] 👋 aboutToDisappear');
     this.stopPlayback();
   }
 
