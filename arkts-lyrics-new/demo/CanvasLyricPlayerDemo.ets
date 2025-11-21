@@ -1,27 +1,31 @@
 /**
- * Canvas歌词播放器完整Demo
- * 展示所有特效功能
- * 严格符合ArkTS类型规范
+ * ✅ Canvas 歌词播放器完整 Demo
+ * 使用声明式 UI 模式，通过 @Prop 传递数据
+ * 完全符合 ArkTS 规范
  */
 
 import { CanvasLyricPlayerComponent } from '../src/components/CanvasLyricPlayerComponent';
 import { LyricLine, LyricWord, LyricPlayerConfig } from '../src/models/LyricModels';
 
 /**
- * Demo页面组件
+ * Demo 页面组件
  */
 @Entry
 @Component
 struct CanvasLyricPlayerDemoPage {
+  // ============================================================
+  // @State 属性：在父组件中维护状态
+  // ============================================================
+
+  /** 歌词数据 */
+  @State lyrics: LyricLine[] = [];
   /** 当前播放时间（毫秒） */
   @State currentTimeMs: number = 0;
   /** 是否正在播放 */
-  @State isPlayingState: boolean = false;
+  @State isPlaying: boolean = false;
   /** 进度条值 */
   @State sliderValue: number = 0;
 
-  /** 歌词播放器组件引用 */
-  private lyricPlayerComponent: CanvasLyricPlayerComponent | null = null;
   /** 定时器句柄 */
   private timerHandle: number = -1;
   /** 最大播放时间 */
@@ -29,7 +33,6 @@ struct CanvasLyricPlayerDemoPage {
 
   /**
    * 创建示例歌词数据
-   * 使用类型化对象，避免对象字面量类型错误
    */
   private createSampleLyrics(): LyricLine[] {
     const lines: LyricLine[] = [];
@@ -56,13 +59,9 @@ struct CanvasLyricPlayerDemoPage {
     // 第3行：Like stars in the night
     const line3Words: LyricWord[] = [
       new LyricWord(5000, 5500, 'Like'),
-      new LyricWord(5500, 5500, ' '),
       new LyricWord(5500, 6200, 'stars'),
-      new LyricWord(6200, 6200, ' '),
       new LyricWord(6200, 6400, 'in'),
-      new LyricWord(6400, 6400, ' '),
       new LyricWord(6400, 6600, 'the'),
-      new LyricWord(6600, 6600, ' '),
       new LyricWord(6600, 7500, 'night')
     ];
     lines.push(new LyricLine(line3Words, 5000, 7500, '像夜空中的星星'));
@@ -87,50 +86,66 @@ struct CanvasLyricPlayerDemoPage {
     ];
     lines.push(new LyricLine(line5Words, 11500, 13500, 'Time flies'));
 
-    // 第6行：但爱永恒（长间奏前）
-    const line6Words: LyricWord[] = [
+    // 第6行：间奏（无歌词）
+    const line6Words: LyricWord[] = [];
+    lines.push(new LyricLine(line6Words, 14000, 17500, '', '', true));  // isBG = true
+
+    // 第7行：但爱永恒
+    const line7Words: LyricWord[] = [
       new LyricWord(18000, 18400, '但'),
       new LyricWord(18400, 19000, '爱'),
       new LyricWord(19000, 19600, '永'),
       new LyricWord(19600, 20500, '恒')
     ];
-    lines.push(new LyricLine(line6Words, 18000, 20500, 'But love is eternal'));
+    lines.push(new LyricLine(line7Words, 18000, 20500, 'But love is eternal'));
 
-    // 第7行：这份感动（带音译）
-    const line7Words: LyricWord[] = [
+    // 第8行：这份感动（带音译）
+    const line8Words: LyricWord[] = [
       new LyricWord(21000, 21300, '这'),
       new LyricWord(21300, 21600, '份'),
       new LyricWord(21600, 22000, '感'),
       new LyricWord(22000, 22800, '动')
     ];
-    lines.push(new LyricLine(line7Words, 21000, 22800, 'This feeling', 'zhè fèn gǎn dòng'));
+    lines.push(new LyricLine(line8Words, 21000, 22800, 'This feeling', 'zhè fèn gǎn dòng'));
 
-    // 第8行：Forever and ever
-    const line8Words: LyricWord[] = [
+    // 第9行：Forever and ever
+    const line9Words: LyricWord[] = [
       new LyricWord(23500, 24500, 'Forever'),
-      new LyricWord(24500, 24500, ' '),
       new LyricWord(24500, 24700, 'and'),
-      new LyricWord(24700, 24700, ' '),
       new LyricWord(24700, 25500, 'ever')
     ];
-    lines.push(new LyricLine(line8Words, 23500, 25500, '永远永远'));
+    lines.push(new LyricLine(line9Words, 23500, 25500, '永远永远'));
 
-    // 第9行：不会忘记（对唱模式）
-    const line9Words: LyricWord[] = [
+    // 第10行：不会忘记（对唱模式）
+    const line10Words: LyricWord[] = [
       new LyricWord(26000, 26400, '不'),
       new LyricWord(26400, 26800, '会'),
       new LyricWord(26800, 27500, '忘'),
       new LyricWord(27500, 28500, '记')
     ];
-    lines.push(new LyricLine(line9Words, 26000, 28500, 'Never forget', '', false, true)); // isDuet = true
+    lines.push(new LyricLine(line10Words, 26000, 28500, 'Never forget', '', false, true)); // isDuet = true
 
     return lines;
+  }
+
+  /**
+   * 组件即将出现
+   */
+  aboutToAppear(): void {
+    console.info('[Demo] 🎬 aboutToAppear');
+
+    // 🔥 关键：在组件初始化时加载歌词数据
+    // 这样 build() 中的 CanvasLyricPlayerComponent 就能立即获得数据
+    this.lyrics = this.createSampleLyrics();
+
+    console.info('[Demo] ✓ Loaded', this.lyrics.length, 'lyrics lines');
   }
 
   /**
    * 组件即将消失
    */
   aboutToDisappear(): void {
+    console.info('[Demo] 👋 aboutToDisappear');
     this.stopPlayback();
   }
 
@@ -138,7 +153,8 @@ struct CanvasLyricPlayerDemoPage {
    * 开始播放
    */
   private startPlayback(): void {
-    this.isPlayingState = true;
+    console.info('[Demo] ▶️ Start playback');
+    this.isPlaying = true;
     let lastTime: number = Date.now();
 
     this.timerHandle = setInterval(() => {
@@ -146,25 +162,25 @@ struct CanvasLyricPlayerDemoPage {
       const delta: number = now - lastTime;
       lastTime = now;
 
+      // 🔥 关键：直接更新 @State 属性
+      // 子组件通过 @Prop/@Watch 自动响应变化
       this.currentTimeMs += delta;
       this.sliderValue = this.currentTimeMs;
-
-      if (this.lyricPlayerComponent) {
-        this.lyricPlayerComponent.setCurrentTime(this.currentTimeMs);
-      }
 
       // 循环播放
       if (this.currentTimeMs > this.maxTimeMs) {
         this.currentTimeMs = 0;
+        console.info('[Demo] 🔄 Loop playback');
       }
-    }, 16);
+    }, 16);  // ~60fps
   }
 
   /**
    * 停止播放
    */
   private stopPlayback(): void {
-    this.isPlayingState = false;
+    console.info('[Demo] ⏸️ Stop playback');
+    this.isPlaying = false;
     if (this.timerHandle !== -1) {
       clearInterval(this.timerHandle);
       this.timerHandle = -1;
@@ -175,7 +191,7 @@ struct CanvasLyricPlayerDemoPage {
    * 切换播放状态
    */
   private togglePlayback(): void {
-    if (this.isPlayingState) {
+    if (this.isPlaying) {
       this.stopPlayback();
     } else {
       this.startPlayback();
@@ -186,30 +202,23 @@ struct CanvasLyricPlayerDemoPage {
    * 重置播放
    */
   private resetPlayback(): void {
+    console.info('[Demo] 🔄 Reset playback');
     this.stopPlayback();
     this.currentTimeMs = 0;
     this.sliderValue = 0;
-    if (this.lyricPlayerComponent) {
-      this.lyricPlayerComponent.setCurrentTime(0);
-    }
   }
 
   /**
    * 跳转到指定时间
-   * @param timeMs 时间（毫秒）
    */
   private seekTo(timeMs: number): void {
+    console.info('[Demo] ⏩ Seek to:', timeMs);
     this.currentTimeMs = timeMs;
     this.sliderValue = timeMs;
-    if (this.lyricPlayerComponent) {
-      this.lyricPlayerComponent.setCurrentTime(timeMs);
-    }
   }
 
   /**
    * 格式化时间显示
-   * @param ms 毫秒数
-   * @returns 格式化的时间字符串 (mm:ss)
    */
   private formatTime(ms: number): string {
     const totalSeconds: number = Math.floor(ms / 1000);
@@ -223,7 +232,7 @@ struct CanvasLyricPlayerDemoPage {
     Column() {
       // 标题栏
       Row() {
-        Text('Apple Music 风格歌词 (Canvas版本)')
+        Text('Apple Music 风格歌词')
           .fontSize(18)
           .fontWeight(FontWeight.Bold)
           .fontColor(Color.White)
@@ -234,34 +243,28 @@ struct CanvasLyricPlayerDemoPage {
       .justifyContent(FlexAlign.Center)
       .backgroundColor('#1a1a1a')
 
-      // 歌词播放器
-      Stack() {
-        CanvasLyricPlayerComponent({
-          playerConfig: LyricPlayerConfig.create({
-            alignAnchor: 'center',
-            alignPosition: 0.4,
-            enableScale: true,
-            enableBlur: true,
-            enableSpring: true,
-            enableEmphasize: true,
-            enableGlow: true,
-            showTranslation: true,
-            showRoman: false,
-            useCanvas: true
-          })
+      // 🔥 关键：通过 @Prop 传递数据，完全符合 ArkTS 声明式 UI 规范
+      // ✅ 不需要保存组件引用
+      // ✅ 不需要在 onAppear 中调用组件方法
+      // ✅ 不需要使用 new CanvasLyricPlayerComponent()
+      // ✅ 数据变化时子组件自动响应
+      CanvasLyricPlayerComponent({
+        lyricLines: this.lyrics,          // ← 传递歌词数据
+        currentTime: this.currentTimeMs,  // ← 传递当前时间（自动触发 @Watch）
+        playerConfig: LyricPlayerConfig.create({
+          alignAnchor: 'center',
+          alignPosition: 0.4,
+          enableScale: true,
+          enableBlur: true,
+          enableSpring: true,
+          enableEmphasize: true,
+          enableGlow: true,
+          showTranslation: true,
+          showRoman: false,
+          useCanvas: true
         })
-          .onAppear(() => {
-            // 创建播放器配置
-            const config: LyricPlayerConfig = LyricPlayerConfig.create();
-            this.lyricPlayerComponent = new CanvasLyricPlayerComponent();
-            this.lyricPlayerComponent.playerConfig = config;
-
-            // 创建并设置歌词数据
-            const lines: LyricLine[] = this.createSampleLyrics();
-            this.lyricPlayerComponent.setLyricLines(lines);
-          })
-      }
-      .layoutWeight(1)
+      })
+        .layoutWeight(1)
 
       // 控制栏
       Column() {
@@ -314,8 +317,8 @@ struct CanvasLyricPlayerDemoPage {
 
           // 播放/暂停按钮
           Button({ type: ButtonType.Circle }) {
-            Text(this.isPlayingState ? '❚❚' : '▶')
-              .fontSize(this.isPlayingState ? 20 : 24)
+            Text(this.isPlaying ? '❚❚' : '▶')
+              .fontSize(this.isPlaying ? 20 : 24)
               .fontColor(Color.White)
           }
           .width(60)

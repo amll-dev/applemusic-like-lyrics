@@ -18,9 +18,27 @@ import { CanvasLyricRenderer } from '../canvas/CanvasLyricRenderer';
 
 /**
  * Canvas歌词播放器组件
+ * 🔥 使用 @Prop 模式，符合 ArkTS 声明式 UI 规范
  */
 @Component
 export struct CanvasLyricPlayerComponent {
+  // ============================================================
+  // @Prop 属性：从父组件接收数据（只读）
+  // ============================================================
+
+  /** 歌词数据 - 从父组件传入 */
+  @Prop lyricLines: LyricLine[] = [];
+
+  /** 当前播放时间（毫秒）- 使用 @Watch 监听变化 */
+  @Prop @Watch('onCurrentTimeChanged') currentTime: number = 0;
+
+  /** 播放器配置 */
+  @Prop playerConfig: LyricPlayerConfig = LyricPlayerConfig.create();
+
+  // ============================================================
+  // Private 属性：组件内部状态
+  // ============================================================
+
   /** Canvas渲染设置 */
   private settings: RenderingContextSettings = new RenderingContextSettings(true);
   /** Canvas 2D上下文 - 必须在声明时初始化，因为 build() 在 aboutToAppear() 之前执行 */
@@ -37,16 +55,19 @@ export struct CanvasLyricPlayerComponent {
   private renderer: CanvasLyricRenderer | null = null;
   /** 动画器 */
   private animator: AnimatorResult | null = null;
-  /** 当前播放时间 */
-  private currentPlayTime: number = 0;
 
-  /** 播放器配置 */
-  public playerConfig: LyricPlayerConfig = LyricPlayerConfig.create();
+  // ============================================================
+  // 生命周期方法
+  // ============================================================
 
   /**
    * 组件即将出现
    */
   aboutToAppear(): void {
+    console.info('[LyricPlayer] 🎬 aboutToAppear');
+    console.info('[LyricPlayer] Lyrics count:', this.lyricLines.length);
+    console.info('[LyricPlayer] Current time:', this.currentTime);
+
     // 创建控制器
     this.controller = new LyricPlayerController(this.playerConfig);
 
@@ -58,44 +79,64 @@ export struct CanvasLyricPlayerComponent {
     );
     this.renderer = new CanvasLyricRenderer(renderContext);
     this.renderer.setCanvasContext(this.canvasContext);
+
+    // 🔥 关键：如果初始化时就有歌词数据，设置进控制器
+    if (this.controller && this.lyricLines.length > 0) {
+      console.info('[LyricPlayer] ✓ Setting initial lyrics');
+      this.controller.setLyricLines(this.lyricLines);
+    }
+
+    // 设置初始播放时间
+    if (this.controller && this.currentTime > 0) {
+      console.info('[LyricPlayer] ✓ Setting initial time:', this.currentTime);
+      this.controller.setCurrentTime(this.currentTime);
+    }
+  }
+
+  /**
+   * 组件即将更新
+   * 🔥 当 @Prop 属性变化时，ArkTS 框架会自动调用此方法
+   */
+  aboutToUpdate(): void {
+    // 当 lyricLines 变化时，更新控制器
+    if (this.controller && this.lyricLines.length > 0) {
+      console.info('[LyricPlayer] 📝 Lyrics updated, count:', this.lyricLines.length);
+      this.controller.setLyricLines(this.lyricLines);
+      this.drawFrame();
+    }
   }
 
   /**
    * 组件即将消失
    */
   aboutToDisappear(): void {
+    console.info('[LyricPlayer] 👋 aboutToDisappear');
     this.stopAnimator();
   }
 
+  // ============================================================
+  // @Watch 回调方法
+  // ============================================================
+
   /**
-   * 设置歌词数据
-   * @param lines 歌词行数组
+   * 当前时间变化时调用
+   * 🔥 通过 @Watch('onCurrentTimeChanged') 自动触发
    */
-  public setLyricLines(lines: LyricLine[]): void {
-    if (this.controller) {
-      this.controller.setLyricLines(lines);
-      this.drawFrame();
+  onCurrentTimeChanged(): void {
+    if (!this.controller) {
+      return;
     }
-  }
 
-  /**
-   * 设置当前播放时间
-   * @param timeMs 时间（毫秒）
-   */
-  public setCurrentTime(timeMs: number): void {
-    this.currentPlayTime = timeMs;
-    if (this.controller) {
-      const oldLineIndex: number = this.controller.getCurrentLineIndex();
-      this.controller.setCurrentTime(timeMs);
-      const newLineIndex: number = this.controller.getCurrentLineIndex();
+    const oldLineIndex: number = this.controller.getCurrentLineIndex();
+    this.controller.setCurrentTime(this.currentTime);
+    const newLineIndex: number = this.controller.getCurrentLineIndex();
 
-      // 如果行切换，启动滚动动画
-      if (oldLineIndex !== newLineIndex && newLineIndex !== -1) {
-        this.startScrollAnimator();
-      } else {
-        // 否则直接绘制
-        this.drawFrame();
-      }
+    // 如果行切换，启动滚动动画
+    if (oldLineIndex !== newLineIndex && newLineIndex !== -1) {
+      this.startScrollAnimator();
+    } else {
+      // 否则直接绘制
+      this.drawFrame();
     }
   }
 
@@ -155,6 +196,10 @@ export struct CanvasLyricPlayerComponent {
     }
   }
 
+  // ============================================================
+  // 渲染方法
+  // ============================================================
+
   /**
    * 绘制帧
    */
@@ -183,7 +228,8 @@ export struct CanvasLyricPlayerComponent {
     // 渲染每一行歌词
     lineStates.forEach((state: LyricLineRenderState) => {
       if (state.isInView) {
-        this.renderer!.renderLine(state, this.currentPlayTime, rendererConfig);
+        // 🔥 使用 @Prop currentTime 而不是 private currentPlayTime
+        this.renderer!.renderLine(state, this.currentTime, rendererConfig);
       }
     });
 
