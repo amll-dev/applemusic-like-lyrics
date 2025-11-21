@@ -1,189 +1,137 @@
 /**
  * Canvas歌词播放器完整Demo
  * 展示所有特效功能
+ * 严格符合ArkTS类型规范
  */
 
 import { CanvasLyricPlayerComponent } from '../src/components/CanvasLyricPlayerComponent';
 import { LyricLine, LyricWord, LyricPlayerConfig } from '../src/models/LyricModels';
 
+/**
+ * Demo页面组件
+ */
 @Entry
 @Component
 struct CanvasLyricPlayerDemoPage {
+  /** 当前播放时间（毫秒） */
   @State private currentTimeMs: number = 0;
+  /** 是否正在播放 */
   @State private isPlayingState: boolean = false;
+  /** 进度条值 */
   @State private sliderValue: number = 0;
 
+  /** 歌词播放器组件引用 */
   private lyricPlayerComponent: CanvasLyricPlayerComponent | null = null;
+  /** 定时器句柄 */
   private timerHandle: number = -1;
+  /** 最大播放时间 */
   private readonly maxTimeMs: number = 30000;
 
-  // 示例歌词数据
-  private sampleLyricsData: Array<Record<string, Object>> = [
-    {
-      words: [
-        { word: '在', startTime: 0, endTime: 300 },
-        { word: '这', startTime: 300, endTime: 600 },
-        { word: '个', startTime: 600, endTime: 900 },
-        { word: '世', startTime: 900, endTime: 1500 },
-        { word: '界', startTime: 1500, endTime: 2000 }
-      ],
-      translatedLyric: 'In this world',
-      startTime: 0,
-      endTime: 2000,
-      isBG: false,
-      isDuet: false
-    },
-    {
-      words: [
-        { word: '我', startTime: 2500, endTime: 2800 },
-        { word: '们', startTime: 2800, endTime: 3100 },
-        { word: '相', startTime: 3100, endTime: 3600 },
-        { word: '遇', startTime: 3600, endTime: 4500 }
-      ],
-      translatedLyric: 'We met',
-      startTime: 2500,
-      endTime: 4500,
-      isBG: false,
-      isDuet: false
-    },
-    {
-      words: [
-        { word: 'Like', startTime: 5000, endTime: 5500 },
-        { word: ' ', startTime: 5500, endTime: 5500 },
-        { word: 'stars', startTime: 5500, endTime: 6200 },
-        { word: ' ', startTime: 6200, endTime: 6200 },
-        { word: 'in', startTime: 6200, endTime: 6400 },
-        { word: ' ', startTime: 6400, endTime: 6400 },
-        { word: 'the', startTime: 6400, endTime: 6600 },
-        { word: ' ', startTime: 6600, endTime: 6600 },
-        { word: 'night', startTime: 6600, endTime: 7500 }
-      ],
-      translatedLyric: '像夜空中的星星',
-      startTime: 5000,
-      endTime: 7500,
-      isBG: false,
-      isDuet: false
-    },
-    {
-      words: [
-        { word: '照', startTime: 8000, endTime: 8400 },
-        { word: '亮', startTime: 8400, endTime: 9000 },
-        { word: '彼', startTime: 9000, endTime: 9400 },
-        { word: '此', startTime: 9400, endTime: 9800 },
-        { word: '的', startTime: 9800, endTime: 10000 },
-        { word: '心', startTime: 10000, endTime: 11000 }
-      ],
-      translatedLyric: 'Lighting up each other\'s hearts',
-      startTime: 8000,
-      endTime: 11000,
-      isBG: false,
-      isDuet: false
-    },
-    {
-      words: [
-        { word: '时', startTime: 11500, endTime: 11900 },
-        { word: '光', startTime: 11900, endTime: 12500 },
-        { word: '荏', startTime: 12500, endTime: 13000 },
-        { word: '苒', startTime: 13000, endTime: 13500 }
-      ],
-      translatedLyric: 'Time flies',
-      startTime: 11500,
-      endTime: 13500,
-      isBG: false,
-      isDuet: false
-    },
-    {
-      words: [
-        { word: '但', startTime: 18000, endTime: 18400 },
-        { word: '爱', startTime: 18400, endTime: 19000 },
-        { word: '永', startTime: 19000, endTime: 19600 },
-        { word: '恒', startTime: 19600, endTime: 20500 }
-      ],
-      translatedLyric: 'But love is eternal',
-      startTime: 18000,
-      endTime: 20500,
-      isBG: false,
-      isDuet: false
-    },
-    {
-      words: [
-        { word: '这', startTime: 21000, endTime: 21300 },
-        { word: '份', startTime: 21300, endTime: 21600 },
-        { word: '感', startTime: 21600, endTime: 22000 },
-        { word: '动', startTime: 22000, endTime: 22800 }
-      ],
-      translatedLyric: 'This feeling',
-      romanLyric: 'zhè fèn gǎn dòng',
-      startTime: 21000,
-      endTime: 22800,
-      isBG: false,
-      isDuet: false
-    },
-    {
-      words: [
-        { word: 'Forever', startTime: 23500, endTime: 24500 },
-        { word: ' ', startTime: 24500, endTime: 24500 },
-        { word: 'and', startTime: 24500, endTime: 24700 },
-        { word: ' ', startTime: 24700, endTime: 24700 },
-        { word: 'ever', startTime: 24700, endTime: 25500 }
-      ],
-      translatedLyric: '永远永远',
-      startTime: 23500,
-      endTime: 25500,
-      isBG: false,
-      isDuet: false
-    },
-    {
-      words: [
-        { word: '不', startTime: 26000, endTime: 26400 },
-        { word: '会', startTime: 26400, endTime: 26800 },
-        { word: '忘', startTime: 26800, endTime: 27500 },
-        { word: '记', startTime: 27500, endTime: 28500 }
-      ],
-      translatedLyric: 'Never forget',
-      startTime: 26000,
-      endTime: 28500,
-      isBG: false,
-      isDuet: true
-    }
-  ];
+  /**
+   * 创建示例歌词数据
+   * 使用类型化对象，避免对象字面量类型错误
+   */
+  private createSampleLyrics(): LyricLine[] {
+    const lines: LyricLine[] = [];
 
-  aboutToDisappear(): void {
-    this.stopPlayback();
+    // 第1行：在这个世界
+    const line1Words: LyricWord[] = [
+      new LyricWord(0, 300, '在'),
+      new LyricWord(300, 600, '这'),
+      new LyricWord(600, 900, '个'),
+      new LyricWord(900, 1500, '世'),
+      new LyricWord(1500, 2000, '界')
+    ];
+    lines.push(new LyricLine(line1Words, 0, 2000, 'In this world'));
+
+    // 第2行：我们相遇
+    const line2Words: LyricWord[] = [
+      new LyricWord(2500, 2800, '我'),
+      new LyricWord(2800, 3100, '们'),
+      new LyricWord(3100, 3600, '相'),
+      new LyricWord(3600, 4500, '遇')
+    ];
+    lines.push(new LyricLine(line2Words, 2500, 4500, 'We met'));
+
+    // 第3行：Like stars in the night
+    const line3Words: LyricWord[] = [
+      new LyricWord(5000, 5500, 'Like'),
+      new LyricWord(5500, 5500, ' '),
+      new LyricWord(5500, 6200, 'stars'),
+      new LyricWord(6200, 6200, ' '),
+      new LyricWord(6200, 6400, 'in'),
+      new LyricWord(6400, 6400, ' '),
+      new LyricWord(6400, 6600, 'the'),
+      new LyricWord(6600, 6600, ' '),
+      new LyricWord(6600, 7500, 'night')
+    ];
+    lines.push(new LyricLine(line3Words, 5000, 7500, '像夜空中的星星'));
+
+    // 第4行：照亮彼此的心
+    const line4Words: LyricWord[] = [
+      new LyricWord(8000, 8400, '照'),
+      new LyricWord(8400, 9000, '亮'),
+      new LyricWord(9000, 9400, '彼'),
+      new LyricWord(9400, 9800, '此'),
+      new LyricWord(9800, 10000, '的'),
+      new LyricWord(10000, 11000, '心')
+    ];
+    lines.push(new LyricLine(line4Words, 8000, 11000, 'Lighting up each other\'s hearts'));
+
+    // 第5行：时光荏苒
+    const line5Words: LyricWord[] = [
+      new LyricWord(11500, 11900, '时'),
+      new LyricWord(11900, 12500, '光'),
+      new LyricWord(12500, 13000, '荏'),
+      new LyricWord(13000, 13500, '苒')
+    ];
+    lines.push(new LyricLine(line5Words, 11500, 13500, 'Time flies'));
+
+    // 第6行：但爱永恒（长间奏前）
+    const line6Words: LyricWord[] = [
+      new LyricWord(18000, 18400, '但'),
+      new LyricWord(18400, 19000, '爱'),
+      new LyricWord(19000, 19600, '永'),
+      new LyricWord(19600, 20500, '恒')
+    ];
+    lines.push(new LyricLine(line6Words, 18000, 20500, 'But love is eternal'));
+
+    // 第7行：这份感动（带音译）
+    const line7Words: LyricWord[] = [
+      new LyricWord(21000, 21300, '这'),
+      new LyricWord(21300, 21600, '份'),
+      new LyricWord(21600, 22000, '感'),
+      new LyricWord(22000, 22800, '动')
+    ];
+    lines.push(new LyricLine(line7Words, 21000, 22800, 'This feeling', 'zhè fèn gǎn dòng'));
+
+    // 第8行：Forever and ever
+    const line8Words: LyricWord[] = [
+      new LyricWord(23500, 24500, 'Forever'),
+      new LyricWord(24500, 24500, ' '),
+      new LyricWord(24500, 24700, 'and'),
+      new LyricWord(24700, 24700, ' '),
+      new LyricWord(24700, 25500, 'ever')
+    ];
+    lines.push(new LyricLine(line8Words, 23500, 25500, '永远永远'));
+
+    // 第9行：不会忘记（对唱模式）
+    const line9Words: LyricWord[] = [
+      new LyricWord(26000, 26400, '不'),
+      new LyricWord(26400, 26800, '会'),
+      new LyricWord(26800, 27500, '忘'),
+      new LyricWord(27500, 28500, '记')
+    ];
+    lines.push(new LyricLine(line9Words, 26000, 28500, 'Never forget', '', false, true)); // isDuet = true
+
+    return lines;
   }
 
   /**
-   * 转换数据为类型化对象
+   * 组件即将消失
    */
-  private parseLyricData(): LyricLine[] {
-    const lines: LyricLine[] = [];
-
-    this.sampleLyricsData.forEach((lineData: Record<string, Object>) => {
-      const wordsData = lineData['words'] as Array<Record<string, Object>>;
-      const words: LyricWord[] = wordsData.map((wordData: Record<string, Object>) => {
-        return new LyricWord(
-          wordData['startTime'] as number,
-          wordData['endTime'] as number,
-          wordData['word'] as string,
-          (wordData['romanWord'] as string) ?? '',
-          (wordData['obscene'] as boolean) ?? false
-        );
-      });
-
-      const line: LyricLine = new LyricLine(
-        words,
-        lineData['startTime'] as number,
-        lineData['endTime'] as number,
-        (lineData['translatedLyric'] as string) ?? '',
-        (lineData['romanLyric'] as string) ?? '',
-        (lineData['isBG'] as boolean) ?? false,
-        (lineData['isDuet'] as boolean) ?? false
-      );
-
-      lines.push(line);
-    });
-
-    return lines;
+  aboutToDisappear(): void {
+    this.stopPlayback();
   }
 
   /**
@@ -205,6 +153,7 @@ struct CanvasLyricPlayerDemoPage {
         this.lyricPlayerComponent.setCurrentTime(this.currentTimeMs);
       }
 
+      // 循环播放
       if (this.currentTimeMs > this.maxTimeMs) {
         this.currentTimeMs = 0;
       }
@@ -246,7 +195,8 @@ struct CanvasLyricPlayerDemoPage {
   }
 
   /**
-   * 跳转
+   * 跳转到指定时间
+   * @param timeMs 时间（毫秒）
    */
   private seekTo(timeMs: number): void {
     this.currentTimeMs = timeMs;
@@ -257,7 +207,9 @@ struct CanvasLyricPlayerDemoPage {
   }
 
   /**
-   * 格式化时间
+   * 格式化时间显示
+   * @param ms 毫秒数
+   * @returns 格式化的时间字符串 (mm:ss)
    */
   private formatTime(ms: number): string {
     const totalSeconds: number = Math.floor(ms / 1000);
@@ -299,11 +251,13 @@ struct CanvasLyricPlayerDemoPage {
           })
         })
           .onAppear(() => {
+            // 创建播放器配置
             const config: LyricPlayerConfig = LyricPlayerConfig.create();
             this.lyricPlayerComponent = new CanvasLyricPlayerComponent();
             this.lyricPlayerComponent.playerConfig = config;
 
-            const lines: LyricLine[] = this.parseLyricData();
+            // 创建并设置歌词数据
+            const lines: LyricLine[] = this.createSampleLyrics();
             this.lyricPlayerComponent.setLyricLines(lines);
           })
       }
@@ -343,6 +297,7 @@ struct CanvasLyricPlayerDemoPage {
 
         // 控制按钮
         Row() {
+          // 重置按钮
           Button({ type: ButtonType.Circle }) {
             Text('⟲')
               .fontSize(24)
@@ -357,6 +312,7 @@ struct CanvasLyricPlayerDemoPage {
 
           Blank().width(20)
 
+          // 播放/暂停按钮
           Button({ type: ButtonType.Circle }) {
             Text(this.isPlayingState ? '❚❚' : '▶')
               .fontSize(this.isPlayingState ? 20 : 24)
@@ -371,6 +327,7 @@ struct CanvasLyricPlayerDemoPage {
 
           Blank().width(20)
 
+          // 快进按钮
           Button({ type: ButtonType.Circle }) {
             Text('⏩')
               .fontSize(20)
