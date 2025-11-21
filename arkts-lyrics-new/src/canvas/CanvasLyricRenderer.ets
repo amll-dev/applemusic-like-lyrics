@@ -1,9 +1,17 @@
 /**
  * Canvas歌词渲染器
  * 完整实现原版的所有视觉效果
+ * 严格符合ArkTS类型规范
  */
 
-import { LyricLine, LyricWord, WordRenderInfo, LyricLineRenderState, CanvasRenderContext } from '../models/LyricModels';
+import {
+  LyricLine,
+  LyricWord,
+  WordRenderInfo,
+  LyricLineRenderState,
+  CanvasRenderContext,
+  RendererConfig
+} from '../models/LyricModels';
 import {
   calculateWordProgress,
   shouldEmphasizeWord,
@@ -12,30 +20,42 @@ import {
   calculateWordColor
 } from '../utils/LyricUtils';
 
+/**
+ * 歌词渲染器类
+ * 负责将歌词渲染到Canvas上
+ */
 export class CanvasLyricRenderer {
+  /** 渲染上下文配置 */
   private renderContext: CanvasRenderContext;
+  /** Canvas 2D 上下文 */
   private canvasCtx: CanvasRenderingContext2D | null = null;
+  /** 普通歌词字体 */
+  private readonly normalFont: string = 'HarmonyHeiTi';
+  /** 加粗歌词字体 */
+  private readonly boldFont: string = 'HarmonyHeiTi-Bold';
 
   constructor(context: CanvasRenderContext) {
     this.renderContext = context;
   }
 
+  /**
+   * 设置Canvas上下文
+   * @param ctx Canvas 2D渲染上下文
+   */
   setCanvasContext(ctx: CanvasRenderingContext2D): void {
     this.canvasCtx = ctx;
   }
 
   /**
    * 渲染单行歌词
+   * @param state 歌词行渲染状态
+   * @param currentTime 当前播放时间（毫秒）
+   * @param config 渲染器配置
    */
   renderLine(
     state: LyricLineRenderState,
     currentTime: number,
-    config: {
-      enableEmphasize: boolean,
-      enableGlow: boolean,
-      showTranslation: boolean,
-      showRoman: boolean
-    }
+    config: RendererConfig
   ): void {
     if (!this.canvasCtx) {
       return;
@@ -44,9 +64,10 @@ export class CanvasLyricRenderer {
     const ctx: CanvasRenderingContext2D = this.canvasCtx;
     const line: LyricLine = state.line;
 
+    // 保存画布状态
     ctx.save();
 
-    // 应用变换
+    // 应用变换：位置、缩放、透明度
     ctx.translate(0, state.positionY);
     ctx.scale(state.scaleRatio, state.scaleRatio);
     ctx.globalAlpha = state.alphaValue;
@@ -64,21 +85,30 @@ export class CanvasLyricRenderer {
       this.renderRoman(ctx, line.romanLyric, state.isActive);
     }
 
+    // 恢复画布状态
     ctx.restore();
   }
 
   /**
    * 渲染主歌词行
+   * @param ctx Canvas上下文
+   * @param line 歌词行数据
+   * @param currentTime 当前播放时间
+   * @param isActive 是否为激活行
+   * @param config 渲染器配置
    */
   private renderMainLyric(
     ctx: CanvasRenderingContext2D,
     line: LyricLine,
     currentTime: number,
     isActive: boolean,
-    config: { enableEmphasize: boolean, enableGlow: boolean }
+    config: RendererConfig
   ): void {
+    // 设置字体
     const fontSize: number = isActive ? 24 : 20;
-    ctx.font = `${isActive ? 'bold' : 'normal'} ${fontSize}px sans-serif`;
+    const fontWeight: string = isActive ? 'bold' : 'normal';
+    const fontFamily: string = isActive ? this.boldFont : this.normalFont;
+    ctx.font = `${fontWeight} ${fontSize}vp ${fontFamily}`;
     ctx.textBaseline = 'top';
 
     // 计算单词位置
@@ -114,7 +144,11 @@ export class CanvasLyricRenderer {
   }
 
   /**
-   * 计算单词位置
+   * 计算单词位置信息
+   * @param ctx Canvas上下文
+   * @param line 歌词行
+   * @param fontSize 字体大小
+   * @returns 单词渲染信息数组
    */
   private calculateWordPositions(
     ctx: CanvasRenderingContext2D,
@@ -136,6 +170,9 @@ export class CanvasLyricRenderer {
 
   /**
    * 渲染单个单词
+   * @param ctx Canvas上下文
+   * @param wordInfo 单词渲染信息
+   * @param isActive 是否为激活行
    */
   private renderWord(
     ctx: CanvasRenderingContext2D,
@@ -146,15 +183,20 @@ export class CanvasLyricRenderer {
 
     // 应用强调变换
     if (wordInfo.shouldEmphasize && wordInfo.emphasizeScale > 1.0) {
-      ctx.translate(wordInfo.x + wordInfo.width / 2, wordInfo.y + wordInfo.height / 2);
+      const centerX: number = wordInfo.x + wordInfo.width / 2;
+      const centerY: number = wordInfo.y + wordInfo.height / 2;
+      ctx.translate(centerX, centerY);
       ctx.scale(wordInfo.emphasizeScale, wordInfo.emphasizeScale);
-      ctx.translate(-(wordInfo.x + wordInfo.width / 2), -(wordInfo.y + wordInfo.height / 2));
+      ctx.translate(-centerX, -centerY);
     }
 
     // 渲染辉光效果
     if (wordInfo.glowIntensity > 0) {
-      ctx.shadowColor = 'rgba(255, 255, 255, ' + wordInfo.glowIntensity + ')';
+      const alphaStr: string = wordInfo.glowIntensity.toFixed(2);
+      ctx.shadowColor = `rgba(255, 255, 255, ${alphaStr})`;
       ctx.shadowBlur = 20 * wordInfo.glowIntensity;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 0;
     }
 
     // 渲染渐变遮罩效果
@@ -172,6 +214,9 @@ export class CanvasLyricRenderer {
 
   /**
    * 渲染带渐变遮罩的单词（核心特效）
+   * 使用线性渐变模拟原版的mask-image效果
+   * @param ctx Canvas上下文
+   * @param wordInfo 单词渲染信息
    */
   private renderWordWithGradientMask(
     ctx: CanvasRenderingContext2D,
@@ -197,6 +242,7 @@ export class CanvasLyricRenderer {
       y
     );
 
+    // 设置渐变色标
     if (currentPos > fadeWidth) {
       gradient.addColorStop(0, '#FFFFFF'); // 已播放部分：白色
     }
@@ -215,7 +261,10 @@ export class CanvasLyricRenderer {
   }
 
   /**
-   * 渲染翻译
+   * 渲染翻译文本
+   * @param ctx Canvas上下文
+   * @param translation 翻译内容
+   * @param isActive 是否为激活行
    */
   private renderTranslation(
     ctx: CanvasRenderingContext2D,
@@ -224,8 +273,10 @@ export class CanvasLyricRenderer {
   ): void {
     ctx.save();
 
-    ctx.font = '14px sans-serif';
-    ctx.fillStyle = isActive ? 'rgba(153, 153, 153, 0.8)' : 'rgba(153, 153, 153, 0.4)';
+    ctx.font = `normal 14vp ${this.normalFont}`;
+    const alphaValue: number = isActive ? 0.8 : 0.4;
+    const alphaStr: string = alphaValue.toFixed(2);
+    ctx.fillStyle = `rgba(153, 153, 153, ${alphaStr})`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
 
@@ -236,7 +287,10 @@ export class CanvasLyricRenderer {
   }
 
   /**
-   * 渲染音译
+   * 渲染音译文本
+   * @param ctx Canvas上下文
+   * @param roman 音译内容
+   * @param isActive 是否为激活行
    */
   private renderRoman(
     ctx: CanvasRenderingContext2D,
@@ -245,8 +299,10 @@ export class CanvasLyricRenderer {
   ): void {
     ctx.save();
 
-    ctx.font = '12px sans-serif';
-    ctx.fillStyle = isActive ? 'rgba(119, 119, 119, 0.6)' : 'rgba(119, 119, 119, 0.3)';
+    ctx.font = `normal 12vp ${this.normalFont}`;
+    const alphaValue: number = isActive ? 0.6 : 0.3;
+    const alphaStr: string = alphaValue.toFixed(2);
+    ctx.fillStyle = `rgba(119, 119, 119, ${alphaStr})`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
 
@@ -268,6 +324,10 @@ export class CanvasLyricRenderer {
 
   /**
    * 渲染间奏动画
+   * 三个圆点依次跳动的效果
+   * @param positionY Y轴位置
+   * @param dotOpacities 圆点透明度数组
+   * @param dotScales 圆点缩放数组
    */
   renderInterlude(
     positionY: number,
@@ -285,7 +345,8 @@ export class CanvasLyricRenderer {
     const spacing: number = 12;
     const dotRadius: number = 4;
 
-    for (let i = 0; i < 3; i++) {
+    // 渲染三个圆点
+    for (let i: number = 0; i < 3; i++) {
       const x: number = centerX + (i - 1) * spacing;
       const y: number = positionY;
       const scale: number = dotScales[i];

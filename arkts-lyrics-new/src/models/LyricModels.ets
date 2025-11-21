@@ -182,3 +182,42 @@ export class CanvasRenderContext {
     this.pixelRatio = pixelRatio;
   }
 }
+
+/**
+ * 渲染器配置类
+ * 用于传递渲染配置，避免对象字面量类型错误
+ */
+export class RendererConfig {
+  /** 是否启用强调效果 */
+  enableEmphasize: boolean = true;
+  /** 是否启用辉光效果 */
+  enableGlow: boolean = true;
+  /** 是否显示翻译 */
+  showTranslation: boolean = true;
+  /** 是否显示音译 */
+  showRoman: boolean = false;
+
+  constructor(
+    enableEmphasize: boolean = true,
+    enableGlow: boolean = true,
+    showTranslation: boolean = true,
+    showRoman: boolean = false
+  ) {
+    this.enableEmphasize = enableEmphasize;
+    this.enableGlow = enableGlow;
+    this.showTranslation = showTranslation;
+    this.showRoman = showRoman;
+  }
+
+  /**
+   * 从播放器配置创建渲染器配置
+   */
+  static fromPlayerConfig(playerConfig: LyricPlayerConfig): RendererConfig {
+    return new RendererConfig(
+      playerConfig.enableEmphasize,
+      playerConfig.enableGlow,
+      playerConfig.showTranslation,
+      playerConfig.showRoman
+    );
+  }
+}
