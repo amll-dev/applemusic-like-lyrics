@@ -67,6 +67,13 @@ export class CanvasLyricRenderer {
     // 保存画布状态
     ctx.save();
 
+    // 🎵 应用模糊效果（参考原版 lyric-line.ts line 181）
+    if (state.blurRadius > 0) {
+      ctx.filter = `blur(${state.blurRadius}px)`;
+    } else {
+      ctx.filter = 'none';
+    }
+
     // 应用变换：位置、缩放、透明度
     // 🎵 Y坐标组成：
     //   - positionY: 基础位置（布局计算得出）

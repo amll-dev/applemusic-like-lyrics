@@ -166,11 +166,25 @@ export class LyricPlayerController {
       }
 
       // ========== 模糊效果 ==========
+      // 🎵 参考原版 base.ts calcLayout 的模糊计算逻辑
+      let blurLevel: number = 0;
       if (this.config.enableBlur) {
-        state.blurRadius = calculateBlurRadius(distance, 5);
-      } else {
-        state.blurRadius = 0;
+        if (state.isActive) {
+          // 激活行：不模糊
+          blurLevel = 0;
+        } else {
+          // 非激活行：基础模糊值为1
+          blurLevel = 1;
+          if (index < this.currentLineIndex) {
+            // 已播放的歌词：距离越远，模糊越大
+            blurLevel += Math.abs(this.currentLineIndex - index) + 1;
+          } else {
+            // 未播放的歌词：距离越远，模糊越大
+            blurLevel += Math.abs(index - this.currentLineIndex);
+          }
+        }
       }
+      state.blurRadius = blurLevel;
 
       // ========== 已播放歌词的抬升效果 ==========
       // 🎵 参考 Apple Music：已播放的歌词会略微向上移动
