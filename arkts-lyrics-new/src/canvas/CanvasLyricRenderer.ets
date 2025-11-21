@@ -203,18 +203,16 @@ export class CanvasLyricRenderer {
     // 参考原版: up = 0.05em, easing: ease-out, fill: both
     let floatOffsetY: number = 0;
     if (wordInfo.progress > 0) {
-      // 🔧 调试：增大偏移值以便视觉验证（原值约3px）
-      const maxFloatOffset: number = -15;  // 调试用：向上偏移15px
+      // 使用字体高度的比例计算偏移量（原版是 0.05em = 5%）
+      // 这样在不同字体大小下都能保持一致的视觉效果
+      const floatRatio: number = 0.08;  // 字体高度的8%（略大于原版的5%，视觉更明显）
+      const maxFloatOffset: number = -wordInfo.height * floatRatio;
 
       if (wordInfo.progress < 1) {
         // 正在播放中：使用 ease-out 曲线逐渐抬升
         // ease-out: 1 - (1 - t)^2
         const easeOut: number = 1 - Math.pow(1 - wordInfo.progress, 2);
         floatOffsetY = maxFloatOffset * easeOut;
-
-        // 📊 调试日志：输出正在播放的单词的抬升效果
-        console.info(`[逐字抬升] "${wordInfo.word.word}" progress=${(wordInfo.progress * 100).toFixed(0)}% ` +
-          `floatY=${floatOffsetY.toFixed(1)}px`);
       } else {
         // 播放完毕：保持抬起状态 (fill: both)
         floatOffsetY = maxFloatOffset;
