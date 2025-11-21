@@ -53,8 +53,12 @@ export struct CanvasLyricPlayerComponent {
   private controller: LyricPlayerController | null = null;
   /** Canvas渲染器 */
   private renderer: CanvasLyricRenderer | null = null;
-  /** 动画器 */
+  /** 动画器 - 持续运行的渲染循环 */
   private animator: AnimatorResult | null = null;
+  /** 上一帧的时间戳（ms） */
+  private lastFrameTime: number = 0;
+  /** 动画是否正在运行 */
+  private isAnimating: boolean = false;
 
   // ============================================================
   // 生命周期方法
@@ -90,6 +94,9 @@ export struct CanvasLyricPlayerComponent {
     if (this.controller && this.currentTime > 0) {
       this.controller.setCurrentTime(this.currentTime);
     }
+
+    // 🎨 启动持续渲染循环
+    this.startRenderLoop();
   }
 
   /**
@@ -104,7 +111,7 @@ export struct CanvasLyricPlayerComponent {
    * 组件即将消失
    */
   aboutToDisappear(): void {
-    this.stopAnimator();
+    this.stopRenderLoop();
   }
 
   // ============================================================
@@ -146,65 +153,65 @@ export struct CanvasLyricPlayerComponent {
     this.controller.setCurrentTime(this.currentTime);
     const newLineIndex: number = this.controller.getCurrentLineIndex();
 
-    // 如果行切换，启动滚动动画
-    if (oldLineIndex !== newLineIndex && newLineIndex !== -1) {
-      this.startScrollAnimator();
-    } else {
-      // 否则直接绘制
-      this.drawFrame();
-    }
+    // 直接绘制（渲染循环会持续更新）
+    this.drawFrame();
   }
 
   /**
-   * 启动滚动动画
+   * 启动持续渲染循环
+   * 🎵 使用高帧率（目标120fps）确保流畅的动画效果
    */
-  private startScrollAnimator(): void {
-    if (!this.controller) {
-      return;
+  private startRenderLoop(): void {
+    if (this.isAnimating) {
+      return; // 已经在运行
     }
 
-    const scrollOffset: number = this.controller.getScrollOffset();
+    this.isAnimating = true;
+    this.lastFrameTime = Date.now();
 
-    // 停止之前的动画
-    if (this.animator) {
-      this.animator.finish();
-    }
-
-    // 创建新的动画器
+    // 创建持续运行的动画器
+    // 🎯 duration设置为一个很大的值，让动画持续运行
     this.animator = this.getUIContext().createAnimator({
-      duration: 400, // 动画时长400ms
-      easing: 'linear', // 线性缓动
+      duration: 3600000, // 1小时，确保足够长
+      easing: 'linear',
       delay: 0,
       fill: 'forwards',
       direction: 'normal',
-      iterations: 1,
+      iterations: -1, // 无限循环
       begin: 0,
       end: 1
     });
 
-    // 设置帧回调
-    this.animator.onFrame = (progress: number) => {
-      if (this.controller) {
-        // 更新控制器（弹簧动画会在update中计算）
-        this.controller.update(16.67); // 假设60fps
-        this.drawFrame();
+    // 🎨 帧回调 - 每帧调用
+    this.animator.onFrame = (_progress: number) => {
+      if (!this.controller) {
+        return;
       }
-    };
 
-    // 设置完成回调
-    this.animator.onFinish = () => {
-      // 动画完成，绘制最终状态
+      // 计算实际的帧时间间隔（ms）
+      const currentTime: number = Date.now();
+      const deltaTimeMs: number = currentTime - this.lastFrameTime;
+      this.lastFrameTime = currentTime;
+
+      // 限制最大间隔，避免标签页切换后的巨大时间跳跃
+      const cappedDelta: number = Math.min(deltaTimeMs, 100);
+
+      // 更新控制器状态（弹簧动画、间奏动画等）
+      this.controller.update(cappedDelta);
+
+      // 渲染当前帧
       this.drawFrame();
     };
 
-    // 播放动画
+    // 播放动画循环
     this.animator.play();
   }
 
   /**
-   * 停止动画器
+   * 停止渲染循环
    */
-  private stopAnimator(): void {
+  private stopRenderLoop(): void {
+    this.isAnimating = false;
     if (this.animator) {
       this.animator.finish();
       this.animator = null;

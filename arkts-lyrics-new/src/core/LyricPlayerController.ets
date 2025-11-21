@@ -5,6 +5,7 @@
 
 import { LyricLine, LyricLineRenderState, LyricPlayerConfig, InterludeState, CanvasRenderContext } from '../models/LyricModels';
 import { SpringAnimator, SpringAnimatorConfig } from '../utils/SpringAnimator';
+import { InterludeAnimator } from '../utils/InterludeAnimator';
 import { processLyricLines, calculateBlurRadius } from '../utils/LyricUtils';
 
 export class LyricPlayerController {
@@ -19,6 +20,7 @@ export class LyricPlayerController {
   private containerHeight: number = 0;
 
   private interludeState: InterludeState;
+  private interludeAnimator: InterludeAnimator;
 
   constructor(config: LyricPlayerConfig) {
     this.config = config;
@@ -27,6 +29,7 @@ export class LyricPlayerController {
     this.scrollAnimator = new SpringAnimator(springConfig);
 
     this.interludeState = new InterludeState();
+    this.interludeAnimator = new InterludeAnimator(this.interludeState);
   }
 
   /**
@@ -58,12 +61,20 @@ export class LyricPlayerController {
 
   /**
    * 帧更新
+   * @param deltaTimeMs 距离上一帧的时间（毫秒）
    */
   update(deltaTimeMs: number): void {
+    // 更新滚动动画
     if (this.config.enableSpring) {
       this.scrollAnimator.update(deltaTimeMs / 1000.0);
       this.scrollOffset = this.scrollAnimator.getPosition();
     }
+
+    // 🎵 更新间奏动画（三个小白点的跳动效果）
+    this.interludeAnimator.update(deltaTimeMs);
+
+    // 🎵 更新逐行波动动画（带回弹的优雅效果）
+    this.updateWaveAnimation(deltaTimeMs / 1000.0); // 转换为秒
   }
 
   /**
@@ -83,7 +94,7 @@ export class LyricPlayerController {
   private updateCurrentLine(): void {
     let newIndex: number = -1;
 
-    for (let i = 0; i < this.lines.length; i++) {
+    for (let i: number = 0; i < this.lines.length; i++) {
       const line: LyricLine = this.lines[i];
       if (this.currentTime >= line.startTime && this.currentTime < line.endTime) {
         newIndex = i;
@@ -92,8 +103,14 @@ export class LyricPlayerController {
     }
 
     if (newIndex !== this.currentLineIndex) {
+      const oldIndex: number = this.currentLineIndex;
       this.currentLineIndex = newIndex;
       this.updateScrollTarget();
+
+      // 🎵 触发逐行波动动画（创造优雅的连锁反应效果）
+      if (newIndex !== -1) {
+        this.triggerWaveAnimation(newIndex, oldIndex);
+      }
     }
   }
 
@@ -122,6 +139,7 @@ export class LyricPlayerController {
 
   /**
    * 更新行状态
+   * 包括：透明度、缩放、模糊、Y轴偏移等
    */
   private updateLineStates(): void {
     this.lineStates.forEach((state: LyricLineRenderState, index: number) => {
@@ -131,12 +149,14 @@ export class LyricPlayerController {
 
       const distance: number = Math.abs(index - this.currentLineIndex);
 
+      // ========== 缩放效果 ==========
       if (this.config.enableScale) {
         state.scaleRatio = state.isActive ? 1.0 : 0.97;
       } else {
         state.scaleRatio = 1.0;
       }
 
+      // ========== 透明度效果 ==========
       if (state.isActive) {
         state.alphaValue = 1.0;
       } else if (this.config.hidePassed && index < this.currentLineIndex) {
@@ -145,10 +165,27 @@ export class LyricPlayerController {
         state.alphaValue = Math.max(0.2, 1.0 - distance * 0.15);
       }
 
+      // ========== 模糊效果 ==========
       if (this.config.enableBlur) {
         state.blurRadius = calculateBlurRadius(distance, 5);
       } else {
         state.blurRadius = 0;
+      }
+
+      // ========== 已播放歌词的抬升效果 ==========
+      // 🎵 参考 Apple Music：已播放的歌词会略微向上移动
+      // 创造一种"被当前歌词推开"的视觉效果
+      if (index < this.currentLineIndex) {
+        // 已播放的歌词向上偏移
+        // 距离当前行越远，偏移越小（最近的偏移最大）
+        const passedDistance: number = this.currentLineIndex - index;
+        const maxOffset: number = -12;  // 最大向上偏移12px
+        const minOffset: number = -3;   // 最小向上偏移3px
+        // 使用指数衰减：最近的行偏移最大，远处的行逐渐减小
+        state.yOffset = maxOffset * Math.exp(-passedDistance * 0.5) + minOffset;
+      } else {
+        // 当前行和未播放的歌词：无偏移
+        state.yOffset = 0;
       }
     });
   }
@@ -167,10 +204,15 @@ export class LyricPlayerController {
 
   /**
    * 更新间奏状态
+   * 🎵 当两行歌词之间的间隔超过4秒时，显示间奏动画（三个跳动的小白点）
    */
   private updateInterludeState(): void {
-    if (this.currentLineIndex < 0) {
-      this.interludeState.visible = false;
+    // 没有当前行，隐藏间奏
+    if (this.currentLineIndex < 0 || this.currentLineIndex >= this.lines.length) {
+      if (this.interludeState.visible) {
+        this.interludeState.visible = false;
+        this.interludeAnimator.reset();
+      }
       return;
     }
 
@@ -178,24 +220,43 @@ export class LyricPlayerController {
     const nextLine: LyricLine | undefined =
       this.currentLineIndex + 1 < this.lines.length ? this.lines[this.currentLineIndex + 1] : undefined;
 
-    if (nextLine && this.currentTime >= currentLine.endTime) {
+    // 检查是否在两行之间的间隙中
+    if (nextLine && this.currentTime >= currentLine.endTime && this.currentTime < nextLine.startTime) {
+      // 计算间隙时长
       const gap: number = nextLine.startTime - currentLine.endTime;
 
+      // 间隙超过4秒，显示间奏动画
       if (gap >= 4000) {
-        this.interludeState.visible = true;
+        // 首次进入间奏状态，重置动画
+        if (!this.interludeState.visible) {
+          this.interludeState.visible = true;
+          this.interludeAnimator.reset();
+        }
+
         this.interludeState.prevLineIndex = this.currentLineIndex;
         this.interludeState.nextLineIndex = this.currentLineIndex + 1;
 
+        // 计算间奏动画的Y坐标（当前行下方）
         let posY: number = 0;
-        for (let i = 0; i <= this.currentLineIndex; i++) {
+        for (let i: number = 0; i <= this.currentLineIndex; i++) {
           posY += this.getLineHeight(i);
         }
+        // 将间奏放在两行的中间位置
+        posY += this.getLineHeight(this.currentLineIndex) / 2;
         this.interludeState.positionY = posY;
       } else {
-        this.interludeState.visible = false;
+        // 间隙小于4秒，隐藏间奏
+        if (this.interludeState.visible) {
+          this.interludeState.visible = false;
+          this.interludeAnimator.reset();
+        }
       }
     } else {
-      this.interludeState.visible = false;
+      // 不在间隙中，隐藏间奏
+      if (this.interludeState.visible) {
+        this.interludeState.visible = false;
+        this.interludeAnimator.reset();
+      }
     }
   }
 
@@ -216,6 +277,84 @@ export class LyricPlayerController {
     }
 
     return height;
+  }
+
+  /**
+   * 触发逐行波动动画
+   * 🎵 创造"被拉起"的连锁反应效果
+   * @param currentIndex 当前激活的行索引
+   * @param previousIndex 之前激活的行索引
+   */
+  private triggerWaveAnimation(currentIndex: number, previousIndex: number): void {
+    if (currentIndex < 0 || currentIndex >= this.lineStates.length) {
+      return;
+    }
+
+    // 🌊 波动参数
+    const waveAmplitude: number = -15;  // 向上偏移15px
+    const propagationSpeed: number = 0.08;  // 传播速度（控制延迟效果）
+
+    // 从当前行开始，向上和向下传播波动
+    this.lineStates.forEach((state: LyricLineRenderState, index: number) => {
+      // 计算距离当前行的距离
+      const distance: number = Math.abs(index - currentIndex);
+
+      // 🎯 根据距离计算延迟和衰减
+      // 距离越远，延迟越大，幅度越小
+      const delay: number = distance * propagationSpeed;
+      const attenuation: number = Math.exp(-distance * 0.3);  // 指数衰减
+      const targetOffset: number = waveAmplitude * attenuation;
+
+      // 设置目标偏移（会在update中平滑过渡）
+      // 使用延迟让波动依次传播
+      if (distance === 0) {
+        // 当前行：立即触发
+        state.waveTarget = targetOffset;
+        state.waveVelocity = 0;  // 重置速度
+      } else if (distance <= 5) {
+        // 附近的行：添加延迟效果
+        // 注意：这里使用setTimeout是为了创造延迟效果
+        // 在生产环境中，可以使用基于时间的延迟计数器
+        setTimeout(() => {
+          state.waveTarget = targetOffset;
+        }, delay * 1000);
+      }
+    });
+  }
+
+  /**
+   * 更新波动动画
+   * 🎵 使用弹簧物理模拟，创造带回弹的优雅效果
+   * @param deltaTimeSec 距离上一帧的时间（秒）
+   */
+  private updateWaveAnimation(deltaTimeSec: number): void {
+    // 弹簧参数
+    const stiffness: number = 200.0;  // 刚度：越大回弹越快
+    const damping: number = 18.0;     // 阻尼：越大震荡越小
+    const threshold: number = 0.01;   // 停止阈值
+
+    this.lineStates.forEach((state: LyricLineRenderState) => {
+      // 计算弹簧力
+      const displacement: number = state.waveOffset - state.waveTarget;
+      const springForce: number = -stiffness * displacement;
+      const dampingForce: number = -damping * state.waveVelocity;
+      const totalForce: number = springForce + dampingForce;
+
+      // 更新速度和位置（使用半隐式欧拉方法，更稳定）
+      state.waveVelocity += totalForce * deltaTimeSec;
+      state.waveOffset += state.waveVelocity * deltaTimeSec;
+
+      // 当接近目标且速度很小时，直接设置为目标值（避免无限振荡）
+      if (Math.abs(displacement) < threshold && Math.abs(state.waveVelocity) < threshold) {
+        state.waveOffset = state.waveTarget;
+        state.waveVelocity = 0;
+
+        // 如果已经回到静止状态，将目标重置为0
+        if (state.waveTarget !== 0 && Math.abs(state.waveOffset) < threshold) {
+          state.waveTarget = 0;
+        }
+      }
+    });
   }
 
   /**

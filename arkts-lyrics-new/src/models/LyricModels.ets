@@ -122,6 +122,14 @@ export class LyricLineRenderState {
   line: LyricLine;
   index: number;
   positionY: number = 0;
+  /** Y轴偏移量（用于已播放歌词的抬升效果） */
+  yOffset: number = 0;
+  /** 波动动画偏移量（逐行抬升效果） */
+  waveOffset: number = 0;
+  /** 波动动画目标值 */
+  waveTarget: number = 0;
+  /** 波动动画速度 */
+  waveVelocity: number = 0;
   scaleRatio: number = 0.97;
   alphaValue: number = 0.2;
   blurRadius: number = 0;

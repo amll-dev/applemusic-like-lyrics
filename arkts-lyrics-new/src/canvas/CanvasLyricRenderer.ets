@@ -68,7 +68,12 @@ export class CanvasLyricRenderer {
     ctx.save();
 
     // 应用变换：位置、缩放、透明度
-    ctx.translate(0, state.positionY);
+    // 🎵 Y坐标组成：
+    //   - positionY: 基础位置（布局计算得出）
+    //   - yOffset: 已播放歌词的抬升偏移（静态，让已播放的歌词略微上移）
+    //   - waveOffset: 波动动画偏移（动态，逐行传播的弹簧效果）
+    const finalY: number = state.positionY + state.yOffset + state.waveOffset;
+    ctx.translate(0, finalY);
     ctx.scale(state.scaleRatio, state.scaleRatio);
     ctx.globalAlpha = state.alphaValue;
 
@@ -114,10 +119,16 @@ export class CanvasLyricRenderer {
     // 计算单词位置
     const wordInfos: WordRenderInfo[] = this.calculateWordPositions(ctx, line, fontSize);
 
-    // 计算起始X坐标（居中或右对齐）
+    // 计算起始X坐标
+    // 🎵 对齐规则（参考 Apple Music）：
+    //   - 普通歌词：左对齐（距离左边缘 40px）
+    //   - 对唱歌词：右对齐（距离右边缘 40px）
     const totalWidth: number = wordInfos.reduce((sum: number, info: WordRenderInfo) => sum + info.width, 0);
-    const centerX: number = this.renderContext.width / 2;
-    let startX: number = line.isDuet ? (this.renderContext.width - totalWidth - 40) : (centerX - totalWidth / 2);
+    const leftMargin: number = 40;   // 左侧边距
+    const rightMargin: number = 40;  // 右侧边距
+    let startX: number = line.isDuet ?
+      (this.renderContext.width - totalWidth - rightMargin) :  // 对唱：右对齐
+      leftMargin;                                                // 普通：左对齐
 
     // 渲染每个单词
     wordInfos.forEach((wordInfo: WordRenderInfo) => {
