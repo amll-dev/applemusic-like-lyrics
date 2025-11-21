@@ -26,8 +26,8 @@ export struct CanvasLyricPlayerComponent {
   // @Prop 属性：从父组件接收数据（只读）
   // ============================================================
 
-  /** 歌词数据 - 从父组件传入 */
-  @Prop lyricLines: LyricLine[] = [];
+  /** 歌词数据 - 从父组件传入，使用 @Watch 监听变化 */
+  @Prop @Watch('onLyricLinesChanged') lyricLines: LyricLine[] = [];
 
   /** 当前播放时间（毫秒）- 使用 @Watch 监听变化 */
   @Prop @Watch('onCurrentTimeChanged') currentTime: number = 0;
@@ -112,16 +112,11 @@ export struct CanvasLyricPlayerComponent {
 
   /**
    * 组件即将更新
-   * 🔥 当 @Prop 属性变化时，ArkTS 框架会自动调用此方法
+   * 🔥 注意：现在使用 @Watch 装饰器代替 aboutToUpdate
+   * @Watch 会在具体的 @Prop 变化时立即触发，更可靠
+   * 见 onLyricLinesChanged() 和 onCurrentTimeChanged()
    */
-  aboutToUpdate(): void {
-    // 当 lyricLines 变化时，更新控制器
-    if (this.controller && this.lyricLines.length > 0) {
-      console.info('[LyricPlayer] 📝 Lyrics updated, count:', this.lyricLines.length);
-      this.controller.setLyricLines(this.lyricLines);
-      this.drawFrame();
-    }
-  }
+  // aboutToUpdate() 已被 @Watch 装饰器替代
 
   /**
    * 组件即将消失
@@ -134,6 +129,37 @@ export struct CanvasLyricPlayerComponent {
   // ============================================================
   // @Watch 回调方法
   // ============================================================
+
+  /**
+   * 歌词数据变化时调用
+   * 🔥 通过 @Watch('onLyricLinesChanged') 自动触发
+   */
+  onLyricLinesChanged(): void {
+    console.info('[LyricPlayer] ========================================');
+    console.info('[LyricPlayer] 🔄 onLyricLinesChanged() TRIGGERED');
+    console.info('[LyricPlayer]   - New lyrics count:', this.lyricLines.length);
+    console.info('[LyricPlayer] ========================================');
+
+    if (!this.controller) {
+      console.warn('[LyricPlayer] ⚠️ Controller not initialized yet');
+      return;
+    }
+
+    if (this.lyricLines.length === 0) {
+      console.warn('[LyricPlayer] ⚠️ Lyrics array is empty');
+      return;
+    }
+
+    // 重新设置歌词数据到控制器
+    console.info('[LyricPlayer] 📝 Setting new lyrics to controller...');
+    this.controller.setLyricLines(this.lyricLines);
+    console.info('[LyricPlayer] ✓ Lyrics set successfully');
+
+    // 立即重绘
+    console.info('[LyricPlayer] 🎨 Calling drawFrame after lyrics change...');
+    this.drawFrame();
+    console.info('[LyricPlayer] ========================================');
+  }
 
   /**
    * 当前时间变化时调用
