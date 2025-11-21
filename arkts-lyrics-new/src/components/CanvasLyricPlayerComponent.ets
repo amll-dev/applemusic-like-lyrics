@@ -21,15 +21,15 @@ import { CanvasLyricRenderer } from '../canvas/CanvasLyricRenderer';
  */
 @Component
 export struct CanvasLyricPlayerComponent {
-  /** Canvas宽度 */
-  @State canvasWidth: number = 0;
-  /** Canvas高度 */
-  @State canvasHeight: number = 0;
-
   /** Canvas渲染设置 */
   private settings: RenderingContextSettings = new RenderingContextSettings(true);
   /** Canvas 2D上下文 */
   private canvasContext: CanvasRenderingContext2D = new CanvasRenderingContext2D(this.settings);
+
+  /** Canvas宽度 */
+  private canvasWidth: number = 0;
+  /** Canvas高度 */
+  private canvasHeight: number = 0;
 
   /** 播放器控制器 */
   private controller: LyricPlayerController | null = null;
