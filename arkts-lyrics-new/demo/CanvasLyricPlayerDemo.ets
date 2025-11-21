@@ -18,7 +18,11 @@ struct CanvasLyricPlayerDemoPage {
   // ============================================================
 
   /** 歌词数据 - 🔥 关键：在声明时就初始化，而不是在 aboutToAppear() 中 */
-  @State lyrics: LyricLine[] = CanvasLyricPlayerDemoPage.createSampleLyrics();
+  @State lyrics: LyricLine[] = (() => {
+    const lines = CanvasLyricPlayerDemoPage.createSampleLyrics();
+    console.info('[Demo] 📦 @State lyrics initialized:', lines.length, 'lines');
+    return lines;
+  })();
   /** 当前播放时间（毫秒） */
   @State currentTimeMs: number = 0;
   /** 是否正在播放 */
@@ -224,6 +228,9 @@ struct CanvasLyricPlayerDemoPage {
   }
 
   build() {
+    // 🔍 数据传递日志
+    console.info('[Demo] 🏗️ build() - Passing lyrics to component:', this.lyrics.length);
+
     Column() {
       // 标题栏
       Row() {

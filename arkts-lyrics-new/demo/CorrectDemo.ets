@@ -12,8 +12,12 @@ import { LyricLine, LyricWord, LyricPlayerConfig } from '../src/models/LyricMode
 @Entry
 @Component
 struct CorrectCanvasLyricPlayerDemo {
-  /** 歌词数据（在父组件中维护） */
-  @State lyrics: LyricLine[] = [];
+  /** 歌词数据 - 🔥 关键：在声明时就初始化数据 */
+  @State lyrics: LyricLine[] = (() => {
+    const lines = CorrectCanvasLyricPlayerDemo.createSampleLyrics();
+    console.info('[Demo] 📦 @State lyrics initialized:', lines.length, 'lines');
+    return lines;
+  })();
   /** 当前播放时间（毫秒） */
   @State currentTimeMs: number = 0;
   /** 是否正在播放 */
@@ -28,8 +32,9 @@ struct CorrectCanvasLyricPlayerDemo {
 
   /**
    * 创建示例歌词数据
+   * 🔥 必须是静态方法，以便在 @State 声明时调用
    */
-  private createSampleLyrics(): LyricLine[] {
+  private static createSampleLyrics(): LyricLine[] {
     const lines: LyricLine[] = [];
 
     // 第1行：在这个世界
@@ -95,11 +100,10 @@ struct CorrectCanvasLyricPlayerDemo {
 
   /**
    * 组件即将出现
+   * 🔥 注意：歌词数据已在 @State 声明时初始化
    */
   aboutToAppear(): void {
-    // 🔥 关键修复：在组件初始化时加载歌词数据
-    // 这样 build() 中的 CanvasLyricPlayerComponent 就能立即获得数据
-    this.lyrics = this.createSampleLyrics();
+    console.info('[Demo] 🎬 aboutToAppear - Lyrics:', this.lyrics.length);
   }
 
   /**
@@ -184,6 +188,9 @@ struct CorrectCanvasLyricPlayerDemo {
   }
 
   build() {
+    // 🔍 数据传递日志
+    console.info('[Demo] 🏗️ build() - Passing lyrics:', this.lyrics.length, 'lines');
+
     Column() {
       // 标题栏
       Row() {
@@ -198,12 +205,11 @@ struct CorrectCanvasLyricPlayerDemo {
       .justifyContent(FlexAlign.Center)
       .backgroundColor('#1a1a1a')
 
-      // 🔥 关键修复：通过 @Prop 传递数据，不需要保存组件引用
-      // ArkTS 会自动处理组件的创建和生命周期
-      // ✅ 不要使用 new CanvasLyricPlayerComponent()
-      // ✅ 不要保存组件引用
-      // ✅ 不要在 onAppear 中调用组件方法
+      // 🔥 关键：通过 @Prop 传递数据
+      // ✅ 必须传递 lyricLines 和 currentTime
       CanvasLyricPlayerComponent({
+        lyricLines: this.lyrics,          // ← 🔥 关键：传递歌词数据
+        currentTime: this.currentTimeMs,  // ← 🔥 关键：传递当前时间
         playerConfig: LyricPlayerConfig.create({
           alignAnchor: 'center',
           alignPosition: 0.4,
