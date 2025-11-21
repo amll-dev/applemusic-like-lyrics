@@ -23,7 +23,7 @@ import { CanvasLyricRenderer } from '../canvas/CanvasLyricRenderer';
 export struct CanvasLyricPlayerComponent {
   /** Canvas渲染设置 */
   private settings: RenderingContextSettings = new RenderingContextSettings(true);
-  /** Canvas 2D上下文 */
+  /** Canvas 2D上下文 - 必须在声明时初始化，因为 build() 在 aboutToAppear() 之前执行 */
   private canvasContext: CanvasRenderingContext2D = new CanvasRenderingContext2D(this.settings);
 
   /** Canvas宽度 */
