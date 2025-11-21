@@ -253,12 +253,15 @@ export struct CanvasLyricPlayerComponent {
    * @param height 新高度
    */
   private handleSizeChange(width: number, height: number): void {
+    console.info('[LyricPlayer] 📏 Size changed:', width, 'x', height);
+
     this.canvasWidth = width;
     this.canvasHeight = height;
 
     // 更新控制器容器高度
     if (this.controller) {
       this.controller.setContainerHeight(height);
+      console.info('[LyricPlayer] ✓ Controller height updated');
     }
 
     // 重新创建渲染器
@@ -266,9 +269,19 @@ export struct CanvasLyricPlayerComponent {
       const newContext: CanvasRenderContext = new CanvasRenderContext(width, height, 1.0);
       this.renderer = new CanvasLyricRenderer(newContext);
       this.renderer.setCanvasContext(this.canvasContext);
+      console.info('[LyricPlayer] ✓ Renderer recreated');
     }
 
-    // 重绘
+    // 🔥 关键：如果有歌词数据，确保已设置到控制器
+    // 这解决了首次渲染黑屏的问题
+    if (this.controller && this.lyricLines.length > 0) {
+      console.info('[LyricPlayer] 🔄 Re-setting lyrics after size change');
+      this.controller.setLyricLines(this.lyricLines);
+    }
+
+    // 🔥 关键：立即绘制一次（参考华为官方做法）
+    // 确保在获得有效尺寸后立即显示内容
+    console.info('[LyricPlayer] 🎨 Drawing initial frame after size change...');
     this.drawFrame();
   }
 
