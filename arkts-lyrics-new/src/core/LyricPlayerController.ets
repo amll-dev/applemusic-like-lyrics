@@ -230,7 +230,7 @@ export class LyricPlayerController {
 
     this.lineStates.forEach((state: LyricLineRenderState) => {
       const lineTop: number = state.positionY + state.yOffset + state.waveOffset;
-      const lineBottom: number = lineTop + this.getLineHeight(state.lineIndex);
+      const lineBottom: number = lineTop + this.getLineHeight(state.index);
 
       // 行是否在视口内（包括overscan）
       state.isInView = !(lineBottom < viewportTop || lineTop > viewportBottom);
