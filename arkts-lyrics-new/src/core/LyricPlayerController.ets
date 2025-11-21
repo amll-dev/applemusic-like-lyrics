@@ -204,8 +204,9 @@ export class LyricPlayerController {
         // 已播放的歌词向上偏移
         // 距离当前行越远，偏移越小（最近的偏移最大）
         const passedDistance: number = this.currentLineIndex - index;
-        const maxOffset: number = -12;  // 最大向上偏移12px
-        const minOffset: number = -3;   // 最小向上偏移3px
+        // 🔧 调试：增大偏移值以便视觉验证
+        const maxOffset: number = -60;  // 调试用：最大向上偏移60px（原值12px）
+        const minOffset: number = -20;  // 调试用：最小向上偏移20px（原值3px）
         // 使用指数衰减：最近的行偏移最大，远处的行逐渐减小
         state.yOffset = maxOffset * Math.exp(-passedDistance * 0.5) + minOffset;
 

@@ -90,6 +90,14 @@ export class CanvasLyricRenderer {
     ctx.scale(state.scaleRatio, state.scaleRatio);
     ctx.globalAlpha = state.alphaValue;
 
+    // 🔧 调试：给已抬升的歌词绘制红色背景，便于视觉确认
+    if (state.yOffset !== 0) {
+      ctx.save();
+      ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';  // 半透明红色
+      ctx.fillRect(0, 0, this.renderContext.width, 50);  // 绘制背景条
+      ctx.restore();
+    }
+
     // 渲染主歌词
     this.renderMainLyric(ctx, line, currentTime, state.isActive, config);
 
