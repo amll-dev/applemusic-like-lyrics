@@ -70,11 +70,11 @@ export class LyricPlayerController {
       this.scrollOffset = this.scrollAnimator.getPosition();
     }
 
-    // 🎵 更新间奏动画（三个小白点的跳动效果）
-    this.interludeAnimator.update(this.currentTime);
+    // 🚫 暂时屏蔽间奏动画（调试用）
+    // this.interludeAnimator.update(this.currentTime);
 
-    // 🎵 更新逐行波动动画（带回弹的优雅效果）
-    this.updateWaveAnimation(deltaTimeMs / 1000.0); // 转换为秒
+    // 🚫 暂时屏蔽逐行波动动画（调试用）
+    // this.updateWaveAnimation(deltaTimeMs / 1000.0);
   }
 
   /**
@@ -105,12 +105,23 @@ export class LyricPlayerController {
     if (newIndex !== this.currentLineIndex) {
       const oldIndex: number = this.currentLineIndex;
       this.currentLineIndex = newIndex;
+
+      // 📊 日志输出：当前行切换
+      if (newIndex !== -1) {
+        const currentLine = this.lines[newIndex];
+        const lyrics = currentLine.words.map(w => w.word).join('');
+        console.info(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+        console.info(`[行切换] ${oldIndex} → ${newIndex} | 当前播放: "${lyrics}"`);
+        console.info(`[时间] ${this.currentTime}ms | 行范围: ${currentLine.startTime}-${currentLine.endTime}ms`);
+        console.info(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+      }
+
       this.updateScrollTarget();
 
-      // 🎵 触发逐行波动动画（创造优雅的连锁反应效果）
-      if (newIndex !== -1) {
-        this.triggerWaveAnimation(newIndex, oldIndex);
-      }
+      // 🚫 暂时屏蔽波动动画（调试用）
+      // if (newIndex !== -1) {
+      //   this.triggerWaveAnimation(newIndex, oldIndex);
+      // }
     }
   }
 
@@ -197,10 +208,24 @@ export class LyricPlayerController {
         const minOffset: number = -3;   // 最小向上偏移3px
         // 使用指数衰减：最近的行偏移最大，远处的行逐渐减小
         state.yOffset = maxOffset * Math.exp(-passedDistance * 0.5) + minOffset;
+
+        // 📊 日志输出：已播放歌词的抬升效果
+        console.info(`[抬升] 行${index} "${line.words.map(w => w.word).join('')}" ` +
+          `passedDistance=${passedDistance} yOffset=${state.yOffset.toFixed(2)}px`);
       } else {
         // 当前行和未播放的歌词：无偏移
         state.yOffset = 0;
+
+        // 📊 日志输出：当前行和未播放行
+        if (state.isActive) {
+          console.info(`[当前行] 行${index} "${line.words.map(w => w.word).join('')}" yOffset=0px (正在播放)`);
+        }
       }
+
+      // 🚫 暂时屏蔽波动动画（调试用）
+      state.waveOffset = 0;
+      state.waveTarget = 0;
+      state.waveVelocity = 0;
     });
   }
 

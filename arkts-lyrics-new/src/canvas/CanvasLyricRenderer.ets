@@ -79,6 +79,13 @@ export class CanvasLyricRenderer {
     //   - yOffset: 已播放歌词的抬升偏移（静态，让已播放的歌词略微上移）
     //   - waveOffset: 波动动画偏移（动态，逐行传播的弹簧效果）
     const finalY: number = state.positionY + state.yOffset + state.waveOffset;
+
+    // 📊 日志输出：最终渲染坐标（只输出有yOffset的行）
+    if (state.yOffset !== 0) {
+      const lyrics = line.words.map(w => w.word).join('');
+      console.info(`[渲染] "${lyrics}" | positionY=${state.positionY.toFixed(1)} + yOffset=${state.yOffset.toFixed(2)} = finalY=${finalY.toFixed(2)}`);
+    }
+
     ctx.translate(0, finalY);
     ctx.scale(state.scaleRatio, state.scaleRatio);
     ctx.globalAlpha = state.alphaValue;
