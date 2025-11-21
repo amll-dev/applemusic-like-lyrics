@@ -22,9 +22,9 @@ import { CanvasLyricRenderer } from '../canvas/CanvasLyricRenderer';
 @Component
 export struct CanvasLyricPlayerComponent {
   /** Canvas宽度 */
-  @State private canvasWidth: number = 0;
+  @State canvasWidth: number = 0;
   /** Canvas高度 */
-  @State private canvasHeight: number = 0;
+  @State canvasHeight: number = 0;
 
   /** Canvas渲染设置 */
   private settings: RenderingContextSettings = new RenderingContextSettings(true);

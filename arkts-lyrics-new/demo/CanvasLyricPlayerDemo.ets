@@ -14,11 +14,11 @@ import { LyricLine, LyricWord, LyricPlayerConfig } from '../src/models/LyricMode
 @Component
 struct CanvasLyricPlayerDemoPage {
   /** 当前播放时间（毫秒） */
-  @State private currentTimeMs: number = 0;
+  @State currentTimeMs: number = 0;
   /** 是否正在播放 */
-  @State private isPlayingState: boolean = false;
+  @State isPlayingState: boolean = false;
   /** 进度条值 */
-  @State private sliderValue: number = 0;
+  @State sliderValue: number = 0;
 
   /** 歌词播放器组件引用 */
   private lyricPlayerComponent: CanvasLyricPlayerComponent | null = null;
