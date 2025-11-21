@@ -197,31 +197,10 @@ export class LyricPlayerController {
       }
       state.blurRadius = blurLevel;
 
-      // ========== 已播放歌词的抬升效果 ==========
-      // 🎵 参考 Apple Music：已播放的歌词会略微向上移动
-      // 创造一种"被当前歌词推开"的视觉效果
-      if (index < this.currentLineIndex) {
-        // 已播放的歌词向上偏移
-        // 距离当前行越远，偏移越小（最近的偏移最大）
-        const passedDistance: number = this.currentLineIndex - index;
-        // 🔧 调试：增大偏移值以便视觉验证
-        const maxOffset: number = -60;  // 调试用：最大向上偏移60px（原值12px）
-        const minOffset: number = -20;  // 调试用：最小向上偏移20px（原值3px）
-        // 使用指数衰减：最近的行偏移最大，远处的行逐渐减小
-        state.yOffset = maxOffset * Math.exp(-passedDistance * 0.5) + minOffset;
-
-        // 📊 日志输出：已播放歌词的抬升效果
-        console.info(`[抬升] 行${index} "${line.words.map(w => w.word).join('')}" ` +
-          `passedDistance=${passedDistance} yOffset=${state.yOffset.toFixed(2)}px`);
-      } else {
-        // 当前行和未播放的歌词：无偏移
-        state.yOffset = 0;
-
-        // 📊 日志输出：当前行和未播放行
-        if (state.isActive) {
-          console.info(`[当前行] 行${index} "${line.words.map(w => w.word).join('')}" yOffset=0px (正在播放)`);
-        }
-      }
+      // ========== 行级 Y 偏移（保留用于未来扩展）==========
+      // 注意：逐字抬升效果已移至 CanvasLyricRenderer.renderWord() 中实现
+      // 这里的 yOffset 仅用于行级别的偏移（如波动动画等）
+      state.yOffset = 0;
 
       // 🚫 暂时屏蔽波动动画（调试用）
       state.waveOffset = 0;

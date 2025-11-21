@@ -79,24 +79,9 @@ export class CanvasLyricRenderer {
     //   - yOffset: 已播放歌词的抬升偏移（静态，让已播放的歌词略微上移）
     //   - waveOffset: 波动动画偏移（动态，逐行传播的弹簧效果）
     const finalY: number = state.positionY + state.yOffset + state.waveOffset;
-
-    // 📊 日志输出：最终渲染坐标（只输出有yOffset的行）
-    if (state.yOffset !== 0) {
-      const lyrics = line.words.map(w => w.word).join('');
-      console.info(`[渲染] "${lyrics}" | positionY=${state.positionY.toFixed(1)} + yOffset=${state.yOffset.toFixed(2)} = finalY=${finalY.toFixed(2)}`);
-    }
-
     ctx.translate(0, finalY);
     ctx.scale(state.scaleRatio, state.scaleRatio);
     ctx.globalAlpha = state.alphaValue;
-
-    // 🔧 调试：给已抬升的歌词绘制红色背景，便于视觉确认
-    if (state.yOffset !== 0) {
-      ctx.save();
-      ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';  // 半透明红色
-      ctx.fillRect(0, 0, this.renderContext.width, 50);  // 绘制背景条
-      ctx.restore();
-    }
 
     // 渲染主歌词
     this.renderMainLyric(ctx, line, currentTime, state.isActive, config);
@@ -213,10 +198,36 @@ export class CanvasLyricRenderer {
   ): void {
     ctx.save();
 
+    // ========== 🎵 逐字抬升效果（Apple Music 风格）==========
+    // 当单词开始播放时，向上浮动；播放完毕后保持抬起状态
+    // 参考原版: up = 0.05em, easing: ease-out, fill: both
+    let floatOffsetY: number = 0;
+    if (wordInfo.progress > 0) {
+      // 🔧 调试：增大偏移值以便视觉验证（原值约3px）
+      const maxFloatOffset: number = -15;  // 调试用：向上偏移15px
+
+      if (wordInfo.progress < 1) {
+        // 正在播放中：使用 ease-out 曲线逐渐抬升
+        // ease-out: 1 - (1 - t)^2
+        const easeOut: number = 1 - Math.pow(1 - wordInfo.progress, 2);
+        floatOffsetY = maxFloatOffset * easeOut;
+
+        // 📊 调试日志：输出正在播放的单词的抬升效果
+        console.info(`[逐字抬升] "${wordInfo.word.word}" progress=${(wordInfo.progress * 100).toFixed(0)}% ` +
+          `floatY=${floatOffsetY.toFixed(1)}px`);
+      } else {
+        // 播放完毕：保持抬起状态 (fill: both)
+        floatOffsetY = maxFloatOffset;
+      }
+    }
+
+    // 应用抬升偏移
+    const renderY: number = wordInfo.y + floatOffsetY;
+
     // 应用强调变换
     if (wordInfo.shouldEmphasize && wordInfo.emphasizeScale > 1.0) {
       const centerX: number = wordInfo.x + wordInfo.width / 2;
-      const centerY: number = wordInfo.y + wordInfo.height / 2;
+      const centerY: number = renderY + wordInfo.height / 2;
       ctx.translate(centerX, centerY);
       ctx.scale(wordInfo.emphasizeScale, wordInfo.emphasizeScale);
       ctx.translate(-centerX, -centerY);
@@ -234,30 +245,31 @@ export class CanvasLyricRenderer {
     // 渲染渐变遮罩效果（性能优化：减少渐变创建）
     // 只在真正有渐变效果的范围内使用渐变（0.05-0.95）
     if (isActive && wordInfo.progress > 0.05 && wordInfo.progress < 0.95) {
-      this.renderWordWithGradientMask(ctx, wordInfo);
+      this.renderWordWithGradientMaskAtY(ctx, wordInfo, renderY);
     } else {
       // 普通渲染（性能更好）
       const color: string = calculateWordColor(wordInfo.progress, isActive);
       ctx.fillStyle = color;
-      ctx.fillText(wordInfo.word.word, wordInfo.x, wordInfo.y);
+      ctx.fillText(wordInfo.word.word, wordInfo.x, renderY);
     }
 
     ctx.restore();
   }
 
   /**
-   * 渲染带渐变遮罩的单词（核心特效）
+   * 渲染带渐变遮罩的单词（核心特效）- 指定Y坐标版本
    * 使用线性渐变模拟原版的mask-image效果
    * @param ctx Canvas上下文
    * @param wordInfo 单词渲染信息
+   * @param renderY 渲染Y坐标（包含抬升偏移）
    */
-  private renderWordWithGradientMask(
+  private renderWordWithGradientMaskAtY(
     ctx: CanvasRenderingContext2D,
-    wordInfo: WordRenderInfo
+    wordInfo: WordRenderInfo,
+    renderY: number
   ): void {
     const word: string = wordInfo.word.word;
     const x: number = wordInfo.x;
-    const y: number = wordInfo.y;
     const width: number = wordInfo.width;
     const progress: number = wordInfo.progress;
 
@@ -270,9 +282,9 @@ export class CanvasLyricRenderer {
     // 创建线性渐变
     const gradient: CanvasGradient = ctx.createLinearGradient(
       x + gradientStart,
-      y,
+      renderY,
       x + gradientEnd,
-      y
+      renderY
     );
 
     // 设置渐变色标
@@ -290,7 +302,7 @@ export class CanvasLyricRenderer {
     }
 
     ctx.fillStyle = gradient;
-    ctx.fillText(word, x, y);
+    ctx.fillText(word, x, renderY);
   }
 
   /**
