@@ -17,8 +17,8 @@ struct CanvasLyricPlayerDemoPage {
   // @State 属性：在父组件中维护状态
   // ============================================================
 
-  /** 歌词数据 */
-  @State lyrics: LyricLine[] = [];
+  /** 歌词数据 - 🔥 关键：在声明时就初始化，而不是在 aboutToAppear() 中 */
+  @State lyrics: LyricLine[] = CanvasLyricPlayerDemoPage.createSampleLyrics();
   /** 当前播放时间（毫秒） */
   @State currentTimeMs: number = 0;
   /** 是否正在播放 */
@@ -33,8 +33,9 @@ struct CanvasLyricPlayerDemoPage {
 
   /**
    * 创建示例歌词数据
+   * 🔥 必须是静态方法，以便在 @State 声明时调用
    */
-  private createSampleLyrics(): LyricLine[] {
+  private static createSampleLyrics(): LyricLine[] {
     const lines: LyricLine[] = [];
 
     // 第1行：在这个世界
@@ -130,15 +131,11 @@ struct CanvasLyricPlayerDemoPage {
 
   /**
    * 组件即将出现
+   * 🔥 注意：歌词数据已在 @State 声明时初始化，不需要在这里再次设置
    */
   aboutToAppear(): void {
     console.info('[Demo] 🎬 aboutToAppear');
-
-    // 🔥 关键：在组件初始化时加载歌词数据
-    // 这样 build() 中的 CanvasLyricPlayerComponent 就能立即获得数据
-    this.lyrics = this.createSampleLyrics();
-
-    console.info('[Demo] ✓ Loaded', this.lyrics.length, 'lyrics lines');
+    console.info('[Demo] ✓ Lyrics already loaded:', this.lyrics.length, 'lines');
   }
 
   /**
