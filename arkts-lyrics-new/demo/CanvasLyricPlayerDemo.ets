@@ -1,21 +1,24 @@
 /**
- * 鸿蒙ArkTS版本 - Apple Music风格歌词播放器
- * Demo示例
+ * Canvas歌词播放器完整Demo
+ * 展示所有特效功能
  */
 
-import { LyricPlayer } from '../src/components/LyricPlayer';
-import { LyricLine, LyricPlayerConfig } from '../src/interfaces/LyricInterfaces';
+import { CanvasLyricPlayerComponent } from '../src/components/CanvasLyricPlayerComponent';
+import { LyricLine, LyricWord, LyricPlayerConfig } from '../src/models/LyricModels';
 
 @Entry
 @Component
-struct LyricPlayerDemoPage {
-  @State currentTime: number = 0;
-  @State isPlaying: boolean = false;
-  private lyricPlayerRef: LyricPlayer | null = null;
-  private timer: number = -1;
+struct CanvasLyricPlayerDemoPage {
+  @State private currentTimeMs: number = 0;
+  @State private isPlayingState: boolean = false;
+  @State private sliderValue: number = 0;
+
+  private lyricPlayerComponent: CanvasLyricPlayerComponent | null = null;
+  private timerHandle: number = -1;
+  private readonly maxTimeMs: number = 30000;
 
   // 示例歌词数据
-  private sampleLyrics: LyricLine[] = [
+  private sampleLyricsData: Array<Record<string, Object>> = [
     {
       words: [
         { word: '在', startTime: 0, endTime: 300 },
@@ -89,7 +92,6 @@ struct LyricPlayerDemoPage {
       isBG: false,
       isDuet: false
     },
-    // 长间奏
     {
       words: [
         { word: '但', startTime: 18000, endTime: 18400 },
@@ -142,78 +144,89 @@ struct LyricPlayerDemoPage {
       startTime: 26000,
       endTime: 28500,
       isBG: false,
-      isDuet: true // 对唱效果
+      isDuet: true
     }
   ];
 
-  // 播放器配置
-  private playerConfig: LyricPlayerConfig = {
-    alignAnchor: 'center',
-    alignPosition: 0.4,
-    enableScale: true,
-    enableBlur: true,
-    enableSpring: true,
-    wordFadeWidth: 0.5,
-    hidePassed: false,
-    showTranslation: true,
-    showRoman: false
-  };
-
-  aboutToAppear() {
-    // 初始化时设置歌词
-    if (this.lyricPlayerRef) {
-      this.lyricPlayerRef.setLyricLines(this.sampleLyrics);
-    }
+  aboutToDisappear(): void {
+    this.stopPlayback();
   }
 
-  aboutToDisappear() {
-    this.stopPlayback();
+  /**
+   * 转换数据为类型化对象
+   */
+  private parseLyricData(): LyricLine[] {
+    const lines: LyricLine[] = [];
+
+    this.sampleLyricsData.forEach((lineData: Record<string, Object>) => {
+      const wordsData = lineData['words'] as Array<Record<string, Object>>;
+      const words: LyricWord[] = wordsData.map((wordData: Record<string, Object>) => {
+        return new LyricWord(
+          wordData['startTime'] as number,
+          wordData['endTime'] as number,
+          wordData['word'] as string,
+          (wordData['romanWord'] as string) ?? '',
+          (wordData['obscene'] as boolean) ?? false
+        );
+      });
+
+      const line: LyricLine = new LyricLine(
+        words,
+        lineData['startTime'] as number,
+        lineData['endTime'] as number,
+        (lineData['translatedLyric'] as string) ?? '',
+        (lineData['romanLyric'] as string) ?? '',
+        (lineData['isBG'] as boolean) ?? false,
+        (lineData['isDuet'] as boolean) ?? false
+      );
+
+      lines.push(line);
+    });
+
+    return lines;
   }
 
   /**
    * 开始播放
    */
-  startPlayback() {
-    this.isPlaying = true;
-    let lastTime = Date.now();
+  private startPlayback(): void {
+    this.isPlayingState = true;
+    let lastTime: number = Date.now();
 
-    this.timer = setInterval(() => {
-      const now = Date.now();
-      const delta = now - lastTime;
+    this.timerHandle = setInterval(() => {
+      const now: number = Date.now();
+      const delta: number = now - lastTime;
       lastTime = now;
 
-      // 更新播放时间
-      this.currentTime += delta;
+      this.currentTimeMs += delta;
+      this.sliderValue = this.currentTimeMs;
 
-      // 更新歌词播放器
-      if (this.lyricPlayerRef) {
-        this.lyricPlayerRef.setCurrentTime(this.currentTime);
-        this.lyricPlayerRef.onFrameUpdate(delta);
+      if (this.lyricPlayerComponent) {
+        this.lyricPlayerComponent.setCurrentTime(this.currentTimeMs);
       }
 
-      // 循环播放
-      if (this.currentTime > 30000) {
-        this.currentTime = 0;
+      if (this.currentTimeMs > this.maxTimeMs) {
+        this.currentTimeMs = 0;
       }
-    }, 16); // ~60fps
+    }, 16);
   }
 
   /**
    * 停止播放
    */
-  stopPlayback() {
-    this.isPlaying = false;
-    if (this.timer !== -1) {
-      clearInterval(this.timer);
-      this.timer = -1;
+  private stopPlayback(): void {
+    this.isPlayingState = false;
+    if (this.timerHandle !== -1) {
+      clearInterval(this.timerHandle);
+      this.timerHandle = -1;
     }
   }
 
   /**
    * 切换播放状态
    */
-  togglePlayback() {
-    if (this.isPlaying) {
+  private togglePlayback(): void {
+    if (this.isPlayingState) {
       this.stopPlayback();
     } else {
       this.startPlayback();
@@ -223,47 +236,75 @@ struct LyricPlayerDemoPage {
   /**
    * 重置播放
    */
-  resetPlayback() {
+  private resetPlayback(): void {
     this.stopPlayback();
-    this.currentTime = 0;
-    if (this.lyricPlayerRef) {
-      this.lyricPlayerRef.setCurrentTime(0);
+    this.currentTimeMs = 0;
+    this.sliderValue = 0;
+    if (this.lyricPlayerComponent) {
+      this.lyricPlayerComponent.setCurrentTime(0);
     }
   }
 
   /**
-   * 跳转到指定时间
+   * 跳转
    */
-  seekTo(time: number) {
-    this.currentTime = time;
-    if (this.lyricPlayerRef) {
-      this.lyricPlayerRef.setCurrentTime(time);
+  private seekTo(timeMs: number): void {
+    this.currentTimeMs = timeMs;
+    this.sliderValue = timeMs;
+    if (this.lyricPlayerComponent) {
+      this.lyricPlayerComponent.setCurrentTime(timeMs);
     }
+  }
+
+  /**
+   * 格式化时间
+   */
+  private formatTime(ms: number): string {
+    const totalSeconds: number = Math.floor(ms / 1000);
+    const minutes: number = Math.floor(totalSeconds / 60);
+    const seconds: number = totalSeconds % 60;
+    const secondsStr: string = seconds < 10 ? '0' + seconds : seconds.toString();
+    return minutes + ':' + secondsStr;
   }
 
   build() {
     Column() {
       // 标题栏
       Row() {
-        Text('Apple Music 风格歌词')
-          .fontSize(20)
+        Text('Apple Music 风格歌词 (Canvas版本)')
+          .fontSize(18)
           .fontWeight(FontWeight.Bold)
           .fontColor(Color.White)
       }
       .width('100%')
-      .height(60)
-      .padding({ left: 20, right: 20 })
+      .height(56)
+      .padding({ left: 16, right: 16 })
       .justifyContent(FlexAlign.Center)
       .backgroundColor('#1a1a1a')
 
       // 歌词播放器
       Stack() {
-        LyricPlayer({
-          config: this.playerConfig
+        CanvasLyricPlayerComponent({
+          playerConfig: LyricPlayerConfig.create({
+            alignAnchor: 'center',
+            alignPosition: 0.4,
+            enableScale: true,
+            enableBlur: true,
+            enableSpring: true,
+            enableEmphasize: true,
+            enableGlow: true,
+            showTranslation: true,
+            showRoman: false,
+            useCanvas: true
+          })
         })
-          .onReady((player: LyricPlayer) => {
-            this.lyricPlayerRef = player;
-            player.setLyricLines(this.sampleLyrics);
+          .onAppear(() => {
+            const config: LyricPlayerConfig = LyricPlayerConfig.create();
+            this.lyricPlayerComponent = new CanvasLyricPlayerComponent();
+            this.lyricPlayerComponent.playerConfig = config;
+
+            const lines: LyricLine[] = this.parseLyricData();
+            this.lyricPlayerComponent.setLyricLines(lines);
           })
       }
       .layoutWeight(1)
@@ -272,15 +313,15 @@ struct LyricPlayerDemoPage {
       Column() {
         // 进度条
         Row() {
-          Text(this.formatTime(this.currentTime))
+          Text(this.formatTime(this.currentTimeMs))
             .fontSize(12)
             .fontColor('#999999')
             .width(50)
 
           Slider({
-            value: this.currentTime,
+            value: this.sliderValue,
             min: 0,
-            max: 30000,
+            max: this.maxTimeMs,
             step: 100
           })
             .layoutWeight(1)
@@ -291,7 +332,7 @@ struct LyricPlayerDemoPage {
               this.seekTo(value);
             })
 
-          Text(this.formatTime(30000))
+          Text(this.formatTime(this.maxTimeMs))
             .fontSize(12)
             .fontColor('#999999')
             .width(50)
@@ -302,12 +343,10 @@ struct LyricPlayerDemoPage {
 
         // 控制按钮
         Row() {
-          // 重置按钮
           Button({ type: ButtonType.Circle }) {
-            Image($r('sys.symbol.arrow_counterclockwise'))
-              .width(24)
-              .height(24)
-              .fillColor(Color.White)
+            Text('⟲')
+              .fontSize(24)
+              .fontColor(Color.White)
           }
           .width(50)
           .height(50)
@@ -316,22 +355,12 @@ struct LyricPlayerDemoPage {
             this.resetPlayback();
           })
 
-          Blank()
-            .width(20)
+          Blank().width(20)
 
-          // 播放/暂停按钮
           Button({ type: ButtonType.Circle }) {
-            if (this.isPlaying) {
-              Image($r('sys.symbol.pause_fill'))
-                .width(30)
-                .height(30)
-                .fillColor(Color.White)
-            } else {
-              Image($r('sys.symbol.play_fill'))
-                .width(30)
-                .height(30)
-                .fillColor(Color.White)
-            }
+            Text(this.isPlayingState ? '❚❚' : '▶')
+              .fontSize(this.isPlayingState ? 20 : 24)
+              .fontColor(Color.White)
           }
           .width(60)
           .height(60)
@@ -340,21 +369,18 @@ struct LyricPlayerDemoPage {
             this.togglePlayback();
           })
 
-          Blank()
-            .width(20)
+          Blank().width(20)
 
-          // 快进按钮
           Button({ type: ButtonType.Circle }) {
-            Image($r('sys.symbol.forward_15'))
-              .width(24)
-              .height(24)
-              .fillColor(Color.White)
+            Text('⏩')
+              .fontSize(20)
+              .fontColor(Color.White)
           }
           .width(50)
           .height(50)
           .backgroundColor('#333333')
           .onClick(() => {
-            this.seekTo(Math.min(this.currentTime + 5000, 30000));
+            this.seekTo(Math.min(this.currentTimeMs + 5000, this.maxTimeMs));
           })
         }
         .width('100%')
@@ -368,15 +394,5 @@ struct LyricPlayerDemoPage {
     .width('100%')
     .height('100%')
     .backgroundColor('#000000')
-  }
-
-  /**
-   * 格式化时间
-   */
-  formatTime(ms: number): string {
-    const seconds = Math.floor(ms / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   }
 }
