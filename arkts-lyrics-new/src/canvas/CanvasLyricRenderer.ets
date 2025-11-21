@@ -216,11 +216,12 @@ export class CanvasLyricRenderer {
       ctx.shadowOffsetY = 0;
     }
 
-    // 渲染渐变遮罩效果
-    if (isActive && wordInfo.progress > 0 && wordInfo.progress < 1) {
+    // 渲染渐变遮罩效果（性能优化：减少渐变创建）
+    // 只在真正有渐变效果的范围内使用渐变（0.05-0.95）
+    if (isActive && wordInfo.progress > 0.05 && wordInfo.progress < 0.95) {
       this.renderWordWithGradientMask(ctx, wordInfo);
     } else {
-      // 普通渲染
+      // 普通渲染（性能更好）
       const color: string = calculateWordColor(wordInfo.progress, isActive);
       ctx.fillStyle = color;
       ctx.fillText(wordInfo.word.word, wordInfo.x, wordInfo.y);

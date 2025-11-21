@@ -214,6 +214,27 @@ export class LyricPlayerController {
       state.positionY = currentY;
       currentY += this.getLineHeight(index);
     });
+
+    // 🎯 视口裁剪：标记可见行（性能优化）
+    this.updateViewportVisibility();
+  }
+
+  /**
+   * 更新视口可见性（性能优化）
+   * 只渲染视口内+overscan的行
+   */
+  private updateViewportVisibility(): void {
+    const overscan: number = 300; // 预渲染区域（像素）
+    const viewportTop: number = this.scrollOffset - overscan;
+    const viewportBottom: number = this.scrollOffset + this.containerHeight + overscan;
+
+    this.lineStates.forEach((state: LyricLineRenderState) => {
+      const lineTop: number = state.positionY + state.yOffset + state.waveOffset;
+      const lineBottom: number = lineTop + this.getLineHeight(state.lineIndex);
+
+      // 行是否在视口内（包括overscan）
+      state.isInView = !(lineBottom < viewportTop || lineTop > viewportBottom);
+    });
   }
 
   /**
