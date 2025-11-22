@@ -88,8 +88,19 @@ export class CanvasLyricRenderer {
     //   - yOffset: 已播放歌词的抬升偏移（静态，让已播放的歌词略微上移）
     //   - waveOffset: 波动动画偏移（动态，逐行传播的弹簧效果）
     const finalY: number = state.positionY + state.yOffset + state.waveOffset;
-    ctx.translate(0, finalY);
+
+    // 🎵 缩放变换：以文字区域左边缘为基准点进行缩放
+    // Canvas 的 scale() 是以原点为中心的，需要先 translate 再 scale
+    // 缩放中心点：x=40（文字左边缘），y=行中心
+    const scaleOriginX: number = 40;
+    const scaleOriginY: number = finalY + 30; // 假设行高约 60px，中心点在 30px
+
+    ctx.translate(scaleOriginX, scaleOriginY);
     ctx.scale(state.scaleRatio, state.scaleRatio);
+    ctx.translate(-scaleOriginX, -scaleOriginY);
+
+    // 应用 Y 位置偏移
+    ctx.translate(0, finalY);
     ctx.globalAlpha = state.alphaValue;
 
     // 渲染主歌词
