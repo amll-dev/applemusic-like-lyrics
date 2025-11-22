@@ -22,6 +22,10 @@ export class LyricPlayerController {
   private interludeState: InterludeState;
   private interludeAnimator: InterludeAnimator;
 
+  // 🎵 行级弹簧动画：缩放和透明度
+  private scaleAnimators: SpringAnimator[] = [];
+  private alphaAnimators: SpringAnimator[] = [];
+
   constructor(config: LyricPlayerConfig) {
     this.config = config;
 
@@ -64,17 +68,44 @@ export class LyricPlayerController {
    * @param deltaTimeMs 距离上一帧的时间（毫秒）
    */
   update(deltaTimeMs: number): void {
+    const deltaSec: number = deltaTimeMs / 1000.0;
+
     // 更新滚动动画
     if (this.config.enableSpring) {
-      this.scrollAnimator.update(deltaTimeMs / 1000.0);
+      this.scrollAnimator.update(deltaSec);
       this.scrollOffset = this.scrollAnimator.getPosition();
     }
+
+    // 🎵 更新行级弹簧动画（缩放和透明度）
+    this.updateLineSpringAnimations(deltaSec);
 
     // 🎵 更新间奏动画
     this.interludeAnimator.update(this.currentTime);
 
     // 🚫 暂时屏蔽逐行波动动画（调试用）
-    // this.updateWaveAnimation(deltaTimeMs / 1000.0);
+    // this.updateWaveAnimation(deltaSec);
+  }
+
+  /**
+   * 更新行级弹簧动画
+   * @param deltaSec 时间增量（秒）
+   */
+  private updateLineSpringAnimations(deltaSec: number): void {
+    for (let i: number = 0; i < this.lineStates.length; i++) {
+      const state: LyricLineRenderState = this.lineStates[i];
+
+      // 更新缩放弹簧动画
+      if (i < this.scaleAnimators.length) {
+        this.scaleAnimators[i].update(deltaSec);
+        state.scaleRatio = this.scaleAnimators[i].getPosition();
+      }
+
+      // 更新透明度弹簧动画
+      if (i < this.alphaAnimators.length) {
+        this.alphaAnimators[i].update(deltaSec);
+        state.alphaValue = this.alphaAnimators[i].getPosition();
+      }
+    }
   }
 
   /**
@@ -82,9 +113,27 @@ export class LyricPlayerController {
    */
   private initializeLineStates(): void {
     this.lineStates = [];
+    this.scaleAnimators = [];
+    this.alphaAnimators = [];
+
+    // 🎵 弹簧参数（参考原版 base.ts）
+    // 缩放弹簧：mass=2, damping=25, stiffness=100
+    const scaleSpringConfig: SpringAnimatorConfig = new SpringAnimatorConfig(2.0, 100.0, 25.0);
+    // 透明度弹簧：略快一些
+    const alphaSpringConfig: SpringAnimatorConfig = new SpringAnimatorConfig(1.0, 120.0, 20.0);
+
     this.lines.forEach((line: LyricLine, index: number) => {
       const state: LyricLineRenderState = new LyricLineRenderState(line, index);
       this.lineStates.push(state);
+
+      // 为每行创建弹簧动画器
+      const scaleAnimator: SpringAnimator = new SpringAnimator(scaleSpringConfig);
+      scaleAnimator.setCurrent(0.97); // 初始缩放 97%（以百分比表示，0.97 = 97%）
+      this.scaleAnimators.push(scaleAnimator);
+
+      const alphaAnimator: SpringAnimator = new SpringAnimator(alphaSpringConfig);
+      alphaAnimator.setCurrent(0.2); // 初始透明度 20%
+      this.alphaAnimators.push(alphaAnimator);
     });
   }
 
@@ -120,8 +169,15 @@ export class LyricPlayerController {
     }
 
     if (newIndex !== this.currentLineIndex && newIndex !== -1) {
+      const oldIndex: number = this.currentLineIndex;
       this.currentLineIndex = newIndex;
       this.updateScrollTarget();
+
+      // 📊 过渡效果日志：歌词行切换时输出
+      const newLine: LyricLine = this.lines[newIndex];
+      const lineText: string = newLine.words.map(w => w.word).join('').substring(0, 15);
+      console.info(`[过渡] 行切换 ${oldIndex} → ${newIndex} "${lineText}..." | ` +
+        `scale: 0.97 → 1.0 | alpha: 变亮`);
 
       // 🚫 暂时屏蔽波动动画（调试用）
       // if (newIndex !== -1) {
@@ -166,19 +222,29 @@ export class LyricPlayerController {
       const distance: number = Math.abs(index - this.currentLineIndex);
 
       // ========== 缩放效果 ==========
+      // 🎵 设置目标值，由弹簧动画平滑过渡
+      let targetScale: number = 1.0;
       if (this.config.enableScale) {
-        state.scaleRatio = state.isActive ? 1.0 : 0.97;
-      } else {
-        state.scaleRatio = 1.0;
+        targetScale = state.isActive ? 1.0 : 0.97;
+      }
+      // 设置弹簧动画目标值（实际值在 update 中更新）
+      if (index < this.scaleAnimators.length) {
+        this.scaleAnimators[index].setTarget(targetScale);
       }
 
       // ========== 透明度效果 ==========
+      // 🎵 设置目标值，由弹簧动画平滑过渡
+      let targetAlpha: number = 0.2;
       if (state.isActive) {
-        state.alphaValue = 1.0;
+        targetAlpha = 1.0;
       } else if (this.config.hidePassed && index < this.currentLineIndex) {
-        state.alphaValue = 0;
+        targetAlpha = 0;
       } else {
-        state.alphaValue = Math.max(0.2, 1.0 - distance * 0.15);
+        targetAlpha = Math.max(0.2, 1.0 - distance * 0.15);
+      }
+      // 设置弹簧动画目标值（实际值在 update 中更新）
+      if (index < this.alphaAnimators.length) {
+        this.alphaAnimators[index].setTarget(targetAlpha);
       }
 
       // ========== 模糊效果 ==========
