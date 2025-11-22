@@ -387,6 +387,7 @@ export class LyricPlayerController {
 
   /**
    * 获取行高度
+   * 🎵 优先使用渲染器计算的高度（考虑换行），否则使用估算值
    */
   private getLineHeight(index: number): number {
     const state: LyricLineRenderState = this.lineStates[index];
@@ -399,13 +400,20 @@ export class LyricPlayerController {
       return 30; // 间奏行高度
     }
 
-    let height: number = 60;
+    // 🎵 如果已经计算过高度，使用计算值（考虑了换行）
+    if (state.calculatedHeight > 0) {
+      return state.calculatedHeight;
+    }
+
+    // 🎵 估算高度（首次渲染前使用）
+    // 基础高度 = 字体大小 * 行高系数 + 行间距
+    let height: number = 24 * 1.4 + 16; // 激活行字体大小 24，行高 1.4
 
     if (this.config.showTranslation && state.line.translatedLyric) {
-      height += 20;
+      height += 24; // 翻译行高
     }
     if (this.config.showRoman && state.line.romanLyric) {
-      height += 16;
+      height += 20; // 音译行高
     }
 
     return height;

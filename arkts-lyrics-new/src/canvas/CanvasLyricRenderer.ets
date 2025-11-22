@@ -21,6 +21,19 @@ import {
 } from '../utils/LyricUtils';
 
 /**
+ * 单词位置计算结果
+ */
+class WordPositionResult {
+  wordInfos: WordRenderInfo[];
+  lineCount: number;
+
+  constructor(wordInfos: WordRenderInfo[], lineCount: number) {
+    this.wordInfos = wordInfos;
+    this.lineCount = lineCount;
+  }
+}
+
+/**
  * 歌词渲染器类
  * 负责将歌词渲染到Canvas上
  */
@@ -103,38 +116,62 @@ export class CanvasLyricRenderer {
 
     ctx.globalAlpha = state.alphaValue;
 
-    // 渲染主歌词
-    this.renderMainLyric(ctx, line, currentTime, state.isActive, config);
+    // 渲染主歌词（支持换行）
+    const mainLineCount: number = this.renderMainLyric(ctx, state, currentTime, config);
 
-    // 渲染翻译
+    // 计算主歌词的总高度
+    const fontSize: number = state.isActive ? 24 : 20;
+    const mainLyricHeight: number = mainLineCount * fontSize * 1.4;
+
+    // 渲染翻译（位置在主歌词下方）
     if (config.showTranslation && line.translatedLyric) {
+      ctx.save();
+      ctx.translate(0, mainLyricHeight);
       this.renderTranslation(ctx, line, state.isActive);
+      ctx.restore();
     }
 
     // 渲染音译
     if (config.showRoman && line.romanLyric) {
+      ctx.save();
+      const translationHeight: number = config.showTranslation && line.translatedLyric ? 24 : 0;
+      ctx.translate(0, mainLyricHeight + translationHeight);
       this.renderRoman(ctx, line, state.isActive);
+      ctx.restore();
     }
+
+    // 计算并存储总行高
+    let totalHeight: number = mainLyricHeight;
+    if (config.showTranslation && line.translatedLyric) {
+      totalHeight += 24; // 翻译行高
+    }
+    if (config.showRoman && line.romanLyric) {
+      totalHeight += 20; // 音译行高
+    }
+    totalHeight += 16; // 行间距
+    state.calculatedHeight = totalHeight;
 
     // 恢复画布状态
     ctx.restore();
   }
 
   /**
-   * 渲染主歌词行
+   * 渲染主歌词行（支持自动换行）
    * @param ctx Canvas上下文
-   * @param line 歌词行数据
+   * @param state 歌词行渲染状态
    * @param currentTime 当前播放时间
-   * @param isActive 是否为激活行
    * @param config 渲染器配置
+   * @returns 实际渲染的行数
    */
   private renderMainLyric(
     ctx: CanvasRenderingContext2D,
-    line: LyricLine,
+    state: LyricLineRenderState,
     currentTime: number,
-    isActive: boolean,
     config: RendererConfig
-  ): void {
+  ): number {
+    const line: LyricLine = state.line;
+    const isActive: boolean = state.isActive;
+
     // 设置字体
     const fontSize: number = isActive ? 24 : 20;
     const fontWeight: string = isActive ? 'bold' : 'normal';
@@ -142,27 +179,24 @@ export class CanvasLyricRenderer {
     ctx.font = `${fontWeight} ${fontSize}vp ${fontFamily}`;
     ctx.textBaseline = 'top';
 
-    // 计算单词位置
-    const wordInfos: WordRenderInfo[] = this.calculateWordPositions(ctx, line, fontSize);
+    // 计算可用宽度和起始X坐标
+    const leftMargin: number = 40;
+    const rightMargin: number = 40;
+    const maxWidth: number = this.renderContext.width - rightMargin;
+    const startX: number = leftMargin;
 
-    // 计算起始X坐标
-    // 🎵 对齐规则（参考 Apple Music）：
-    //   - 普通歌词：左对齐（距离左边缘 40px）
-    //   - 对唱歌词：右对齐（距离右边缘 40px）
-    const totalWidth: number = wordInfos.reduce((sum: number, info: WordRenderInfo) => sum + info.width, 0);
-    const leftMargin: number = 40;   // 左侧边距
-    const rightMargin: number = 40;  // 右侧边距
-    let startX: number = line.isDuet ?
-      (this.renderContext.width - totalWidth - rightMargin) :  // 对唱：右对齐
-      leftMargin;                                                // 普通：左对齐
+    // 计算单词位置（支持换行）
+    const result: WordPositionResult = this.calculateWordPositions(ctx, line, fontSize, maxWidth, startX);
+    const wordInfos: WordRenderInfo[] = result.wordInfos;
+
+    // 存储行数到状态
+    state.mainLyricLines = result.lineCount;
 
     // 渲染每个单词
     wordInfos.forEach((wordInfo: WordRenderInfo) => {
       const word: LyricWord = wordInfo.word;
       const progress: number = calculateWordProgress(word, currentTime);
       wordInfo.progress = progress;
-      wordInfo.x = startX;
-      wordInfo.y = 0;
 
       // 判断是否需要强调
       const shouldEmphasize: boolean = config.enableEmphasize && shouldEmphasizeWord(word);
@@ -175,34 +209,56 @@ export class CanvasLyricRenderer {
 
       // 渲染单词
       this.renderWord(ctx, wordInfo, isActive);
-
-      startX += wordInfo.width;
     });
+
+    return result.lineCount;
   }
 
   /**
-   * 计算单词位置信息
+   * 计算单词位置信息（支持自动换行）
    * @param ctx Canvas上下文
    * @param line 歌词行
    * @param fontSize 字体大小
-   * @returns 单词渲染信息数组
+   * @param maxWidth 最大可用宽度
+   * @param startX 起始X坐标
+   * @returns 包含单词信息和行数的结果
    */
   private calculateWordPositions(
     ctx: CanvasRenderingContext2D,
     line: LyricLine,
-    fontSize: number
-  ): WordRenderInfo[] {
+    fontSize: number,
+    maxWidth: number,
+    startX: number
+  ): WordPositionResult {
     const wordInfos: WordRenderInfo[] = [];
+    const lineHeight: number = fontSize * 1.4; // 行高为字体大小的 1.4 倍
+
+    let currentX: number = startX;
+    let currentY: number = 0;
+    let lineCount: number = 1;
 
     line.words.forEach((word: LyricWord) => {
       const info: WordRenderInfo = new WordRenderInfo(word);
       const metrics: TextMetrics = ctx.measureText(word.word);
       info.width = metrics.width + 4; // 添加间距
       info.height = fontSize;
+
+      // 检查是否需要换行
+      if (currentX + info.width > maxWidth && currentX > startX) {
+        // 换行
+        currentX = startX;
+        currentY += lineHeight;
+        lineCount++;
+      }
+
+      info.x = currentX;
+      info.y = currentY;
+      currentX += info.width;
+
       wordInfos.push(info);
     });
 
-    return wordInfos;
+    return new WordPositionResult(wordInfos, lineCount);
   }
 
   /**

@@ -139,6 +139,10 @@ export class LyricLineRenderState {
   blurRadius: number = 0;
   isActive: boolean = false;
   isInView: boolean = true;
+  /** 🎵 计算后的行高（考虑换行） */
+  calculatedHeight: number = 0;
+  /** 🎵 主歌词的行数（换行后） */
+  mainLyricLines: number = 1;
 
   constructor(line: LyricLine, index: number) {
     this.line = line;
