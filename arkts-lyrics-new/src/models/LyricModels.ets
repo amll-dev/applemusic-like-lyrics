@@ -183,6 +183,22 @@ export class InterludeState {
   dotOpacities: number[] = [0.3, 0.3, 0.3];
   dotScales: number[] = [1.0, 1.0, 1.0];
 
+  // 🎵 间奏时间信息
+  startTime: number = 0;
+  endTime: number = 0;
+
+  // 🎵 动态高度：间奏展开/收缩动画
+  /** 展开进度 0-1，0=完全收缩，1=完全展开 */
+  expandProgress: number = 0;
+  /** 全局缩放（包含呼吸效果） */
+  globalScale: number = 0;
+  /** 全局透明度（淡入淡出） */
+  globalOpacity: number = 0;
+  /** 基础高度（完全展开时的高度） */
+  baseHeight: number = 30;
+  /** 当前动态高度（用于布局计算） */
+  currentHeight: number = 0;
+
   constructor() {
   }
 }

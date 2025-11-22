@@ -67,10 +67,18 @@ export class InterludeAnimator {
     this.currentTime = currentPlayTime;
     this.state.visible = true;
 
+    // 🎵 保存时间信息到状态
+    this.state.startTime = startTime;
+    this.state.endTime = endTime;
+
     // 🎵 初始化动画状态，避免第一帧闪烁
     // 动画从完全透明和零缩放开始，然后淡入
     this.state.dotOpacities = [0, 0, 0];
     this.state.dotScales = [0, 0, 0];
+    this.state.expandProgress = 0;
+    this.state.globalScale = 0;
+    this.state.globalOpacity = 0;
+    this.state.currentHeight = 0;
   }
 
   /**
@@ -80,6 +88,10 @@ export class InterludeAnimator {
     this.state.visible = false;
     this.state.dotOpacities = [0, 0, 0];
     this.state.dotScales = [1.0, 1.0, 1.0];
+    this.state.expandProgress = 0;
+    this.state.globalScale = 0;
+    this.state.globalOpacity = 0;
+    this.state.currentHeight = 0;
   }
 
   /**
@@ -171,6 +183,25 @@ export class InterludeAnimator {
       1
     );
 
+    // ========== 🎵 计算展开/收缩进度（用于动态高度）==========
+    let expandProgress: number = 1.0;
+
+    // 展开动画（前2秒）：从0展开到1
+    if (currentDuration < 2000) {
+      expandProgress = easeOutExpo(currentDuration / 2000);
+    }
+
+    // 收缩动画（最后750ms）：从1收缩到0
+    if (this.interludeDuration - currentDuration < 750) {
+      const shrinkProgress: number = (750 - (this.interludeDuration - currentDuration)) / 750;
+      expandProgress *= 1 - easeInOutBack(shrinkProgress / 2);
+    }
+
+    expandProgress = Math.max(0, Math.min(1, expandProgress));
+
+    // 🎵 计算当前动态高度
+    const currentHeight: number = this.state.baseHeight * expandProgress;
+
     // ========== 应用到状态 ==========
     this.state.dotScales = [scale, scale, scale];
     this.state.dotOpacities = [
@@ -179,10 +210,16 @@ export class InterludeAnimator {
       clamp(0, Math.max(0, globalOpacity * dot2Opacity), 1)
     ];
 
+    // 🎵 保存展开进度和动态高度
+    this.state.expandProgress = expandProgress;
+    this.state.globalScale = scale;
+    this.state.globalOpacity = globalOpacity;
+    this.state.currentHeight = currentHeight;
+
     // 📊 调试日志：每秒输出一次
     if (Math.floor(currentDuration / 1000) !== Math.floor((currentDuration - 16) / 1000)) {
       console.info(`[间奏动画] 进度: ${(currentDuration / 1000).toFixed(1)}s / ${(this.interludeDuration / 1000).toFixed(1)}s | ` +
-        `scale=${scale.toFixed(2)} | opacity=[${this.state.dotOpacities.map(o => o.toFixed(2)).join(',')}]`);
+        `expand=${expandProgress.toFixed(2)} | height=${currentHeight.toFixed(1)} | scale=${scale.toFixed(2)}`);
     }
   }
 

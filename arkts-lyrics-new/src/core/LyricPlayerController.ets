@@ -119,16 +119,18 @@ export class LyricPlayerController {
     }
 
     if (needsUpdate || this.layoutNeedsUpdate) {
-      this.recalculatePositions();
+      // 🎵 间奏高度变化时不触发波浪延迟，只是平滑更新位置
+      this.recalculatePositions(false);
       this.layoutNeedsUpdate = false;
     }
   }
 
   /**
    * 重新计算所有行的 positionY
-   * 🎵 同时设置位置弹簧动画的目标值，实现波浪效果
+   * 🎵 同时设置位置弹簧动画的目标值
+   * @param applyWaveDelay 是否应用波浪延迟（歌词切换时为true，间奏高度变化时为false）
    */
-  private recalculatePositions(): void {
+  private recalculatePositions(applyWaveDelay: boolean = true): void {
     let currentY: number = 0;
 
     // 更新缓存和位置
@@ -140,8 +142,18 @@ export class LyricPlayerController {
       currentY += height;
     });
 
-    // 🎵 设置位置弹簧动画目标（带波浪延迟）
-    this.applyWaveDelayToPositions();
+    // 🎵 设置位置弹簧动画目标
+    if (applyWaveDelay) {
+      // 歌词行切换：带波浪延迟
+      this.applyWaveDelayToPositions();
+    } else {
+      // 间奏高度变化：直接设置目标，无延迟（弹簧动画会平滑过渡）
+      this.lineStates.forEach((state: LyricLineRenderState, index: number) => {
+        if (index < this.positionAnimators.length) {
+          this.positionAnimators[index].setTarget(state.positionY);
+        }
+      });
+    }
 
     // 更新视口可见性
     this.updateViewportVisibility();
@@ -450,6 +462,9 @@ export class LyricPlayerController {
     });
   }
 
+  // 🎵 上一帧的间奏高度，用于检测变化
+  private lastInterludeHeight: number = 0;
+
   /**
    * 更新间奏状态
    * 🎵 使用空白歌词行（words.length === 0）来表示间奏
@@ -480,7 +495,11 @@ export class LyricPlayerController {
       if (!this.interludeState.visible) {
         console.info(`[间奏] 🎵 间奏开始 | 行${interludeLineIndex}`);
         console.info(`[间奏]    时间范围: ${interludeLine.startTime} → ${interludeLine.endTime}ms (${duration}ms)`);
+
+        // 🎵 设置间奏的基础高度（与普通歌词行一致）
+        this.interludeState.baseHeight = this.getEstimatedLineHeight();
         this.interludeState.visible = true;
+
         this.interludeAnimator.setInterlude(
           interludeLine.startTime,
           interludeLine.endTime,
@@ -490,6 +509,13 @@ export class LyricPlayerController {
 
       this.interludeState.prevLineIndex = interludeLineIndex - 1;
       this.interludeState.nextLineIndex = interludeLineIndex + 1;
+
+      // 🎵 检测间奏高度变化，触发布局重算
+      const currentHeight: number = this.interludeState.currentHeight;
+      if (Math.abs(currentHeight - this.lastInterludeHeight) > 0.5) {
+        this.lastInterludeHeight = currentHeight;
+        this.layoutNeedsUpdate = true;
+      }
 
       // 计算间奏动画的Y坐标（紧贴上一行歌词）
       let posY: number = 0;
@@ -503,6 +529,9 @@ export class LyricPlayerController {
         console.info(`[间奏] 隐藏：不在间奏行`);
         this.interludeState.visible = false;
         this.interludeAnimator.reset();
+        // 🎵 间奏消失时，触发布局重算
+        this.lastInterludeHeight = 0;
+        this.layoutNeedsUpdate = true;
       }
     }
   }
@@ -522,10 +551,18 @@ export class LyricPlayerController {
       return state.calculatedHeight;
     }
 
-    // 🎵 空白歌词行（间奏）使用普通歌词行的高度
-    // 不再使用固定高度，这样间奏行与普通行高度一致
+    // 🎵 空白歌词行（间奏）使用动态高度
+    // 间奏开始时高度从0展开，结束时收缩到0
     if (state.line.words.length === 0) {
-      return this.getEstimatedLineHeight();
+      // 检查当前是否正在播放这个间奏行
+      if (this.interludeState.visible &&
+          this.currentTime >= state.line.startTime &&
+          this.currentTime < state.line.endTime) {
+        // 🎵 使用间奏动画计算的动态高度
+        return this.interludeState.currentHeight;
+      }
+      // 不在播放中的间奏行高度为0（不占空间）
+      return 0;
     }
 
     return this.getEstimatedLineHeight();
