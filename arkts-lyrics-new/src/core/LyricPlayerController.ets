@@ -288,12 +288,14 @@ export class LyricPlayerController {
       this.interludeState.prevLineIndex = interludeLineIndex - 1;
       this.interludeState.nextLineIndex = interludeLineIndex + 1;
 
-      // 计算间奏动画的Y坐标（在空白行的位置）
+      // 计算间奏动画的Y坐标（在间奏行的中间位置）
       let posY: number = 0;
       for (let i: number = 0; i < interludeLineIndex; i++) {
         posY += this.getLineHeight(i);
       }
-      posY += 30; // 间奏圆点高度的一半
+      // 加上间奏行高度的一半，使白点居中
+      const interludeHeight: number = this.getLineHeight(interludeLineIndex);
+      posY += interludeHeight / 2;
       this.interludeState.positionY = posY;
     } else {
       // 不在间奏中
@@ -314,9 +316,9 @@ export class LyricPlayerController {
       return 0;
     }
 
-    // 🎵 空白歌词行（间奏）不占用高度
+    // 🎵 空白歌词行（间奏）有固定高度，用于放置间奏动画
     if (state.line.words.length === 0) {
-      return 0;
+      return 30; // 间奏行高度
     }
 
     let height: number = 60;
