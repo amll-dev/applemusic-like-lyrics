@@ -1,8 +1,11 @@
 /**
  * 歌词解析器 Demo
  * 从 JSON 资源加载网易云音乐格式歌词
+ * 支持同步播放 rawfile 中的音频文件
  */
 
+import { media } from '@kit.MediaKit';
+import { common } from '@kit.AbilityKit';
 import { CanvasLyricPlayerComponent } from '../src/components/CanvasLyricPlayerComponent';
 import { LyricLine, LyricPlayerConfig } from '../src/models/LyricModels';
 import { parseLyricResponse } from '../src/utils/LyricParser';
@@ -15,16 +18,26 @@ struct LyricParserDemo {
   @State isPlaying: boolean = false;
   @State isLoading: boolean = true;
   @State sliderValue: number = 0;
+  @State isSeeking: boolean = false;
 
   private timerHandle: number = -1;
   private maxTimeMs: number = 240000; // 4分钟
 
+  // 🎵 音频播放器
+  private avPlayer: media.AVPlayer | null = null;
+  private context: common.UIAbilityContext | null = null;
+  /** 音频文件名（rawfile 目录下） */
+  private readonly audioFileName: string = 'music.flac';
+
   aboutToAppear(): void {
+    this.context = getContext(this) as common.UIAbilityContext;
     this.loadLyrics();
+    this.initAudioPlayer();
   }
 
   aboutToDisappear(): void {
     this.stopPlayback();
+    this.releaseAudioPlayer();
   }
 
   /**
@@ -41,12 +54,8 @@ struct LyricParserDemo {
   private loadLyrics(): void {
     try {
       // 从 string.json 资源加载歌词 JSON
-      // 使用方式: const jsonStr: string = this.resourceToString($r('app.string.testLrc'));
-      // this.lyrics = parseLyricResponse(jsonStr);
-
-      // Demo: 使用内嵌数据
-      const lyricData: object = this.getSampleLyricData();
-      this.lyrics = parseLyricResponse(lyricData);
+      const jsonStr: string = this.resourceToString($r('app.string.testLrc'));
+      this.lyrics = parseLyricResponse(jsonStr);
 
       // 更新最大时间
       if (this.lyrics.length > 0) {
@@ -62,49 +71,168 @@ struct LyricParserDemo {
     }
   }
 
+  // ============================================================
+  // 🎵 音频播放器相关
+  // ============================================================
+
   /**
-   * 获取示例歌词数据（网易云音乐 API 格式）
+   * 初始化音频播放器
    */
-  private getSampleLyricData(): object {
-    return {
-      "code": 200,
-      "lrc": {
-        "version": 1,
-        "lyric": "[00:00.00]Sample Song\n[00:05.00]This is a test"
-      },
-      "tlyric": {
-        "version": 1,
-        "lyric": "[00:00.88]我为你痴狂\n[00:10.45]我为你痴狂\n[00:21.49]我能感受浑身血液为你沸腾"
-      },
-      "yrc": {
-        "version": 4,
-        "lyric": "[540,1320](540,390,0)Mad (930,540,0)about (1470,390,0)you\n" +
-          "[10050,1350](10050,390,0)Mad (10440,660,0)about (11100,300,0)you\n" +
-          "[15720,3000](15720,330,0)I'm (16050,540,0)mad(16590,0,0), (16590,600,0)mad(17190,0,0), (17190,570,0)mad(17760,0,0), (17760,960,0)mad\n" +
-          "[19620,1320](19620,330,0)Mad (19950,540,0)about (20490,450,0)you\n" +
-          "[21060,2310](21060,300,0)I (21360,360,0)feel (21720,180,0)the (21900,630,0)magic (22530,150,0)in (22680,180,0)my (22860,510,0)veins\n" +
-          "[25800,2760](25800,360,0)It's (26160,330,0)like (26490,180,0)I'm (26670,750,0)sipping (27420,90,0)a (27510,1050,0)potion\n" +
-          "[28560,1770](28560,480,0)Only (29040,330,0)you (29370,180,0)can (29550,270,0)give (29820,150,0)to (29970,360,0)me\n" +
-          "[30570,3930](30570,330,0)It (30900,330,0)burns (31230,240,0)me (31470,480,0)higher (31950,300,0)than (32250,60,0)a (32310,2190,0)flame\n" +
-          "[35310,1260](35310,420,0)And (35730,150,0)I (35880,390,0)can't (36270,300,0)help\n" +
-          "[36570,3180](36570,360,0)But (36930,870,0)ignite (37800,120,0)it (37920,300,0)so (38220,780,0)light (39000,150,0)it (39150,600,0)comes\n" +
-          "[39780,1860](39780,180,0)When (39960,150,0)you (40110,240,0)get (40350,330,0)close (40680,180,0)to (40860,780,0)me\n" +
-          "[42120,1920](42120,210,0)I (42330,210,0)don't (42540,210,0)know (42750,300,0)what (43050,240,0)to (43290,750,0)think\n" +
-          "[44040,2310](44040,450,0)It's (44490,450,0)making (44940,180,0)it (45120,300,0)hard (45420,180,0)to (45600,750,0)speak\n" +
-          "[46350,2550](46350,570,0)Right (46920,270,0)now (47190,180,0)to (47370,480,0)you(47850,210,0), (48060,300,0)now (48360,150,0)to (48510,390,0)you\n" +
-          "[48900,1950](48900,330,0)My (49230,420,0)body's (49650,240,0)feeling (49890,960,0)counterfeit\n" +
-          "[51600,2220](51600,420,0)Maybe (52020,240,0)I'm (52260,540,0)going (52800,1020,0)crazy\n" +
-          "[54000,2400](54000,210,0)No(54210,0,0), (54210,180,0)let's (54390,240,0)not (54630,300,0)make (54930,870,0)believe (55800,600,0)this\n" +
-          "[56430,2130](56430,270,0)All (56700,750,0)because(57450,150,0), (57600,300,0)all (57900,660,0)because\n" +
-          "[58560,2670](58560,210,0)I'm (58770,510,0)mad(59280,0,0), (59280,690,0)mad(59970,0,0), (59970,360,0)mad (60330,540,0)about (60870,360,0)you"
-      }
-    };
+  private async initAudioPlayer(): Promise<void> {
+    try {
+      console.info('[Demo] 🎵 初始化音频播放器...');
+      this.avPlayer = await media.createAVPlayer();
+      this.setAVPlayerCallback();
+      await this.loadAudioFile();
+    } catch (error) {
+      console.error('[Demo] 初始化音频播放器失败:', error);
+    }
   }
 
-  private startPlayback(): void {
+  /**
+   * 加载音频文件
+   */
+  private async loadAudioFile(): Promise<void> {
+    if (!this.avPlayer || !this.context) {
+      return;
+    }
+
+    try {
+      const resourceManager = this.context.resourceManager;
+      console.info('[Demo] 🎵 加载音频文件:', this.audioFileName);
+
+      // 从 rawfile 获取文件描述符
+      const rawFd = await resourceManager.getRawFd(this.audioFileName);
+
+      // 设置音频源
+      this.avPlayer.fdSrc = {
+        fd: rawFd.fd,
+        offset: rawFd.offset,
+        length: rawFd.length
+      };
+
+      console.info('[Demo] 🎵 音频文件加载成功');
+    } catch (error) {
+      console.warn('[Demo] 🎵 音频文件加载失败（将使用模拟时间）:', error);
+    }
+  }
+
+  /**
+   * 设置 AVPlayer 回调
+   */
+  private setAVPlayerCallback(): void {
+    if (!this.avPlayer) {
+      return;
+    }
+
+    // 状态变化回调
+    this.avPlayer.on('stateChange', (state: string) => {
+      console.info('[Demo] 🎵 播放器状态:', state);
+
+      switch (state) {
+        case 'initialized':
+          // 准备播放
+          this.avPlayer?.prepare();
+          break;
+        case 'prepared':
+          // 获取音频时长
+          const duration = this.avPlayer?.duration || 0;
+          if (duration > 0) {
+            this.maxTimeMs = duration;
+          }
+          console.info('[Demo] 🎵 音频时长:', this.maxTimeMs, 'ms');
+          break;
+        case 'playing':
+          this.isPlaying = true;
+          this.startTimeSync();
+          break;
+        case 'paused':
+          this.isPlaying = false;
+          this.stopTimeSync();
+          break;
+        case 'completed':
+          this.isPlaying = false;
+          this.stopTimeSync();
+          this.currentTimeMs = 0;
+          this.sliderValue = 0;
+          break;
+      }
+    });
+
+    // 时间更新回调
+    this.avPlayer.on('timeUpdate', (timeMs: number) => {
+      if (!this.isSeeking) {
+        this.currentTimeMs = timeMs;
+        this.sliderValue = timeMs;
+      }
+    });
+
+    // 错误回调
+    this.avPlayer.on('error', (error: Error) => {
+      console.error('[Demo] 🎵 播放器错误:', error);
+    });
+  }
+
+  /**
+   * 释放音频播放器
+   */
+  private async releaseAudioPlayer(): Promise<void> {
+    if (this.avPlayer) {
+      try {
+        await this.avPlayer.release();
+        this.avPlayer = null;
+        console.info('[Demo] 🎵 播放器已释放');
+      } catch (error) {
+        console.error('[Demo] 释放播放器失败:', error);
+      }
+    }
+  }
+
+  /**
+   * 开始时间同步（用于更平滑的歌词同步）
+   */
+  private startTimeSync(): void {
+    this.stopTimeSync();
+    this.timerHandle = setInterval(() => {
+      if (this.avPlayer && this.isPlaying && !this.isSeeking) {
+        const currentTime = this.avPlayer.currentTime;
+        if (currentTime >= 0) {
+          this.currentTimeMs = currentTime;
+          this.sliderValue = currentTime;
+        }
+      }
+    }, 8); // 120Hz
+  }
+
+  /**
+   * 停止时间同步
+   */
+  private stopTimeSync(): void {
+    if (this.timerHandle !== -1) {
+      clearInterval(this.timerHandle);
+      this.timerHandle = -1;
+    }
+  }
+
+  // ============================================================
+  // 播放控制
+  // ============================================================
+
+  private async startPlayback(): Promise<void> {
+    console.info('[Demo] ▶️ Start playback');
+
+    if (this.avPlayer) {
+      try {
+        await this.avPlayer.play();
+        return;
+      } catch (error) {
+        console.warn('[Demo] 音频播放失败，使用模拟时间:', error);
+      }
+    }
+
+    // 回退：使用模拟时间（无音频时）
     this.isPlaying = true;
     let lastTime: number = Date.now();
-    console.info('[Demo] ▶️ Start playback');
 
     this.timerHandle = setInterval(() => {
       const now: number = Date.now();
@@ -117,23 +245,59 @@ struct LyricParserDemo {
       if (this.currentTimeMs > this.maxTimeMs) {
         this.currentTimeMs = 0;
       }
-    }, 8); // 120Hz = 8ms
+    }, 8); // 120Hz
   }
 
-  private stopPlayback(): void {
-    this.isPlaying = false;
-    if (this.timerHandle !== -1) {
-      clearInterval(this.timerHandle);
-      this.timerHandle = -1;
-    }
+  private async stopPlayback(): Promise<void> {
     console.info('[Demo] ⏸️ Stop playback');
+
+    if (this.avPlayer) {
+      try {
+        await this.avPlayer.pause();
+        return;
+      } catch (error) {
+        console.warn('[Demo] 暂停失败:', error);
+      }
+    }
+
+    // 回退：停止模拟时间
+    this.isPlaying = false;
+    this.stopTimeSync();
   }
 
-  private togglePlayback(): void {
+  private async togglePlayback(): Promise<void> {
     if (this.isPlaying) {
-      this.stopPlayback();
+      await this.stopPlayback();
     } else {
-      this.startPlayback();
+      await this.startPlayback();
+    }
+  }
+
+  private async seekTo(timeMs: number): Promise<void> {
+    console.info(`[Demo] ⏩ Seek to: ${Math.floor(timeMs)}`);
+    this.currentTimeMs = timeMs;
+    this.sliderValue = timeMs;
+
+    if (this.avPlayer) {
+      try {
+        await this.avPlayer.seek(timeMs);
+      } catch (error) {
+        console.warn('[Demo] Seek 失败:', error);
+      }
+    }
+  }
+
+  private async resetPlayback(): Promise<void> {
+    await this.stopPlayback();
+    this.currentTimeMs = 0;
+    this.sliderValue = 0;
+
+    if (this.avPlayer) {
+      try {
+        await this.avPlayer.seek(0);
+      } catch (error) {
+        console.warn('[Demo] Reset 失败:', error);
+      }
     }
   }
 
@@ -213,10 +377,16 @@ struct LyricParserDemo {
             .blockColor(Color.White)
             .trackColor('#333333')
             .selectedColor('#1DB954')
-            .onChange((value: number) => {
-              this.currentTimeMs = value;
-              this.sliderValue = value;
-              console.info(`[Demo] ⏩ Seek to: ${Math.floor(value)}`);
+            .onChange((value: number, mode: SliderChangeMode) => {
+              if (mode === SliderChangeMode.Begin) {
+                this.isSeeking = true;
+              } else if (mode === SliderChangeMode.End) {
+                this.isSeeking = false;
+                this.seekTo(value);
+              } else {
+                this.sliderValue = value;
+                this.currentTimeMs = value;
+              }
             })
 
           Text(this.formatTime(this.maxTimeMs))
@@ -237,9 +407,7 @@ struct LyricParserDemo {
 
           Button('重置')
             .onClick(() => {
-              this.stopPlayback();
-              this.currentTimeMs = 0;
-              this.sliderValue = 0;
+              this.resetPlayback();
             })
             .width(80)
             .height(44)
