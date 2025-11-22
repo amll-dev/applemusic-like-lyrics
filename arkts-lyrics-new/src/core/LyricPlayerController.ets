@@ -406,14 +406,23 @@ export class LyricPlayerController {
     }
 
     // 🎵 估算高度（首次渲染前使用）
-    // 基础高度 = 字体大小 * 行高系数 + 行间距
-    let height: number = 24 * 1.4 + 16; // 激活行字体大小 24，行高 1.4
+    // 与 CanvasLyricRenderer.renderLine 保持一致：
+    // - 激活行主字体: 28vp，非激活: 24vp
+    // - 翻译字体: 18vp
+    // - 音译字体: 16vp
+    // - 行间距: 8vp
+    // - 行与行之间间距: 20vp
+    const mainFontSize: number = 28;  // 使用激活行大小估算
+    const lineSpacing: number = 8;
+    const bottomPadding: number = 20;
+
+    let height: number = mainFontSize + bottomPadding;
 
     if (this.config.showTranslation && state.line.translatedLyric) {
-      height += 24; // 翻译行高
+      height += lineSpacing + 18; // 间距 + 翻译字体大小
     }
     if (this.config.showRoman && state.line.romanLyric) {
-      height += 20; // 音译行高
+      height += lineSpacing + 16; // 间距 + 音译字体大小
     }
 
     return height;

@@ -116,39 +116,50 @@ export class CanvasLyricRenderer {
 
     ctx.globalAlpha = state.alphaValue;
 
+    // 🎵 字体大小配置（整体放大两号）
+    const mainFontSize: number = state.isActive ? 28 : 24;
+    const translationFontSize: number = 18;
+    const romanFontSize: number = 16;
+    const lineSpacing: number = 8; // 主歌词与翻译之间的间距
+
     // 渲染主歌词（支持换行）
-    const mainLineCount: number = this.renderMainLyric(ctx, state, currentTime, config);
+    const mainLineCount: number = this.renderMainLyric(ctx, state, currentTime, config, mainFontSize);
 
-    // 计算主歌词的总高度
-    const fontSize: number = state.isActive ? 24 : 20;
-    const mainLyricHeight: number = mainLineCount * fontSize * 1.4;
+    // 计算主歌词的实际高度
+    // 单行时只需要字体高度，多行时需要考虑行间距
+    const lineHeight: number = mainFontSize * 1.4;
+    const mainLyricHeight: number = mainLineCount === 1
+      ? mainFontSize
+      : (mainLineCount - 1) * lineHeight + mainFontSize;
 
-    // 渲染翻译（位置在主歌词下方）
+    // 渲染翻译（位置在主歌词下方 + 间距）
     if (config.showTranslation && line.translatedLyric) {
       ctx.save();
-      ctx.translate(0, mainLyricHeight);
-      this.renderTranslation(ctx, line, state.isActive);
+      ctx.translate(0, mainLyricHeight + lineSpacing);
+      this.renderTranslation(ctx, line, state.isActive, translationFontSize);
       ctx.restore();
     }
 
     // 渲染音译
     if (config.showRoman && line.romanLyric) {
       ctx.save();
-      const translationHeight: number = config.showTranslation && line.translatedLyric ? 24 : 0;
-      ctx.translate(0, mainLyricHeight + translationHeight);
-      this.renderRoman(ctx, line, state.isActive);
+      const translationOffset: number = config.showTranslation && line.translatedLyric
+        ? translationFontSize + lineSpacing
+        : 0;
+      ctx.translate(0, mainLyricHeight + lineSpacing + translationOffset);
+      this.renderRoman(ctx, line, state.isActive, romanFontSize);
       ctx.restore();
     }
 
     // 计算并存储总行高
     let totalHeight: number = mainLyricHeight;
     if (config.showTranslation && line.translatedLyric) {
-      totalHeight += 24; // 翻译行高
+      totalHeight += lineSpacing + translationFontSize;
     }
     if (config.showRoman && line.romanLyric) {
-      totalHeight += 20; // 音译行高
+      totalHeight += lineSpacing + romanFontSize;
     }
-    totalHeight += 16; // 行间距
+    totalHeight += 20; // 行与行之间的间距
     state.calculatedHeight = totalHeight;
 
     // 恢复画布状态
@@ -161,19 +172,20 @@ export class CanvasLyricRenderer {
    * @param state 歌词行渲染状态
    * @param currentTime 当前播放时间
    * @param config 渲染器配置
+   * @param fontSize 字体大小
    * @returns 实际渲染的行数
    */
   private renderMainLyric(
     ctx: CanvasRenderingContext2D,
     state: LyricLineRenderState,
     currentTime: number,
-    config: RendererConfig
+    config: RendererConfig,
+    fontSize: number
   ): number {
     const line: LyricLine = state.line;
     const isActive: boolean = state.isActive;
 
-    // 设置字体
-    const fontSize: number = isActive ? 24 : 20;
+    // 设置字体（使用传入的字体大小）
     const fontWeight: string = isActive ? 'bold' : 'normal';
     const fontFamily: string = isActive ? this.boldFont : this.normalFont;
     ctx.font = `${fontWeight} ${fontSize}vp ${fontFamily}`;
@@ -384,15 +396,17 @@ export class CanvasLyricRenderer {
    * @param ctx Canvas上下文
    * @param line 歌词行数据（用于判断对齐方式）
    * @param isActive 是否为激活行
+   * @param fontSize 字体大小
    */
   private renderTranslation(
     ctx: CanvasRenderingContext2D,
     line: LyricLine,
-    isActive: boolean
+    isActive: boolean,
+    fontSize: number
   ): void {
     ctx.save();
 
-    ctx.font = `normal 14vp ${this.normalFont}`;
+    ctx.font = `normal ${fontSize}vp ${this.normalFont}`;
     const alphaValue: number = isActive ? 0.8 : 0.4;
     const alphaStr: string = alphaValue.toFixed(2);
     ctx.fillStyle = `rgba(153, 153, 153, ${alphaStr})`;
@@ -415,7 +429,8 @@ export class CanvasLyricRenderer {
       x = leftMargin;
     }
 
-    ctx.fillText(line.translatedLyric, x, 30);
+    // Y坐标为0，因为调用方已经通过translate设置了正确的位置
+    ctx.fillText(line.translatedLyric, x, 0);
 
     ctx.restore();
   }
@@ -425,15 +440,17 @@ export class CanvasLyricRenderer {
    * @param ctx Canvas上下文
    * @param line 歌词行数据（用于判断对齐方式）
    * @param isActive 是否为激活行
+   * @param fontSize 字体大小
    */
   private renderRoman(
     ctx: CanvasRenderingContext2D,
     line: LyricLine,
-    isActive: boolean
+    isActive: boolean,
+    fontSize: number
   ): void {
     ctx.save();
 
-    ctx.font = `normal 12vp ${this.normalFont}`;
+    ctx.font = `normal ${fontSize}vp ${this.normalFont}`;
     const alphaValue: number = isActive ? 0.6 : 0.3;
     const alphaStr: string = alphaValue.toFixed(2);
     ctx.fillStyle = `rgba(119, 119, 119, ${alphaStr})`;
@@ -456,7 +473,8 @@ export class CanvasLyricRenderer {
       x = leftMargin;
     }
 
-    ctx.fillText(line.romanLyric, x, 50);
+    // Y坐标为0，因为调用方已经通过translate设置了正确的位置
+    ctx.fillText(line.romanLyric, x, 0);
 
     ctx.restore();
   }
