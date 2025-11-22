@@ -66,6 +66,11 @@ export class InterludeAnimator {
     this.interludeDuration = endTime - startTime;
     this.currentTime = currentPlayTime;
     this.state.visible = true;
+
+    // 🎵 初始化动画状态，避免第一帧闪烁
+    // 动画从完全透明和零缩放开始，然后淡入
+    this.state.dotOpacities = [0, 0, 0];
+    this.state.dotScales = [0, 0, 0];
   }
 
   /**
