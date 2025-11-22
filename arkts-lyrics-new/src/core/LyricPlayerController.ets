@@ -124,11 +124,11 @@ export class LyricPlayerController {
     this.scaleAnimators = [];
     this.alphaAnimators = [];
 
-    // 🎵 弹簧参数（参考原版 base.ts）
-    // 缩放弹簧：mass=2, damping=25, stiffness=100
-    const scaleSpringConfig: SpringAnimatorConfig = new SpringAnimatorConfig(2.0, 100.0, 25.0);
-    // 透明度弹簧：略快一些
-    const alphaSpringConfig: SpringAnimatorConfig = new SpringAnimatorConfig(1.0, 120.0, 20.0);
+    // 🎵 弹簧参数（针对 120Hz 高刷屏优化）
+    // 缩放弹簧：增加 stiffness 让动画更快更灵敏
+    const scaleSpringConfig: SpringAnimatorConfig = new SpringAnimatorConfig(1.0, 300.0, 20.0);
+    // 透明度弹簧：同样加快
+    const alphaSpringConfig: SpringAnimatorConfig = new SpringAnimatorConfig(1.0, 280.0, 18.0);
 
     this.lines.forEach((line: LyricLine, index: number) => {
       const state: LyricLineRenderState = new LyricLineRenderState(line, index);
@@ -136,7 +136,7 @@ export class LyricPlayerController {
 
       // 为每行创建弹簧动画器
       const scaleAnimator: SpringAnimator = new SpringAnimator(scaleSpringConfig);
-      scaleAnimator.setCurrent(0.97); // 初始缩放 97%（以百分比表示，0.97 = 97%）
+      scaleAnimator.setCurrent(0.92); // 初始缩放 92%（增大差异，更明显）
       this.scaleAnimators.push(scaleAnimator);
 
       const alphaAnimator: SpringAnimator = new SpringAnimator(alphaSpringConfig);
@@ -233,7 +233,8 @@ export class LyricPlayerController {
       // 🎵 设置目标值，由弹簧动画平滑过渡
       let targetScale: number = 1.0;
       if (this.config.enableScale) {
-        targetScale = state.isActive ? 1.0 : 0.97;
+        // 激活行 100%，非激活行 92%（8% 差异更明显）
+        targetScale = state.isActive ? 1.0 : 0.92;
       }
       // 设置弹簧动画目标值（实际值在 update 中更新）
       if (index < this.scaleAnimators.length) {
