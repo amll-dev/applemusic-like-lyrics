@@ -70,8 +70,8 @@ export class LyricPlayerController {
       this.scrollOffset = this.scrollAnimator.getPosition();
     }
 
-    // 🚫 暂时屏蔽间奏动画（调试用）
-    // this.interludeAnimator.update(this.currentTime);
+    // 🎵 更新间奏动画
+    this.interludeAnimator.update(this.currentTime);
 
     // 🚫 暂时屏蔽逐行波动动画（调试用）
     // this.updateWaveAnimation(deltaTimeMs / 1000.0);
@@ -103,19 +103,7 @@ export class LyricPlayerController {
     }
 
     if (newIndex !== this.currentLineIndex) {
-      const oldIndex: number = this.currentLineIndex;
       this.currentLineIndex = newIndex;
-
-      // 📊 日志输出：当前行切换
-      if (newIndex !== -1) {
-        const currentLine = this.lines[newIndex];
-        const lyrics = currentLine.words.map(w => w.word).join('');
-        console.info(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
-        console.info(`[行切换] ${oldIndex} → ${newIndex} | 当前播放: "${lyrics}"`);
-        console.info(`[时间] ${this.currentTime}ms | 行范围: ${currentLine.startTime}-${currentLine.endTime}ms`);
-        console.info(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
-      }
-
       this.updateScrollTarget();
 
       // 🚫 暂时屏蔽波动动画（调试用）
@@ -245,10 +233,50 @@ export class LyricPlayerController {
   /**
    * 更新间奏状态
    * 🎵 当两行歌词之间的间隔超过4秒时，显示间奏动画（三个跳动的小白点）
+   * 参考原版: getCurrentInterlude() 方法
    */
   private updateInterludeState(): void {
-    // 没有当前行，隐藏间奏
-    if (this.currentLineIndex < 0 || this.currentLineIndex >= this.lines.length) {
+    // 🎵 查找当前应该检查间奏的行索引
+    // 原版使用 scrollToIndex，我们需要找到"最后一行已结束的歌词"
+    let checkIndex: number = -1;
+
+    // 查找当前时间点之前最近的已结束的行
+    for (let i: number = 0; i < this.lines.length; i++) {
+      const line: LyricLine = this.lines[i];
+      if (this.currentTime >= line.endTime) {
+        checkIndex = i;
+      } else if (this.currentTime >= line.startTime) {
+        // 当前正在播放某行，不显示间奏
+        if (this.interludeState.visible) {
+          console.info(`[间奏] 隐藏：正在播放第${i}行`);
+          this.interludeState.visible = false;
+          this.interludeAnimator.reset();
+        }
+        return;
+      } else {
+        break;
+      }
+    }
+
+    // 检查开头间奏（第一行歌词开始前）
+    if (checkIndex === -1 && this.lines.length > 0) {
+      const firstLine: LyricLine = this.lines[0];
+      if (this.currentTime < firstLine.startTime && firstLine.startTime >= 4000) {
+        // 开头间奏
+        if (!this.interludeState.visible) {
+          console.info(`[间奏] 🎵 开头间奏开始 | 0 → ${firstLine.startTime}ms`);
+          this.interludeState.visible = true;
+          this.interludeAnimator.setInterlude(0, firstLine.startTime, this.currentTime);
+        }
+        this.interludeState.prevLineIndex = -1;
+        this.interludeState.nextLineIndex = 0;
+        this.interludeState.positionY = 0;
+        return;
+      }
+    }
+
+    // 没有已结束的行
+    if (checkIndex < 0) {
       if (this.interludeState.visible) {
         this.interludeState.visible = false;
         this.interludeAnimator.reset();
@@ -256,19 +284,29 @@ export class LyricPlayerController {
       return;
     }
 
-    const currentLine: LyricLine = this.lines[this.currentLineIndex];
-    const nextLine: LyricLine | undefined =
-      this.currentLineIndex + 1 < this.lines.length ? this.lines[this.currentLineIndex + 1] : undefined;
+    // 检查是否有下一行
+    const nextIndex: number = checkIndex + 1;
+    if (nextIndex >= this.lines.length) {
+      // 没有下一行，不显示间奏
+      if (this.interludeState.visible) {
+        this.interludeState.visible = false;
+        this.interludeAnimator.reset();
+      }
+      return;
+    }
 
-    // 检查是否在两行之间的间隙中
-    if (nextLine && this.currentTime >= currentLine.endTime && this.currentTime < nextLine.startTime) {
-      // 计算间隙时长
+    const currentLine: LyricLine = this.lines[checkIndex];
+    const nextLine: LyricLine = this.lines[nextIndex];
+
+    // 检查是否在间隙中
+    if (this.currentTime >= currentLine.endTime && this.currentTime < nextLine.startTime) {
       const gap: number = nextLine.startTime - currentLine.endTime;
 
-      // 间隙超过4秒，显示间奏动画
       if (gap >= 4000) {
-        // 首次进入间奏状态，设置间奏时间范围
+        // 间隙超过4秒，显示间奏动画
         if (!this.interludeState.visible) {
+          console.info(`[间奏] 🎵 间奏开始 | 行${checkIndex}结束后`);
+          console.info(`[间奏]    时间范围: ${currentLine.endTime} → ${nextLine.startTime}ms (${gap}ms)`);
           this.interludeState.visible = true;
           this.interludeAnimator.setInterlude(
             currentLine.endTime,
@@ -277,27 +315,28 @@ export class LyricPlayerController {
           );
         }
 
-        this.interludeState.prevLineIndex = this.currentLineIndex;
-        this.interludeState.nextLineIndex = this.currentLineIndex + 1;
+        this.interludeState.prevLineIndex = checkIndex;
+        this.interludeState.nextLineIndex = nextIndex;
 
-        // 计算间奏动画的Y坐标（当前行下方）
+        // 计算间奏动画的Y坐标
         let posY: number = 0;
-        for (let i: number = 0; i <= this.currentLineIndex; i++) {
+        for (let i: number = 0; i <= checkIndex; i++) {
           posY += this.getLineHeight(i);
         }
-        // 将间奏放在两行的中间位置
-        posY += this.getLineHeight(this.currentLineIndex) / 2;
+        posY += 30; // 间奏圆点高度的一半
         this.interludeState.positionY = posY;
       } else {
-        // 间隙小于4秒，隐藏间奏
+        // 间隙小于4秒
         if (this.interludeState.visible) {
+          console.info(`[间奏] 隐藏：间隙${gap}ms < 4000ms`);
           this.interludeState.visible = false;
           this.interludeAnimator.reset();
         }
       }
     } else {
-      // 不在间隙中，隐藏间奏
+      // 不在间隙中
       if (this.interludeState.visible) {
+        console.info(`[间奏] 隐藏：不在间隙中`);
         this.interludeState.visible = false;
         this.interludeAnimator.reset();
       }

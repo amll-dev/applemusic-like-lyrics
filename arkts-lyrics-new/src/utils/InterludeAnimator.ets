@@ -173,6 +173,12 @@ export class InterludeAnimator {
       clamp(0, Math.max(0, globalOpacity * dot1Opacity), 1),
       clamp(0, Math.max(0, globalOpacity * dot2Opacity), 1)
     ];
+
+    // 📊 调试日志：每秒输出一次
+    if (Math.floor(currentDuration / 1000) !== Math.floor((currentDuration - 16) / 1000)) {
+      console.info(`[间奏动画] 进度: ${(currentDuration / 1000).toFixed(1)}s / ${(this.interludeDuration / 1000).toFixed(1)}s | ` +
+        `scale=${scale.toFixed(2)} | opacity=[${this.state.dotOpacities.map(o => o.toFixed(2)).join(',')}]`);
+    }
   }
 
   /**
