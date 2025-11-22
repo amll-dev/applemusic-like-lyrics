@@ -21,6 +21,29 @@ import {
 } from '../utils/LyricUtils';
 
 /**
+ * 🎵 字体大小配置
+ * 可在初始化时自定义，方便后续调整
+ */
+export class FontSizeConfig {
+  /** 激活行主歌词字体大小 */
+  mainActive: number = 28;
+  /** 非激活行主歌词字体大小 */
+  mainInactive: number = 24;
+  /** 翻译字体大小 */
+  translation: number = 18;
+  /** 音译字体大小 */
+  roman: number = 16;
+  /** 主歌词与翻译之间的间距 */
+  lineSpacing: number = 8;
+  /** 行与行之间的间距 */
+  linePadding: number = 20;
+  /** 行高系数（相对于字体大小） */
+  lineHeightRatio: number = 1.4;
+
+  constructor() {}
+}
+
+/**
  * 单词位置计算结果
  */
 class WordPositionResult {
@@ -46,9 +69,19 @@ export class CanvasLyricRenderer {
   private readonly normalFont: string = 'HarmonyHeiTi';
   /** 加粗歌词字体 */
   private readonly boldFont: string = 'HarmonyHeiTi-Bold';
+  /** 🎵 字体大小配置 */
+  private fontConfig: FontSizeConfig;
 
-  constructor(context: CanvasRenderContext) {
+  constructor(context: CanvasRenderContext, fontConfig?: FontSizeConfig) {
     this.renderContext = context;
+    this.fontConfig = fontConfig ? fontConfig : new FontSizeConfig();
+  }
+
+  /**
+   * 获取字体配置（供外部读取）
+   */
+  getFontConfig(): FontSizeConfig {
+    return this.fontConfig;
   }
 
   /**
@@ -116,18 +149,19 @@ export class CanvasLyricRenderer {
 
     ctx.globalAlpha = state.alphaValue;
 
-    // 🎵 字体大小配置（整体放大两号）
-    const mainFontSize: number = state.isActive ? 28 : 24;
-    const translationFontSize: number = 18;
-    const romanFontSize: number = 16;
-    const lineSpacing: number = 8; // 主歌词与翻译之间的间距
+    // 🎵 从配置获取字体大小
+    const fc: FontSizeConfig = this.fontConfig;
+    const mainFontSize: number = state.isActive ? fc.mainActive : fc.mainInactive;
+    const translationFontSize: number = fc.translation;
+    const romanFontSize: number = fc.roman;
+    const lineSpacing: number = fc.lineSpacing;
 
     // 渲染主歌词（支持换行）
     const mainLineCount: number = this.renderMainLyric(ctx, state, currentTime, config, mainFontSize);
 
     // 计算主歌词的实际高度
     // 单行时只需要字体高度，多行时需要考虑行间距
-    const lineHeight: number = mainFontSize * 1.4;
+    const lineHeight: number = mainFontSize * fc.lineHeightRatio;
     const mainLyricHeight: number = mainLineCount === 1
       ? mainFontSize
       : (mainLineCount - 1) * lineHeight + mainFontSize;
@@ -159,7 +193,7 @@ export class CanvasLyricRenderer {
     if (config.showRoman && line.romanLyric) {
       totalHeight += lineSpacing + romanFontSize;
     }
-    totalHeight += 20; // 行与行之间的间距
+    totalHeight += fc.linePadding; // 行与行之间的间距
     state.calculatedHeight = totalHeight;
 
     // 恢复画布状态
@@ -243,7 +277,7 @@ export class CanvasLyricRenderer {
     startX: number
   ): WordPositionResult {
     const wordInfos: WordRenderInfo[] = [];
-    const lineHeight: number = fontSize * 1.4; // 行高为字体大小的 1.4 倍
+    const lineHeight: number = fontSize * this.fontConfig.lineHeightRatio;
 
     let currentX: number = startX;
     let currentY: number = 0;

@@ -26,6 +26,11 @@ export class LyricPlayerController {
   private scaleAnimators: SpringAnimator[] = [];
   private alphaAnimators: SpringAnimator[] = [];
 
+  // 🎵 布局重算标志：当行高变化时需要重新计算 positionY
+  private layoutNeedsUpdate: boolean = false;
+  // 🎵 上一次计算的行高缓存，用于检测变化
+  private cachedHeights: number[] = [];
+
   constructor(config: LyricPlayerConfig) {
     this.config = config;
 
@@ -82,8 +87,58 @@ export class LyricPlayerController {
     // 🎵 更新间奏动画
     this.interludeAnimator.update(this.currentTime);
 
+    // 🎵 检查并重新计算布局（当行高变化时）
+    this.checkAndRecalculateLayout();
+
     // 🚫 暂时屏蔽逐行波动动画（调试用）
     // this.updateWaveAnimation(deltaSec);
+  }
+
+  /**
+   * 检查并重新计算布局
+   * 🎵 当 calculatedHeight 变化时，需要更新 positionY
+   */
+  private checkAndRecalculateLayout(): void {
+    let needsUpdate: boolean = false;
+
+    // 检查是否有行高变化
+    for (let i: number = 0; i < this.lineStates.length; i++) {
+      const state: LyricLineRenderState = this.lineStates[i];
+      const currentHeight: number = this.getLineHeight(i);
+      const cachedHeight: number = i < this.cachedHeights.length ? this.cachedHeights[i] : 0;
+
+      if (Math.abs(currentHeight - cachedHeight) > 0.1) {
+        needsUpdate = true;
+        break;
+      }
+    }
+
+    if (needsUpdate || this.layoutNeedsUpdate) {
+      this.recalculatePositions();
+      this.layoutNeedsUpdate = false;
+    }
+  }
+
+  /**
+   * 重新计算所有行的 positionY
+   */
+  private recalculatePositions(): void {
+    let currentY: number = 0;
+
+    // 更新缓存和位置
+    this.cachedHeights = [];
+    this.lineStates.forEach((state: LyricLineRenderState, index: number) => {
+      state.positionY = currentY;
+      const height: number = this.getLineHeight(index);
+      this.cachedHeights.push(height);
+      currentY += height;
+    });
+
+    // 更新视口可见性
+    this.updateViewportVisibility();
+
+    // 更新滚动目标
+    this.updateScrollTarget();
   }
 
   /**
@@ -395,17 +450,25 @@ export class LyricPlayerController {
       return 0;
     }
 
-    // 🎵 空白歌词行（间奏）有固定高度，用于放置间奏动画
-    if (state.line.words.length === 0) {
-      return 30; // 间奏行高度
-    }
-
     // 🎵 如果已经计算过高度，使用计算值（考虑了换行）
     if (state.calculatedHeight > 0) {
       return state.calculatedHeight;
     }
 
-    // 🎵 估算高度（首次渲染前使用）
+    // 🎵 空白歌词行（间奏）使用普通歌词行的高度
+    // 不再使用固定高度，这样间奏行与普通行高度一致
+    if (state.line.words.length === 0) {
+      return this.getEstimatedLineHeight();
+    }
+
+    return this.getEstimatedLineHeight();
+  }
+
+  /**
+   * 获取估算的行高度
+   * 🎵 首次渲染前使用的估算值
+   */
+  private getEstimatedLineHeight(): number {
     // 与 CanvasLyricRenderer.renderLine 保持一致：
     // - 激活行主字体: 28vp，非激活: 24vp
     // - 翻译字体: 18vp
@@ -418,10 +481,13 @@ export class LyricPlayerController {
 
     let height: number = mainFontSize + bottomPadding;
 
-    if (this.config.showTranslation && state.line.translatedLyric) {
+    // 注意：间奏行没有翻译和音译，但为保持布局一致，
+    // 如果全局配置显示翻译/音译，则间奏行也预留相应空间
+    // 这样歌词滚动时不会跳动
+    if (this.config.showTranslation) {
       height += lineSpacing + 18; // 间距 + 翻译字体大小
     }
-    if (this.config.showRoman && state.line.romanLyric) {
+    if (this.config.showRoman) {
       height += lineSpacing + 16; // 间距 + 音译字体大小
     }
 
