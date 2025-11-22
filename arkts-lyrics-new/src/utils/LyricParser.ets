@@ -102,7 +102,52 @@ function parseYrcLyric(yrcContent: string): LyricLine[] {
   // 按开始时间排序
   lines.sort((a: LyricLine, b: LyricLine) => a.startTime - b.startTime);
 
-  return lines;
+  // 🎵 自动插入间奏行
+  const linesWithInterlude: LyricLine[] = insertInterludeLines(lines);
+
+  return linesWithInterlude;
+}
+
+/**
+ * 自动插入间奏行
+ * 当两行歌词之间的时间间隔超过阈值时，插入一个空白行作为间奏
+ * @param lines 原始歌词行数组
+ * @param minGap 最小间隔阈值（毫秒），默认 3500ms
+ * @returns 包含间奏行的歌词数组
+ */
+function insertInterludeLines(lines: LyricLine[], minGap: number = 3500): LyricLine[] {
+  if (lines.length === 0) {
+    return lines;
+  }
+
+  const result: LyricLine[] = [];
+
+  for (let i: number = 0; i < lines.length; i++) {
+    const currentLine: LyricLine = lines[i];
+
+    // 检查与上一行的时间间隔
+    if (i > 0) {
+      const prevLine: LyricLine = lines[i - 1];
+      const gap: number = currentLine.startTime - prevLine.endTime;
+
+      // 如果间隔超过阈值，插入间奏行
+      if (gap >= minGap) {
+        // 间奏行：words 为空数组
+        const interludeLine: LyricLine = new LyricLine(
+          [],  // 空单词数组表示间奏
+          prevLine.endTime,  // 从上一行结束开始
+          currentLine.startTime  // 到下一行开始结束
+        );
+        result.push(interludeLine);
+
+        console.info(`[LyricParser] 🎵 插入间奏: ${prevLine.endTime}ms → ${currentLine.startTime}ms (${gap}ms)`);
+      }
+    }
+
+    result.push(currentLine);
+  }
+
+  return result;
 }
 
 /**
