@@ -238,11 +238,18 @@ export class LyricPlayerController {
   private updateInterludeState(): void {
     // 🎵 查找当前应该检查间奏的行索引
     // 原版使用 scrollToIndex，我们需要找到"最后一行已结束的歌词"
+    // 注意：跳过 isBG=true 或空歌词的行
     let checkIndex: number = -1;
 
-    // 查找当前时间点之前最近的已结束的行
+    // 查找当前时间点之前最近的已结束的有效行（非背景行）
     for (let i: number = 0; i < this.lines.length; i++) {
       const line: LyricLine = this.lines[i];
+
+      // 跳过背景行或空歌词行
+      if (line.isBG || line.words.length === 0) {
+        continue;
+      }
+
       if (this.currentTime >= line.endTime) {
         checkIndex = i;
       } else if (this.currentTime >= line.startTime) {
@@ -253,20 +260,19 @@ export class LyricPlayerController {
           this.interludeAnimator.reset();
         }
         return;
-      } else {
-        break;
       }
     }
 
     // 检查开头间奏（第一行歌词开始前）
     if (checkIndex === -1 && this.lines.length > 0) {
-      const firstLine: LyricLine = this.lines[0];
-      if (this.currentTime < firstLine.startTime && firstLine.startTime >= 4000) {
+      // 找到第一个有效行（非背景行）
+      const firstValidLine: LyricLine | undefined = this.lines.find(l => !l.isBG && l.words.length > 0);
+      if (firstValidLine && this.currentTime < firstValidLine.startTime && firstValidLine.startTime >= 4000) {
         // 开头间奏
         if (!this.interludeState.visible) {
-          console.info(`[间奏] 🎵 开头间奏开始 | 0 → ${firstLine.startTime}ms`);
+          console.info(`[间奏] 🎵 开头间奏开始 | 0 → ${firstValidLine.startTime}ms`);
           this.interludeState.visible = true;
-          this.interludeAnimator.setInterlude(0, firstLine.startTime, this.currentTime);
+          this.interludeAnimator.setInterlude(0, firstValidLine.startTime, this.currentTime);
         }
         this.interludeState.prevLineIndex = -1;
         this.interludeState.nextLineIndex = 0;
@@ -275,7 +281,7 @@ export class LyricPlayerController {
       }
     }
 
-    // 没有已结束的行
+    // 没有已结束的有效行
     if (checkIndex < 0) {
       if (this.interludeState.visible) {
         this.interludeState.visible = false;
@@ -284,10 +290,18 @@ export class LyricPlayerController {
       return;
     }
 
-    // 检查是否有下一行
-    const nextIndex: number = checkIndex + 1;
-    if (nextIndex >= this.lines.length) {
-      // 没有下一行，不显示间奏
+    // 找到下一个有效行（跳过背景行或空歌词行）
+    let nextIndex: number = -1;
+    for (let i: number = checkIndex + 1; i < this.lines.length; i++) {
+      const line: LyricLine = this.lines[i];
+      if (!line.isBG && line.words.length > 0) {
+        nextIndex = i;
+        break;
+      }
+    }
+
+    if (nextIndex < 0) {
+      // 没有下一个有效行，不显示间奏
       if (this.interludeState.visible) {
         this.interludeState.visible = false;
         this.interludeAnimator.reset();
