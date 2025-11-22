@@ -90,6 +90,7 @@ export class LyricPlayerController {
 
   /**
    * 更新当前播放行
+   * 注意：跳过空白歌词行（间奏），保持 currentLineIndex 在有效歌词行上
    */
   private updateCurrentLine(): void {
     let newIndex: number = -1;
@@ -97,12 +98,28 @@ export class LyricPlayerController {
     for (let i: number = 0; i < this.lines.length; i++) {
       const line: LyricLine = this.lines[i];
       if (this.currentTime >= line.startTime && this.currentTime < line.endTime) {
+        // 跳过空白歌词行（间奏），保持上一个有效行的索引
+        if (line.words.length === 0) {
+          // 间奏行：不更新 currentLineIndex，保持在上一个有效行
+          return;
+        }
         newIndex = i;
         break;
       }
     }
 
-    if (newIndex !== this.currentLineIndex) {
+    // 如果没找到当前行，尝试找到最后一个已播放完的有效行
+    if (newIndex === -1) {
+      for (let i: number = this.lines.length - 1; i >= 0; i--) {
+        const line: LyricLine = this.lines[i];
+        if (line.words.length > 0 && this.currentTime >= line.endTime) {
+          newIndex = i;
+          break;
+        }
+      }
+    }
+
+    if (newIndex !== this.currentLineIndex && newIndex !== -1) {
       this.currentLineIndex = newIndex;
       this.updateScrollTarget();
 
