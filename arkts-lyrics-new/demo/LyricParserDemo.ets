@@ -28,24 +28,29 @@ struct LyricParserDemo {
   }
 
   /**
-   * 从 rawfile 资源加载歌词
+   * 从 string.json 资源同步获取字符串
+   * @param resource 资源引用，如 $r('app.string.testLrc')
    */
-  private async loadLyrics(): Promise<void> {
+  private resourceToString(resource: Resource): string {
+    return getContext(this).resourceManager.getStringSync(resource);
+  }
+
+  /**
+   * 加载歌词
+   */
+  private loadLyrics(): void {
     try {
-      // 方式1: 从 rawfile 加载 (需要将 JSON 放入 src/main/resources/rawfile/)
-      // const context = getContext(this);
-      // const resourceManager = context.resourceManager;
-      // const rawData = await resourceManager.getRawFileContent('lyrics.json');
-      // const jsonStr = String.fromCharCode(...new Uint8Array(rawData));
+      // 从 string.json 资源加载歌词 JSON
+      // 使用方式: const jsonStr: string = this.resourceToString($r('app.string.testLrc'));
       // this.lyrics = parseLyricResponse(jsonStr);
 
-      // 方式2: 直接使用内嵌 JSON（Demo 用）
-      const lyricData = this.getSampleLyricData();
+      // Demo: 使用内嵌数据
+      const lyricData: object = this.getSampleLyricData();
       this.lyrics = parseLyricResponse(lyricData);
 
       // 更新最大时间
       if (this.lyrics.length > 0) {
-        const lastLine = this.lyrics[this.lyrics.length - 1];
+        const lastLine: LyricLine = this.lyrics[this.lyrics.length - 1];
         this.maxTimeMs = lastLine.endTime + 5000;
       }
 
