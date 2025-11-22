@@ -183,6 +183,19 @@ function parseYrcWords(wordsPart: string): LyricWord[] {
 }
 
 /**
+ * 临时歌词行数据（用于 LRC 解析）
+ */
+class TempLrcLine {
+  time: number;
+  text: string;
+
+  constructor(time: number, text: string) {
+    this.time = time;
+    this.text = text;
+  }
+}
+
+/**
  * 解析普通 LRC 歌词（降级方案）
  * 格式: [mm:ss.xx]歌词文本
  */
@@ -190,7 +203,7 @@ function parseLrcLyric(lrcContent: string): LyricLine[] {
   const lines: LyricLine[] = [];
   const lineRegex: RegExp = /\[(\d{2}):(\d{2})\.(\d{2,3})\](.*)/g;
 
-  const tempLines: Array<{ time: number; text: string }> = [];
+  const tempLines: TempLrcLine[] = [];
 
   let match: RegExpExecArray | null = lineRegex.exec(lrcContent);
   while (match !== null) {
@@ -206,20 +219,24 @@ function parseLrcLyric(lrcContent: string): LyricLine[] {
     const text: string = match[4].trim();
 
     if (text.length > 0) {
-      tempLines.push({ time: startTime, text: text });
+      const tempLine: TempLrcLine = new TempLrcLine(startTime, text);
+      tempLines.push(tempLine);
     }
 
     match = lineRegex.exec(lrcContent);
   }
 
   // 按时间排序
-  tempLines.sort((a, b) => a.time - b.time);
+  tempLines.sort((a: TempLrcLine, b: TempLrcLine): number => a.time - b.time);
 
   // 转换为 LyricLine（整行作为一个单词）
   for (let i: number = 0; i < tempLines.length; i++) {
-    const current = tempLines[i];
-    const next = tempLines[i + 1];
-    const endTime: number = next ? next.time : current.time + 5000;
+    const current: TempLrcLine = tempLines[i];
+    const nextIndex: number = i + 1;
+    let endTime: number = current.time + 5000;
+    if (nextIndex < tempLines.length) {
+      endTime = tempLines[nextIndex].time;
+    }
 
     // LyricWord 构造函数: (startTime, endTime, word)
     const word: LyricWord = new LyricWord(current.time, endTime, current.text);
