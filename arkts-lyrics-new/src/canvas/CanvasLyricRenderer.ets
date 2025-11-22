@@ -145,7 +145,7 @@ export class CanvasLyricRenderer {
     ctx.scale(state.scaleRatio, state.scaleRatio);
     ctx.translate(-scaleOriginX, -scaleOriginY);
 
-    ctx.globalAlpha = state.alphaValue;
+    ctx.globalAlpha = 1.0;
 
     // 🎵 从配置获取字体大小
     const fc: FontSizeConfig = this.fontConfig;
@@ -218,9 +218,8 @@ export class CanvasLyricRenderer {
     const isActive: boolean = state.isActive;
 
     // 设置字体（使用传入的字体大小）
-    const fontWeight: string = isActive ? 'bold' : 'normal';
-    const fontFamily: string = isActive ? this.boldFont : this.normalFont;
-    ctx.font = `${fontWeight} ${fontSize}vp ${fontFamily}`;
+    // 🎵 所有字体都使用粗体
+    ctx.font = `bold ${fontSize}vp ${this.boldFont}`;
     ctx.textBaseline = 'top';
 
     // 计算可用宽度和起始X坐标
@@ -438,10 +437,9 @@ export class CanvasLyricRenderer {
   ): void {
     ctx.save();
 
-    ctx.font = `normal ${fontSize}vp ${this.normalFont}`;
-    const alphaValue: number = isActive ? 0.8 : 0.4;
-    const alphaStr: string = alphaValue.toFixed(2);
-    ctx.fillStyle = `rgba(153, 153, 153, ${alphaStr})`;
+    // 🎵 所有字体都使用粗体，透明度固定为1
+    ctx.font = `bold ${fontSize}vp ${this.boldFont}`;
+    ctx.fillStyle = 'rgb(153, 153, 153)';
     ctx.textBaseline = 'top';
 
     // 🎵 跟随主歌词对齐方式：
@@ -482,10 +480,9 @@ export class CanvasLyricRenderer {
   ): void {
     ctx.save();
 
-    ctx.font = `normal ${fontSize}vp ${this.normalFont}`;
-    const alphaValue: number = isActive ? 0.6 : 0.3;
-    const alphaStr: string = alphaValue.toFixed(2);
-    ctx.fillStyle = `rgba(119, 119, 119, ${alphaStr})`;
+    // 🎵 所有字体都使用粗体，透明度固定为1
+    ctx.font = `bold ${fontSize}vp ${this.boldFont}`;
+    ctx.fillStyle = 'rgb(119, 119, 119)';
     ctx.textBaseline = 'top';
 
     // 🎵 跟随主歌词对齐方式：
