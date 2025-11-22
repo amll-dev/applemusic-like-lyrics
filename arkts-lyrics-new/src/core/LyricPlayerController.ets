@@ -324,14 +324,30 @@ export class LyricPlayerController {
 
   /**
    * 更新滚动目标
+   * 🎵 间奏期间，滚动目标为间奏后的下一行
    */
   private updateScrollTarget(): void {
-    if (this.currentLineIndex < 0 || this.containerHeight === 0) {
+    if (this.containerHeight === 0) {
       return;
     }
 
+    // 🎵 确定滚动目标行
+    // 间奏期间：滚动到间奏后的下一行
+    // 正常播放：滚动到当前行
+    let targetLineIndex: number = this.currentLineIndex;
+
+    if (this.interludeState.visible && this.interludeState.nextLineIndex >= 0) {
+      // 间奏期间，滚动目标为下一行歌词
+      targetLineIndex = this.interludeState.nextLineIndex;
+    }
+
+    if (targetLineIndex < 0) {
+      return;
+    }
+
+    // 计算滚动偏移
     let targetOffset: number = 0;
-    for (let i = 0; i < this.currentLineIndex; i++) {
+    for (let i = 0; i < targetLineIndex; i++) {
       targetOffset += this.getLineHeight(i);
     }
 
@@ -492,6 +508,10 @@ export class LyricPlayerController {
       const interludeLine: LyricLine = this.lines[interludeLineIndex];
       const duration: number = interludeLine.endTime - interludeLine.startTime;
 
+      // 🎵 保存旧的 nextLineIndex，用于检测变化
+      const oldNextLineIndex: number = this.interludeState.nextLineIndex;
+      const wasVisible: boolean = this.interludeState.visible;
+
       if (!this.interludeState.visible) {
         console.info(`[间奏] 🎵 间奏开始 | 行${interludeLineIndex}`);
         console.info(`[间奏]    时间范围: ${interludeLine.startTime} → ${interludeLine.endTime}ms (${duration}ms)`);
@@ -509,6 +529,12 @@ export class LyricPlayerController {
 
       this.interludeState.prevLineIndex = interludeLineIndex - 1;
       this.interludeState.nextLineIndex = interludeLineIndex + 1;
+
+      // 🎵 间奏开始时，或目标行改变时，触发滚动到焦点行
+      if (!wasVisible || oldNextLineIndex !== this.interludeState.nextLineIndex) {
+        console.info(`[间奏] 滚动到焦点行 ${this.interludeState.nextLineIndex}`);
+        this.updateScrollTarget();
+      }
 
       // 🎵 检测间奏高度变化，触发布局重算
       const currentHeight: number = this.interludeState.currentHeight;
