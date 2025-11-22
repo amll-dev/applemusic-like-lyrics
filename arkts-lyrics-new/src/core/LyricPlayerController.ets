@@ -200,7 +200,15 @@ export class LyricPlayerController {
           }
         }
       }
+      const oldBlurRadius: number = state.blurRadius;
       state.blurRadius = blurLevel;
+
+      // 📊 模糊调试日志：仅当模糊值变化时输出
+      if (oldBlurRadius !== blurLevel && state.line.words.length > 0) {
+        const lineText: string = state.line.words.map(w => w.word).join('').substring(0, 10);
+        console.info(`[模糊] 行${index} "${lineText}..." | blurLevel: ${oldBlurRadius} → ${blurLevel} | ` +
+          `距离当前行: ${Math.abs(index - this.currentLineIndex)} | isActive: ${state.isActive}`);
+      }
 
       // ========== 行级 Y 偏移（保留用于未来扩展）==========
       // 注意：逐字抬升效果已移至 CanvasLyricRenderer.renderWord() 中实现

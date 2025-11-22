@@ -72,11 +72,16 @@ export class CanvasLyricRenderer {
     // 保存画布状态
     ctx.save();
 
-    // 🎵 模糊效果暂时禁用（性能优化中）
-    // TODO: 实现离屏Canvas缓存系统后再启用
-    // if (state.blurRadius > 0) {
-    //   ctx.filter = `blur(${state.blurRadius}px)`;
-    // }
+    // 🎵 模糊效果
+    // 根据距离当前行的距离计算模糊程度
+    if (state.blurRadius > 0) {
+      // 将 blurLevel 转换为实际的像素模糊值
+      // 参考原版：blurLevel * 0.8 (小屏) 或 blurLevel (大屏)
+      const blurPx: number = state.blurRadius * 0.8;
+      ctx.filter = `blur(${blurPx}px)`;
+    } else {
+      ctx.filter = 'none';
+    }
 
     // 应用变换：位置、缩放、透明度
     // 🎵 Y坐标组成：
