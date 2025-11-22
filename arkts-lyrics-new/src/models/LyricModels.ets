@@ -121,7 +121,10 @@ export class LyricPlayerConfig {
 export class LyricLineRenderState {
   line: LyricLine;
   index: number;
+  /** 基础位置Y（静态布局计算） */
   positionY: number = 0;
+  /** 🎵 动画后的位置Y（波浪效果，每行独立的弹簧动画） */
+  animatedPositionY: number = 0;
   /** Y轴偏移量（用于已播放歌词的抬升效果） */
   yOffset: number = 0;
   /** 波动动画偏移量（逐行抬升效果） */

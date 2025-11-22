@@ -15,6 +15,20 @@ export class SpringAnimatorConfig {
   }
 }
 
+/**
+ * 🎵 延迟队列项
+ * 用于实现波浪延迟效果
+ */
+class DelayedTarget {
+  position: number;
+  remainingDelay: number;
+
+  constructor(position: number, delay: number) {
+    this.position = position;
+    this.remainingDelay = delay;
+  }
+}
+
 export class SpringAnimator {
   private mass: number;
   private stiffness: number;
@@ -24,17 +38,40 @@ export class SpringAnimator {
   private velocity: number = 0;
   private animating: boolean = false;
 
+  // 🎵 延迟队列：支持波浪效果
+  private delayedTarget: DelayedTarget | null = null;
+
   constructor(config: SpringAnimatorConfig) {
     this.mass = config.mass;
     this.stiffness = config.stiffness;
     this.damping = config.damping;
   }
 
+  /**
+   * 设置目标位置（立即生效）
+   */
   setTarget(target: number): void {
     // 🎵 只要目标值变化就启动动画（阈值改为 0.0001，适用于缩放等小范围值）
     if (Math.abs(target - this.targetPos) > 0.0001) {
       this.targetPos = target;
       this.animating = true;
+      // 清除延迟队列
+      this.delayedTarget = null;
+    }
+  }
+
+  /**
+   * 🎵 设置目标位置（带延迟）
+   * 用于实现波浪滚动效果，每行有不同的延迟
+   * @param target 目标位置
+   * @param delaySec 延迟时间（秒）
+   */
+  setTargetWithDelay(target: number, delaySec: number): void {
+    if (delaySec > 0) {
+      // 加入延迟队列
+      this.delayedTarget = new DelayedTarget(target, delaySec);
+    } else {
+      this.setTarget(target);
     }
   }
 
@@ -43,9 +80,20 @@ export class SpringAnimator {
     this.targetPos = position;
     this.velocity = 0;
     this.animating = false;
+    this.delayedTarget = null;
   }
 
   update(deltaTimeSec: number): void {
+    // 🎵 处理延迟队列
+    if (this.delayedTarget !== null) {
+      this.delayedTarget.remainingDelay -= deltaTimeSec;
+      if (this.delayedTarget.remainingDelay <= 0) {
+        // 延迟时间到，应用目标位置
+        this.setTarget(this.delayedTarget.position);
+        this.delayedTarget = null;
+      }
+    }
+
     if (!this.animating) {
       return;
     }
@@ -71,6 +119,6 @@ export class SpringAnimator {
   }
 
   isAnimating(): boolean {
-    return this.animating;
+    return this.animating || this.delayedTarget !== null;
   }
 }

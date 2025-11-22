@@ -130,10 +130,10 @@ export class CanvasLyricRenderer {
 
     // 应用变换：位置、缩放、透明度
     // 🎵 Y坐标组成：
-    //   - positionY: 基础位置（布局计算得出）
+    //   - animatedPositionY: 动画后的位置（波浪延迟效果，每行独立弹簧动画）
     //   - yOffset: 已播放歌词的抬升偏移（静态，让已播放的歌词略微上移）
-    //   - waveOffset: 波动动画偏移（动态，逐行传播的弹簧效果）
-    const finalY: number = state.positionY + state.yOffset + state.waveOffset;
+    //   - waveOffset: 波动动画偏移（保留用于其他效果）
+    const finalY: number = state.animatedPositionY + state.yOffset + state.waveOffset;
 
     // 🎵 先移动到行的位置
     ctx.translate(0, finalY);

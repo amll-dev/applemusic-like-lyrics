@@ -22,14 +22,19 @@ export class LyricPlayerController {
   private interludeState: InterludeState;
   private interludeAnimator: InterludeAnimator;
 
-  // 🎵 行级弹簧动画：缩放和透明度
+  // 🎵 行级弹簧动画：缩放、透明度、位置
   private scaleAnimators: SpringAnimator[] = [];
   private alphaAnimators: SpringAnimator[] = [];
+  private positionAnimators: SpringAnimator[] = [];  // 🎵 新增：每行的位置弹簧动画
 
   // 🎵 布局重算标志：当行高变化时需要重新计算 positionY
   private layoutNeedsUpdate: boolean = false;
   // 🎵 上一次计算的行高缓存，用于检测变化
   private cachedHeights: number[] = [];
+
+  // 🎵 波浪延迟参数（参考原版）
+  private readonly baseDelay: number = 0.05;  // 基础延迟 50ms
+  private readonly delayDecay: number = 1.05; // 延迟衰减系数
 
   constructor(config: LyricPlayerConfig) {
     this.config = config;
@@ -121,6 +126,7 @@ export class LyricPlayerController {
 
   /**
    * 重新计算所有行的 positionY
+   * 🎵 同时设置位置弹簧动画的目标值，实现波浪效果
    */
   private recalculatePositions(): void {
     let currentY: number = 0;
@@ -134,11 +140,61 @@ export class LyricPlayerController {
       currentY += height;
     });
 
+    // 🎵 设置位置弹簧动画目标（带波浪延迟）
+    this.applyWaveDelayToPositions();
+
     // 更新视口可见性
     this.updateViewportVisibility();
 
     // 更新滚动目标
     this.updateScrollTarget();
+  }
+
+  /**
+   * 🎵 应用波浪延迟到位置动画
+   * 参考原版 calcLayout 的延迟逻辑
+   */
+  private applyWaveDelayToPositions(): void {
+    if (!this.config.enableSpring) {
+      // 禁用弹簧时，直接设置位置，无延迟
+      this.lineStates.forEach((state: LyricLineRenderState, index: number) => {
+        state.animatedPositionY = state.positionY;
+        if (index < this.positionAnimators.length) {
+          this.positionAnimators[index].setCurrent(state.positionY);
+        }
+      });
+      return;
+    }
+
+    // 🎵 波浪延迟计算
+    // 参考原版：从当前行开始，逐行累加延迟，延迟递减
+    let delay: number = 0;
+    let currentDelay: number = this.baseDelay;
+
+    this.lineStates.forEach((state: LyricLineRenderState, index: number) => {
+      if (index >= this.positionAnimators.length) {
+        return;
+      }
+
+      const targetY: number = state.positionY;
+
+      // 🎵 判断是否在当前行之后（需要延迟的行）
+      // 原版逻辑：curPos >= 0 时开始累加延迟
+      if (index >= this.currentLineIndex && this.currentLineIndex >= 0) {
+        // 当前行及之后的行：应用递增的延迟
+        this.positionAnimators[index].setTargetWithDelay(targetY, delay);
+
+        // 累加延迟（非背景行）
+        if (state.line.words.length > 0) {
+          delay += currentDelay;
+          // 延迟衰减，形成波浪尾部减速效果
+          currentDelay /= this.delayDecay;
+        }
+      } else {
+        // 当前行之前的行：立即移动，无延迟
+        this.positionAnimators[index].setTarget(targetY);
+      }
+    });
   }
 
   /**
@@ -152,21 +208,21 @@ export class LyricPlayerController {
       // 更新缩放弹簧动画
       if (i < this.scaleAnimators.length) {
         const scaleAnimator: SpringAnimator = this.scaleAnimators[i];
-        const oldScale: number = scaleAnimator.getPosition();
         scaleAnimator.update(deltaSec);
-        const newScale: number = scaleAnimator.getPosition();
-        state.scaleRatio = newScale;
-
-        // 📊 调试日志：仅对当前行输出动画过程
-        if (i === this.currentLineIndex && scaleAnimator.isAnimating()) {
-          console.info(`[弹簧] 行${i} scale: ${oldScale.toFixed(4)} → ${newScale.toFixed(4)} | animating: true`);
-        }
+        state.scaleRatio = scaleAnimator.getPosition();
       }
 
       // 更新透明度弹簧动画
       if (i < this.alphaAnimators.length) {
         this.alphaAnimators[i].update(deltaSec);
         state.alphaValue = this.alphaAnimators[i].getPosition();
+      }
+
+      // 🎵 更新位置弹簧动画（波浪效果的核心）
+      if (i < this.positionAnimators.length) {
+        this.positionAnimators[i].update(deltaSec);
+        // 将动画后的位置应用到 state
+        state.animatedPositionY = this.positionAnimators[i].getPosition();
       }
     }
   }
@@ -178,12 +234,15 @@ export class LyricPlayerController {
     this.lineStates = [];
     this.scaleAnimators = [];
     this.alphaAnimators = [];
+    this.positionAnimators = [];
 
     // 🎵 弹簧参数（针对 120Hz 高刷屏优化）
     // 缩放弹簧：增加 stiffness 让动画更快更灵敏
     const scaleSpringConfig: SpringAnimatorConfig = new SpringAnimatorConfig(1.0, 300.0, 20.0);
     // 透明度弹簧：同样加快
     const alphaSpringConfig: SpringAnimatorConfig = new SpringAnimatorConfig(1.0, 280.0, 18.0);
+    // 🎵 位置弹簧：参考原版参数 (mass: 0.9, damping: 15, stiffness: 90)
+    const positionSpringConfig: SpringAnimatorConfig = new SpringAnimatorConfig(0.9, 90.0, 15.0);
 
     this.lines.forEach((line: LyricLine, index: number) => {
       const state: LyricLineRenderState = new LyricLineRenderState(line, index);
@@ -197,6 +256,11 @@ export class LyricPlayerController {
       const alphaAnimator: SpringAnimator = new SpringAnimator(alphaSpringConfig);
       alphaAnimator.setCurrent(0.2); // 初始透明度 20%
       this.alphaAnimators.push(alphaAnimator);
+
+      // 🎵 位置弹簧动画器（用于波浪效果）
+      const positionAnimator: SpringAnimator = new SpringAnimator(positionSpringConfig);
+      positionAnimator.setCurrent(0); // 初始位置 0
+      this.positionAnimators.push(positionAnimator);
     });
   }
 
@@ -236,16 +300,13 @@ export class LyricPlayerController {
       this.currentLineIndex = newIndex;
       this.updateScrollTarget();
 
+      // 🎵 触发波浪延迟动画
+      this.applyWaveDelayToPositions();
+
       // 📊 过渡效果日志：歌词行切换时输出
       const newLine: LyricLine = this.lines[newIndex];
       const lineText: string = newLine.words.map(w => w.word).join('').substring(0, 15);
-      console.info(`[过渡] 行切换 ${oldIndex} → ${newIndex} "${lineText}..." | ` +
-        `scale: 0.97 → 1.0 | alpha: 变亮`);
-
-      // 🚫 暂时屏蔽波动动画（调试用）
-      // if (newIndex !== -1) {
-      //   this.triggerWaveAnimation(newIndex, oldIndex);
-      // }
+      console.info(`[过渡] 行切换 ${oldIndex} → ${newIndex} "${lineText}..." | 波浪延迟已触发`);
     }
   }
 
@@ -358,6 +419,11 @@ export class LyricPlayerController {
 
     this.lineStates.forEach((state: LyricLineRenderState, index: number) => {
       state.positionY = currentY;
+      // 🎵 初始化位置弹簧动画器（第一次布局时直接设置位置，无动画）
+      if (index < this.positionAnimators.length) {
+        this.positionAnimators[index].setCurrent(currentY);
+        state.animatedPositionY = currentY;
+      }
       currentY += this.getLineHeight(index);
     });
 
@@ -375,7 +441,8 @@ export class LyricPlayerController {
     const viewportBottom: number = this.scrollOffset + this.containerHeight + overscan;
 
     this.lineStates.forEach((state: LyricLineRenderState) => {
-      const lineTop: number = state.positionY + state.yOffset + state.waveOffset;
+      // 🎵 使用动画后的位置计算可见性
+      const lineTop: number = state.animatedPositionY + state.yOffset + state.waveOffset;
       const lineBottom: number = lineTop + this.getLineHeight(state.index);
 
       // 行是否在视口内（包括overscan）
