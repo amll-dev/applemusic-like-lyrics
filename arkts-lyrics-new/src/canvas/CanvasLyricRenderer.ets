@@ -64,6 +64,11 @@ export class CanvasLyricRenderer {
     const ctx: CanvasRenderingContext2D = this.canvasCtx;
     const line: LyricLine = state.line;
 
+    // 🎵 跳过空白歌词行（间奏行），由 renderInterlude 单独渲染
+    if (line.words.length === 0) {
+      return;
+    }
+
     // 保存画布状态
     ctx.save();
 
