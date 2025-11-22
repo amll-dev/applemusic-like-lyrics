@@ -422,6 +422,11 @@ struct LyricParserDemo {
     }
     .width('100%')
     .height('100%')
-    .backgroundColor('#000000')
+    .backgroundImage($r('app.media.bg'))
+    .backgroundImageSize(ImageSize.Cover)
+    .backgroundEffect({
+      brightness: 0.8,
+      radius: 120
+    })
   }
 }

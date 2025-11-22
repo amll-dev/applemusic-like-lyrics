@@ -310,7 +310,7 @@ export struct CanvasLyricPlayerComponent {
       Canvas(this.canvasContext)
         .width('100%')
         .height('100%')
-        .backgroundColor('#000000')
+        .backgroundColor(Color.Transparent)
         .onReady(() => {
           // Canvas准备就绪，设置上下文
           if (this.renderer) {
