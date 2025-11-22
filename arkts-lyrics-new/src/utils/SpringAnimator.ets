@@ -31,8 +31,11 @@ export class SpringAnimator {
   }
 
   setTarget(target: number): void {
-    this.targetPos = target;
-    this.animating = Math.abs(target - this.currentPos) > 0.1;
+    // 🎵 只要目标值变化就启动动画（阈值改为 0.0001，适用于缩放等小范围值）
+    if (Math.abs(target - this.targetPos) > 0.0001) {
+      this.targetPos = target;
+      this.animating = true;
+    }
   }
 
   setCurrent(position: number): void {
@@ -55,7 +58,8 @@ export class SpringAnimator {
     this.velocity += acceleration * deltaTimeSec;
     this.currentPos += this.velocity * deltaTimeSec;
 
-    if (Math.abs(displacement) < 0.1 && Math.abs(this.velocity) < 0.1) {
+    // 🎵 使用更小的阈值判断动画完成（适用于缩放等小范围值）
+    if (Math.abs(displacement) < 0.001 && Math.abs(this.velocity) < 0.001) {
       this.currentPos = this.targetPos;
       this.velocity = 0;
       this.animating = false;

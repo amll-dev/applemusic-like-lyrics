@@ -96,8 +96,16 @@ export class LyricPlayerController {
 
       // 更新缩放弹簧动画
       if (i < this.scaleAnimators.length) {
-        this.scaleAnimators[i].update(deltaSec);
-        state.scaleRatio = this.scaleAnimators[i].getPosition();
+        const scaleAnimator: SpringAnimator = this.scaleAnimators[i];
+        const oldScale: number = scaleAnimator.getPosition();
+        scaleAnimator.update(deltaSec);
+        const newScale: number = scaleAnimator.getPosition();
+        state.scaleRatio = newScale;
+
+        // 📊 调试日志：仅对当前行输出动画过程
+        if (i === this.currentLineIndex && scaleAnimator.isAnimating()) {
+          console.info(`[弹簧] 行${i} scale: ${oldScale.toFixed(4)} → ${newScale.toFixed(4)} | animating: true`);
+        }
       }
 
       // 更新透明度弹簧动画
