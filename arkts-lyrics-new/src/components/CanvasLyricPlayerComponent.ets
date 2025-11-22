@@ -255,11 +255,12 @@ export struct CanvasLyricPlayerComponent {
 
     // 渲染间奏动画
     const interludeState: InterludeState = this.controller.getInterludeState();
-    if (interludeState.visible) {
+    if (interludeState.visible && interludeState.currentHeight > 0) {
       this.renderer!.renderInterlude(
         interludeState.positionY,
         interludeState.dotOpacities,
-        interludeState.dotScales
+        interludeState.dotScales,
+        interludeState.currentHeight  // 🎵 传入当前动态高度，用于垂直居中
       );
     }
 

@@ -525,15 +525,17 @@ export class CanvasLyricRenderer {
 
   /**
    * 渲染间奏动画
-   * 三个圆点依次跳动的效果
-   * @param positionY Y轴位置
+   * 🎵 三个圆点依次跳动的效果
+   * @param positionY Y轴位置（行顶部）
    * @param dotOpacities 圆点透明度数组
-   * @param dotScales 圆点缩放数组
+   * @param dotScales 圆点缩放数组（包含整体缩放，用于消失动画的先放大再缩小效果）
+   * @param lineHeight 当前行高（用于垂直居中）
    */
   renderInterlude(
     positionY: number,
     dotOpacities: number[],
-    dotScales: number[]
+    dotScales: number[],
+    lineHeight: number = 30
   ): void {
     if (!this.canvasCtx) {
       return;
@@ -542,24 +544,43 @@ export class CanvasLyricRenderer {
     const ctx: CanvasRenderingContext2D = this.canvasCtx;
     ctx.save();
 
-    // 🎵 左对齐，与歌词对齐方式一致
+    // 🎵 圆点参数
+    const dotRadius: number = 4;        // 基础半径
+    const dotSpacing: number = 10;      // 点与点之间的间距（边缘到边缘）
+    const dotDiameter: number = dotRadius * 2;
+
+    // 🎵 左对齐：圆点左边缘与歌词左边缘对齐
+    // 歌词左边缘在 x=40，所以第一个圆点的圆心在 x=40+dotRadius
     const leftMargin: number = 40;
-    const startX: number = leftMargin;
-    const spacing: number = 12;
-    const dotRadius: number = 4;
+    const firstDotCenterX: number = leftMargin + dotRadius;
+
+    // 🎵 垂直居中：在当前行高度内居中
+    const centerY: number = positionY + lineHeight / 2;
+
+    // 🎵 整体缩放（从 dotScales[0] 获取，三个点缩放相同）
+    const globalScale: number = dotScales[0];
+
+    // 🎵 计算整体中心点（用于缩放变换）
+    const totalWidth: number = dotDiameter * 3 + dotSpacing * 2;
+    const centerX: number = firstDotCenterX + totalWidth / 2 - dotRadius;
+
+    // 🎵 应用整体缩放变换（先放大再缩小效果的关键）
+    ctx.translate(centerX, centerY);
+    ctx.scale(globalScale, globalScale);
+    ctx.translate(-centerX, -centerY);
 
     // 渲染三个圆点
     for (let i: number = 0; i < 3; i++) {
-      const x: number = startX + i * spacing;
-      const y: number = positionY;
-      const scale: number = dotScales[i];
+      // 每个点的 X 坐标
+      const x: number = firstDotCenterX + i * (dotDiameter + dotSpacing);
+      const y: number = centerY;
       const opacity: number = dotOpacities[i];
 
       ctx.globalAlpha = opacity;
       ctx.fillStyle = '#FFFFFF';
 
       ctx.beginPath();
-      ctx.arc(x, y, dotRadius * scale, 0, Math.PI * 2);
+      ctx.arc(x, y, dotRadius, 0, Math.PI * 2);
       ctx.fill();
     }
 
