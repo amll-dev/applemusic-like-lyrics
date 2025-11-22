@@ -309,16 +309,23 @@ export class LyricPlayerController {
    * 获取行高度
    */
   private getLineHeight(index: number): number {
+    const state: LyricLineRenderState = this.lineStates[index];
+    if (!state) {
+      return 0;
+    }
+
+    // 🎵 空白歌词行（间奏）不占用高度
+    if (state.line.words.length === 0) {
+      return 0;
+    }
+
     let height: number = 60;
 
-    const state: LyricLineRenderState = this.lineStates[index];
-    if (state) {
-      if (this.config.showTranslation && state.line.translatedLyric) {
-        height += 20;
-      }
-      if (this.config.showRoman && state.line.romanLyric) {
-        height += 16;
-      }
+    if (this.config.showTranslation && state.line.translatedLyric) {
+      height += 20;
+    }
+    if (this.config.showRoman && state.line.romanLyric) {
+      height += 16;
     }
 
     return height;
