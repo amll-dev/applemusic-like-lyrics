@@ -414,13 +414,15 @@ export class CanvasLyricRenderer {
     const ctx: CanvasRenderingContext2D = this.canvasCtx;
     ctx.save();
 
-    const centerX: number = this.renderContext.width / 2;
+    // 🎵 左对齐，与歌词对齐方式一致
+    const leftMargin: number = 40;
+    const startX: number = leftMargin;
     const spacing: number = 12;
     const dotRadius: number = 4;
 
     // 渲染三个圆点
     for (let i: number = 0; i < 3; i++) {
-      const x: number = centerX + (i - 1) * spacing;
+      const x: number = startX + i * spacing;
       const y: number = positionY;
       const scale: number = dotScales[i];
       const opacity: number = dotOpacities[i];
