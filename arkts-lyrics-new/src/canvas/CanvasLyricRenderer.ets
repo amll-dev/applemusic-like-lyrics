@@ -118,15 +118,13 @@ export class CanvasLyricRenderer {
     // 保存画布状态
     ctx.save();
 
-    // 🎵 模糊效果（暂时禁用 - Canvas blur 性能消耗太大）
-    // 目前用透明度变化来代替模糊效果
-    // TODO: 考虑使用离屏 Canvas 缓存或其他优化方案
-    // if (state.blurRadius > 0) {
-    //   const blurPx: number = state.blurRadius * 0.8;
-    //   ctx.filter = `blur(${blurPx}px)`;
-    // } else {
-    //   ctx.filter = 'none';
-    // }
+    // 🎵 模糊效果
+    if (state.blurRadius > 0) {
+      const blurPx: number = state.blurRadius * 0.8;
+      ctx.filter = `blur(${blurPx}px)`;
+    } else {
+      ctx.filter = 'none';
+    }
 
     // 应用变换：位置、缩放、透明度
     // 🎵 Y坐标组成：
