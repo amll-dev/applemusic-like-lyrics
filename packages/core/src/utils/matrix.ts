@@ -42,6 +42,6 @@ export function translateMatrix4(m: Matrix4, x = 0, y = 0, z = 0): Matrix4 {
 }
 
 export function matrix4ToCSS(m: Matrix4, fractionDigits = 4): string {
-	const format = (n: number, i: number) => n.toFixed(fractionDigits);
+	const format = (n: number, _i: number) => n.toFixed(fractionDigits);
 	return `matrix3d(${m.map(format).join(", ")})`;
 }

@@ -25,7 +25,6 @@ export class WebAnimationSpring extends EventTarget implements Disposable {
 	private currentAnimation: Animation;
 	private targetPosition = 0;
 	private isStatic = true;
-	private params: Partial<SpringParams> = {};
 	private currentSolver: (t: seconds) => number = () => this.targetPosition;
 	private getV: (t: seconds) => number = () => 0;
 

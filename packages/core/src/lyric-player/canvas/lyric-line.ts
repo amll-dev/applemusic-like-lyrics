@@ -135,13 +135,8 @@ export class CanvasLyricLine extends LyricLineBase {
 			);
 		}
 	}
-	private enabled = false;
-	override enable(): void {
-		this.enabled = true;
-	}
-	override disable(): void {
-		this.enabled = false;
-	}
+	override enable(): void {}
+	override disable(): void {}
 	override resume(): void {}
 	override pause(): void {}
 	override setTransform(

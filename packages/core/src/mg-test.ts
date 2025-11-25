@@ -223,7 +223,7 @@ const stats = new Stats();
 stats.showPanel(0);
 stats.dom.style.left = "50px";
 document.body.appendChild(stats.dom);
-const frame = (time: number) => {
+const frame = (_time: number) => {
 	stats.end();
 	stats.begin();
 	requestAnimationFrame(frame);
