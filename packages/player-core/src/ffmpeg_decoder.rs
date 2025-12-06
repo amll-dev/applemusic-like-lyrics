@@ -315,7 +315,7 @@ fn run_decoding_loop(
 
         resample_frame(
             data,
-            &decoded,
+            &mut decoded,
             &mut player_scratch_buf,
             &mut fft_scratch_buf,
         );
@@ -333,61 +333,109 @@ fn run_decoding_loop(
     shared.condvar.notify_all();
 }
 
+fn try_resample_with_retry(
+    resampler_opt: &mut Option<ffmpeg::software::resampling::context::Context>,
+    decoded: &ffmpeg::frame::Audio,
+    target_format: ffmpeg::format::Sample,
+    target_layout: ChannelLayout,
+    target_rate: u32,
+) -> Option<ffmpeg::frame::Audio> {
+    if let Some(resampler_ctx) = resampler_opt {
+        let output_samples =
+            (decoded.samples() as f64 * target_rate as f64 / decoded.rate() as f64).ceil() as usize;
+
+        let mut output_frame =
+            ffmpeg::frame::Audio::new(target_format, output_samples, target_layout);
+
+        if resampler_ctx.run(decoded, &mut output_frame).is_ok() {
+            return Some(output_frame);
+        }
+
+        match ffmpeg::software::resampling::context::Context::get(
+            decoded.format(),
+            decoded.channel_layout(),
+            decoded.rate(),
+            target_format,
+            target_layout,
+            target_rate,
+        ) {
+            Ok(new_resampler) => {
+                *resampler_ctx = new_resampler;
+                if resampler_ctx.run(decoded, &mut output_frame).is_ok() {
+                    return Some(output_frame);
+                } else {
+                    error!(
+                        "Resampler重建后依然失败。\n期望: fmt={:?} rate={}\n实际: fmt={:?} rate={}",
+                        target_format,
+                        target_rate,
+                        decoded.format(),
+                        decoded.rate()
+                    );
+                }
+            }
+            Err(e) => {
+                error!("无法重建 Resampler: {e}");
+            }
+        }
+    }
+    None
+}
+
 fn resample_frame(
     data: &mut DecoderInitData,
-    decoded: &ffmpeg::frame::Audio,
+    decoded: &mut ffmpeg::frame::Audio,
     player_buf: &mut Vec<f32>,
     fft_buf: &mut Vec<f32>,
 ) {
-    {
-        if let Some(resampler_ctx) = &mut data.resampler {
-            let target_rate = resampler_ctx.output().rate;
-            let target_layout = resampler_ctx.output().channel_layout;
-            let target_format = resampler_ctx.output().format;
-
-            let output_samples = (decoded.samples() as f64 * target_rate as f64
-                / decoded.rate() as f64)
-                .ceil() as usize;
-
-            let mut resampled_frame =
-                ffmpeg::frame::Audio::new(target_format, output_samples, target_layout);
-
-            if resampler_ctx.run(decoded, &mut resampled_frame).is_ok() {
-                let samples_written = resampled_frame.samples();
-                interleave_planar_frame(player_buf, &resampled_frame, samples_written);
-            } else {
-                error!("resampler.run() 失败");
-            }
-        } else {
-            interleave_planar_frame(player_buf, decoded, decoded.samples());
-        }
+    if decoded.channel_layout().is_empty() {
+        let default_layout = ChannelLayout::default(decoded.channels() as i32);
+        decoded.set_channel_layout(default_layout);
     }
 
-    {
-        if let Some(fft_resampler_ctx) = &mut data.fft_resampler {
-            let fft_output_samples = (decoded.samples() as f64 * FFT_TARGET_RATE as f64
-                / decoded.rate() as f64)
-                .ceil() as usize;
+    if data.resampler.is_some() {
+        let (target_fmt, target_layout, target_rate) = {
+            let ctx = data.resampler.as_ref().unwrap();
+            (
+                ctx.output().format,
+                ctx.output().channel_layout,
+                ctx.output().rate,
+            )
+        };
 
-            let mut fft_frame = ffmpeg::frame::Audio::new(
-                ffmpeg::format::Sample::F32(ffmpeg::format::sample::Type::Planar),
-                fft_output_samples,
-                ChannelLayout::MONO,
-            );
+        if let Some(frame) = try_resample_with_retry(
+            &mut data.resampler,
+            decoded,
+            target_fmt,
+            target_layout,
+            target_rate,
+        ) {
+            interleave_planar_frame(player_buf, &frame, frame.samples());
+        }
+    } else {
+        interleave_planar_frame(player_buf, decoded, decoded.samples());
+    }
 
-            if fft_resampler_ctx.run(decoded, &mut fft_frame).is_ok() {
-                let samples_written = fft_frame.samples();
-                if samples_written > 0 {
-                    fft_buf.extend_from_slice(&fft_frame.plane::<f32>(0)[..samples_written]);
-                }
-            } else {
-                error!("fft_resampler.run() 失败");
+    if data.fft_resampler.is_some() {
+        let target_fmt = ffmpeg::format::Sample::F32(ffmpeg::format::sample::Type::Planar);
+        let target_layout = ChannelLayout::MONO;
+        let target_rate = FFT_TARGET_RATE;
+
+        if let Some(frame) = try_resample_with_retry(
+            &mut data.fft_resampler,
+            decoded,
+            target_fmt,
+            target_layout,
+            target_rate,
+        ) {
+            let samples = frame.samples();
+            if samples > 0 {
+                fft_buf.extend_from_slice(&frame.plane::<f32>(0)[..samples]);
             }
-        } else {
-            let samples_written = decoded.samples();
-            if samples_written > 0 {
-                fft_buf.extend_from_slice(&decoded.plane::<f32>(0)[..samples_written]);
-            }
+        }
+    } else {
+        let samples = decoded.samples();
+        if samples > 0 {
+            fft_buf.extend_from_slice(&decoded.plane::<f32>(0)[..samples]);
         }
     }
 }
