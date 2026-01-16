@@ -14,7 +14,6 @@ const withMDX = mdx({
 const nextConfig = {
 	output: 'export',
 	reactStrictMode: true,
-	basePath: "/applemusic-like-lyrics",
 	pageExtensions: ["js", "jsx", "mdx", "ts", "tsx"],
 };
 
