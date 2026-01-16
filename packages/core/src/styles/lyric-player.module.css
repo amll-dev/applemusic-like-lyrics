@@ -102,11 +102,13 @@
 
 	& span {
 		display: inline-block;
+        text-align: start;
 	}
 	
 	.romanWord {
 		font-size: 0.5em;
 		line-height: 1em;
+        display: flex;
 	}
 
 	&>span,
