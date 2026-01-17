@@ -6,6 +6,9 @@ on:
       - full-refractor
       - dev
 
+permissions:
+  contents: write
+
 jobs:
   deploy-docs:
     name: 构建并部署开发文档
