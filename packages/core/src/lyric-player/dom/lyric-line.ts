@@ -200,6 +200,13 @@ export class LyricLineEl extends LyricLineBase {
 			0,
 			maskAnimationTime - this.lyricLine.startTime,
 		);
+		const firstWordStart =
+			this.lyricLine.words[0]?.startTime ?? this.lyricLine.startTime;
+		const actualMaskTime =
+			maskAnimationTime === this.lyricLine.startTime
+				? this.lyricPlayer.getCurrentTime()
+				: maskAnimationTime;
+		const maskRelativeTime = Math.max(0, actualMaskTime - firstWordStart);
 
 		for (const word of this.splittedWords) {
 			for (const a of word.elementAnimations) {
@@ -209,7 +216,7 @@ export class LyricLineEl extends LyricLineBase {
 			}
 
 			for (const a of word.maskAnimations) {
-				a.currentTime = Math.min(this.totalDuration, relativeTime);
+				a.currentTime = Math.min(this.totalDuration, maskRelativeTime);
 				a.playbackRate = 1;
 				a.play();
 			}
