@@ -114,6 +114,14 @@ export interface LyricLine {
 	 */
 	romanLyric: string;
 	/**
+	 * 该行的角色信息
+	 */
+	agent: string;
+	/**
+	 * 该行的 vocal 标识
+	 */
+	vocal: string;
+	/**
 	 * 该行是否为背景歌词行
 	 * 此选项只有作为 Lyricify Syllable 文件格式导入导出时才有意义
 	 */
