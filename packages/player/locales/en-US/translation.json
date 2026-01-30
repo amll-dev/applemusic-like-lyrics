@@ -176,7 +176,7 @@
 				},
 				"fontWeight": {
 					"label": "Font Weight",
-					"description": "Equals to the font-weight property in CSS, set to 0 to use default value."
+					"description": "Equals to the font-weight property in CSS, set to 0 to be controlled by system. 600 is recommanded"
 				},
 				"letterSpacing": {
 					"label": "Letter Spacing",
