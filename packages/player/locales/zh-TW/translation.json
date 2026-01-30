@@ -174,7 +174,7 @@
 				},
 				"fontWeight": {
 					"label": "字體字重",
-					"description": "等同於 CSS 的 font-weight 屬性，設定 0 為默認"
+					"description": "等同於 CSS 的 font-weight 屬性，設定 0 為系統控制，建議值 600"
 				},
 				"letterSpacing": {
 					"label": "字元間距",
