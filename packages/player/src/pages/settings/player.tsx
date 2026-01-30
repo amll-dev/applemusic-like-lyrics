@@ -210,7 +210,7 @@ const LyricFontSetting: FC = () => {
 					</Text>
 					<Text as="div" color="gray" size="2" className={styles.desc}>
 						<Trans i18nKey="page.settings.lyricFont.fontWeight.description">
-							等同于 CSS 的 font-weight 属性，设置 0 为默认
+							等同于 CSS 的 font-weight 属性，设置 0 为系统控制，推荐值 600
 						</Trans>
 					</Text>
 				</Flex>
