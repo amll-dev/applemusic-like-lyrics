@@ -95,7 +95,7 @@
 				},
 				"fontWeight": {
 					"label": "Độ dày của phông chữ",
-					"description": "Giá trị 0 sẽ được sử dụng như là giá trị mặc định cho thuộc tính này, giống như cách hoạt động của thuộc tính font-weight trong CSS"
+					"description": "Tương tự như thuộc tính font-weight trong CSS, đặt giá trị bằng 0 để được hệ thống kiểm soát. Giá trị 600 được khuyến nghị."
 				},
 				"letterSpacing": {
 					"label": "Khoảng cách giữa các ký tự",
