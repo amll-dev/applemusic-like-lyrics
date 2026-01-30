@@ -103,8 +103,6 @@ pub struct LyricLine<'a> {
     #[cfg_attr(feature = "serde", serde(default))]
     pub roman_lyric: Cow<'a, str>,
     #[cfg_attr(feature = "serde", serde(default))]
-    pub agent: Cow<'a, str>,
-    #[cfg_attr(feature = "serde", serde(default))]
     pub vocal: Cow<'a, str>,
     #[cfg_attr(feature = "serde", serde(default, rename = "isBG"))]
     pub is_bg: bool,
@@ -123,7 +121,6 @@ pub struct LyricLineOwned {
     pub words: Vec<LyricWordOwned>,
     pub translated_lyric: String,
     pub roman_lyric: String,
-    pub agent: String,
     pub vocal: String,
     pub is_bg: bool,
     pub is_duet: bool,
@@ -137,7 +134,6 @@ impl<'a> From<LyricLine<'a>> for LyricLineOwned {
             words: value.words.iter().map(|w| w.to_owned()).collect(),
             translated_lyric: value.translated_lyric.into_owned(),
             roman_lyric: value.roman_lyric.into_owned(),
-            agent: value.agent.into_owned(),
             vocal: value.vocal.into_owned(),
             is_bg: value.is_bg,
             is_duet: value.is_duet,
@@ -153,7 +149,6 @@ impl LyricLine<'_> {
             words: self.words.iter().map(|w| w.to_owned()).collect(),
             translated_lyric: self.translated_lyric.clone().into_owned(),
             roman_lyric: self.roman_lyric.clone().into_owned(),
-            agent: self.agent.clone().into_owned(),
             vocal: self.vocal.clone().into_owned(),
             is_bg: self.is_bg,
             is_duet: self.is_duet,
@@ -181,7 +176,6 @@ impl LyricLineOwned {
             words: self.words.iter().map(|w| w.to_ref()).collect(),
             translated_lyric: self.translated_lyric.as_str().into(),
             roman_lyric: self.roman_lyric.as_str().into(),
-            agent: self.agent.as_str().into(),
             vocal: self.vocal.as_str().into(),
             is_bg: self.is_bg,
             is_duet: self.is_duet,

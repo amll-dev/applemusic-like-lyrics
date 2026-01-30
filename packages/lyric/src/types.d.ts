@@ -114,10 +114,6 @@ export interface LyricLine {
 	 */
 	romanLyric: string;
 	/**
-	 * 该行的角色信息
-	 */
-	agent: string;
-	/**
 	 * 该行的 vocal 标识
 	 */
 	vocal: string;

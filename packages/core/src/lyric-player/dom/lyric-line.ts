@@ -101,7 +101,6 @@ export class LyricLineEl extends LyricLineBase {
 			words: [],
 			translatedLyric: "",
 			romanLyric: "",
-			agent: "",
 			vocal: "",
 			startTime: 0,
 			endTime: 0,

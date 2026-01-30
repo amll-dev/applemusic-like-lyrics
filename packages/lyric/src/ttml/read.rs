@@ -100,9 +100,6 @@ fn configure_lyric_line(
         match attr {
             Ok(a) => match a.key.as_ref() {
                 b"ttm:agent" => {
-                    line.agent = Cow::Owned(
-                        String::from_utf8_lossy(a.value.as_ref()).into_owned(),
-                    );
                     line.is_duet |= a.value.as_ref() != main_agent;
                 }
                 b"amll:vocal" => {
@@ -504,12 +501,6 @@ pub fn parse_ttml<'a>(data: impl BufRead) -> std::result::Result<TTMLLyric<'a>, 
                                                             .last()
                                                             .unwrap()
                                                             .is_duet,
-                                                        agent: result
-                                                            .lines
-                                                            .last()
-                                                            .unwrap()
-                                                            .agent
-                                                            .clone(),
                                                         vocal: result
                                                             .lines
                                                             .last()
