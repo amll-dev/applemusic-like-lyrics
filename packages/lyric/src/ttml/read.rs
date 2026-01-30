@@ -117,11 +117,13 @@ fn configure_lyric_line(
                             parts.push(key.to_string());
                         }
                     }
-                    if parts.is_empty() {
-                        line.vocal = Cow::Owned(raw_value.into_owned());
-                    } else {
-                        line.vocal = Cow::Owned(parts.join("×"));
-                    }
+                    line.vocal = Cow::Owned(
+                        if parts.is_empty() {
+                            raw_value.into_owned()
+                        } else {
+                            parts.join(",")
+                        },
+                    );
                 }
                 b"begin" => {
                     if let Ok((_, time)) = parse_timestamp(a.value.as_bytes()) {

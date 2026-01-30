@@ -417,11 +417,11 @@ export class LyricLineEl extends LyricLineBase {
 	}
 
 	private setVocalText(vocal: HTMLDivElement) {
-		// Called during rebuild: split vocal text on ×, wrap each part in its own span, and insert gaps.
+		// Called during rebuild: split vocal text on ',', wrap each part in its own span, and insert gaps.
 		vocal.innerHTML = "";
 		const vocalText = this.lyricLine.vocal?.trim();
 		if (!vocalText) return;
-		const parts = vocalText.split("×").map((part) => part.trim());
+		const parts = vocalText.split(",").map((part) => part.trim());
 		let first = true;
 		for (const part of parts) {
 			if (!part) continue;
