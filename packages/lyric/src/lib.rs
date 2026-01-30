@@ -103,7 +103,7 @@ pub struct LyricLine<'a> {
     #[cfg_attr(feature = "serde", serde(default))]
     pub roman_lyric: Cow<'a, str>,
     #[cfg_attr(feature = "serde", serde(default))]
-    pub vocal: Cow<'a, str>,
+    pub vocal: Vec<Cow<'a, str>>,
     #[cfg_attr(feature = "serde", serde(default, rename = "isBG"))]
     pub is_bg: bool,
     #[cfg_attr(feature = "serde", serde(default))]
@@ -121,7 +121,7 @@ pub struct LyricLineOwned {
     pub words: Vec<LyricWordOwned>,
     pub translated_lyric: String,
     pub roman_lyric: String,
-    pub vocal: String,
+    pub vocal: Vec<String>,
     pub is_bg: bool,
     pub is_duet: bool,
     pub start_time: u64,
@@ -134,7 +134,7 @@ impl<'a> From<LyricLine<'a>> for LyricLineOwned {
             words: value.words.iter().map(|w| w.to_owned()).collect(),
             translated_lyric: value.translated_lyric.into_owned(),
             roman_lyric: value.roman_lyric.into_owned(),
-            vocal: value.vocal.into_owned(),
+            vocal: value.vocal.into_iter().map(|x| x.into_owned()).collect(),
             is_bg: value.is_bg,
             is_duet: value.is_duet,
             start_time: value.start_time,
@@ -149,7 +149,7 @@ impl LyricLine<'_> {
             words: self.words.iter().map(|w| w.to_owned()).collect(),
             translated_lyric: self.translated_lyric.clone().into_owned(),
             roman_lyric: self.roman_lyric.clone().into_owned(),
-            vocal: self.vocal.clone().into_owned(),
+            vocal: self.vocal.iter().map(|x| x.clone().into_owned()).collect(),
             is_bg: self.is_bg,
             is_duet: self.is_duet,
             start_time: self.start_time,
@@ -176,7 +176,11 @@ impl LyricLineOwned {
             words: self.words.iter().map(|w| w.to_ref()).collect(),
             translated_lyric: self.translated_lyric.as_str().into(),
             roman_lyric: self.roman_lyric.as_str().into(),
-            vocal: self.vocal.as_str().into(),
+            vocal: self
+                .vocal
+                .iter()
+                .map(|x| Cow::Borrowed(x.as_ref()))
+                .collect(),
             is_bg: self.is_bg,
             is_duet: self.is_duet,
             start_time: self.start_time,

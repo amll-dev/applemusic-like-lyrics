@@ -394,6 +394,7 @@ export class LyricLineEl extends LyricLineBase {
 
 	override rebuildElement() {
 		this.disposeElements();
+		console.log("lyricLine", this.lyricLine);
 		const vocal = this.element.children[0] as HTMLDivElement;
 		const main = this.element.children[1] as HTMLDivElement;
 		const trans = this.element.children[2] as HTMLDivElement;
@@ -417,16 +418,11 @@ export class LyricLineEl extends LyricLineBase {
 	}
 
 	private setVocalText(vocal: HTMLDivElement) {
-		// Called during rebuild: split vocal text on ',', wrap each part in its own span, and insert gaps.
+		// Called during rebuild: iterate vocal entries (array preferred), wrap each part, and insert gaps.
 		vocal.innerHTML = "";
-		const vocals = this.lyricLine.vocal;
-		const parts = Array.isArray(vocals)
-			? vocals.map((v) => v.trim()).filter(Boolean)
-			: vocals
-				?.split(",")
-				.map((part) => part.trim())
-				.filter(Boolean);
-		if (!parts || parts.length === 0) return;
+		const vocals = this.lyricLine.vocal ?? [];
+		const parts = vocals.map((v) => v.trim()).filter(Boolean);
+		if (parts.length === 0) return;
 		let first = true;
 		for (const part of parts) {
 			if (!part) continue;

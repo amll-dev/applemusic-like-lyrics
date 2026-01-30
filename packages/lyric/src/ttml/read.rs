@@ -87,12 +87,12 @@ impl TTMLError {
     }
 }
 
-fn configure_lyric_line(
+fn configure_lyric_line<'a>(
     e: &BytesStart<'_>,
     read_len: usize,
     main_agent: &[u8],
     vocal_map: &HashMap<Vec<u8>, Vec<u8>>,
-    line: &mut LyricLine<'_>,
+    line: &mut LyricLine<'a>,
 ) -> std::result::Result<(), TTMLError> {
     // Called for every <p> (and bg) to fill line-level attrs: ttm:agent, amll:vocal, timing.
     // The caller passes prebuilt vocal_map so we can map vocal IDs to values in place.
@@ -105,25 +105,24 @@ fn configure_lyric_line(
                 b"amll:vocal" => {
                     // Supports multi IDs like "1,2" mapped via vocal_map, keeping caller order.
                     let raw_value = String::from_utf8_lossy(a.value.as_ref());
-                    let mut parts: Vec<String> = Vec::new();
+                    let mut parts: Vec<Cow<'a, str>> = Vec::new();
                     for key in raw_value.split(',') {
                         let key = key.trim();
                         if key.is_empty() {
                             continue;
                         }
                         if let Some(vocal_value) = vocal_map.get(key.as_bytes()) {
-                            parts.push(String::from_utf8_lossy(vocal_value.as_ref()).into());
+                            parts.push(Cow::Owned(
+                                String::from_utf8_lossy(vocal_value.as_ref()).into_owned(),
+                            ));
                         } else {
-                            parts.push(key.to_string());
+                            parts.push(Cow::Owned(key.to_string()));
                         }
                     }
-                    line.vocal = Cow::Owned(
-                        if parts.is_empty() {
-                            raw_value.into_owned()
-                        } else {
-                            parts.join(",")
-                        },
-                    );
+                    if parts.is_empty() {
+                        parts.push(Cow::Owned(raw_value.into_owned()));
+                    }
+                    line.vocal = parts;
                 }
                 b"begin" => {
                     if let Ok((_, time)) = parse_timestamp(a.value.as_bytes()) {
