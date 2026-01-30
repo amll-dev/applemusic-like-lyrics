@@ -94,6 +94,8 @@ fn configure_lyric_line(
     vocal_map: &HashMap<Vec<u8>, Vec<u8>>,
     line: &mut LyricLine<'_>,
 ) -> std::result::Result<(), TTMLError> {
+    // Called for every <p> (and bg) to fill line-level attrs: ttm:agent, amll:vocal, timing.
+    // The caller passes prebuilt vocal_map so we can map vocal IDs to values in place.
     for attr in e.attributes() {
         match attr {
             Ok(a) => match a.key.as_ref() {
@@ -104,6 +106,7 @@ fn configure_lyric_line(
                     line.is_duet |= a.value.as_ref() != main_agent;
                 }
                 b"amll:vocal" => {
+                    // Supports multi IDs like "1,2" mapped via vocal_map, keeping caller order.
                     let raw_value = String::from_utf8_lossy(a.value.as_ref());
                     let mut parts: Vec<String> = Vec::new();
                     for key in raw_value.split(',') {
@@ -973,6 +976,7 @@ pub fn parse_ttml<'a>(data: impl BufRead) -> std::result::Result<TTMLLyric<'a>, 
 #[cfg(all(target_arch = "wasm32", feature = "serde"))]
 #[wasm_bindgen(js_name = "parseTTML", skip_typescript)]
 pub fn parse_ttml_js(src: &str) -> JsValue {
+    // JS entry: tries normal parse, then strips amll:vocals on error before surfacing to JS.
     match parse_ttml(src.as_bytes()) {
         Ok(ttml) => serde_wasm_bindgen::to_value(&ttml).unwrap(),
         Err(err) => {
@@ -989,6 +993,8 @@ pub fn parse_ttml_js(src: &str) -> JsValue {
 
 #[cfg(all(target_arch = "wasm32", feature = "serde"))]
 fn strip_amll_vocals(input: &str) -> String {
+    // Best-effort removal of <amll:vocals>...</amll:vocals> blocks to salvage broken files.
+    // Called only from parse_ttml_js on parse failure; returns original string if nothing removed.
     let bytes = input.as_bytes();
     let mut out = Vec::with_capacity(bytes.len());
     let mut i = 0;
@@ -1016,6 +1022,7 @@ fn strip_amll_vocals(input: &str) -> String {
 
 #[cfg(all(target_arch = "wasm32", feature = "serde"))]
 fn find_subslice(haystack: &[u8], needle: &[u8]) -> Option<usize> {
+    // Minimal substring search used by strip_amll_vocals; linear scan is sufficient here.
     if needle.is_empty() || haystack.len() < needle.len() {
         return None;
     }
