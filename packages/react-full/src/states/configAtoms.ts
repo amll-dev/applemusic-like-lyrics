@@ -169,7 +169,7 @@ export const lyricFontFamilyAtom = atomWithStorage(
  */
 export const lyricFontWeightAtom = atomWithStorage<number | string>(
 	"amll-react-full.lyricFontWeight",
-	0,
+	600,
 );
 
 /**
