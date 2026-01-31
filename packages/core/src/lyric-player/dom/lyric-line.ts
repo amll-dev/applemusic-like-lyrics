@@ -419,7 +419,12 @@ export class LyricLineEl extends LyricLineBase {
 	private setVocalText(vocal: HTMLDivElement) {
 		// Called during rebuild: iterate vocal entries (array preferred), wrap each part, and insert gaps.
 		vocal.innerHTML = "";
-		const vocals = this.lyricLine.vocal ?? [];
+		const rawVocals = this.lyricLine.vocal as string[] | string | undefined;
+		const vocals = Array.isArray(rawVocals)
+			? rawVocals
+			: typeof rawVocals === "string"
+			? [rawVocals]
+			: [];
 		const parts = vocals.map((v) => v.trim()).filter(Boolean);
 		if (parts.length === 0) return;
 		let first = true;
@@ -439,7 +444,34 @@ export class LyricLineEl extends LyricLineBase {
 	/** 设置翻译与音译行文本 */
 	private setSubLinesText(trans: HTMLDivElement, roman: HTMLDivElement) {
 		trans.innerText = this.lyricLine.translatedLyric;
-		roman.innerText = this.lyricLine.romanLyric;
+		const rawRoman = this.lyricLine.romanLyric as unknown;
+		if (typeof rawRoman !== "string") {
+			roman.innerText = "";
+			return;
+		}
+		const trimmedRoman = rawRoman.trim();
+		if (trimmedRoman.length === 0) {
+			roman.innerText = "";
+			return;
+		}
+		const wordRomans = this.lyricLine.words
+			.map((word) => word.romanWord?.trim() ?? "")
+			.filter(Boolean);
+		if (wordRomans.length === 0) {
+			roman.innerText = rawRoman;
+			return;
+		}
+		const derivedRoman = this.lyricLine.words
+			.map((word) => {
+				if (word.word.trim().length === 0) {
+					return word.word;
+				}
+				return word.romanWord?.trim() ?? "";
+			})
+			.join("");
+		const normalize = (value: string) => value.replace(/\s+/g, "");
+		roman.innerText =
+			normalize(derivedRoman) === normalize(trimmedRoman) ? "" : rawRoman;
 	}
 
 	private createWord(word: LyricWord, shouldEmphasize: boolean): RealWord {
@@ -1073,3 +1105,4 @@ export class LyricLineEl extends LyricLineBase {
 		this.element.remove();
 	}
 }
+

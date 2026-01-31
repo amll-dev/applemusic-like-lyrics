@@ -77,6 +77,34 @@
 	transform-origin: right;
 }
 
+.lyricVocalLine {
+	line-height: initial;
+	position: relative;
+	display: inline-block;
+	white-space: pre;
+	font-size: 0.55em;
+}
+
+.lyricVocalItem {
+	display: inline-block;
+	background-color: gray;
+	border-radius: 6px;
+	padding: 1px 5px 1px 5px;
+}
+
+.lyricLine.active .lyricVocalLine {
+	opacity: 0.4;
+}
+
+.lyricDuetLine .lyricVocalLine {
+	margin-left: auto;
+	text-align: right;
+}
+
+.lyricVocalLine:empty {
+	display: none;
+}
+
 .lyricMainLine {
 	transition: opacity 0.3s 0.1s;
 	contain: content paint;

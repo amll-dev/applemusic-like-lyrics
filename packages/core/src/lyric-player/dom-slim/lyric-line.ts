@@ -98,6 +98,7 @@ export class LyricLineEl extends LyricLineBase {
 			words: [],
 			translatedLyric: "",
 			romanLyric: "",
+			vocal: [],
 			startTime: 0,
 			endTime: 0,
 			isBG: false,
@@ -112,12 +113,15 @@ export class LyricLineEl extends LyricLineBase {
 		if (this.lyricLine.isDuet) {
 			this.element.classList.add(styles.lyricDuetLine);
 		}
+		this.element.appendChild(document.createElement("div")); // 角色标签
 		this.element.appendChild(document.createElement("div")); // 歌词行
 		this.element.appendChild(document.createElement("div")); // 翻译行
 		this.element.appendChild(document.createElement("div")); // 音译行
-		const main = this.element.children[0] as HTMLDivElement;
-		const trans = this.element.children[1] as HTMLDivElement;
-		const roman = this.element.children[2] as HTMLDivElement;
+		const vocal = this.element.children[0] as HTMLDivElement;
+		const main = this.element.children[1] as HTMLDivElement;
+		const trans = this.element.children[2] as HTMLDivElement;
+		const roman = this.element.children[3] as HTMLDivElement;
+		vocal.setAttribute("class", styles.lyricVocalLine);
 		main.setAttribute("class", styles.lyricMainLine);
 		trans.setAttribute("class", styles.lyricSubLine);
 		roman.setAttribute("class", styles.lyricSubLine);
@@ -191,7 +195,7 @@ export class LyricLineEl extends LyricLineBase {
 		this.isEnabled = true;
 		this.element.classList.add(styles.active);
 		await this.waitMaskImageUpdated();
-		const main = this.element.children[0] as HTMLDivElement;
+		const main = this.element.children[1] as HTMLDivElement;
 		for (const word of this.splittedWords) {
 			for (const a of word.elementAnimations) {
 				a.currentTime = 0;
@@ -212,7 +216,7 @@ export class LyricLineEl extends LyricLineBase {
 	disable() {
 		this.isEnabled = false;
 		this.element.classList.remove(styles.active);
-		const main = this.element.children[0] as HTMLDivElement;
+		const main = this.element.children[1] as HTMLDivElement;
 		for (const word of this.splittedWords) {
 			for (const a of word.elementAnimations) {
 				if (
@@ -327,14 +331,15 @@ export class LyricLineEl extends LyricLineBase {
 	}
 	rebuildElement() {
 		this.disposeElements();
-		const main = this.element.children[0] as HTMLDivElement;
-		const trans = this.element.children[1] as HTMLDivElement;
-		const roman = this.element.children[2] as HTMLDivElement;
+		const vocal = this.element.children[0] as HTMLDivElement;
+		const main = this.element.children[1] as HTMLDivElement;
+		const trans = this.element.children[2] as HTMLDivElement;
+		const roman = this.element.children[3] as HTMLDivElement;
+		this.setVocalText(vocal);
 		// 如果是非动态歌词，那么就不需要分词了
 		if (this.lyricPlayer._getIsNonDynamic()) {
 			main.innerText = this.lyricLine.words.map((w) => w.word).join("");
-			trans.innerText = this.lyricLine.translatedLyric;
-			roman.innerText = this.lyricLine.romanLyric;
+			this.setSubLinesText(trans, roman);
 			return;
 		}
 		const chunkedWords = chunkAndSplitLyricWords(this.lyricLine.words);
@@ -486,6 +491,34 @@ export class LyricLineEl extends LyricLineBase {
 				this.splittedWords.push(realWord);
 			}
 		}
+		this.setSubLinesText(trans, roman);
+	}
+	private setVocalText(vocal: HTMLDivElement) {
+		vocal.innerHTML = "";
+		const rawVocals = this.lyricLine.vocal as string[] | string | undefined;
+		const vocals = Array.isArray(rawVocals)
+			? rawVocals
+			: typeof rawVocals === "string"
+			? [rawVocals]
+			: [];
+		const parts = vocals.map((v) => v.trim()).filter(Boolean);
+		if (parts.length === 0) return;
+		let first = true;
+		for (const part of parts) {
+			if (!part) continue;
+			if (!first) {
+				vocal.appendChild(document.createTextNode("　"));
+			}
+			const item = document.createElement("span");
+			item.classList.add(styles.lyricVocalItem);
+			item.innerText = part;
+			vocal.appendChild(item);
+			first = false;
+		}
+	}
+
+	/** 设置翻译与音译行文本 */
+	private setSubLinesText(trans: HTMLDivElement, roman: HTMLDivElement) {
 		trans.innerText = this.lyricLine.translatedLyric;
 		roman.innerText = this.lyricLine.romanLyric;
 	}
@@ -845,7 +878,7 @@ export class LyricLineEl extends LyricLineBase {
 		this.top = top;
 		this.scale = scale;
 		this.delay = (delay * 1000) | 0;
-		const main = this.element.children[0] as HTMLDivElement;
+		const main = this.element.children[1] as HTMLDivElement;
 		// main.style.opacity = `${opacity *
 		// 	(!this.hasFaded ? 1 : this.lyricPlayer._getIsNonDynamic() ? 1 : 0.3)
 		// 	}`;
