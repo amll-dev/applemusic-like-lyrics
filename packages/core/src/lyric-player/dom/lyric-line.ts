@@ -394,7 +394,6 @@ export class LyricLineEl extends LyricLineBase {
 
 	override rebuildElement() {
 		this.disposeElements();
-		console.log("lyricLine", this.lyricLine);
 		const vocal = this.element.children[0] as HTMLDivElement;
 		const main = this.element.children[1] as HTMLDivElement;
 		const trans = this.element.children[2] as HTMLDivElement;
