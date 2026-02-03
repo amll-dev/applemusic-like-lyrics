@@ -553,40 +553,55 @@ export abstract class LyricPlayerBase
 		for (let i = this.processedLines.length - 1; i >= 0; i--) {
 			const line = this.processedLines[i];
 			if (line.isBG) continue;
-			const prevLine = this.processedLines[i - 1];
-			if (prevLine) {
-				// 增加一个 min 边界是为了如果现有歌词已经和上一行歌词有交错，则不做修改
-				line.startTime = Math.max(
-					Math.min(prevLine.endTime, line.startTime),
-					line.startTime - 1000,
+
+			const nextLine = this.processedLines[i + 1];
+			if (nextLine?.isBG) {
+				const allWords = [...line.words, ...nextLine.words].filter(
+					(w) => w.word.trim().length > 0,
 				);
-			} else {
-				line.startTime = Math.max(0, line.startTime - 1000);
+
+				if (allWords.length > 0) {
+					const minStart = Math.min(...allWords.map((w) => w.startTime));
+					const maxEnd = Math.max(...allWords.map((w) => w.endTime));
+
+					const finalStart = Math.min(
+						minStart,
+						line.startTime,
+						nextLine.startTime,
+					);
+					const finalEnd = Math.max(maxEnd, line.endTime, nextLine.endTime);
+
+					line.startTime = finalStart;
+					line.endTime = finalEnd;
+					nextLine.startTime = finalStart;
+					nextLine.endTime = finalEnd;
+				}
 			}
 		}
 
-		// 让背景歌词和上一行歌词一同出现并一同消失
+		// 给背景歌词也尝试提前最多一秒
 		for (let i = this.processedLines.length - 1; i >= 0; i--) {
 			const line = this.processedLines[i];
 			if (line.isBG) continue;
+
+			let prevEndTime = 0;
+			if (i > 0) {
+				let prevIdx = i - 1;
+				if (this.processedLines[prevIdx].isBG) {
+					prevIdx--;
+				}
+				if (prevIdx >= 0) {
+					prevEndTime = this.processedLines[prevIdx].endTime;
+				}
+			}
+
+			const newStartTime = Math.max(prevEndTime, line.startTime - 1000);
+
+			line.startTime = newStartTime;
+
 			const nextLine = this.processedLines[i + 1];
 			if (nextLine?.isBG) {
-				const bgStartTime = Math.min(
-					...nextLine.words
-						.filter((w) => w.word.trim().length > 0)
-						.map((w) => w.startTime),
-					line.startTime,
-				);
-				const bgEndTime = Math.max(
-					...nextLine.words
-						.filter((w) => w.word.trim().length > 0)
-						.map((w) => w.endTime),
-					line.endTime,
-				);
-				const startTime = Math.min(bgStartTime, line.startTime);
-				const endTime = Math.max(bgEndTime, line.endTime);
-				nextLine.startTime = startTime;
-				nextLine.endTime = endTime;
+				nextLine.startTime = newStartTime;
 			}
 		}
 
