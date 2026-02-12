@@ -1,0 +1,203 @@
+name: 构建 AMLL Player Tauri 桌面版本
+on:
+  push:
+    branches:
+      - full-refractor
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  clean-pre-release:
+    name: 删除预发布版本的构建产物
+    runs-on: ubuntu-22.04
+    steps:
+      - name: 删除预发布版本的构建产物
+        uses: mknejp/delete-release-assets@v1
+        with:
+          token: ${{ github.token }}
+          assets: |
+            *.*
+          tag: ${{ github.ref_name }}-player-dev
+          fail-if-no-assets: false
+          fail-if-no-release: false
+  build-tauri-desktop:
+    name: 构建 Tauri 桌面版本
+    needs: clean-pre-release
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: ubuntu-22.04
+            args: ""
+            name: linux
+            arch: x86_64
+          - platform: windows-latest
+            args: ""
+            name: windows
+            arch: x86_64
+          - platform: windows-latest
+            args: "--target aarch64-pc-windows-msvc"
+            name: windows
+            arch: aarch64
+          - platform: macos-latest # arm64 二进制包
+            args: "--target aarch64-apple-darwin"
+            name: macOS
+            arch: aarch64
+          - platform: macos-latest # x86 二进制包
+            args: "--target x86_64-apple-darwin"
+            name: macOS
+            arch: x86_64
+          - platform: macos-latest # 通用二进制包
+            args: "--target universal-apple-darwin"
+            name: macOS
+            arch: universal
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v3
+        name: 克隆仓库
+        with:
+          fetch-depth: 0 # 为了正确生成开发版本号码
+      - name: 缓存 Cargo 产物
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - name: 安装 PNPM
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+      - name: 安装 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: pnpm
+      - name: 安装 Rust 工具链
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: |
+            ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || (matrix.platform == 'windows-latest' && matrix.arch == 'aarch64') && 'aarch64-pc-windows-msvc' || '' }}
+      - name: 安装 wasm-pack
+        uses: jetli/wasm-pack-action@v0.4.0
+        with:
+          version: latest
+      - name: 安装 wasm32 目标
+        run: rustup target add wasm32-unknown-unknown
+      # macOS 自带的 Xcode LLVM 不支持 WASM 目标
+      - name: "macOS: 安装 LLVM 和 Clang"
+        uses: KyleMayes/install-llvm-action@v2
+        if: matrix.platform == 'macos-latest'
+        with:
+          version: "15"
+      - name: 安装 Tauri 所需系统依赖（仅 Linux）
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libasound2-dev libappindicator3-dev libwebkit2gtk-4.0-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+      - name: 构建 AMLL Full React 包
+        run: |
+          pnpm i
+          pnpm lerna run build --scope player
+        env:
+          AMLL_GITHUB_IS_ACTION: true
+      - name: 生成开发构建版本号
+        run: |
+          node ./packages/player/scripts/gen-dev-version.mjs
+      - name: 构建 AMLL Player 程序并发布自动构建
+        uses: tauri-apps/tauri-action@v0
+        with:
+          projectPath: packages/player
+          tagName: ${{ github.ref_name }}-player-dev
+          includeUpdaterJson: true
+          releaseName: AMLL Player ${{ github.ref_name }} branch development build
+          releaseBody: |
+            Latest ${{ github.ref_name }} branch development build.
+            最新 ${{ github.ref_name }} 分支开发调试构建。
+            Development version may be unstable and may not work properly, please only for test purpose.
+            开发版本可能不稳定且可能无法正常工作，请仅用于测试目的。
+
+            Latest commits (最新提交): ${{ github.event.head_commit.message }}
+          prerelease: true
+          args: ${{ matrix.args }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+      - name: 上传产物到 Action Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: AMLL Player ${{matrix.name}}-${{matrix.arch}}
+          path: |
+            packages/player/src-tauri/target/**/release/bundle/**/*
+            packages/player/src-tauri/target/**/release/amll-player.exe
+            packages/player/src-tauri/target/**/release/amll-player
+  build-tauri-android:
+    name: 构建 Tauri 安卓移动版本
+    needs: clean-pre-release
+    strategy:
+      fail-fast: false
+
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+        name: 克隆仓库
+        with:
+          fetch-depth: 0 # 为了正确生成开发版本号码
+      - name: 缓存 Cargo 产物
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - name: 安装 PNPM
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+      - name: 安装 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: pnpm
+      - name: 安装 Rust 工具链
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: 'x86_64-unknown-linux-gnu,x86_64-linux-android,i686-linux-android,aarch64-linux-android,arm-linux-androideabi,armv7-linux-androideabi,thumbv7neon-linux-androideabi'
+      - name: 安装 wasm-pack
+        uses: jetli/wasm-pack-action@v0.4.0
+        with:
+          version: latest
+      - name: 安装 wasm32 目标
+        run: rustup target add wasm32-unknown-unknown
+      - name: 构建 AMLL Full React 包
+        run: |
+          pnpm i
+          pnpm lerna run build --scope player
+        env:
+          AMLL_GITHUB_IS_ACTION: true
+      - name: 生成开发构建版本号
+        run: |
+          node ./packages/player/scripts/gen-dev-version.mjs
+      - name: 构建 AMLL Player 安卓移动版程序
+        run: |
+          export NDK_HOME=$ANDROID_NDK_HOME
+          export JAVA_HOME=$JAVA_HOME_17_X64
+          pnpm -F player tauri android build --split-per-abi
+      - name: 上传产物到 Action Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: AMLL Player Android Universal
+          path: |
+            packages/player/src-tauri/gen/android/app/build/outputs/**/*.apk
+            packages/player/src-tauri/gen/android/app/build/outputs/**/*.aab
