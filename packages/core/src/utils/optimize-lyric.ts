@@ -59,6 +59,9 @@ function syncMainAndBackgroundLines(lines: LyricLine[]) {
 				nextLine.endTime = finalEnd;
 			}
 		}
+		
+		// 注意：从第二个背景行开始，保持其原始时间不变
+		// 这样每个背景行都可以按照自己的时间播放动画
 	}
 }
 

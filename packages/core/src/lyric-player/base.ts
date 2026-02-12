@@ -663,12 +663,16 @@ export abstract class LyricPlayerBase
 					// 激活所有连续的背景行
 					let bgId = id + 1;
 					while (arr[bgId]?.getLine()?.isBG) {
-						this.hotLines.add(bgId);
-						addedIds.add(bgId);
-						if (isSeek) {
-							arr[bgId].enable(time, this.isPlaying);
-						} else {
-							arr[bgId].enable();
+						const bgLine = arr[bgId].getLine();
+						// 检查背景行的时间是否在当前播放时间范围内
+						if (bgLine.startTime <= time && bgLine.endTime > time) {
+							this.hotLines.add(bgId);
+							addedIds.add(bgId);
+							if (isSeek) {
+								arr[bgId].enable(time, this.isPlaying);
+							} else {
+								arr[bgId].enable();
+							}
 						}
 						bgId++;
 					}
