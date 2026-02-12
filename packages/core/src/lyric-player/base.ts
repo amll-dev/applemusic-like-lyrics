@@ -689,6 +689,7 @@ export abstract class LyricPlayerBase
 			const shouldAnimate = line.startTime <= time && line.endTime > time;
 			
 			// 存储动画状态供非isSeek模式使用
+			const wasAnimating = bgAnimateStates.get(id) ?? false;
 			bgAnimateStates.set(id, shouldAnimate);
 			
 			if (shouldShow && !isCurrentlyHot) {
@@ -709,6 +710,15 @@ export abstract class LyricPlayerBase
 			} else if (isCurrentlyHot && isSeek) {
 				// 已经在显示中，更新动画时间和播放状态
 				lineObj.enable(time, shouldAnimate && this.isPlaying);
+			} else if (isCurrentlyHot && !isSeek) {
+				// 非isSeek模式下，背景行正在显示
+				if (shouldAnimate && !wasAnimating && this.isPlaying) {
+					// 动画状态从false变为true，开始播放动画
+					lineObj.enable(time, true);
+				} else if (!shouldAnimate && wasAnimating) {
+					// 动画状态从true变为false，暂停动画
+					lineObj.enable(time, false);
+				}
 			}
 		});
 
