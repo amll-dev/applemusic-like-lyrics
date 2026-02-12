@@ -17,20 +17,13 @@ function resetLineTimestamps(lines: LyricLine[]) {
 
 /**
  * 把多行背景人声转换为单行背景人声 + 主歌词行的形式
+ *
+ * 注意：此函数现已禁用，允许多个背景行连续显示
+ * 以支持多和声声部（如三重唱、四重唱）的场景
  */
-function convertExcessiveBackgroundLines(lines: LyricLine[]) {
-	let consecutiveBgCount = 0;
-
-	for (const line of lines) {
-		if (line.isBG) {
-			consecutiveBgCount++;
-			if (consecutiveBgCount > 1) {
-				line.isBG = false;
-			}
-		} else {
-			consecutiveBgCount = 0;
-		}
-	}
+function convertExcessiveBackgroundLines(_lines: LyricLine[]) {
+	// 函数已禁用：不再限制背景行数量
+	// 这样可以支持多个和声层同时显示
 }
 
 /**
