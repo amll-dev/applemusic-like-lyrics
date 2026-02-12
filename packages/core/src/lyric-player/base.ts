@@ -602,24 +602,38 @@ export abstract class LyricPlayerBase
 			if (line) {
 				if (line.isBG) continue;
 				const nextLine = this.processedLines[lastHotId + 1];
-				if (nextLine?.isBG) {
-					const nextMainLine = this.processedLines[lastHotId + 2];
-					const startTime = Math.min(line.startTime, nextLine?.startTime);
-					const endTime = Math.min(
-						Math.max(line.endTime, nextMainLine?.startTime ?? Number.MAX_VALUE),
-						Math.max(line.endTime, nextLine?.endTime),
-					);
-					if (startTime > time || endTime <= time) {
-						this.hotLines.delete(lastHotId);
-						removedHotIds.add(lastHotId);
-						this.hotLines.delete(lastHotId + 1);
-						removedHotIds.add(lastHotId + 1);
-						if (isSeek) {
-							this.currentLyricLineObjects[lastHotId]?.disable();
-							this.currentLyricLineObjects[lastHotId + 1]?.disable();
-						}
+				// 处理所有连续的背景行
+					let bgOffset = 1;
+					const bgLineIds = [];
+					while (this.processedLines[lastHotId + bgOffset]?.isBG) {
+						bgLineIds.push(lastHotId + bgOffset);
+						bgOffset++;
 					}
-				} else if (line.startTime > time || line.endTime <= time) {
+					const nextMainLine = this.processedLines[lastHotId + bgOffset];
+					
+					if (bgLineIds.length > 0) {
+						const lastBgLine = this.processedLines[bgLineIds[bgLineIds.length - 1]];
+						const firstBgLine = this.processedLines[bgLineIds[0]];
+						const startTime = Math.min(line.startTime, firstBgLine?.startTime);
+						const endTime = Math.min(
+							Math.max(line.endTime, nextMainLine?.startTime ?? Number.MAX_VALUE),
+							Math.max(line.endTime, lastBgLine?.endTime),
+						);
+						if (startTime > time || endTime <= time) {
+							this.hotLines.delete(lastHotId);
+							removedHotIds.add(lastHotId);
+							for (const bgLineId of bgLineIds) {
+								this.hotLines.delete(bgLineId);
+								removedHotIds.add(bgLineId);
+								if (isSeek) {
+									this.currentLyricLineObjects[bgLineId]?.disable();
+								}
+							}
+							if (isSeek) {
+								this.currentLyricLineObjects[lastHotId]?.disable();
+							}
+						}
+					} else if (line.startTime > time || line.endTime <= time) {
 					this.hotLines.delete(lastHotId);
 					removedHotIds.add(lastHotId);
 					if (isSeek) this.currentLyricLineObjects[lastHotId]?.disable();
@@ -646,14 +660,17 @@ export abstract class LyricPlayerBase
 						lineObj.enable();
 					}
 
-					if (arr[id + 1]?.getLine()?.isBG) {
-						this.hotLines.add(id + 1);
-						addedIds.add(id + 1);
+					// 激活所有连续的背景行
+					let bgId = id + 1;
+					while (arr[bgId]?.getLine()?.isBG) {
+						this.hotLines.add(bgId);
+						addedIds.add(bgId);
 						if (isSeek) {
-							arr[id + 1].enable(time, this.isPlaying);
+							arr[bgId].enable(time, this.isPlaying);
 						} else {
-							arr[id + 1].enable();
+							arr[bgId].enable();
 						}
+						bgId++;
 					}
 				}
 			}
