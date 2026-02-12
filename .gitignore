@@ -18,3 +18,5 @@ target/
 .vscode/
 *.tsbuildinfo
 .million/
+.iflow
+settings.json
