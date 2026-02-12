@@ -613,7 +613,7 @@ export abstract class LyricPlayerBase
 				if (isSeek) this.currentLyricLineObjects[lastHotId]?.disable();
 			}
 		}
-		this.currentLyricLineObjects.forEach((lineObj, id, arr) => {
+		this.currentLyricLineObjects.forEach((lineObj, id) => {
 			const line = lineObj.getLine();
 
 			if (!line.isBG && line.startTime <= time && line.endTime > time) {

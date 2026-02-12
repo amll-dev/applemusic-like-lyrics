@@ -31,7 +31,7 @@ function convertExcessiveBackgroundLines(_lines: LyricLine[]) {
  *
  * 取两者中最早的开始时间和最晚的结束时间，应用给双方
  */
-function syncMainAndBackgroundLines(lines: LyricLine[]) {
+function syncMainAndBackgroundLines(_lines: LyricLine[]) {
 	// 此函数已禁用，不再同步主行和背景行的时间
 	// 每个背景行都保持自己的原始时间，独立显示和消失
 	// 这样可以支持多个背景行按照各自的时间独立播放
