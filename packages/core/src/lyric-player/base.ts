@@ -597,43 +597,12 @@ export abstract class LyricPlayerBase
 		const addedIds = new Set<number>();
 
 		// 先检索当前已经超出时间范围的缓冲行，列入待删除集内
+		// 只处理主行，背景行的取消激活由后面的独立逻辑处理
 		for (const lastHotId of this.hotLines) {
 			const line = this.processedLines[lastHotId];
 			if (line) {
 				if (line.isBG) continue;
-				const nextLine = this.processedLines[lastHotId + 1];
-				// 处理所有连续的背景行
-					let bgOffset = 1;
-					const bgLineIds = [];
-					while (this.processedLines[lastHotId + bgOffset]?.isBG) {
-						bgLineIds.push(lastHotId + bgOffset);
-						bgOffset++;
-					}
-					const nextMainLine = this.processedLines[lastHotId + bgOffset];
-					
-					if (bgLineIds.length > 0) {
-						const lastBgLine = this.processedLines[bgLineIds[bgLineIds.length - 1]];
-						const firstBgLine = this.processedLines[bgLineIds[0]];
-						const startTime = Math.min(line.startTime, firstBgLine?.startTime);
-						const endTime = Math.min(
-							Math.max(line.endTime, nextMainLine?.startTime ?? Number.MAX_VALUE),
-							Math.max(line.endTime, lastBgLine?.endTime),
-						);
-						if (startTime > time || endTime <= time) {
-							this.hotLines.delete(lastHotId);
-							removedHotIds.add(lastHotId);
-							for (const bgLineId of bgLineIds) {
-								this.hotLines.delete(bgLineId);
-								removedHotIds.add(bgLineId);
-								if (isSeek) {
-									this.currentLyricLineObjects[bgLineId]?.disable();
-								}
-							}
-							if (isSeek) {
-								this.currentLyricLineObjects[lastHotId]?.disable();
-							}
-						}
-					} else if (line.startTime > time || line.endTime <= time) {
+				if (line.startTime > time || line.endTime <= time) {
 					this.hotLines.delete(lastHotId);
 					removedHotIds.add(lastHotId);
 					if (isSeek) this.currentLyricLineObjects[lastHotId]?.disable();
@@ -660,25 +629,89 @@ export abstract class LyricPlayerBase
 						lineObj.enable();
 					}
 
-					// 激活所有连续的背景行
-					let bgId = id + 1;
-					while (arr[bgId]?.getLine()?.isBG) {
-						const bgLine = arr[bgId].getLine();
-						// 检查背景行的时间是否在当前播放时间范围内
-						if (bgLine.startTime <= time && bgLine.endTime > time) {
-							this.hotLines.add(bgId);
-							addedIds.add(bgId);
-							if (isSeek) {
-								arr[bgId].enable(time, this.isPlaying);
-							} else {
-								arr[bgId].enable();
-							}
-						}
-						bgId++;
-					}
+					// 注意：背景行的处理已移到后面的独立逻辑中
+					// 这样可以确保背景行按照自己的时间独立播放动画
 				}
 			}
 		});
+
+		// 存储背景行的动画播放状态（用于非isSeek模式）
+		const bgAnimateStates = new Map<number, boolean>();
+		
+		// 处理背景行的显示/隐藏和动画播放
+		// 背景行集合一起显示（主行显示时）、一起消失（最后一个背景行播放完毕后）
+		// 但每个背景行的动画按照自己的时间独立播放
+		
+		// 首先，找到所有主行及其背景行集合的时间范围
+		const mainLineWithBgRanges = new Map<number, { start: number; end: number }>();
+		for (let i = 0; i < this.processedLines.length; i++) {
+			const line = this.processedLines[i];
+			if (line.isBG) continue;
+			
+			// 找到这个主行后面的所有连续背景行
+			let lastBgEndTime = line.endTime;
+			let bgOffset = 1;
+			while (this.processedLines[i + bgOffset]?.isBG) {
+				const bgLine = this.processedLines[i + bgOffset];
+				lastBgEndTime = Math.max(lastBgEndTime, bgLine.endTime);
+				bgOffset++;
+			}
+			
+			if (bgOffset > 1) {
+				// 这个主行有背景行
+				mainLineWithBgRanges.set(i, {
+					start: line.startTime,
+					end: lastBgEndTime
+				});
+			}
+		}
+		
+		// 处理背景行的显示/隐藏和动画
+		this.currentLyricLineObjects.forEach((lineObj, id) => {
+			const line = lineObj.getLine();
+			if (!line.isBG) return;
+			
+			// 找到这个背景行所属的主行
+			let mainLineId = id - 1;
+			while (mainLineId >= 0 && this.processedLines[mainLineId]?.isBG) {
+				mainLineId--;
+			}
+			
+			const bgRange = mainLineWithBgRanges.get(mainLineId);
+			if (!bgRange) return;
+			
+			const isCurrentlyHot = this.hotLines.has(id);
+			
+			// 背景行集合一起显示（主行显示时）、一起消失（最后一个背景行播放完毕后）
+			const shouldShow = bgRange.start <= time && bgRange.end > time;
+			
+			// 但动画按照自己的时间播放
+			const shouldAnimate = line.startTime <= time && line.endTime > time;
+			
+			// 存储动画状态供非isSeek模式使用
+			bgAnimateStates.set(id, shouldAnimate);
+			
+			if (shouldShow && !isCurrentlyHot) {
+				// 需要显示（进入hotLines）
+				this.hotLines.add(id);
+				addedIds.add(id);
+				if (isSeek) {
+					// 传入当前时间，但shouldPlay控制是否播放动画
+					lineObj.enable(time, shouldAnimate && this.isPlaying);
+				}
+			} else if (!shouldShow && isCurrentlyHot) {
+				// 需要隐藏
+				this.hotLines.delete(id);
+				removedIds.add(id);
+				if (isSeek) {
+					lineObj.disable();
+				}
+			} else if (isCurrentlyHot && isSeek) {
+				// 已经在显示中，更新动画时间和播放状态
+				lineObj.enable(time, shouldAnimate && this.isPlaying);
+			}
+		});
+
 		for (const v of this.bufferedLines) {
 			if (!this.hotLines.has(v)) {
 				removedIds.add(v);
@@ -708,7 +741,18 @@ export abstract class LyricPlayerBase
 			if (removedIds.size === 0 && addedIds.size > 0) {
 				for (const v of addedIds) {
 					this.bufferedLines.add(v);
-					this.currentLyricLineObjects[v]?.enable();
+					const lineObj = this.currentLyricLineObjects[v];
+					if (lineObj) {
+						const line = lineObj.getLine();
+						if (line.isBG) {
+							// 背景行：根据动画状态决定是否播放
+							const shouldAnimate = bgAnimateStates.get(v) ?? false;
+							lineObj.enable(this.currentTime, shouldAnimate && this.isPlaying);
+						} else {
+							// 主行：正常启用
+							lineObj.enable();
+						}
+					}
 				}
 				this.scrollToIndex = Math.min(...this.bufferedLines);
 				this.calcLayout();
@@ -725,7 +769,18 @@ export abstract class LyricPlayerBase
 			} else {
 				for (const v of addedIds) {
 					this.bufferedLines.add(v);
-					this.currentLyricLineObjects[v]?.enable();
+					const lineObj = this.currentLyricLineObjects[v];
+					if (lineObj) {
+						const line = lineObj.getLine();
+						if (line.isBG) {
+							// 背景行：根据动画状态决定是否播放
+							const shouldAnimate = bgAnimateStates.get(v) ?? false;
+							lineObj.enable(this.currentTime, shouldAnimate && this.isPlaying);
+						} else {
+							// 主行：正常启用
+							lineObj.enable();
+						}
+					}
 				}
 				for (const v of removedIds) {
 					this.bufferedLines.delete(v);

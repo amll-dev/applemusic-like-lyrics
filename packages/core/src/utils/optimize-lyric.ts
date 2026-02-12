@@ -32,37 +32,9 @@ function convertExcessiveBackgroundLines(_lines: LyricLine[]) {
  * 取两者中最早的开始时间和最晚的结束时间，应用给双方
  */
 function syncMainAndBackgroundLines(lines: LyricLine[]) {
-	for (let i = lines.length - 1; i >= 0; i--) {
-		const line = lines[i];
-		if (line.isBG) continue;
-
-		const nextLine = lines[i + 1];
-		if (nextLine?.isBG) {
-			const allWords = [...line.words, ...nextLine.words].filter(
-				(w) => w.word.trim().length > 0,
-			);
-
-			if (allWords.length > 0) {
-				const minStart = Math.min(...allWords.map((w) => w.startTime));
-				const maxEnd = Math.max(...allWords.map((w) => w.endTime));
-
-				const finalStart = Math.min(
-					minStart,
-					line.startTime,
-					nextLine.startTime,
-				);
-				const finalEnd = Math.max(maxEnd, line.endTime, nextLine.endTime);
-
-				line.startTime = finalStart;
-				line.endTime = finalEnd;
-				nextLine.startTime = finalStart;
-				nextLine.endTime = finalEnd;
-			}
-		}
-		
-		// 注意：从第二个背景行开始，保持其原始时间不变
-		// 这样每个背景行都可以按照自己的时间播放动画
-	}
+	// 此函数已禁用，不再同步主行和背景行的时间
+	// 每个背景行都保持自己的原始时间，独立显示和消失
+	// 这样可以支持多个背景行按照各自的时间独立播放
 }
 
 /**
