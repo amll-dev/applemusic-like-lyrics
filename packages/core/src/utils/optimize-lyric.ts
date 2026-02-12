@@ -136,6 +136,7 @@ function tryAdvanceStartTime(lines: LyricLine[]) {
  * @param lines 歌词行数组
  */
 export function optimizeLyricLines(lines: LyricLine[]) {
+	console.log("AMLL core optimize-lyric active");
 	for (const line of lines) {
 		for (const word of line.words) {
 			word.word = word.word.replace(/\s+/g, " ");
