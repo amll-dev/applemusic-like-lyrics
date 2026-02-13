@@ -96,6 +96,39 @@
 	transform-origin: right;
 }
 
+.lyricVocalLine {
+	line-height: initial;
+	position: relative;
+	display: inline-block;
+	white-space: pre;
+	font-size: 0.55em;
+	opacity: 0;
+	transition: opacity 0.25s;
+	margin: 0;
+	pointer-events: none;
+	z-index: 0;
+}
+
+.lyricVocalItem {
+	display: inline-block;
+	background-color: gray;
+	border-radius: 6px;
+	padding: 1px 5px 1px 5px;
+}
+
+.lyricLine.active .lyricVocalLine {
+	opacity: 0.4;
+}
+
+.lyricDuetLine .lyricVocalLine {
+	margin-left: auto;
+	text-align: right;
+}
+
+.lyricVocalLine:empty {
+	display: none;
+}
+
 .lyricMainLine {
 	transition: opacity 0.3s 0.1s;
 	margin: -1em;

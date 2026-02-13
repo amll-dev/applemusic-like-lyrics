@@ -25,6 +25,14 @@ import {
 import { DomLyricPlayer, type LyricLineMouseEvent } from "./lyric-player";
 import type { SpringParams } from "./utils/spring";
 
+type GuiController = { updateDisplay(): void };
+
+let lyricController: GuiController | null = null;
+let musicController: GuiController | null = null;
+let localLyric: { name: string; content: string } | null = null;
+let localAudioName: string | null = null;
+let localAudioUrl: string | null = null;
+
 (window as any).lyrics = lyrics;
 
 const audio = document.createElement("audio");
@@ -35,6 +43,28 @@ const debugValues = {
 	lyric: new URL(location.href).searchParams.get("lyric") || "",
 	music: new URL(location.href).searchParams.get("music") || "",
 	album: new URL(location.href).searchParams.get("album") || "",
+	async loadLocalTTML() {
+		const file = await pickLocalFile(".ttml");
+		if (!file) return;
+		const content = await file.text();
+		localLyric = { name: file.name, content };
+		await loadLyric(file.name, content);
+		debugValues.lyric = file.name;
+		lyricController?.updateDisplay();
+	},
+	async loadLocalAudio() {
+		const file = await pickLocalFile("audio/*");
+		if (!file) return;
+		if (localAudioUrl) {
+			URL.revokeObjectURL(localAudioUrl);
+		}
+		localAudioName = file.name;
+		localAudioUrl = URL.createObjectURL(file);
+		audio.src = localAudioUrl;
+		audio.load();
+		debugValues.music = file.name;
+		musicController?.updateDisplay();
+	},
 	enableSpring: true,
 	bgFPS: 60,
 	bgMode: new URL(location.href).searchParams.get("bg") || "mg",
@@ -95,6 +125,17 @@ const debugValues = {
 	},
 };
 
+const pickLocalFile = (accept: string): Promise<File | null> =>
+	new Promise((resolve) => {
+		const input = document.createElement("input");
+		input.type = "file";
+		input.accept = accept;
+		input.onchange = () => {
+			resolve(input.files?.[0] ?? null);
+		};
+		input.click();
+	});
+
 function recreateBGRenderer(mode: string) {
 	window.globalBackground?.dispose();
 	if (mode === "pixi") {
@@ -123,19 +164,21 @@ const gui = new GUI();
 gui.close();
 
 gui.title("AMLL 歌词测试页面");
-gui
+lyricController = gui
 	.add(debugValues, "lyric")
 	.name("歌词文件")
-	.onFinishChange(async (url: string) => {
-		lyricPlayer.setLyricLines(
-			parseTTML(await (await fetch(url)).text()).lines.map(mapTTMLLyric),
-		);
+	.onFinishChange((url: string) => {
+		void loadLyric(url);
 	});
-gui
+musicController = gui
 	.add(debugValues, "music")
 	.name("歌曲")
 	.onFinishChange((v: string) => {
-		audio.src = v;
+		if (localAudioUrl && localAudioName && v === localAudioName) {
+			audio.src = localAudioUrl;
+		} else {
+			audio.src = v;
+		}
 	});
 gui
 	.add(debugValues, "album")
@@ -143,6 +186,10 @@ gui
 	.onFinishChange((v: string) => {
 		window.globalBackground.setAlbum(v);
 	});
+
+const localGui = gui.addFolder("本地文件");
+localGui.add(debugValues, "loadLocalTTML").name("加载本地TTML");
+localGui.add(debugValues, "loadLocalAudio").name("加载本地音频");
 
 const bgGui = gui.addFolder("背景");
 bgGui
@@ -287,41 +334,33 @@ declare global {
 
 const waitFrame = (): Promise<number> =>
 	new Promise((resolve) => requestAnimationFrame(resolve));
-const mapLyric = (
-	line: RawLyricLine,
-	_i: number,
-	_lines: RawLyricLine[],
-): LyricLine => ({
-	words: line.words.map((word) => ({ obscene: false, romanWord: "", ...word })),
-	startTime: line.words[0]?.startTime ?? 0,
-	endTime:
-		line.words[line.words.length - 1]?.endTime ?? Number.POSITIVE_INFINITY,
-	translatedLyric: "",
-	romanLyric: "",
-	isBG: false,
-	isDuet: false,
+const mapLyricWord = (word: RawLyricLine["words"][number]) => ({
+	...word,
+	romanWord: word.romanWord ?? "",
+	obscene: false,
 });
 
-const mapTTMLLyric = (line: RawLyricLine): LyricLine => ({
-	...line,
-	words: line.words.map((word) => ({ obscene: false, romanWord: "", ...word })),
-	romanLyric: "",
+const mapLyricLine = (line: RawLyricLine): LyricLine => ({
+	words: line.words.map(mapLyricWord),
+	startTime: Number.isFinite(line.startTime)
+		? line.startTime
+		: line.words[0]?.startTime ?? 0,
+	endTime: Number.isFinite(line.endTime)
+		? line.endTime
+		: line.words[line.words.length - 1]?.endTime ?? Number.POSITIVE_INFINITY,
+	translatedLyric: line.translatedLyric ?? "",
+	romanLyric: line.romanLyric ?? "",
+	vocal: line.vocal,
+	isBG: line.isBG ?? false,
+	isDuet: line.isDuet ?? false,
 });
 
-async function loadLyric() {
-	const lyricFile = debugValues.lyric;
-	const content = await (await fetch(lyricFile)).text();
-	if (lyricFile.endsWith(".ttml")) {
-		lyricPlayer.setLyricLines(parseTTML(content).lines.map(mapTTMLLyric));
-	} else if (lyricFile.endsWith(".lrc")) {
-		lyricPlayer.setLyricLines(parseLrc(content).map(mapLyric));
-	} else if (lyricFile.endsWith(".yrc")) {
-		lyricPlayer.setLyricLines(parseYrc(content).map(mapLyric));
-	} else if (lyricFile.endsWith(".lys")) {
-		lyricPlayer.setLyricLines(parseLys(content).map(mapLyric));
-	} else if (lyricFile.endsWith(".qrc")) {
-		lyricPlayer.setLyricLines(parseQrc(content).map(mapLyric));
-	} else if (lyricFile === "bug") {
+async function loadLyric(
+	lyricFile = debugValues.lyric,
+	lyricContent?: string,
+) {
+	if (!lyricFile) return;
+	if (lyricFile === "bug") {
 		const buildLyricLines = (
 			lyric: string,
 			startTime = 1000,
@@ -367,8 +406,28 @@ async function loadLyric() {
 		];
 
 		lyricPlayer.setLyricLines(DEMO_LYRIC);
+		return;
+	}
+
+	const content =
+		lyricContent ??
+		(localLyric && lyricFile === localLyric.name
+			? localLyric.content
+			: await (await fetch(lyricFile)).text());
+	const normalized = lyricFile.split("?")[0].toLowerCase();
+	if (normalized.endsWith(".ttml")) {
+		lyricPlayer.setLyricLines(parseTTML(content).lines.map(mapLyricLine));
+	} else if (normalized.endsWith(".lrc")) {
+		lyricPlayer.setLyricLines(parseLrc(content).map(mapLyricLine));
+	} else if (normalized.endsWith(".yrc")) {
+		lyricPlayer.setLyricLines(parseYrc(content).map(mapLyricLine));
+	} else if (normalized.endsWith(".lys")) {
+		lyricPlayer.setLyricLines(parseLys(content).map(mapLyricLine));
+	} else if (normalized.endsWith(".qrc")) {
+		lyricPlayer.setLyricLines(parseQrc(content).map(mapLyricLine));
 	}
 }
+
 
 (async () => {
 	recreateBGRenderer(debugValues.bgMode);

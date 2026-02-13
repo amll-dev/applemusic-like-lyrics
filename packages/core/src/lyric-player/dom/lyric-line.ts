@@ -101,6 +101,7 @@ export class LyricLineEl extends LyricLineBase {
 			words: [],
 			translatedLyric: "",
 			romanLyric: "",
+			vocal: [],
 			startTime: 0,
 			endTime: 0,
 			isBG: false,
@@ -118,12 +119,15 @@ export class LyricLineEl extends LyricLineBase {
 			this.element.classList.add(styles.lyricDuetLine);
 		}
 		this.lineTransforms.posY.setPosition(window.innerHeight * 2);
+		this.element.appendChild(document.createElement("div")); // 角色标签
 		this.element.appendChild(document.createElement("div")); // 歌词行
 		this.element.appendChild(document.createElement("div")); // 翻译行
 		this.element.appendChild(document.createElement("div")); // 音译行
-		const main = this.element.children[0] as HTMLDivElement;
-		const trans = this.element.children[1] as HTMLDivElement;
-		const roman = this.element.children[2] as HTMLDivElement;
+		const vocal = this.element.children[0] as HTMLDivElement;
+		const main = this.element.children[1] as HTMLDivElement;
+		const trans = this.element.children[2] as HTMLDivElement;
+		const roman = this.element.children[3] as HTMLDivElement;
+		vocal.setAttribute("class", styles.lyricVocalLine);
 		main.setAttribute("class", styles.lyricMainLine);
 		trans.setAttribute("class", styles.lyricSubLine);
 		roman.setAttribute("class", styles.lyricSubLine);
@@ -198,7 +202,7 @@ export class LyricLineEl extends LyricLineBase {
 	) {
 		this.isEnabled = true;
 		this.element.classList.add(styles.active);
-		const main = this.element.children[0] as HTMLDivElement;
+		const main = this.element.children[1] as HTMLDivElement;
 
 		const relativeTime = Math.max(
 			0,
@@ -254,10 +258,7 @@ export class LyricLineEl extends LyricLineBase {
 	disable() {
 		this.isEnabled = false;
 		this.element.classList.remove(styles.active);
-		this.renderMode = LyricLineRenderMode.SOLID;
-
-		const main = this.element.children[0] as HTMLDivElement;
-
+		const main = this.element.children[1] as HTMLDivElement;
 		for (const word of this.splittedWords) {
 			for (const a of word.elementAnimations) {
 				if (
@@ -393,9 +394,11 @@ export class LyricLineEl extends LyricLineBase {
 
 	override rebuildElement() {
 		this.disposeElements();
-		const main = this.element.children[0] as HTMLDivElement;
-		const trans = this.element.children[1] as HTMLDivElement;
-		const roman = this.element.children[2] as HTMLDivElement;
+		const vocal = this.element.children[0] as HTMLDivElement;
+		const main = this.element.children[1] as HTMLDivElement;
+		const trans = this.element.children[2] as HTMLDivElement;
+		const roman = this.element.children[3] as HTMLDivElement;
+		this.setVocalText(vocal);
 		// 非动态歌词，直接渲染整行与副行
 		if (this.lyricPlayer._getIsNonDynamic()) {
 			main.innerText = this.lyricLine.words.map((w) => w.word).join("");
@@ -413,10 +416,62 @@ export class LyricLineEl extends LyricLineBase {
 		this.setSubLinesText(trans, roman);
 	}
 
+	private setVocalText(vocal: HTMLDivElement) {
+		// Called during rebuild: iterate vocal entries (array preferred), wrap each part, and insert gaps.
+		vocal.innerHTML = "";
+		const rawVocals = this.lyricLine.vocal as string[] | string | undefined;
+		const vocals = Array.isArray(rawVocals)
+			? rawVocals
+			: typeof rawVocals === "string"
+			? [rawVocals]
+			: [];
+		const parts = vocals.map((v) => v.trim()).filter(Boolean);
+		if (parts.length === 0) return;
+		let first = true;
+		for (const part of parts) {
+			if (!part) continue;
+			if (!first) {
+				vocal.appendChild(document.createTextNode("　"));
+			}
+			const item = document.createElement("span");
+			item.classList.add(styles.lyricVocalItem);
+			item.innerText = part;
+			vocal.appendChild(item);
+			first = false;
+		}
+	}
+
 	/** 设置翻译与音译行文本 */
 	private setSubLinesText(trans: HTMLDivElement, roman: HTMLDivElement) {
 		trans.innerText = this.lyricLine.translatedLyric;
-		roman.innerText = this.lyricLine.romanLyric;
+		const rawRoman = this.lyricLine.romanLyric as unknown;
+		if (typeof rawRoman !== "string") {
+			roman.innerText = "";
+			return;
+		}
+		const trimmedRoman = rawRoman.trim();
+		if (trimmedRoman.length === 0) {
+			roman.innerText = "";
+			return;
+		}
+		const wordRomans = this.lyricLine.words
+			.map((word) => word.romanWord?.trim() ?? "")
+			.filter(Boolean);
+		if (wordRomans.length === 0) {
+			roman.innerText = rawRoman;
+			return;
+		}
+		const derivedRoman = this.lyricLine.words
+			.map((word) => {
+				if (word.word.trim().length === 0) {
+					return word.word;
+				}
+				return word.romanWord?.trim() ?? "";
+			})
+			.join("");
+		const normalize = (value: string) => value.replace(/\s+/g, "");
+		roman.innerText =
+			normalize(derivedRoman) === normalize(trimmedRoman) ? "" : rawRoman;
 	}
 
 	private createWord(word: LyricWord, shouldEmphasize: boolean): RealWord {
@@ -933,7 +988,7 @@ export class LyricLineEl extends LyricLineBase {
 		this.top = top;
 		this.scale = scale;
 		this.delay = (delay * 1000) | 0;
-		const main = this.element.children[0] as HTMLDivElement;
+		const main = this.element.children[1] as HTMLDivElement;
 		// main.style.opacity = `${opacity *
 		// 	(!this.hasFaded ? 1 : this.lyricPlayer._getIsNonDynamic() ? 1 : 0.3)
 		// 	}`;
@@ -1035,12 +1090,14 @@ export class LyricLineEl extends LyricLineBase {
 			}
 		}
 		this.splittedWords = [];
-		const main = this.element.children[0] as HTMLDivElement;
-		const trans = this.element.children[1] as HTMLDivElement;
-		const roman = this.element.children[2] as HTMLDivElement;
+		const vocal = this.element.children[0] as HTMLDivElement;
+		const main = this.element.children[1] as HTMLDivElement;
+		const trans = this.element.children[2] as HTMLDivElement;
+		const roman = this.element.children[3] as HTMLDivElement;
 		if (main) main.innerHTML = "";
 		if (trans) trans.innerHTML = "";
 		if (roman) roman.innerHTML = "";
+		if (vocal) vocal.innerHTML = "";
 	}
 	override dispose(): void {
 		this.disposeElements();
@@ -1048,3 +1105,4 @@ export class LyricLineEl extends LyricLineBase {
 		this.element.remove();
 	}
 }
+

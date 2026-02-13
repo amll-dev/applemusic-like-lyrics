@@ -35,6 +35,8 @@ enum CurrentStatus {
     InITunesTranslationText,
     InITunesTransliterationText,
 
+    InAmllVocals,
+
     InTtml,
 }
 
@@ -85,17 +87,42 @@ impl TTMLError {
     }
 }
 
-fn configure_lyric_line(
+fn configure_lyric_line<'a>(
     e: &BytesStart<'_>,
     read_len: usize,
     main_agent: &[u8],
-    line: &mut LyricLine<'_>,
+    vocal_map: &HashMap<Vec<u8>, Vec<u8>>,
+    line: &mut LyricLine<'a>,
 ) -> std::result::Result<(), TTMLError> {
+    // Called for every <p> (and bg) to fill line-level attrs: ttm:agent, amll:vocal, timing.
+    // The caller passes prebuilt vocal_map so we can map vocal IDs to values in place.
     for attr in e.attributes() {
         match attr {
             Ok(a) => match a.key.as_ref() {
                 b"ttm:agent" => {
                     line.is_duet |= a.value.as_ref() != main_agent;
+                }
+                b"amll:vocal" => {
+                    // Supports multi IDs like "1,2" mapped via vocal_map, keeping caller order.
+                    let raw_value = String::from_utf8_lossy(a.value.as_ref());
+                    let mut parts: Vec<Cow<'a, str>> = Vec::new();
+                    for key in raw_value.split(',') {
+                        let key = key.trim();
+                        if key.is_empty() {
+                            continue;
+                        }
+                        if let Some(vocal_value) = vocal_map.get(key.as_bytes()) {
+                            parts.push(Cow::Owned(
+                                String::from_utf8_lossy(vocal_value.as_ref()).into_owned(),
+                            ));
+                        } else {
+                            parts.push(Cow::Owned(key.to_string()));
+                        }
+                    }
+                    if parts.is_empty() {
+                        parts.push(Cow::Owned(raw_value.into_owned()));
+                    }
+                    line.vocal = parts;
                 }
                 b"begin" => {
                     if let Ok((_, time)) = parse_timestamp(a.value.as_bytes()) {
@@ -166,6 +193,8 @@ pub fn parse_ttml<'a>(data: impl BufRead) -> std::result::Result<TTMLLyric<'a>, 
     let mut itunes_transliteration_pieces: HashMap<Vec<u8>, Vec<Vec<u8>>> = HashMap::new();
     // 用于存储 for="L_ID"
     let mut current_itunes_key: Option<Vec<u8>> = None;
+    // 用于存储 amll:vocals 中的 key->value 映射
+    let mut amll_vocal_map: HashMap<Vec<u8>, Vec<u8>> = HashMap::new();
     // 用于拼接 <text> 下的所有文本（行级）
     let mut current_itunes_text_buffer = String::with_capacity(128);
     // 用于收集 <text> 下每个 <span> 的逐词音译片段（仅用于 transliterations）
@@ -350,6 +379,51 @@ pub fn parse_ttml<'a>(data: impl BufRead) -> std::result::Result<TTMLLyric<'a>, 
                             return Err(TTMLError::UnexpectedAmllMetaElement(read_len));
                         }
                     }
+                    b"amll:vocals" => {
+                        if let CurrentStatus::InMetadata = status {
+                            status = CurrentStatus::InAmllVocals;
+                        }
+                    }
+                    b"vocal" => {
+                        if let CurrentStatus::InAmllVocals = status {
+                            let mut meta_key = Cow::Borrowed(&[] as &[u8]);
+                            let mut meta_value = Cow::Borrowed(&[] as &[u8]);
+                            for attr in e.attributes() {
+                                match attr {
+                                    Ok(a) => match a.key.as_ref() {
+                                        b"key" => {
+                                            meta_key = a.value.clone();
+                                        }
+                                        b"value" => {
+                                            meta_value = a.value.clone();
+                                        }
+                                        _ => {}
+                                    },
+                                    Err(err) => return Err(TTMLError::XmlAttrError(read_len, err)),
+                                }
+                            }
+                            if let Ok(meta_key) = std::str::from_utf8(&meta_key)
+                                && let Ok(meta_value) = std::str::from_utf8(&meta_value)
+                            {
+                                amll_vocal_map.insert(
+                                    meta_key.as_bytes().to_vec(),
+                                    meta_value.as_bytes().to_vec(),
+                                );
+                                let meta_key = Cow::Borrowed(meta_key);
+                                let meta_value = Cow::Borrowed(meta_value);
+                                if let Some(values) =
+                                    result.metadata.iter_mut().find(|x| x.0 == meta_key)
+                                {
+                                    values.1.push(Cow::Owned(meta_value.into_owned()));
+                                } else {
+                                    result.metadata.push((
+                                        Cow::Owned(meta_key.into_owned()),
+                                        vec![Cow::Owned(meta_value.into_owned())],
+                                    ));
+                                }
+                            }
+                        }
+                    }
                     b"body" => {
                         if let CurrentStatus::InTtml = status {
                             status = CurrentStatus::InBody;
@@ -378,7 +452,13 @@ pub fn parse_ttml<'a>(data: impl BufRead) -> std::result::Result<TTMLLyric<'a>, 
                                 }
                             }
 
-                            configure_lyric_line(&e, read_len, &main_agent, &mut new_line)?;
+                            configure_lyric_line(
+                                &e,
+                                read_len,
+                                &main_agent,
+                                &amll_vocal_map,
+                                &mut new_line,
+                            )?;
 
                             if let Some(key) = &itunes_key {
                                 if let Some(translation_text) = itunes_translations.get(key)
@@ -422,12 +502,19 @@ pub fn parse_ttml<'a>(data: impl BufRead) -> std::result::Result<TTMLLyric<'a>, 
                                                             .last()
                                                             .unwrap()
                                                             .is_duet,
+                                                        vocal: result
+                                                            .lines
+                                                            .last()
+                                                            .unwrap()
+                                                            .vocal
+                                                            .clone(),
                                                         ..Default::default()
                                                     };
                                                     configure_lyric_line(
                                                         &e,
                                                         read_len,
                                                         &main_agent,
+                                                        &amll_vocal_map,
                                                         &mut new_bg_line,
                                                     )?;
                                                     result.lines.push(new_bg_line);
@@ -568,10 +655,16 @@ pub fn parse_ttml<'a>(data: impl BufRead) -> std::result::Result<TTMLLyric<'a>, 
                         }
                     }
                     b"metadata" => {
-                        if let CurrentStatus::InMetadata = status {
+                        if matches!(status, CurrentStatus::InMetadata | CurrentStatus::InAmllVocals)
+                        {
                             status = CurrentStatus::InHead;
                         } else {
                             return Err(TTMLError::UnexpectedMetadataElement(read_len));
+                        }
+                    }
+                    b"amll:vocals" => {
+                        if let CurrentStatus::InAmllVocals = status {
+                            status = CurrentStatus::InMetadata;
                         }
                     }
                     b"body" => {
@@ -875,7 +968,62 @@ pub fn parse_ttml<'a>(data: impl BufRead) -> std::result::Result<TTMLLyric<'a>, 
 #[cfg(all(target_arch = "wasm32", feature = "serde"))]
 #[wasm_bindgen(js_name = "parseTTML", skip_typescript)]
 pub fn parse_ttml_js(src: &str) -> JsValue {
-    serde_wasm_bindgen::to_value(&parse_ttml(src.as_bytes()).unwrap()).unwrap()
+    // JS entry: tries normal parse, then strips amll:vocals on error before surfacing to JS.
+    match parse_ttml(src.as_bytes()) {
+        Ok(ttml) => serde_wasm_bindgen::to_value(&ttml).unwrap(),
+        Err(err) => {
+            let stripped = strip_amll_vocals(src);
+            if stripped != src {
+                if let Ok(ttml) = parse_ttml(stripped.as_bytes()) {
+                    return serde_wasm_bindgen::to_value(&ttml).unwrap();
+                }
+            }
+            wasm_bindgen::throw_str(&format!("parseTTML failed: {err}"));
+        }
+    }
+}
+
+#[cfg(all(target_arch = "wasm32", feature = "serde"))]
+fn strip_amll_vocals(input: &str) -> String {
+    // Best-effort removal of <amll:vocals>...</amll:vocals> blocks to salvage broken files.
+    // Called only from parse_ttml_js on parse failure; returns original string if nothing removed.
+    let bytes = input.as_bytes();
+    let mut out = Vec::with_capacity(bytes.len());
+    let mut i = 0;
+    while i < bytes.len() {
+        if bytes[i..].starts_with(b"<amll:vocals") {
+            if let Some(end_tag_offset) = bytes[i..].iter().position(|&b| b == b'>') {
+                let start_end = i + end_tag_offset + 1;
+                if start_end >= 2 && bytes[start_end - 2] == b'/' {
+                    i = start_end;
+                    continue;
+                }
+                let close_tag = b"</amll:vocals>";
+                if let Some(close_offset) = find_subslice(&bytes[start_end..], close_tag) {
+                    i = start_end + close_offset + close_tag.len();
+                    continue;
+                }
+                break;
+            }
+        }
+        out.push(bytes[i]);
+        i += 1;
+    }
+    String::from_utf8_lossy(&out).into_owned()
+}
+
+#[cfg(all(target_arch = "wasm32", feature = "serde"))]
+fn find_subslice(haystack: &[u8], needle: &[u8]) -> Option<usize> {
+    // Minimal substring search used by strip_amll_vocals; linear scan is sufficient here.
+    if needle.is_empty() || haystack.len() < needle.len() {
+        return None;
+    }
+    for i in 0..=haystack.len() - needle.len() {
+        if &haystack[i..i + needle.len()] == needle {
+            return Some(i);
+        }
+    }
+    None
 }
 
 #[test]

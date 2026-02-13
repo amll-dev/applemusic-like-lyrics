@@ -58,6 +58,8 @@ export interface LyricLine {
 	translatedLyric: string;
 	/** 该行的音译歌词，将会显示在翻译歌词行的下方 */
 	romanLyric: string;
+	/** 该行的 vocal 标识（列表），将会显示在歌词行的角落；可能不存在 */
+	vocal?: string[];
 	/** 句子的起始时间，单位为毫秒 */
 	startTime: number;
 	/** 句子的结束时间，单位为毫秒 */

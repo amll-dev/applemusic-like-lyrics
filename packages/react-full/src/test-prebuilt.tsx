@@ -41,6 +41,13 @@ const mapLyric = (
 		line.words[line.words.length - 1]?.endTime ?? Number.POSITIVE_INFINITY,
 	translatedLyric: "",
 	romanLyric: "",
+	...(Array.isArray(line.vocal)
+		? line.vocal.length > 0
+			? { vocal: line.vocal }
+			: {}
+		: typeof line.vocal === "string" && line.vocal.trim()
+		? { vocal: [line.vocal.trim()] }
+		: {}),
 	isBG: false,
 	isDuet: false,
 });
