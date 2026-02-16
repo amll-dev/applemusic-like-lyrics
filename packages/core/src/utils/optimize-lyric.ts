@@ -17,20 +17,13 @@ function resetLineTimestamps(lines: LyricLine[]) {
 
 /**
  * 把多行背景人声转换为单行背景人声 + 主歌词行的形式
+ *
+ * 注意：此函数现已禁用，允许多个背景行连续显示
+ * 以支持多和声声部（如三重唱、四重唱）的场景
  */
-function convertExcessiveBackgroundLines(lines: LyricLine[]) {
-	let consecutiveBgCount = 0;
-
-	for (const line of lines) {
-		if (line.isBG) {
-			consecutiveBgCount++;
-			if (consecutiveBgCount > 1) {
-				line.isBG = false;
-			}
-		} else {
-			consecutiveBgCount = 0;
-		}
-	}
+function convertExcessiveBackgroundLines(_lines: LyricLine[]) {
+	// 函数已禁用：不再限制背景行数量
+	// 这样可以支持多个和声层同时显示
 }
 
 /**
@@ -38,35 +31,10 @@ function convertExcessiveBackgroundLines(lines: LyricLine[]) {
  *
  * 取两者中最早的开始时间和最晚的结束时间，应用给双方
  */
-function syncMainAndBackgroundLines(lines: LyricLine[]) {
-	for (let i = lines.length - 1; i >= 0; i--) {
-		const line = lines[i];
-		if (line.isBG) continue;
-
-		const nextLine = lines[i + 1];
-		if (nextLine?.isBG) {
-			const allWords = [...line.words, ...nextLine.words].filter(
-				(w) => w.word.trim().length > 0,
-			);
-
-			if (allWords.length > 0) {
-				const minStart = Math.min(...allWords.map((w) => w.startTime));
-				const maxEnd = Math.max(...allWords.map((w) => w.endTime));
-
-				const finalStart = Math.min(
-					minStart,
-					line.startTime,
-					nextLine.startTime,
-				);
-				const finalEnd = Math.max(maxEnd, line.endTime, nextLine.endTime);
-
-				line.startTime = finalStart;
-				line.endTime = finalEnd;
-				nextLine.startTime = finalStart;
-				nextLine.endTime = finalEnd;
-			}
-		}
-	}
+function syncMainAndBackgroundLines(_lines: LyricLine[]) {
+	// 此函数已禁用，不再同步主行和背景行的时间
+	// 每个背景行都保持自己的原始时间，独立显示和消失
+	// 这样可以支持多个背景行按照各自的时间独立播放
 }
 
 /**
@@ -168,6 +136,7 @@ function tryAdvanceStartTime(lines: LyricLine[]) {
  * @param lines 歌词行数组
  */
 export function optimizeLyricLines(lines: LyricLine[]) {
+	console.log("AMLL core optimize-lyric active");
 	for (const line of lines) {
 		for (const word of line.words) {
 			word.word = word.word.replace(/\s+/g, " ");

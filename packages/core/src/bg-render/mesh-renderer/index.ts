@@ -764,7 +764,7 @@ export class MeshGradientRenderer extends BaseRenderer {
 	private gl: RenderingContext;
 	private lastFrameTime = 0;
 	private frameTime = 0;
-	// private currentImageData?: ImageData;
+	public currentImageData: ImageData | null = null;
 	private lastTickTime = 0;
 	private smoothedVolume = 0;
 	private volume = 0;
@@ -1069,6 +1069,8 @@ export class MeshGradientRenderer extends BaseRenderer {
 		brightnessImage(imageData, 0.75);
 		blurImage(imageData, 2, 4);
 
+		this.currentImageData = imageData;
+
 		if (this.manualControl && this.meshStates.length > 0) {
 			this.meshStates[0].texture.dispose();
 			this.meshStates[0].texture = new GLTexture(this.gl, imageData);
@@ -1102,7 +1104,6 @@ export class MeshGradientRenderer extends BaseRenderer {
 			}
 
 			newMesh.updateMesh();
-			// this.currentImageData = imageData;
 
 			const albumTexture = new GLTexture(this.gl, imageData);
 			const newState: MeshState = {

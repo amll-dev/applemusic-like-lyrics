@@ -13,9 +13,11 @@ export class BackgroundRender<Renderer extends BaseRenderer>
 	implements AbstractBaseRenderer
 {
 	private element: HTMLCanvasElement;
-	private renderer: Renderer;
+	public readonly renderer: Renderer;
+	public readonly _renderer: Renderer;
 	constructor(renderer: Renderer, canvas: HTMLCanvasElement) {
 		this.renderer = renderer;
+		this._renderer = renderer;
 
 		this.element = canvas;
 		canvas.style.pointerEvents = "none";
@@ -63,6 +65,9 @@ export class BackgroundRender<Renderer extends BaseRenderer>
 	}
 	getElement() {
 		return this.element;
+	}
+	getRenderer(): Renderer {
+		return this.renderer;
 	}
 	dispose() {
 		this.renderer.dispose();

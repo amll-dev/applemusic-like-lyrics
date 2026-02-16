@@ -325,7 +325,7 @@ export class LyricLineEl extends LyricLineBase {
 		// 	this.element.setAttribute("style", style);
 		// }
 	}
-	rebuildElement() {
+	override rebuildElement() {
 		this.disposeElements();
 		const main = this.element.children[0] as HTMLDivElement;
 		const trans = this.element.children[1] as HTMLDivElement;
