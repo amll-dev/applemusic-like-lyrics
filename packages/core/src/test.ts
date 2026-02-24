@@ -10,13 +10,14 @@ import {
 	parseLrc,
 	parseLys,
 	parseQrc,
-	parseTTML,
 	parseYrc,
 	type LyricLine as RawLyricLine,
 } from "@applemusic-like-lyrics/lyric";
 import GUI from "lil-gui";
 import Stats from "stats.js";
 import type { LyricLine } from ".";
+import { parseTTML } from "../../ttml/src/parser.ts";
+import type { LyricLine as TTMLLyricLine } from "../../ttml/src/ttml-types.ts";
 import {
 	BackgroundRender,
 	MeshGradientRenderer,
@@ -130,15 +131,55 @@ const gui = new GUI();
 gui.close();
 
 gui.title("AMLL 歌词测试页面");
-gui
+const lyricController = gui
 	.add(debugValues, "lyric")
 	.name("歌词文件")
 	.onFinishChange(async (url: string) => {
 		lyricPlayer.setLyricLines(
-			parseTTML(await (await fetch(url)).text()).lines.map(mapTTMLLyric),
+			parseTTML(await (await fetch(url)).text()).lyricLines.map(mapTTMLLyric),
 		);
 	});
-gui
+const localFileApi = {
+	openLocalLyricFile() {
+		const input = document.createElement("input");
+		input.type = "file";
+		input.accept = ".ttml,.lrc,.yrc,.lys,.qrc";
+		input.onchange = async () => {
+			const file = input.files?.[0];
+			if (!file) return;
+			localLyricExt = file.name;
+			if (localLyricUrl) {
+				URL.revokeObjectURL(localLyricUrl);
+			}
+			localLyricUrl = URL.createObjectURL(file);
+			debugValues.lyric = localLyricUrl;
+			lyricController.updateDisplay();
+			await loadLyric();
+		};
+		input.click();
+	},
+	openLocalMusicFile() {
+		const input = document.createElement("input");
+		input.type = "file";
+		input.accept = "audio/*";
+		input.onchange = () => {
+			const file = input.files?.[0];
+			if (!file) return;
+			if (localMusicUrl) {
+				URL.revokeObjectURL(localMusicUrl);
+			}
+			localMusicUrl = URL.createObjectURL(file);
+			debugValues.music = localMusicUrl;
+			audio.src = localMusicUrl;
+			audio.load();
+			musicController.updateDisplay();
+		};
+		input.click();
+	},
+};
+gui.add(localFileApi, "openLocalLyricFile").name("打开本地歌词");
+gui.add(localFileApi, "openLocalMusicFile").name("打开本地歌曲");
+const musicController = gui
 	.add(debugValues, "music")
 	.name("歌曲")
 	.onFinishChange((v: string) => {
@@ -299,12 +340,19 @@ declare global {
 
 const waitFrame = (): Promise<number> =>
 	new Promise((resolve) => requestAnimationFrame(resolve));
+let localLyricUrl: string | null = null;
+let localLyricExt: string | null = null;
+let localMusicUrl: string | null = null;
 const mapLyric = (
 	line: RawLyricLine,
 	_i: number,
 	_lines: RawLyricLine[],
 ): LyricLine => ({
-	words: line.words.map((word) => ({ obscene: false, romanWord: "", ...word })),
+	words: line.words.map((word) => ({
+		...word,
+		obscene: false,
+		romanWord: word.romanWord ?? "",
+	})),
 	startTime: line.words[0]?.startTime ?? 0,
 	endTime:
 		line.words[line.words.length - 1]?.endTime ?? Number.POSITIVE_INFINITY,
@@ -314,24 +362,30 @@ const mapLyric = (
 	isDuet: false,
 });
 
-const mapTTMLLyric = (line: RawLyricLine): LyricLine => ({
+const mapTTMLWord = (word: TTMLLyricLine["words"][number]) => ({
+	...word,
+	obscene: false,
+	ruby: word.ruby?.map((ruby) => ({ ...ruby })),
+});
+
+const mapTTMLLyric = (line: TTMLLyricLine): LyricLine => ({
 	...line,
-	words: line.words.map((word) => ({ obscene: false, romanWord: "", ...word })),
-	romanLyric: "",
+	words: line.words.map(mapTTMLWord),
 });
 
 async function loadLyric() {
 	const lyricFile = debugValues.lyric;
 	const content = await (await fetch(lyricFile)).text();
-	if (lyricFile.endsWith(".ttml")) {
-		lyricPlayer.setLyricLines(parseTTML(content).lines.map(mapTTMLLyric));
-	} else if (lyricFile.endsWith(".lrc")) {
+	const lyricSource = (localLyricExt ?? lyricFile).toLowerCase();
+	if (lyricSource.endsWith(".ttml")) {
+		lyricPlayer.setLyricLines(parseTTML(content).lyricLines.map(mapTTMLLyric));
+	} else if (lyricSource.endsWith(".lrc")) {
 		lyricPlayer.setLyricLines(parseLrc(content).map(mapLyric));
-	} else if (lyricFile.endsWith(".yrc")) {
+	} else if (lyricSource.endsWith(".yrc")) {
 		lyricPlayer.setLyricLines(parseYrc(content).map(mapLyric));
-	} else if (lyricFile.endsWith(".lys")) {
+	} else if (lyricSource.endsWith(".lys")) {
 		lyricPlayer.setLyricLines(parseLys(content).map(mapLyric));
-	} else if (lyricFile.endsWith(".qrc")) {
+	} else if (lyricSource.endsWith(".qrc")) {
 		lyricPlayer.setLyricLines(parseQrc(content).map(mapLyric));
 	} else if (lyricFile === "bug") {
 		const buildLyricLines = (

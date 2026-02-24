@@ -418,7 +418,8 @@ export abstract class LyricPlayerBase
 	 * @internal
 	 */
 	processObsceneWord(word: LyricWord): string {
-		if (!word.obscene) return word.word;
+		const isObscene = word.obscene === true;
+		if (!isObscene) return word.word;
 		if (this.maskObsceneWords === MaskObsceneWordsMode.Disabled)
 			return word.word;
 		if (this.maskObsceneWords === MaskObsceneWordsMode.FullMask)

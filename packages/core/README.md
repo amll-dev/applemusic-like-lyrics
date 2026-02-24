@@ -14,6 +14,13 @@ Everything here is UI framework-independent, so it can be indirectly referenced 
 
 Or if you need to use component bindings, there's a [React binding version](../react/README.md) and a [Vue binding version](../vue/README.md)
 
+## Features
+
+- Pure frontend rendering for lyrics and background
+- Word-level timed lyrics with translation and romanization
+- Multi-line, duet, and background line support
+- Style customization via CSS variables
+
 ## Installation
 
 Install the required dependencies (if the dependencies listed below are not installed, you need to install them yourself):
@@ -46,3 +53,31 @@ player.update(0) // Update lyric component animation (needs to be called every f
 ```
 
 The lyrics set through `LyricPlayer.setLyricLines` is a `LyricLine[]` parameter. For details, please refer to the code in [./src/interfaces.ts](./src/interfaces.ts).
+
+## Data Model
+
+Lyrics input is `LyricLine[]`, with each line containing:
+
+- `words`: timed word array, each word includes `startTime` / `endTime` / `word`, with optional `romanWord`, `ruby`, and `obscene`
+- `translatedLyric`: translation text
+- `romanLyric`: romanization text
+- `startTime` / `endTime`: line timestamps
+- `isBG` / `isDuet`: background and duet flags
+
+## Styling
+
+The main styles are provided by `@applemusic-like-lyrics/core/style.css`. Common overrides are via CSS variables:
+
+```css
+.amll-lyric-player {
+  --amll-lp-color: #ffffff;
+  --amll-lp-bg-color: rgba(0, 0, 0, 0.35);
+}
+```
+
+## Development
+
+```bash
+pnpm -C packages/core dev
+pnpm -C packages/core build
+```

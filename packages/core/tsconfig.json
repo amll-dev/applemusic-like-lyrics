@@ -1,13 +1,13 @@
 {
 	"extends": "../../tsconfig.base.json",
-	"include": ["./src/**/*.ts"],
+	"include": ["./src/**/*.ts", "../ttml/src/**/*.ts"],
 	"compilerOptions": {
 		"noEmit": false,
 		"emitDeclarationOnly": true,
 		"declaration": true,
 		"declarationMap": true,
 		"outDir": "./dist",
-		"rootDir": "./src",
+		"rootDir": "../",
 		"composite": true,
 		"jsx": "preserve",
 		"types": ["vite-plugin-glsl/ext"]

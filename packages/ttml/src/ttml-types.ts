@@ -8,11 +8,17 @@ export interface TTMLLyric {
 	lyricLines: LyricLine[];
 }
 
-export interface LyricWord {
+export interface LyricWordBase {
 	startTime: number;
 	endTime: number;
 	word: string;
 	emptyBeat?: number;
+}
+
+export interface LyricWord extends LyricWordBase {
+	romanWord?: string;
+	obscene?: boolean;
+	ruby?: LyricWordBase[];
 }
 
 export interface LyricLine {

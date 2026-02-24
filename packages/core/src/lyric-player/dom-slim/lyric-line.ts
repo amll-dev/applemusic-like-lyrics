@@ -325,7 +325,70 @@ export class LyricLineEl extends LyricLineBase {
 		// 	this.element.setAttribute("style", style);
 		// }
 	}
-	rebuildElement() {
+
+	private getRubySegments(word: LyricWord) {
+		return (word.ruby ?? []).filter(
+			(ruby) => (ruby?.word?.trim().length ?? 0) > 0,
+		);
+	}
+
+	private buildWordElement(
+		word: LyricWord,
+		shouldEmphasize: boolean,
+		hasRubyLine: boolean,
+		hasRomanLine: boolean,
+		displayWord: string,
+	) {
+		const mainWordEl = document.createElement("span");
+		const subElements: HTMLSpanElement[] = [];
+		const romanWord = word.romanWord?.trim() ?? "";
+		let wordContainer: HTMLElement = mainWordEl;
+		if (hasRubyLine || hasRomanLine) {
+			wordContainer = document.createElement("div");
+			mainWordEl.appendChild(wordContainer);
+		}
+		if (hasRubyLine) {
+			const rubyWordEl = document.createElement("div");
+			const rubySegments = this.getRubySegments(word);
+			for (const ruby of rubySegments) {
+				const rubyPartEl = document.createElement("span");
+				rubyPartEl.innerText = ruby.word;
+				rubyPartEl.dataset.startTime = String(ruby.startTime);
+				rubyPartEl.dataset.endTime = String(ruby.endTime);
+				rubyWordEl.appendChild(rubyPartEl);
+			}
+			rubyWordEl.classList.add(styles.rubyWord);
+			mainWordEl.classList.add(styles.wordWithRuby);
+			wordContainer.classList.add(styles.wordBody);
+			mainWordEl.insertBefore(rubyWordEl, wordContainer);
+		}
+
+		if (shouldEmphasize) {
+			mainWordEl.classList.add(styles.emphasize);
+			for (const char of displayWord.trim()) {
+				const charEl = document.createElement("span");
+				charEl.innerText = char;
+				subElements.push(charEl);
+				wordContainer.appendChild(charEl);
+			}
+		} else if (hasRomanLine) {
+			const wordEl = document.createElement("div");
+			wordEl.innerText = displayWord;
+			wordContainer.appendChild(wordEl);
+		} else {
+			mainWordEl.innerText = displayWord;
+		}
+
+		if (hasRomanLine) {
+			const romanWordEl = document.createElement("div");
+			romanWordEl.innerText = romanWord.length > 0 ? romanWord : "\u00A0";
+			romanWordEl.classList.add(styles.romanWord);
+			wordContainer.appendChild(romanWordEl);
+		}
+
+		return { mainWordEl, subElements };
+	}
+	override rebuildElement() {
 		this.disposeElements();
 		const main = this.element.children[0] as HTMLDivElement;
 		const trans = this.element.children[1] as HTMLDivElement;
@@ -338,6 +401,12 @@ export class LyricLineEl extends LyricLineBase {
 			return;
 		}
 		const chunkedWords = chunkAndSplitLyricWords(this.lyricLine.words);
+		const hasRubyLine = this.lyricLine.words.some(
+			(word) => (word.ruby?.length ?? 0) > 0,
+		);
+		const hasRomanLine = this.lyricLine.words.some(
+			(word) => (word.romanWord?.trim().length ?? 0) > 0,
+		);
 		main.innerHTML = "";
 		for (const chunk of chunkedWords) {
 			if (Array.isArray(chunk)) {
@@ -366,49 +435,28 @@ export class LyricLineEl extends LyricLineBase {
 				wrapperWordEl.classList.add(styles.emphasizeWrapper);
 				const characterElements: HTMLElement[] = [];
 				for (const word of chunk) {
-					const mainWordEl = document.createElement("span");
-					// const mainWordFloatAnimation = this.initFloatAnimation(
-					// 	merged,
-					// 	mainWordEl,
-					// );
+					const { mainWordEl, subElements } = this.buildWordElement(
+						word,
+						emp,
+						hasRubyLine,
+						hasRomanLine,
+						word.word,
+					);
 					if (emp) {
-						mainWordEl.classList.add(styles.emphasize);
-						const charEls: HTMLSpanElement[] = [];
-						for (const char of word.word.trim()) {
-							const charEl = document.createElement("span");
-							charEl.innerText = char;
-							charEls.push(charEl);
-							characterElements.push(charEl);
-							mainWordEl.appendChild(charEl);
-						}
-						const realWord: RealWord = {
-							...word,
-							mainElement: mainWordEl,
-							subElements: charEls,
-							// elementAnimations: [this.initFloatAnimation(word, mainWordEl)],
-							elementAnimations: [], // this.initFloatAnimation(word, mainWordEl)
-							maskAnimations: [],
-							width: 0,
-							height: 0,
-							padding: 0,
-							shouldEmphasize: emp,
-						};
-						this.splittedWords.push(realWord);
-					} else {
-						mainWordEl.innerText = word.word;
-						this.splittedWords.push({
-							...word,
-							mainElement: mainWordEl,
-							subElements: [],
-							// elementAnimations: [this.initFloatAnimation(word, mainWordEl)],
-							elementAnimations: [], // this.initFloatAnimation(word, mainWordEl)
-							maskAnimations: [],
-							width: 0,
-							height: 0,
-							padding: 0,
-							shouldEmphasize: emp,
-						});
+						characterElements.push(...subElements);
 					}
+					this.splittedWords.push({
+						...word,
+						mainElement: mainWordEl,
+						subElements: subElements,
+						// elementAnimations: [this.initFloatAnimation(word, mainWordEl)],
+						elementAnimations: [], // this.initFloatAnimation(word, mainWordEl)
+						maskAnimations: [],
+						width: 0,
+						height: 0,
+						padding: 0,
+						shouldEmphasize: emp,
+					});
 					wrapperWordEl.appendChild(mainWordEl);
 				}
 				if (emp) {
@@ -440,11 +488,17 @@ export class LyricLineEl extends LyricLineBase {
 			} else {
 				// 单个单词
 				const emp = LyricLineBase.shouldEmphasize(chunk);
-				const mainWordEl = document.createElement("span");
+				const { mainWordEl, subElements } = this.buildWordElement(
+					chunk,
+					emp,
+					hasRubyLine,
+					hasRomanLine,
+					chunk.word.trim(),
+				);
 				const realWord: RealWord = {
 					...chunk,
 					mainElement: mainWordEl,
-					subElements: [],
+					subElements: subElements,
 					// elementAnimations: [this.initFloatAnimation(chunk, mainWordEl)],
 					elementAnimations: [], // this.initFloatAnimation(chunk, mainWordEl)
 					maskAnimations: [],
@@ -453,28 +507,16 @@ export class LyricLineEl extends LyricLineBase {
 					padding: 0,
 					shouldEmphasize: emp,
 				};
-				if (LyricLineBase.shouldEmphasize(chunk)) {
-					mainWordEl.classList.add(styles.emphasize);
-					const charEls: HTMLSpanElement[] = [];
-					for (const char of chunk.word.trim()) {
-						const charEl = document.createElement("span");
-						charEl.innerText = char;
-						charEls.push(charEl);
-						mainWordEl.appendChild(charEl);
-					}
-					realWord.subElements = charEls;
+				if (emp) {
 					const duration = Math.abs(realWord.endTime - realWord.startTime);
 					realWord.elementAnimations.push(
 						...this.initEmphasizeAnimation(
 							chunk,
-							charEls,
+							subElements,
 							duration,
 							realWord.startTime - this.lyricLine.startTime,
 						),
 					);
-					// realWord.elementAnimations = this.initEmphasizeAnimation(realWord);
-				} else {
-					mainWordEl.innerText = chunk.word.trim();
 				}
 				if (chunk.word.trimStart() !== chunk.word) {
 					main.appendChild(document.createTextNode(" "));
@@ -797,16 +839,74 @@ export class LyricLineEl extends LyricLineBase {
 					// 移动
 					{
 						const fadeDuration = otherWord.endTime - otherWord.startTime;
-						timeOffset += fadeDuration / totalFadeDuration;
-						curPos += otherWord.width;
-						if (j === 0) {
-							curPos += fadeWidth * 1.5;
+						const rubySegments = this.getRubySegments(otherWord);
+						const rubyCharCount = rubySegments.reduce(
+							(total, ruby) => total + ruby.word.length,
+							0,
+						);
+						if (rubyCharCount > 0) {
+							const widthPerChar = otherWord.width / rubyCharCount;
+							let charIndex = 0;
+							for (const ruby of rubySegments) {
+								const rubyStartTime = Number.isFinite(ruby.startTime)
+									? ruby.startTime
+									: otherWord.startTime;
+								const rubyEndTime = Number.isFinite(ruby.endTime)
+									? ruby.endTime
+									: otherWord.endTime;
+								const rubyStart = Math.max(rubyStartTime, otherWord.startTime);
+								const rubyEnd = Math.min(
+									Math.max(rubyEndTime, rubyStart),
+									otherWord.endTime,
+								);
+								const rubyStartStamp = rubyStart - this.lyricLine.startTime;
+								const rubyStaticDuration = rubyStartStamp - lastTimeStamp;
+								timeOffset += rubyStaticDuration / totalFadeDuration;
+								if (rubyStaticDuration > 0) pushFrame();
+								lastTimeStamp = rubyStartStamp;
+								const rubyDuration = Math.max(0, rubyEnd - rubyStart);
+								const perCharDuration = rubyDuration / ruby.word.length;
+								for (
+									let rubyCharIndex = 0;
+									rubyCharIndex < ruby.word.length;
+									rubyCharIndex++
+								) {
+									timeOffset += perCharDuration / totalFadeDuration;
+									curPos += widthPerChar;
+									if (j === 0 && charIndex === 0) {
+										curPos += fadeWidth * 1.5;
+									}
+									if (
+										j === this.splittedWords.length - 1 &&
+										charIndex === rubyCharCount - 1
+									) {
+										curPos += fadeWidth * 0.5;
+									}
+									if (perCharDuration > 0) pushFrame();
+									lastTimeStamp += perCharDuration;
+									charIndex++;
+								}
+							}
+							const wordEndStamp = Math.max(
+								otherWord.endTime - this.lyricLine.startTime,
+								lastTimeStamp,
+							);
+							const wordTailDuration = wordEndStamp - lastTimeStamp;
+							timeOffset += wordTailDuration / totalFadeDuration;
+							if (wordTailDuration > 0) pushFrame();
+							lastTimeStamp = wordEndStamp;
+						} else {
+							timeOffset += fadeDuration / totalFadeDuration;
+							curPos += otherWord.width;
+							if (j === 0) {
+								curPos += fadeWidth * 1.5;
+							}
+							if (j === this.splittedWords.length - 1) {
+								curPos += fadeWidth * 0.5;
+							}
+							if (fadeDuration > 0) pushFrame();
+							lastTimeStamp += fadeDuration;
 						}
-						if (j === this.splittedWords.length - 1) {
-							curPos += fadeWidth * 0.5;
-						}
-						if (fadeDuration > 0) pushFrame();
-						lastTimeStamp += fadeDuration;
 					}
 				});
 				for (const a of word.maskAnimations) {

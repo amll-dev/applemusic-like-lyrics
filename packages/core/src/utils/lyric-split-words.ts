@@ -21,8 +21,15 @@ export function chunkAndSplitLyricWords(
 	for (const w of words) {
 		const content = w.word.trim();
 		const isSpace = content.length === 0;
+		const romanWord = w.romanWord ?? "";
+		const obscene = w.obscene ?? false;
+		const hasRuby = (w.ruby?.length ?? 0) > 0;
 
 		if (isSpace) {
+			atoms.push({ ...w });
+			continue;
+		}
+		if (hasRuby) {
 			atoms.push({ ...w });
 			continue;
 		}
@@ -43,12 +50,12 @@ export function chunkAndSplitLyricWords(
 					romanWord: "",
 					startTime: startTime,
 					endTime: startTime,
-					obscene: w.obscene,
+					obscene: obscene,
 				});
 				continue;
 			}
 
-			if (isCJK(part) && part.length > 1 && !w.romanWord) {
+			if (isCJK(part) && part.length > 1 && romanWord.trim().length === 0) {
 				const chars = part.split("");
 				for (const char of chars) {
 					const charDuration = (1 / totalLength) * (w.endTime - w.startTime);
@@ -60,7 +67,7 @@ export function chunkAndSplitLyricWords(
 						romanWord: "",
 						startTime: startTime,
 						endTime: startTime + charDuration,
-						obscene: w.obscene,
+						obscene: obscene,
 					});
 					currentOffset += 1;
 				}
@@ -74,10 +81,10 @@ export function chunkAndSplitLyricWords(
 
 				atoms.push({
 					word: part,
-					romanWord: w.romanWord,
+					romanWord: romanWord,
 					startTime: startTime,
 					endTime: startTime + duration,
-					obscene: w.obscene,
+					obscene: obscene,
 				});
 				currentOffset += partRealLen;
 			}

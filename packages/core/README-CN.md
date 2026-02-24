@@ -14,6 +14,13 @@ AMLL 的纯 JS 核心组件框架，包括歌词显示组件和背景组件等�
 
 或者如果你需要使用组件绑定的话，这里有 [React 绑定版本](../react/README.md) 和 [Vue 绑定版本](../vue/README.md)
 
+## 特性
+
+- 纯前端渲染的歌词展示与背景渲染
+- 动态逐字歌词、翻译与音译显示
+- 支持多行、对唱与背景行
+- 可通过 CSS 变量自定义颜色与部分表现
+
 ## 安装
 
 安装使用的依赖（如果以下列出的依赖包没有安装的话需要自行安装）：
@@ -46,3 +53,31 @@ player.update(0) // 更新歌词组件动画（需要逐帧调用）
 ```
 
 每次通过 `LyricPlayer.setLyricLines` 设置的歌词是一个 `LyricLine[]` 参数，具体可以参考 [./src/interfaces.ts](./src/interfaces.ts) 中的代码。
+
+## 数据结构
+
+歌词的输入结构为 `LyricLine[]`，其中每行包含：
+
+- `words`: 逐字歌词数组，每个单词包含 `startTime` / `endTime` / `word`，并可选包含 `romanWord`、`ruby`、`obscene` 等字段
+- `translatedLyric`: 翻译行文本
+- `romanLyric`: 音译行文本
+- `startTime` / `endTime`: 行级时间戳
+- `isBG` / `isDuet`: 背景行与对唱行标记
+
+## 样式定制
+
+主要样式由 `@applemusic-like-lyrics/core/style.css` 提供，常用自定义方式为覆写 CSS 变量，例如：
+
+```css
+.amll-lyric-player {
+  --amll-lp-color: #ffffff;
+  --amll-lp-bg-color: rgba(0, 0, 0, 0.35);
+}
+```
+
+## 开发与构建
+
+```bash
+pnpm -C packages/core dev
+pnpm -C packages/core build
+```

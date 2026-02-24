@@ -110,12 +110,34 @@
 	& span {
 		display: inline-block;
 		text-align: start;
+		vertical-align: bottom;
 	}
 
 	.romanWord {
 		font-size: 0.5em;
 		line-height: 1em;
 		display: flex;
+	}
+
+	.rubyWord {
+		font-size: 0.5em;
+		line-height: 1em;
+		display: flex;
+		justify-content: center;
+		min-height: 1em;
+	}
+
+	.wordWithRuby {
+		display: inline-flex;
+		flex-direction: column;
+		align-items: center;
+		vertical-align: bottom;
+	}
+
+	.wordBody {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
 	}
 
 	& > span,
@@ -125,6 +147,7 @@
 		padding: 1em;
 		margin: -1em;
 		will-change: transform;
+		vertical-align: bottom;
 
 		&.emphasize,
 		span.emphasize {

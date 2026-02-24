@@ -34,17 +34,22 @@ export enum LyricLineRenderMode {
 }
 
 /** 一个歌词单词 */
-export interface LyricWord {
+export interface LyricWordBase {
 	/** 单词的起始时间，单位为毫秒 */
 	startTime: number;
 	/** 单词的结束时间，单位为毫秒 */
 	endTime: number;
 	/** 单词内容 */
 	word: string;
+}
+
+export interface LyricWord extends LyricWordBase {
 	/** 单词的音译内容 */
-	romanWord: string;
+	romanWord?: string;
 	/** 单词内容是否包含冒犯性的不雅用语 */
-	obscene: boolean;
+	obscene?: boolean;
+	/** 单词的注音内容 */
+	ruby?: LyricWordBase[];
 }
 
 /** 一行歌词，存储多个单词 */
