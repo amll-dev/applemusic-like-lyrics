@@ -1,9 +1,12 @@
+import { listen, TauriEvent } from "@tauri-apps/api/event";
+import { readTextFile } from "@tauri-apps/plugin-fs";
 import { Button, Callout, Flex, Select, TextArea } from "@radix-ui/themes";
 import {
 	type DragEvent,
 	type FC,
 	useCallback,
 	useContext,
+	useEffect,
 	useLayoutEffect,
 	useState,
 } from "react";
@@ -32,6 +35,42 @@ export const LyricTabContent: FC = () => {
 			setLyricContent("");
 		}
 	}, [song]);
+
+	useEffect(() => {
+		const unlistenDrop = listen<{ paths: string[] }>(
+			TauriEvent.WINDOW_FILE_DROP,
+			async (event) => {
+				setIsDragging(false);
+				const path = event.payload.paths[0];
+				if (!path) return;
+				const format = getLyricFormatFromExtension(path);
+				if (!format) return;
+				try {
+					const content = await readTextFile(path);
+					setLyricFormat(format);
+					setLyricContent(content);
+					if (format === "ttml") {
+						setTranslatedLyricContent("");
+						setRomanLyricContent("");
+					}
+				} catch (e) {
+					console.error("Failed to read lyric file:", e);
+				}
+			},
+		);
+		const unlistenHover = listen(TauriEvent.WINDOW_FILE_DROP_HOVER, () =>
+			setIsDragging(true),
+		);
+		const unlistenCancel = listen(
+			TauriEvent.WINDOW_FILE_DROP_CANCELLED,
+			() => setIsDragging(false),
+		);
+		return () => {
+			unlistenDrop.then((u) => u());
+			unlistenHover.then((u) => u());
+			unlistenCancel.then((u) => u());
+		};
+	}, []);
 
 	const importFromFile = useCallback(
 		(file: File) => {
