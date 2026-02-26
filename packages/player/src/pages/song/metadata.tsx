@@ -9,7 +9,7 @@ import {
 import { Trans, useTranslation } from "react-i18next";
 import { db } from "../../dexie.ts";
 import { readLocalMusicMetadata } from "../../utils/player.ts";
-import { Option, getLyricFormatFromExtension } from "./common.tsx";
+import { getLyricFormatFromExtension, Option } from "./common.tsx";
 import { SongContext } from "./song-ctx.ts";
 
 const MetaInput: FC<

@@ -366,7 +366,8 @@
 				"ttmlLyricTip": "TTML lyric could contain translation and Romanized translation in a single file.",
 				"translationLyricData": "Translated Lyrics",
 				"translationLyricDataTip": "Paste LyRiC type of lyric content here, we will pair as translation by timestamp if they are the same or similar.",
-				"romanLyricDataTip": "Paste LyRiC type of lyric content here, we will pair as Romanized by timestamp if they are the same or similar."
+				"romanLyricDataTip": "Paste LyRiC type of lyric content here, we will pair as Romanized by timestamp if they are the same or similar.",
+				"importFromFile": "Import lyrics from file"
 			},
 			"metadata": {
 				"overrideSafeTip": "Properties in this page will not override into source file.",
@@ -374,7 +375,8 @@
 				"songArtists": "Artists",
 				"songAlbum": "Album",
 				"changeCoverToImageOrVideo": "Change cover image as image / video",
-				"reloadMetadataFromFile": "Reload Metadata from Audio File"
+				"reloadMetadataFromFile": "Reload Metadata from Audio File",
+				"importLyricFromFile": "Import lyrics from file"
 			}
 		},
 		"ws": {

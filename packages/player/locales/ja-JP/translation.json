@@ -366,7 +366,8 @@
 				"ttmlLyricTip": "TTML 歌词可同时包含翻译与音译数据。",
 				"translationLyricData": "翻译歌词数据",
 				"translationLyricDataTip": "请提供 LyRiC 格式的歌词数据，将会根据时间戳与一致或靠近的原文歌词配对成为译文",
-				"romanLyricDataTip": "请提供 LyRiC 格式的歌词数据，将会根据时间戳与一致或靠近的原文歌词配对成为音译"
+				"romanLyricDataTip": "请提供 LyRiC 格式的歌词数据，将会根据时间戳与一致或靠近的原文歌词配对成为音译",
+				"importFromFile": "从本地文件导入歌词"
 			},
 			"metadata": {
 				"overrideSafeTip": "本页面的设置不会写入到原始音乐文件中",
@@ -374,7 +375,8 @@
 				"songArtists": "音乐作者",
 				"songAlbum": "音乐专辑名",
 				"changeCoverToImageOrVideo": "更换封面图为图片 / 视频",
-				"reloadMetadataFromFile": "重新从文件中读取元数据"
+				"reloadMetadataFromFile": "重新从文件中读取元数据",
+				"importLyricFromFile": "从本地文件导入歌词"
 			}
 		},
 		"ws": {

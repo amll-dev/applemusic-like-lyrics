@@ -366,7 +366,8 @@
 				"ttmlLyricTip": "Lời bài hát TTML có thể đồng thời chứa dữ liệu dịch và phiên âm",
 				"translationLyricData": "Dữ liệu lời bài hát dịch",
 				"translationLyricDataTip": "Vui lòng cung cấp dữ liệu lời bài hát định dạng LyRiC (lrc), sẽ được ghép với các văn bản gốc gần giống theo dấu thời gian",
-				"romanLyricDataTip": "Vui lòng cung cấp dữ liệu lời bài hát định dạng LyRiC (lrc), sẽ được ghép với các văn bản gốc gần giống theo dấu thời gian để thành bản dịch."
+				"romanLyricDataTip": "Vui lòng cung cấp dữ liệu lời bài hát định dạng LyRiC (lrc), sẽ được ghép với các văn bản gốc gần giống theo dấu thời gian để thành bản dịch.",
+				"importFromFile": "从本地文件导入歌词"
 			},
 			"metadata": {
 				"overrideSafeTip": "Cài đặt trên trang này sẽ không ảnh hưởng đến tệp âm thanh gốc",
@@ -374,7 +375,8 @@
 				"songArtists": "Tác giả bài hát",
 				"songAlbum": "Tên album",
 				"changeCoverToImageOrVideo": "Thay đổi bìa thành bìa hình ảnh/ bìa video",
-				"reloadMetadataFromFile": "Tải lại siêu dữ liệu từ tệp"
+				"reloadMetadataFromFile": "Tải lại siêu dữ liệu từ tệp",
+				"importLyricFromFile": "从本地文件导入歌词"
 			}
 		},
 		"ws": {

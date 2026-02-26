@@ -1,6 +1,6 @@
+import { Button, Callout, Flex, Select, TextArea } from "@radix-ui/themes";
 import { listen, TauriEvent } from "@tauri-apps/api/event";
 import { readTextFile } from "@tauri-apps/plugin-fs";
-import { Button, Callout, Flex, Select, TextArea } from "@radix-ui/themes";
 import {
 	type DragEvent,
 	type FC,
@@ -14,7 +14,7 @@ import { Trans, useTranslation } from "react-i18next";
 import { ExtensionInjectPoint } from "../../components/ExtensionInjectPoint/index.tsx";
 import { TTMLImportDialog } from "../../components/TTMLImportDialog/index.tsx";
 import { db } from "../../dexie.ts";
-import { Option, getLyricFormatFromExtension } from "./common.tsx";
+import { getLyricFormatFromExtension, Option } from "./common.tsx";
 import { SongContext } from "./song-ctx.ts";
 
 export const LyricTabContent: FC = () => {
@@ -38,7 +38,7 @@ export const LyricTabContent: FC = () => {
 
 	useEffect(() => {
 		const unlistenDrop = listen<{ paths: string[] }>(
-			TauriEvent.WINDOW_FILE_DROP,
+			TauriEvent.DRAG_DROP,
 			async (event) => {
 				setIsDragging(false);
 				const path = event.payload.paths[0];
@@ -58,12 +58,11 @@ export const LyricTabContent: FC = () => {
 				}
 			},
 		);
-		const unlistenHover = listen(TauriEvent.WINDOW_FILE_DROP_HOVER, () =>
+		const unlistenHover = listen(TauriEvent.DRAG_OVER, () =>
 			setIsDragging(true),
 		);
-		const unlistenCancel = listen(
-			TauriEvent.WINDOW_FILE_DROP_CANCELLED,
-			() => setIsDragging(false),
+		const unlistenCancel = listen(TauriEvent.DRAG_LEAVE, () =>
+			setIsDragging(false),
 		);
 		return () => {
 			unlistenDrop.then((u) => u());
@@ -72,24 +71,21 @@ export const LyricTabContent: FC = () => {
 		};
 	}, []);
 
-	const importFromFile = useCallback(
-		(file: File) => {
-			const format = getLyricFormatFromExtension(file.name);
-			if (!format) return;
-			const reader = new FileReader();
-			reader.onload = () => {
-				const content = reader.result as string;
-				setLyricFormat(format);
-				setLyricContent(content);
-				if (format === "ttml") {
-					setTranslatedLyricContent("");
-					setRomanLyricContent("");
-				}
-			};
-			reader.readAsText(file);
-		},
-		[],
-	);
+	const importFromFile = useCallback((file: File) => {
+		const format = getLyricFormatFromExtension(file.name);
+		if (!format) return;
+		const reader = new FileReader();
+		reader.onload = () => {
+			const content = reader.result as string;
+			setLyricFormat(format);
+			setLyricContent(content);
+			if (format === "ttml") {
+				setTranslatedLyricContent("");
+				setRomanLyricContent("");
+			}
+		};
+		reader.readAsText(file);
+	}, []);
 
 	const openLocalLyricFile = useCallback(() => {
 		const input = document.createElement("input");
@@ -102,10 +98,13 @@ export const LyricTabContent: FC = () => {
 		input.click();
 	}, [importFromFile]);
 
-	const handleDragOver = useCallback((e: DragEvent<HTMLDivElement>) => {
-		e.preventDefault();
-		if (!isDragging) setIsDragging(true);
-	}, [isDragging]);
+	const handleDragOver = useCallback(
+		(e: DragEvent<HTMLDivElement>) => {
+			e.preventDefault();
+			if (!isDragging) setIsDragging(true);
+		},
+		[isDragging],
+	);
 
 	const handleDragLeave = useCallback(() => {
 		setIsDragging(false);
@@ -167,6 +166,7 @@ export const LyricTabContent: FC = () => {
 	);
 
 	return (
+		// biome-ignore lint/a11y/noStaticElementInteractions: 拖拽功能有按钮可替代
 		<div
 			onDragOver={handleDragOver}
 			onDragLeave={handleDragLeave}
