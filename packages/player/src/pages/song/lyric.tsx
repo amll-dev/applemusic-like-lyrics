@@ -2,7 +2,6 @@ import { Button, Callout, Flex, Select, TextArea } from "@radix-ui/themes";
 import { listen, TauriEvent } from "@tauri-apps/api/event";
 import { readTextFile } from "@tauri-apps/plugin-fs";
 import {
-	type DragEvent,
 	type FC,
 	useCallback,
 	useContext,
@@ -23,7 +22,6 @@ export const LyricTabContent: FC = () => {
 	const [lyricContent, setLyricContent] = useState("");
 	const [translatedLyricContent, setTranslatedLyricContent] = useState("");
 	const [romanLyricContent, setRomanLyricContent] = useState("");
-	const [isDragging, setIsDragging] = useState(false);
 	const { t } = useTranslation();
 
 	useLayoutEffect(() => {
@@ -40,7 +38,6 @@ export const LyricTabContent: FC = () => {
 		const unlistenDrop = listen<{ paths: string[] }>(
 			TauriEvent.DRAG_DROP,
 			async (event) => {
-				setIsDragging(false);
 				const path = event.payload.paths[0];
 				if (!path) return;
 				const format = getLyricFormatFromExtension(path);
@@ -58,16 +55,8 @@ export const LyricTabContent: FC = () => {
 				}
 			},
 		);
-		const unlistenHover = listen(TauriEvent.DRAG_OVER, () =>
-			setIsDragging(true),
-		);
-		const unlistenCancel = listen(TauriEvent.DRAG_LEAVE, () =>
-			setIsDragging(false),
-		);
 		return () => {
 			unlistenDrop.then((u) => u());
-			unlistenHover.then((u) => u());
-			unlistenCancel.then((u) => u());
 		};
 	}, []);
 
@@ -97,28 +86,6 @@ export const LyricTabContent: FC = () => {
 		};
 		input.click();
 	}, [importFromFile]);
-
-	const handleDragOver = useCallback(
-		(e: DragEvent<HTMLDivElement>) => {
-			e.preventDefault();
-			if (!isDragging) setIsDragging(true);
-		},
-		[isDragging],
-	);
-
-	const handleDragLeave = useCallback(() => {
-		setIsDragging(false);
-	}, []);
-
-	const handleDrop = useCallback(
-		(e: DragEvent<HTMLDivElement>) => {
-			e.preventDefault();
-			setIsDragging(false);
-			const file = e.dataTransfer.files[0];
-			if (file) importFromFile(file);
-		},
-		[importFromFile],
-	);
 
 	const saveData = useCallback(
 		(
@@ -166,16 +133,7 @@ export const LyricTabContent: FC = () => {
 	);
 
 	return (
-		// biome-ignore lint/a11y/noStaticElementInteractions: 拖拽功能有按钮可替代
-		<div
-			onDragOver={handleDragOver}
-			onDragLeave={handleDragLeave}
-			onDrop={handleDrop}
-			style={{
-				outline: isDragging ? "2px dashed var(--accent-9)" : undefined,
-				borderRadius: "var(--radius-3)",
-			}}
-		>
+		<div>
 			<ExtensionInjectPoint injectPointName="page.song.tab.lyric.before" />
 			<Flex direction="column" gap="4">
 				<Option label={t("page.song.lyric.lyricFormatLabel", "歌词格式")}>
