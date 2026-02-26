@@ -9,7 +9,7 @@ import {
 import { Trans, useTranslation } from "react-i18next";
 import { db } from "../../dexie.ts";
 import { readLocalMusicMetadata } from "../../utils/player.ts";
-import { Option } from "./common.tsx";
+import { Option, getLyricFormatFromExtension } from "./common.tsx";
 import { SongContext } from "./song-ctx.ts";
 
 const MetaInput: FC<
@@ -79,6 +79,29 @@ export const MetadataTabContent: FC = () => {
 		});
 	}, [song]);
 
+	const importLyricFromFile = useCallback(() => {
+		if (song === undefined) return;
+		const input = document.createElement("input");
+		input.type = "file";
+		input.accept = ".lrc,.eslrc,.yrc,.qrc,.lys,.ttml";
+		input.onchange = async () => {
+			const file = input.files?.[0];
+			if (!file) return;
+			const format = getLyricFormatFromExtension(file.name);
+			if (!format) return;
+			const content = await file.text();
+			db.songs.update(song, (s) => {
+				s.lyricFormat = format;
+				s.lyric = content;
+				if (format === "ttml") {
+					s.translatedLrc = "";
+					s.romanLrc = "";
+				}
+			});
+		};
+		input.click();
+	}, [song]);
+
 	const saveData = useCallback(() => {
 		if (song === undefined) return;
 		db.songs.update(song, (song) => {
@@ -136,6 +159,18 @@ export const MetadataTabContent: FC = () => {
 			>
 				<Trans i18nKey="page.song.metadata.reloadMetadataFromFile">
 					重新从文件中读取元数据
+				</Trans>
+			</Button>
+			<Button
+				mt="4"
+				style={{
+					display: "block",
+				}}
+				variant="soft"
+				onClick={importLyricFromFile}
+			>
+				<Trans i18nKey="page.song.metadata.importLyricFromFile">
+					从本地文件导入歌词
 				</Trans>
 			</Button>
 			<Button

@@ -13,3 +13,23 @@ export const Option: FC<
 		</Flex>
 	</Text>
 );
+
+export function getLyricFormatFromExtension(filename: string): string | null {
+	const ext = filename.split(".").pop()?.toLowerCase();
+	switch (ext) {
+		case "lrc":
+			return "lrc";
+		case "eslrc":
+			return "eslrc";
+		case "yrc":
+			return "yrc";
+		case "qrc":
+			return "qrc";
+		case "lys":
+			return "lys";
+		case "ttml":
+			return "ttml";
+		default:
+			return null;
+	}
+}

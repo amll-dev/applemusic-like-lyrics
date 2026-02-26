@@ -1,5 +1,6 @@
 import { Button, Callout, Flex, Select, TextArea } from "@radix-ui/themes";
 import {
+	type DragEvent,
 	type FC,
 	useCallback,
 	useContext,
@@ -10,7 +11,7 @@ import { Trans, useTranslation } from "react-i18next";
 import { ExtensionInjectPoint } from "../../components/ExtensionInjectPoint/index.tsx";
 import { TTMLImportDialog } from "../../components/TTMLImportDialog/index.tsx";
 import { db } from "../../dexie.ts";
-import { Option } from "./common.tsx";
+import { Option, getLyricFormatFromExtension } from "./common.tsx";
 import { SongContext } from "./song-ctx.ts";
 
 export const LyricTabContent: FC = () => {
@@ -19,6 +20,7 @@ export const LyricTabContent: FC = () => {
 	const [lyricContent, setLyricContent] = useState("");
 	const [translatedLyricContent, setTranslatedLyricContent] = useState("");
 	const [romanLyricContent, setRomanLyricContent] = useState("");
+	const [isDragging, setIsDragging] = useState(false);
 	const { t } = useTranslation();
 
 	useLayoutEffect(() => {
@@ -30,6 +32,55 @@ export const LyricTabContent: FC = () => {
 			setLyricContent("");
 		}
 	}, [song]);
+
+	const importFromFile = useCallback(
+		(file: File) => {
+			const format = getLyricFormatFromExtension(file.name);
+			if (!format) return;
+			const reader = new FileReader();
+			reader.onload = () => {
+				const content = reader.result as string;
+				setLyricFormat(format);
+				setLyricContent(content);
+				if (format === "ttml") {
+					setTranslatedLyricContent("");
+					setRomanLyricContent("");
+				}
+			};
+			reader.readAsText(file);
+		},
+		[],
+	);
+
+	const openLocalLyricFile = useCallback(() => {
+		const input = document.createElement("input");
+		input.type = "file";
+		input.accept = ".lrc,.eslrc,.yrc,.qrc,.lys,.ttml";
+		input.onchange = () => {
+			const file = input.files?.[0];
+			if (file) importFromFile(file);
+		};
+		input.click();
+	}, [importFromFile]);
+
+	const handleDragOver = useCallback((e: DragEvent<HTMLDivElement>) => {
+		e.preventDefault();
+		if (!isDragging) setIsDragging(true);
+	}, [isDragging]);
+
+	const handleDragLeave = useCallback(() => {
+		setIsDragging(false);
+	}, []);
+
+	const handleDrop = useCallback(
+		(e: DragEvent<HTMLDivElement>) => {
+			e.preventDefault();
+			setIsDragging(false);
+			const file = e.dataTransfer.files[0];
+			if (file) importFromFile(file);
+		},
+		[importFromFile],
+	);
 
 	const saveData = useCallback(
 		(
@@ -77,7 +128,15 @@ export const LyricTabContent: FC = () => {
 	);
 
 	return (
-		<>
+		<div
+			onDragOver={handleDragOver}
+			onDragLeave={handleDragLeave}
+			onDrop={handleDrop}
+			style={{
+				outline: isDragging ? "2px dashed var(--accent-9)" : undefined,
+				borderRadius: "var(--radius-3)",
+			}}
+		>
 			<ExtensionInjectPoint injectPointName="page.song.tab.lyric.before" />
 			<Flex direction="column" gap="4">
 				<Option label={t("page.song.lyric.lyricFormatLabel", "歌词格式")}>
@@ -200,6 +259,11 @@ export const LyricTabContent: FC = () => {
 						saveData("ttml", ttmlContent, "", "");
 					}}
 				/>
+				<Button variant="soft" onClick={openLocalLyricFile}>
+					<Trans i18nKey="page.song.lyric.importFromFile">
+						从本地文件导入歌词
+					</Trans>
+				</Button>
 			</Flex>
 			<Button
 				mt="4"
@@ -215,6 +279,6 @@ export const LyricTabContent: FC = () => {
 				<Trans i18nKey="common.dialog.save">保存</Trans>
 			</Button>
 			<ExtensionInjectPoint injectPointName="page.song.tab.lyric.after" />
-		</>
+		</div>
 	);
 };
