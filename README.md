@@ -70,18 +70,47 @@ GPU performance capable of running at full 60 fps at the expected sizes under th
 -   `1080p (1920x1080)`: NVIDIA GTX 10 series and above
 -   `2160p (3840x2160)`: NVIDIA RTX 2070 and above
 
-## Code contributions
-
-Due to limited time and energy, the author is no longer able to handle issues that arise during usage, so the Issues section has been closed. However, any pull requests that make positive contributions to the code are welcome!
-
 ## Development/build/packaging process
 
-Install `yarn`, `rustc`, and `wasm-pack`, then clone this repository to any folder and enter the following commands in the terminal to build:
+### Prerequisites
+
+-   [Node.js](https://nodejs.org/)
+-   [pnpm](https://pnpm.io/)
+-   [Rust toolchain](https://rustup.rs/)
+-   [wasm-pack](https://rustwasm.github.io/wasm-pack/)
+
+For building the standalone **AMLL Player** desktop application, additionally install:
+
+-   [Tauri prerequisites](https://tauri.app/start/prerequisites/) for your platform
+
+### Building the component libraries
+
+Clone this repository, then run the following commands in the project root:
 
 ```bash
-yarn
-yarn lerna run build:dev --scope "@applemusic-like-lyrics/*" # Development build
-yarn lerna run build --scope "@applemusic-like-lyrics/*" # Production build
+# Install dependencies
+pnpm install
+
+# Production build (all library packages)
+pnpm build:libs
+```
+
+### Building a single package
+
+```bash
+# Example: build only @applemusic-like-lyrics/core
+pnpm nx run @applemusic-like-lyrics/core:build
+
+# Example: development build of @applemusic-like-lyrics/lyric
+pnpm nx run @applemusic-like-lyrics/lyric:build:dev
+```
+
+### Building the AMLL Player desktop application
+
+```bash
+cd packages/player
+pnpm tauri build          # Production build
+pnpm tauri dev            # Development mode
 ```
 
 ## Acknowledgements

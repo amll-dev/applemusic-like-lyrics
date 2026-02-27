@@ -65,18 +65,47 @@ GPU 性能在以下状况下能够以预期尺寸下满 60 帧运行：
 -   `1080p (1920x1080)`: NVIDIA GTX 10 系列及以上
 -   `2160p (3840x2160)`: NVIDIA RTX 2070 及以上
 
-## 代码贡献
-
-由于作者精力有限，已经无力处理大家使用过程中产生的问题，所以关闭了 Issues 板块，但是欢迎任何对代码有积极贡献的 Pull Request！
-
 ## 开发/构建/打包流程
 
-安装好 `yarn`, `rustc`, `wasm-pack`，克隆本仓库到任意文件夹后在终端输入以下指令即可构建：
+### 前置依赖
+
+-   [Node.js](https://nodejs.org/)
+-   [pnpm](https://pnpm.io/)
+-   [Rust 工具链](https://rustup.rs/)
+-   [wasm-pack](https://rustwasm.github.io/wasm-pack/)
+
+如需构建 **AMLL Player** 桌面端应用，还需额外安装：
+
+-   对应平台的 [Tauri 前置依赖](https://tauri.app/start/prerequisites/)
+
+### 构建组件库
+
+克隆本仓库后，在项目根目录执行以下指令：
 
 ```bash
-yarn
-yarn lerna run build:dev --scope "@applemusic-like-lyrics/*" # 开发构建
-yarn lerna run build --scope "@applemusic-like-lyrics/*" # 发行构建
+# 安装依赖
+pnpm install
+
+# 生产构建所有库包
+pnpm build:libs
+```
+
+### 构建单个包
+
+```bash
+# 示例：仅构建 @applemusic-like-lyrics/core
+pnpm nx run @applemusic-like-lyrics/core:build
+
+# 示例：开发构建 @applemusic-like-lyrics/lyric
+pnpm nx run @applemusic-like-lyrics/lyric:build:dev
+```
+
+### 构建 AMLL Player 桌面端应用
+
+```bash
+cd packages/player
+pnpm tauri build   # 发行构建
+pnpm tauri dev     # 开发模式
 ```
 
 ## 鸣谢
