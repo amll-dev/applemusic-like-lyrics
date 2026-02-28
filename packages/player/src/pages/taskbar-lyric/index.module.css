@@ -3,10 +3,66 @@
 	height: 100%;
 	display: flex;
 	align-items: center;
-	justify-content: center;
+	padding: 4px 8px;
+	box-sizing: border-box;
+	background: rgba(0, 0, 0, 0.4);
+	border-radius: 8px;
 	overflow: hidden;
-	white-space: nowrap;
-	text-overflow: ellipsis;
+	font-family: Misans, "Segoe UI", "Microsoft YaHei", sans-serif;
+}
+
+.groupContainer {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+}
+
+.coverWrapper {
+	height: 100%;
+	aspect-ratio: 1 / 1;
+	border-radius: 6px;
+	overflow: hidden;
+	flex-shrink: 0;
+	background: rgba(255, 255, 255, 0.1);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.cover {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+.coverPlaceholder {
+	width: 100%;
+	height: 100%;
+	background: linear-gradient(135deg, #444, #222);
+}
+
+.textPanel {
+	position: relative;
+	height: 40px;
+	margin-left: 12px;
+	flex-grow: 1;
+	overflow: hidden;
+}
+
+.animatedLine {
+	position: absolute;
+	left: 0;
+	top: 0;
+	width: 100%;
 	color: white;
-	text-shadow: 0px 1px 3px rgba(0, 0, 0, 0.4);
+	line-height: 1.2;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	text-shadow: 0px 1px 3px rgba(0, 0, 0, 0.6);
+	transform-origin: left top;
+	will-change: transform, opacity, filter;
 }

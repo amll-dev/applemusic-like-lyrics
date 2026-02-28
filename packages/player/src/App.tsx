@@ -12,6 +12,7 @@ import { ExtensionInjectPoint } from "./components/ExtensionInjectPoint/index.ts
 import { LocalMusicContext } from "./components/LocalMusicContext/index.tsx";
 import { NowPlayingBar } from "./components/NowPlayingBar/index.tsx";
 import { ShotcutContext } from "./components/ShotcutContext/index.tsx";
+import { TaskbarLyricBridge } from "./components/TaskbarLyricBridge/index.tsx";
 import { ThemeManager } from "./components/ThemeManager/index.tsx";
 import { UpdateContext } from "./components/UpdateContext/index.tsx";
 import { WSProtocolMusicContext } from "./components/WSProtocolMusicContext/index.tsx";
@@ -54,6 +55,7 @@ function App() {
 			{musicContextMode === MusicContextMode.Local && (
 				<LocalMusicContext key={MusicContextMode.Local} />
 			)}
+			<TaskbarLyricBridge />
 			{musicContextMode === MusicContextMode.WSProtocol && (
 				<WSProtocolMusicContext
 					key={MusicContextMode.WSProtocol}
