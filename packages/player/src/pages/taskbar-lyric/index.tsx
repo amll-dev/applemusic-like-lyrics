@@ -4,9 +4,11 @@ import { listen } from "@tauri-apps/api/event";
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 import {
+	ALIGN_EVENT,
 	METADATA_EVENT,
 	PLAY_STATUS_EVENT,
 	POSITION_EVENT,
+	type TaskbarLyricAlignmentPayload,
 	type TaskbarLyricMetadataPayload,
 	type TaskbarLyricPlayStatusPayload,
 	type TaskbarLyricPositionPayload,
@@ -54,13 +56,15 @@ interface AppState {
 	currentLyricIndex: number;
 	jumpState: { lastIndex: number; jumpId: number };
 	theme: "dark" | "light";
+	align: "left" | "right";
 }
 
 type Action =
 	| { type: "SYNC_METADATA"; payload: TaskbarLyricMetadataPayload }
 	| { type: "UPDATE_INDEX"; payload: number }
 	| { type: "UPDATE_PLAY_STATUS"; payload: boolean }
-	| { type: "UPDATE_THEME"; payload: "dark" | "light" };
+	| { type: "UPDATE_THEME"; payload: "dark" | "light" }
+	| { type: "UPDATE_ALIGN"; payload: "left" | "right" };
 
 function reducer(state: AppState, action: Action): AppState {
 	switch (action.type) {
@@ -103,6 +107,10 @@ function reducer(state: AppState, action: Action): AppState {
 			return { ...state, theme: action.payload };
 		}
 
+		case "UPDATE_ALIGN": {
+			return { ...state, align: action.payload };
+		}
+
 		default: {
 			return state;
 		}
@@ -119,6 +127,7 @@ const initialState: AppState = {
 	currentLyricIndex: -1,
 	jumpState: { lastIndex: -1, jumpId: 0 },
 	theme: "light",
+	align: "left",
 };
 
 export const TaskbarLyricApp = () => {
@@ -177,11 +186,39 @@ export const TaskbarLyricApp = () => {
 			},
 		);
 
+		const unlistenAlign = listen<TaskbarLyricAlignmentPayload>(
+			ALIGN_EVENT,
+			(evt) => dispatch({ type: "UPDATE_ALIGN", payload: evt.payload.align }),
+		);
+
+		const unlistenLayoutExtra = listen<{
+			isCentered: boolean;
+			systemType: string;
+		}>("taskbar-layout-extra", (evt) => {
+			dispatch({
+				type: "UPDATE_ALIGN",
+				payload: evt.payload.isCentered ? "left" : "right",
+			});
+		});
+
+		const unlistenSystemTheme = listen<{ isLightTheme: boolean }>(
+			"system-theme-changed",
+			(evt) => {
+				dispatch({
+					type: "UPDATE_THEME",
+					payload: evt.payload.isLightTheme ? "light" : "dark",
+				});
+			},
+		);
+
 		return () => {
 			unlistenMetadata.then((fn) => fn());
 			unlistenPlayStatus.then((fn) => fn());
 			unlistenPosition.then((fn) => fn());
 			unlistenTheme.then((fn) => fn());
+			unlistenAlign.then((fn) => fn());
+			unlistenLayoutExtra.then((fn) => fn());
+			unlistenSystemTheme.then((fn) => fn());
 		};
 	}, [updateAnchor]);
 
@@ -219,6 +256,7 @@ export const TaskbarLyricApp = () => {
 		currentLyricIndex,
 		jumpState,
 		theme,
+		align,
 	} = state;
 
 	const hasLyrics = lyricLines.length > 0;
@@ -296,11 +334,12 @@ export const TaskbarLyricApp = () => {
 	}, []);
 
 	return (
-		<div className={styles.wrapper}>
+		<div className={styles.wrapper} data-align={align}>
 			{/** biome-ignore lint/a11y/noStaticElementInteractions: 仅鼠标交互 */}
 			<div
 				className={styles.container}
 				data-theme={theme}
+				data-align={align}
 				onMouseEnter={handleMouseEnter}
 				onMouseLeave={handleMouseLeave}
 			>
@@ -324,21 +363,6 @@ export const TaskbarLyricApp = () => {
 				</div>
 
 				<div className={styles.textPanel}>
-					<div className={styles.ghostPanel} aria-hidden="true">
-						{isMetadataMode ? (
-							<>
-								<div className={styles.ghostLine}>{musicName}</div>
-								<div className={styles.ghostLine}>{musicArtists}</div>
-							</>
-						) : (
-							lyricItems.map((item) => (
-								<div key={item.key} className={styles.ghostLine}>
-									{item.text}
-								</div>
-							))
-						)}
-					</div>
-
 					<AnimatePresence>
 						<motion.div
 							key={groupKey}
@@ -348,6 +372,21 @@ export const TaskbarLyricApp = () => {
 							exit={{ y: -15, opacity: 0, filter: "blur(4px)" }}
 							transition={{ type: "spring", stiffness: 250, damping: 30 }}
 						>
+							<div className={styles.ghostPanel} aria-hidden="true">
+								{isMetadataMode ? (
+									<>
+										<div className={styles.ghostLine}>{musicName}</div>
+										<div className={styles.ghostLine}>{musicArtists}</div>
+									</>
+								) : (
+									lyricItems.map((item) => (
+										<div key={item.key} className={styles.ghostLine}>
+											{item.text}
+										</div>
+									))
+								)}
+							</div>
+
 							{isMetadataMode ? (
 								<>
 									<div

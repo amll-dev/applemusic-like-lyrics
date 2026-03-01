@@ -1,7 +1,8 @@
 use std::sync::Mutex;
 
+use serde::Serialize;
 use taskbar_lyric::TaskbarService;
-use tauri::Manager;
+use tauri::{Emitter, Manager};
 use tracing::warn;
 use windows::Win32::{
     Foundation::HWND,
@@ -23,6 +24,13 @@ pub struct TaskbarLyricState {
     pub watchers: std::sync::Mutex<Option<TaskbarLyricWatchers>>,
 }
 
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TaskbarLayoutExtraPayload {
+    pub is_centered: bool,
+    pub system_type: String,
+}
+
 pub fn init_taskbar_lyric(app: &tauri::AppHandle) {
     let app_clone = app.clone();
     let service = TaskbarService::new(move |layout| {
@@ -33,6 +41,14 @@ pub fn init_taskbar_lyric(app: &tauri::AppHandle) {
             } else {
                 layout.space.right
             };
+
+            let _ = app_clone.emit(
+                "taskbar-layout-extra",
+                TaskbarLayoutExtraPayload {
+                    is_centered: layout.extra.is_centered,
+                    system_type: format!("{:?}", layout.extra.system_type),
+                },
+            );
 
             if let Ok(hwnd) = win.hwnd() {
                 unsafe {
@@ -80,7 +96,7 @@ pub fn init_taskbar_lyric(app: &tauri::AppHandle) {
         if let Ok(win) = win_builder.build() {
             if let Ok(hwnd) = win.hwnd() {
                 let hwnd_ptr = hwnd.0 as usize;
-                let top_hwnd = HWND(hwnd.0 as *mut _);
+                let top_hwnd = HWND(hwnd.0.cast());
 
                 if let Some(webview_hwnd) = webview_finder::find_webview_hwnd(top_hwnd) {
                     mouse_forward::init_mouse_forwarding_state(top_hwnd, webview_hwnd);
@@ -133,6 +149,9 @@ pub fn init_taskbar_lyric(app: &tauri::AppHandle) {
                     });
 
                     let _ = win.show();
+
+                    // #[cfg(debug_assertions)]
+                    // win.open_devtools();
                 }
             } else {
                 tracing::warn!("Failed to get hwnd for taskbar-lyric window");

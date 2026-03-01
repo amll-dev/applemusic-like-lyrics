@@ -20,6 +20,8 @@ mod server;
 
 #[cfg(target_os = "windows")]
 mod taskbar_lyric;
+#[cfg(target_os = "windows")]
+mod theme_watcher;
 
 pub type AMLLWebSocketServerWrapper = RwLock<AMLLWebSocketServer>;
 pub type AMLLWebSocketServerState<'r> = State<'r, AMLLWebSocketServerWrapper>;
@@ -344,6 +346,18 @@ pub fn run() {
 
             #[cfg(target_os = "windows")]
             taskbar_lyric::init_taskbar_lyric(app.handle());
+
+            #[cfg(target_os = "windows")]
+            {
+                match theme_watcher::ThemeWatcher::new(app.handle().clone()) {
+                    Ok(watcher) => {
+                        app.manage(watcher);
+                    }
+                    Err(e) => {
+                        warn!("启动系统主题监听失败: {e}");
+                    }
+                }
+            }
 
             #[cfg(desktop)]
             let _ = app

@@ -37,10 +37,15 @@ export interface TaskbarLyricThemePayload {
 	theme: "dark" | "light";
 }
 
+export interface TaskbarLyricAlignmentPayload {
+	align: "left" | "right";
+}
+
 export const METADATA_EVENT = "taskbar-lyric:metadata";
 export const PLAY_STATUS_EVENT = "taskbar-lyric:play-status";
 export const POSITION_EVENT = "taskbar-lyric:position";
 export const THEME_EVENT = "taskbar-lyric:theme";
+export const ALIGN_EVENT = "taskbar-lyric:alignment";
 
 export const TaskbarLyricBridge: FC = () => {
 	const musicName = useAtomValue(musicNameAtom);
