@@ -15,12 +15,20 @@ import {
 import styles from "./index.module.css";
 
 function findCurrentLyricIndex(lines: LyricLine[], position: number): number {
-	for (let i = lines.length - 1; i >= 0; i--) {
-		if (position >= lines[i].startTime) {
-			return i;
+	let low = 0;
+	let high = lines.length - 1;
+	let index = -1;
+	while (low <= high) {
+		const mid = (low + high) >> 1;
+		const lineTime = lines[mid].startTime;
+		if (lineTime <= position) {
+			index = mid;
+			low = mid + 1;
+		} else {
+			high = mid - 1;
 		}
 	}
-	return -1;
+	return index;
 }
 
 function getLyricText(line: LyricLine): string {
@@ -40,6 +48,7 @@ export const TaskbarLyricApp = () => {
 	const [musicCoverIsVideo, setMusicCoverIsVideo] = useState(false);
 	const [position, setPosition] = useState(0);
 	const [lyricLines, setLyricLines] = useState<LyricLine[]>([]);
+	const [jumpState, setJumpState] = useState({ lastIndex: -1, jumpId: 0 });
 
 	const anchorRef = useRef({ position: 0, time: performance.now() });
 	const playingRef = useRef(false);
@@ -100,40 +109,82 @@ export const TaskbarLyricApp = () => {
 		return () => cancelAnimationFrame(rafId);
 	}, []);
 
+	const LYRIC_OFFSET = 300;
+	const effectivePosition = position + LYRIC_OFFSET;
+
 	const hasLyrics = lyricLines.length > 0;
 	const firstLyricTime = hasLyrics
 		? lyricLines[0].startTime
 		: Number.MAX_SAFE_INTEGER;
 
-	const isMetadataMode = position < firstLyricTime || !hasLyrics;
+	const isMetadataMode = effectivePosition < firstLyricTime || !hasLyrics;
 	const currentLyricIndex = useMemo(
-		() => findCurrentLyricIndex(lyricLines, position),
-		[lyricLines, position],
+		() => findCurrentLyricIndex(lyricLines, effectivePosition),
+		[lyricLines, effectivePosition],
 	);
+
+	let currentJumpId = jumpState.jumpId;
+	if (isMetadataMode) {
+		if (jumpState.lastIndex !== -1) {
+			setJumpState({ lastIndex: -1, jumpId: 0 });
+		}
+	} else {
+		if (currentLyricIndex !== jumpState.lastIndex) {
+			const isJump =
+				jumpState.lastIndex !== -1 &&
+				currentLyricIndex !== jumpState.lastIndex + 1;
+			currentJumpId = isJump ? jumpState.jumpId + 1 : jumpState.jumpId;
+
+			setJumpState({ lastIndex: currentLyricIndex, jumpId: currentJumpId });
+		}
+	}
+
+	const currentLine =
+		currentLyricIndex >= 0 ? lyricLines[currentLyricIndex] : null;
+	const subLyricText = currentLine
+		? currentLine.translatedLyric || currentLine.romanLyric || ""
+		: "";
+	const hasSubLyric = Boolean(subLyricText);
 
 	const groupKey = isMetadataMode
 		? `meta-${musicName}-${musicArtists}`
-		: `lyrics-${musicName}`;
+		: hasSubLyric
+			? `lyrics-group-${musicName}-${currentLyricIndex}`
+			: `lyrics-${musicName}-${currentJumpId}`;
 
 	const lyricItems: LyricItem[] = useMemo(() => {
 		if (isMetadataMode) return [];
 		const items: LyricItem[] = [];
-		if (currentLyricIndex >= 0) {
+		if (currentLyricIndex >= 0 && currentLine) {
 			items.push({
 				key: `lyric-${currentLyricIndex}`,
-				text: getLyricText(lyricLines[currentLyricIndex]),
+				text: getLyricText(currentLine),
 				status: "primary",
 			});
-		}
-		if (currentLyricIndex + 1 < lyricLines.length) {
-			items.push({
-				key: `lyric-${currentLyricIndex + 1}`,
-				text: getLyricText(lyricLines[currentLyricIndex + 1]),
-				status: "secondary",
-			});
+
+			if (hasSubLyric) {
+				items.push({
+					key: `lyric-${currentLyricIndex}-sub`,
+					text: subLyricText,
+					status: "secondary",
+				});
+			} else if (currentLyricIndex + 1 < lyricLines.length) {
+				items.push({
+					key: `lyric-${currentLyricIndex + 1}`,
+					text: getLyricText(lyricLines[currentLyricIndex + 1]),
+					status: "secondary",
+				});
+			}
 		}
 		return items;
-	}, [isMetadataMode, currentLyricIndex, lyricLines]);
+	}, [
+		isMetadataMode,
+		currentLyricIndex,
+		lyricLines,
+		currentLine,
+		hasSubLyric,
+		subLyricText,
+	]);
 
 	const handleMouseEnter = () => {
 		invoke("set_click_interception", { intercept: true }).catch(console.error);
@@ -174,28 +225,31 @@ export const TaskbarLyricApp = () => {
 					<motion.div
 						key={groupKey}
 						className={styles.groupContainer}
-						initial={{ y: 50, opacity: 0, filter: "blur(4px)" }}
+						initial={{ y: 35, opacity: 0, filter: "blur(4px)" }}
 						animate={{ y: 0, opacity: 1, filter: "blur(0px)" }}
 						exit={{ y: -15, opacity: 0, filter: "blur(4px)" }}
 						transition={{ type: "spring", stiffness: 250, damping: 30 }}
 					>
 						{isMetadataMode ? (
 							<>
-								<motion.div
+								<div
 									className={styles.animatedLine}
-									initial={{ y: 0, opacity: 1, scale: 1 }}
+									style={{ transform: "translateY(0px) scale(1)", opacity: 1 }}
 								>
 									{musicName}
-								</motion.div>
-								<motion.div
+								</div>
+								<div
 									className={styles.animatedLine}
-									initial={{ y: 22, opacity: 0.6, scale: 0.8 }}
+									style={{
+										transform: "translateY(22px) scale(0.8)",
+										opacity: 0.6,
+									}}
 								>
 									{musicArtists}
-								</motion.div>
+								</div>
 							</>
 						) : (
-							<AnimatePresence>
+							<AnimatePresence initial={false}>
 								{lyricItems.map((item) => (
 									<motion.div
 										key={item.key}
