@@ -2,7 +2,14 @@ import type { LyricLine } from "@applemusic-like-lyrics/core";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { AnimatePresence, motion } from "framer-motion";
-import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
+import {
+	useCallback,
+	useEffect,
+	useMemo,
+	useReducer,
+	useRef,
+	useState,
+} from "react";
 import {
 	ALIGN_EVENT,
 	METADATA_EVENT,
@@ -132,6 +139,9 @@ const initialState: AppState = {
 
 export const TaskbarLyricApp = () => {
 	const [state, dispatch] = useReducer(reducer, initialState);
+	const [orientation, setOrientation] = useState<"horizontal" | "vertical">(
+		"horizontal",
+	);
 	const positionRef = useRef(0);
 	const anchorRef = useRef({ position: 0, time: performance.now() });
 
@@ -149,6 +159,23 @@ export const TaskbarLyricApp = () => {
 			pos + LYRIC_OFFSET,
 		);
 		dispatch({ type: "UPDATE_INDEX", payload: nextIndex });
+	}, []);
+
+	useEffect(() => {
+		const handleResize = () => {
+			if (window.innerHeight > window.innerWidth) {
+				setOrientation("vertical");
+			} else {
+				setOrientation("horizontal");
+			}
+		};
+
+		handleResize();
+
+		window.addEventListener("resize", handleResize);
+		return () => {
+			window.removeEventListener("resize", handleResize);
+		};
 	}, []);
 
 	useEffect(() => {
@@ -333,13 +360,20 @@ export const TaskbarLyricApp = () => {
 		};
 	}, []);
 
+	const isVert = orientation === "vertical";
+
 	return (
-		<div className={styles.wrapper} data-align={align}>
+		<div
+			className={styles.wrapper}
+			data-align={align}
+			data-orientation={orientation}
+		>
 			{/** biome-ignore lint/a11y/noStaticElementInteractions: 仅鼠标交互 */}
 			<div
 				className={styles.container}
 				data-theme={theme}
 				data-align={align}
+				data-orientation={orientation}
 				onMouseEnter={handleMouseEnter}
 				onMouseLeave={handleMouseLeave}
 			>
@@ -367,9 +401,19 @@ export const TaskbarLyricApp = () => {
 						<motion.div
 							key={groupKey}
 							className={styles.groupContainer}
-							initial={{ y: 35, opacity: 0, filter: "blur(4px)" }}
+							initial={{
+								x: isVert ? -35 : 0,
+								y: isVert ? 0 : 35,
+								opacity: 0,
+								filter: "blur(4px)",
+							}}
 							animate={{ y: 0, opacity: 1, filter: "blur(0px)" }}
-							exit={{ y: -15, opacity: 0, filter: "blur(4px)" }}
+							exit={{
+								x: isVert ? 15 : 0,
+								y: isVert ? 0 : -15,
+								opacity: 0,
+								filter: "blur(4px)",
+							}}
 							transition={{ type: "spring", stiffness: 250, damping: 30 }}
 						>
 							<div className={styles.ghostPanel} aria-hidden="true">
@@ -393,7 +437,9 @@ export const TaskbarLyricApp = () => {
 										className={styles.animatedLine}
 										data-status="primary"
 										style={{
-											transform: "translateY(0px) scale(1)",
+											transform: isVert
+												? "translateX(-0.2em) scale(1)"
+												: "translateY(0px) scale(1)",
 											opacity: 1,
 										}}
 									>
@@ -403,7 +449,9 @@ export const TaskbarLyricApp = () => {
 										className={styles.animatedLine}
 										data-status="secondary"
 										style={{
-											transform: "translateY(22px) scale(0.85)",
+											transform: isVert
+												? "translateX(-1.8em) scale(0.85)"
+												: "translateY(1.2em) scale(0.85)",
 											opacity: 1,
 										}}
 									>
@@ -418,23 +466,32 @@ export const TaskbarLyricApp = () => {
 											className={styles.animatedLine}
 											data-status={item.status}
 											initial={{
-												y: 50,
+												x: isVert ? "-2.5em" : 0,
+												y: isVert ? 0 : "2.5em",
 												opacity: 0,
 												scale: 0.8,
 												filter: "blur(0px)",
 											}}
 											animate={
 												item.status === "primary"
-													? { y: 0, opacity: 1, scale: 1, filter: "blur(0px)" }
+													? {
+															x: isVert ? "-0.2em" : 0,
+															y: 0,
+															opacity: 1,
+															scale: 1,
+															filter: "blur(0px)",
+														}
 													: {
-															y: 22,
+															x: isVert ? "-1.8em" : 0,
+															y: isVert ? 0 : "1.2em",
 															opacity: 1,
 															scale: 0.8,
 															filter: "blur(0px)",
 														}
 											}
 											exit={{
-												y: -15,
+												x: isVert ? "0.8em" : 0,
+												y: isVert ? 0 : "-0.8em",
 												opacity: 0,
 												scale: 1,
 												filter: "blur(4px)",

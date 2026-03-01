@@ -1,6 +1,10 @@
 .wrapper {
 	height: 100vh;
+	width: 100vw;
+	box-sizing: border-box;
+	padding: 3px;
 	justify-content: left;
+	align-items: center;
 	pointer-events: none;
 	display: flex;
 }
@@ -17,7 +21,6 @@
 	--cover-placeholder-bg: linear-gradient(135deg, #444, #222);
 	--cover-wrapper-bg: rgba(255, 255, 255, 0.1);
 
-	min-width: 250px;
 	width: max-content;
 	height: 100%;
 	display: flex;
@@ -35,6 +38,16 @@
 
 	pointer-events: auto;
 
+	gap: 12px;
+}
+
+.container[data-orientation="vertical"] {
+	flex-direction: column;
+	justify-content: flex-start;
+	width: 100%;
+	height: max-content;
+	min-width: unset;
+	padding: 8px 4px;
 	gap: 12px;
 }
 
@@ -71,6 +84,12 @@
 	justify-content: center;
 }
 
+.container[data-orientation="vertical"] .coverWrapper {
+	height: auto;
+	width: 100%;
+	max-width: 64px;
+}
+
 .cover {
 	width: 100%;
 	height: 100%;
@@ -85,15 +104,31 @@
 
 .textPanel {
 	display: grid;
-	height: 40px;
+	height: 100%;
+	flex: 1;
+	min-width: 0;
 	overflow: hidden;
+	align-items: center;
+	justify-items: center;
+}
+
+.container[data-orientation="vertical"] .textPanel {
+	display: grid;
+	width: 100%;
+	flex: 1;
+	min-height: 0;
+	min-width: unset;
 }
 
 .groupContainer {
 	grid-area: 1 / 1;
-
 	position: relative;
 	width: 100%;
+	height: max-content;
+}
+
+.container[data-orientation="vertical"] .groupContainer {
+	width: max-content;
 	height: 100%;
 }
 
@@ -112,6 +147,18 @@
 	padding-left: 0;
 }
 
+.container[data-orientation="vertical"] .ghostPanel {
+	flex-direction: row-reverse;
+}
+
+.container[data-orientation="vertical"] .ghostLine {
+	writing-mode: vertical-rl;
+	padding-right: 0;
+	padding-left: 0;
+	padding-bottom: 12px;
+	text-align: left;
+}
+
 .container[data-align="right"] .ghostLine {
 	text-align: right;
 	padding-right: 0;
@@ -124,7 +171,6 @@
 	top: 0;
 	width: 100%;
 	color: var(--text-primary);
-	line-height: 1.2;
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -132,6 +178,24 @@
 	will-change: transform, opacity, filter, color;
 	transition: color 0.3s ease;
 	text-align: left;
+}
+
+.container[data-orientation="vertical"] .animatedLine {
+	writing-mode: vertical-rl;
+	text-align: left;
+	width: 100%;
+	height: 100%;
+	transform-origin: top right;
+}
+
+.container[data-orientation="vertical"][data-align="right"] {
+	flex-direction: column;
+}
+.container[data-orientation="vertical"][data-align="right"] .ghostLine,
+.container[data-orientation="vertical"][data-align="right"] .animatedLine {
+	text-align: left;
+	padding-bottom: 0;
+	padding-top: 12px;
 }
 
 .container[data-align="right"] .animatedLine {
