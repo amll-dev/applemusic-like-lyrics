@@ -361,6 +361,7 @@ export const TaskbarLyricApp = () => {
 	}, []);
 
 	const isVert = orientation === "vertical";
+	const isSingleLine = lyricItems.length === 1;
 
 	return (
 		<div
@@ -476,7 +477,7 @@ export const TaskbarLyricApp = () => {
 												item.status === "primary"
 													? {
 															x: isVert ? "-0.2em" : 0,
-															y: 0,
+															y: isVert ? 0 : isSingleLine ? "0.3em" : 0,
 															opacity: 1,
 															scale: 1,
 															filter: "blur(0px)",
