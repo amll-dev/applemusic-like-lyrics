@@ -454,22 +454,45 @@ export const TaskbarLyricApp = () => {
 				onMouseLeave={handleMouseLeave}
 			>
 				<div className={styles.coverWrapper}>
-					{musicCover ? (
-						musicCoverIsVideo ? (
-							<video
-								className={styles.cover}
-								src={musicCover}
-								autoPlay
-								loop
-								muted
-								playsInline
-							/>
+					<AnimatePresence initial={false}>
+						{musicCover ? (
+							musicCoverIsVideo ? (
+								<motion.video
+									key={musicCover}
+									className={styles.cover}
+									src={musicCover}
+									autoPlay
+									loop
+									muted
+									playsInline
+									initial={{ opacity: 0 }}
+									animate={{ opacity: 1 }}
+									exit={{ opacity: 0 }}
+									transition={{ duration: 0.3, ease: "easeInOut" }}
+								/>
+							) : (
+								<motion.img
+									key={musicCover}
+									className={styles.cover}
+									src={musicCover}
+									alt="Cover"
+									initial={{ opacity: 0 }}
+									animate={{ opacity: 1 }}
+									exit={{ opacity: 0 }}
+									transition={{ duration: 0.3, ease: "easeInOut" }}
+								/>
+							)
 						) : (
-							<img className={styles.cover} src={musicCover} alt="Cover" />
-						)
-					) : (
-						<div className={styles.coverPlaceholder} />
-					)}
+							<motion.div
+								key="placeholder"
+								className={styles.coverPlaceholder}
+								initial={{ opacity: 0 }}
+								animate={{ opacity: 1 }}
+								exit={{ opacity: 0 }}
+								transition={{ duration: 0.3, ease: "easeInOut" }}
+							/>
+						)}
+					</AnimatePresence>
 				</div>
 
 				<AnimatePresence initial={false}>
