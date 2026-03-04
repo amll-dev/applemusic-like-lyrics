@@ -44,6 +44,9 @@
 	& > * {
 		transition: transform 0.5s;
 		transform-origin: center;
+	}
+
+	&.animate > * {
 		animation: pressed-animation 0.7s;
 		animation-composition: accumulate;
 	}

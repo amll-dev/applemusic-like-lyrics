@@ -1,7 +1,9 @@
 import type { LyricLine } from "@applemusic-like-lyrics/core";
+import { MediaButton } from "@applemusic-like-lyrics/react-full";
 import { invoke } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
+import { emit, listen } from "@tauri-apps/api/event";
 import { AnimatePresence, motion } from "framer-motion";
+import type React from "react";
 import {
 	useCallback,
 	useEffect,
@@ -10,8 +12,15 @@ import {
 	useRef,
 	useState,
 } from "react";
+import IconForward from "../../assets/icon_forward.svg?react";
+import IconPause from "../../assets/icon_pause.svg?react";
+import IconPlay from "../../assets/icon_play.svg?react";
+import IconRewind from "../../assets/icon_rewind.svg?react";
 import {
 	ALIGN_EVENT,
+	CTRL_NEXT_EVENT,
+	CTRL_PLAY_OR_RESUME_EVENT,
+	CTRL_PREV_EVENT,
 	METADATA_EVENT,
 	PLAY_STATUS_EVENT,
 	POSITION_EVENT,
@@ -147,6 +156,12 @@ export const TaskbarLyricApp = () => {
 	const [orientation, setOrientation] = useState<"horizontal" | "vertical">(
 		"horizontal",
 	);
+	const [isHovered, setIsHovered] = useState(false);
+	const prevHoverRef = useRef(isHovered);
+	const isHoverEvent = prevHoverRef.current !== isHovered;
+	useEffect(() => {
+		prevHoverRef.current = isHovered;
+	}, [isHovered]);
 	const positionRef = useRef(0);
 	const anchorRef = useRef({ position: 0, time: performance.now() });
 
@@ -308,6 +323,7 @@ export const TaskbarLyricApp = () => {
 
 	const hasLyrics = lyricLines.length > 0;
 	const isMetadataMode = currentLyricIndex < 0 || !hasLyrics;
+	const displayAsMetadata = isMetadataMode || isHovered;
 
 	const currentLine =
 		currentLyricIndex >= 0 ? lyricLines[currentLyricIndex] : null;
@@ -316,14 +332,14 @@ export const TaskbarLyricApp = () => {
 		: "";
 	const hasSubLyric = Boolean(subLyricText);
 
-	const groupKey = isMetadataMode
+	const groupKey = displayAsMetadata
 		? `meta-${musicName}-${musicArtists}`
 		: hasSubLyric
 			? `lyrics-group-${musicName}-${currentLyricIndex}`
 			: `lyrics-${musicName}-${jumpState.jumpId}`;
 
 	const lyricItems: LyricItem[] = useMemo(() => {
-		if (isMetadataMode) return [];
+		if (displayAsMetadata) return [];
 		const items: LyricItem[] = [];
 		if (currentLyricIndex >= 0 && currentLine) {
 			const nextLine =
@@ -370,7 +386,7 @@ export const TaskbarLyricApp = () => {
 		}
 		return items;
 	}, [
-		isMetadataMode,
+		displayAsMetadata,
 		currentLyricIndex,
 		lyricLines,
 		currentLine,
@@ -379,11 +395,28 @@ export const TaskbarLyricApp = () => {
 	]);
 
 	const handleMouseEnter = () => {
+		setIsHovered(true);
 		invoke("set_click_interception", { intercept: true }).catch(console.error);
 	};
 
 	const handleMouseLeave = () => {
+		setIsHovered(false);
 		invoke("set_click_interception", { intercept: false }).catch(console.error);
+	};
+
+	const handlePrev = (e: React.MouseEvent) => {
+		e.stopPropagation();
+		emit(CTRL_PREV_EVENT).catch(console.error);
+	};
+
+	const handleTogglePlay = (e: React.MouseEvent) => {
+		e.stopPropagation();
+		emit(CTRL_PLAY_OR_RESUME_EVENT).catch(console.error);
+	};
+
+	const handleNext = (e: React.MouseEvent) => {
+		e.stopPropagation();
+		emit(CTRL_NEXT_EVENT).catch(console.error);
 	};
 
 	useEffect(() => {
@@ -439,28 +472,87 @@ export const TaskbarLyricApp = () => {
 					)}
 				</div>
 
+				<AnimatePresence initial={false}>
+					{isHovered && (
+						<motion.div
+							className={styles.controlsWrapper}
+							initial={
+								isVert
+									? { height: 0, opacity: 0, marginTop: -12 }
+									: { width: 0, opacity: 0, marginLeft: -12 }
+							}
+							animate={
+								isVert
+									? { height: "auto", opacity: 1, marginTop: 0 }
+									: { width: "auto", opacity: 1, marginLeft: 0 }
+							}
+							exit={
+								isVert
+									? { height: 0, opacity: 0, marginTop: -12 }
+									: { width: 0, opacity: 0, marginLeft: -12 }
+							}
+							transition={{ type: "spring", stiffness: 400, damping: 35 }}
+						>
+							<div className={styles.controlsPanel}>
+								<MediaButton className={styles.controlBtn} onClick={handlePrev}>
+									<IconRewind className={styles.controlBtnIcon} />
+								</MediaButton>
+								<MediaButton
+									className={`${styles.controlBtn} ${styles.controlBtnPlay}`}
+									onClick={handleTogglePlay}
+								>
+									{state.musicPlaying ? (
+										<IconPause className={styles.controlBtnIconPlay} />
+									) : (
+										<IconPlay className={styles.controlBtnIconPlay} />
+									)}
+								</MediaButton>
+								<MediaButton className={styles.controlBtn} onClick={handleNext}>
+									<IconForward className={styles.controlBtnIcon} />
+								</MediaButton>
+							</div>
+						</motion.div>
+					)}
+				</AnimatePresence>
+
 				<div className={styles.textPanel}>
-					<AnimatePresence>
+					<AnimatePresence custom={isHoverEvent}>
 						<motion.div
 							key={groupKey}
 							className={styles.groupContainer}
-							initial={{
-								x: isVert ? -35 : 0,
-								y: isVert ? 0 : 35,
-								opacity: 0,
-								filter: "blur(4px)",
+							custom={isHoverEvent}
+							variants={{
+								initial: (isHoverFade: boolean) => ({
+									x: isHoverFade ? 0 : isVert ? -35 : 0,
+									y: isHoverFade ? 0 : isVert ? 0 : 35,
+									opacity: 0,
+									filter: isHoverFade ? "blur(0px)" : "blur(4px)",
+								}),
+								animate: (isHoverFade: boolean) => ({
+									x: 0,
+									y: 0,
+									opacity: 1,
+									filter: "blur(0px)",
+									transition: isHoverFade
+										? { duration: 0.2, ease: "easeOut" }
+										: { type: "spring", stiffness: 250, damping: 30 },
+								}),
+								exit: (isHoverFade: boolean) => ({
+									x: isHoverFade ? 0 : isVert ? 15 : 0,
+									y: isHoverFade ? 0 : isVert ? 0 : -15,
+									opacity: 0,
+									filter: isHoverFade ? "blur(0px)" : "blur(4px)",
+									transition: isHoverFade
+										? { duration: 0.15, ease: "easeIn" }
+										: { type: "spring", stiffness: 250, damping: 30 },
+								}),
 							}}
-							animate={{ y: 0, opacity: 1, filter: "blur(0px)" }}
-							exit={{
-								x: isVert ? 15 : 0,
-								y: isVert ? 0 : -15,
-								opacity: 0,
-								filter: "blur(4px)",
-							}}
-							transition={{ type: "spring", stiffness: 250, damping: 30 }}
+							initial="initial"
+							animate="animate"
+							exit="exit"
 						>
 							<div className={styles.ghostPanel} aria-hidden="true">
-								{isMetadataMode ? (
+								{displayAsMetadata ? (
 									<>
 										<div className={styles.ghostLine}>{musicName}</div>
 										<div className={styles.ghostLine}>{musicArtists}</div>
@@ -474,7 +566,7 @@ export const TaskbarLyricApp = () => {
 								)}
 							</div>
 
-							{isMetadataMode ? (
+							{displayAsMetadata ? (
 								<>
 									<div
 										className={styles.animatedLine}

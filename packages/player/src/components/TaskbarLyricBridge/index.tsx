@@ -10,8 +10,11 @@ import {
 	musicNameAtom,
 	musicPlayingAtom,
 	musicPlayingPositionAtom,
+	onPlayOrResumeAtom,
+	onRequestNextSongAtom,
+	onRequestPrevSongAtom,
 } from "@applemusic-like-lyrics/react-full";
-import { emit } from "@tauri-apps/api/event";
+import { emit, listen } from "@tauri-apps/api/event";
 import { useAtomValue } from "jotai";
 import { type FC, useEffect, useRef } from "react";
 
@@ -46,6 +49,9 @@ export const PLAY_STATUS_EVENT = "taskbar-lyric:play-status";
 export const POSITION_EVENT = "taskbar-lyric:position";
 export const THEME_EVENT = "taskbar-lyric:theme";
 export const ALIGN_EVENT = "taskbar-lyric:alignment";
+export const CTRL_PREV_EVENT = "taskbar-lyric:ctrl-prev";
+export const CTRL_PLAY_OR_RESUME_EVENT = "taskbar-lyric:ctrl-play-or-resume";
+export const CTRL_NEXT_EVENT = "taskbar-lyric:ctrl-next";
 
 export const TaskbarLyricBridge: FC = () => {
 	const musicName = useAtomValue(musicNameAtom);
@@ -58,6 +64,9 @@ export const TaskbarLyricBridge: FC = () => {
 	const musicCover = useAtomValue(musicCoverAtom);
 	const musicCoverIsVideo = useAtomValue(musicCoverIsVideoAtom);
 	const lastEmitTime = useRef(0);
+	const onRequestPrevSong = useAtomValue(onRequestPrevSongAtom).onEmit;
+	const onPlayOrResume = useAtomValue(onPlayOrResumeAtom).onEmit;
+	const onRequestNextSong = useAtomValue(onRequestNextSongAtom).onEmit;
 
 	useEffect(() => {
 		const payload: TaskbarLyricMetadataPayload = {
@@ -95,6 +104,23 @@ export const TaskbarLyricBridge: FC = () => {
 		};
 		emit(POSITION_EVENT, payload).catch(console.error);
 	}, [musicPlayingPosition]);
+
+	useEffect(() => {
+		const unlistenPrev = listen(CTRL_PREV_EVENT, () => {
+			onRequestPrevSong?.();
+		});
+		const unlistenPlayOrResume = listen(CTRL_PLAY_OR_RESUME_EVENT, () => {
+			onPlayOrResume?.();
+		});
+		const unlistenNext = listen(CTRL_NEXT_EVENT, () => {
+			onRequestNextSong?.();
+		});
+		return () => {
+			unlistenPrev.then((fn) => fn());
+			unlistenPlayOrResume.then((fn) => fn());
+			unlistenNext.then((fn) => fn());
+		};
+	}, [onRequestPrevSong, onPlayOrResume, onRequestNextSong]);
 
 	return null;
 };

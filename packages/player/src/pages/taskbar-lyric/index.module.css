@@ -115,6 +115,56 @@
 	background: var(--cover-placeholder-bg);
 }
 
+.controlsWrapper {
+	display: flex;
+	overflow: hidden;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.container[data-orientation="vertical"] .controlsWrapper {
+	width: 100%;
+}
+
+.controlsPanel {
+	display: flex;
+	gap: 6px;
+	align-items: center;
+	justify-content: center;
+	padding: 2px 6px;
+	width: max-content;
+}
+
+.container[data-orientation="vertical"] .controlsPanel {
+	padding: 6px 2px;
+	flex-direction: column;
+}
+
+.controlBtn {
+	width: 28px;
+	height: 28px;
+	border-radius: 6px;
+	color: var(--text-primary);
+	box-shadow: 0 0 0 1px color-mix(in srgb, var(--text-primary) 20%, transparent);
+}
+
+.controlBtnPlay {
+	width: 28px;
+	height: 28px;
+	border-radius: 6px;
+}
+
+.controlBtnIcon {
+	width: 24px;
+	height: 24px;
+}
+
+.controlBtnIconPlay {
+	width: 12px;
+	height: 12px;
+}
+
 .textPanel {
 	display: grid;
 	flex: 1;
@@ -124,6 +174,8 @@
 
 	padding: 2px;
 	margin: -2px;
+
+	position: relative;
 
 	-webkit-mask-image:
 		linear-gradient(
