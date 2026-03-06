@@ -7,6 +7,16 @@
 	align-items: center;
 	pointer-events: none;
 	display: flex;
+	opacity: 1;
+	filter: blur(0px);
+	transition:
+		opacity 0.35s ease,
+		filter 0.35s ease;
+}
+
+.wrapper[data-visible="false"] {
+	opacity: 0;
+	filter: blur(8px);
 }
 
 .wrapper[data-orientation="vertical"] {

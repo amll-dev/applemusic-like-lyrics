@@ -23,6 +23,8 @@ import {
 	CTRL_NEXT_EVENT,
 	CTRL_PLAY_OR_RESUME_EVENT,
 	CTRL_PREV_EVENT,
+	FADE_IN_EVENT,
+	FADE_OUT_EVENT,
 	METADATA_EVENT,
 	PLAY_STATUS_EVENT,
 	POSITION_EVENT,
@@ -160,6 +162,7 @@ const initialState: AppState = {
 
 export const TaskbarLyricApp = () => {
 	const [state, dispatch] = useReducer(reducer, initialState);
+	const [isVisible, setIsVisible] = useState(true);
 	const [orientation, setOrientation] = useState<"horizontal" | "vertical">(
 		"horizontal",
 	);
@@ -309,6 +312,14 @@ export const TaskbarLyricApp = () => {
 			},
 		);
 
+		const unlistenFadeOut = listen(FADE_OUT_EVENT, () => {
+			setIsVisible(false);
+		});
+
+		const unlistenFadeIn = listen(FADE_IN_EVENT, () => {
+			setIsVisible(true);
+		});
+
 		return () => {
 			unlistenMetadata.then((fn) => fn());
 			unlistenPlayStatus.then((fn) => fn());
@@ -317,6 +328,8 @@ export const TaskbarLyricApp = () => {
 			unlistenAlign.then((fn) => fn());
 			unlistenLayoutExtra.then((fn) => fn());
 			unlistenSystemTheme.then((fn) => fn());
+			unlistenFadeOut.then((fn) => fn());
+			unlistenFadeIn.then((fn) => fn());
 		};
 	}, [updateAnchor]);
 
@@ -479,6 +492,7 @@ export const TaskbarLyricApp = () => {
 			className={styles.wrapper}
 			data-align={align}
 			data-orientation={orientation}
+			data-visible={isVisible}
 		>
 			{/** biome-ignore lint/a11y/noStaticElementInteractions: 仅鼠标交互 */}
 			<div

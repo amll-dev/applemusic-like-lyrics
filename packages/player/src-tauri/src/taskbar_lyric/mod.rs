@@ -1,4 +1,6 @@
+use std::sync::Arc;
 use std::sync::Mutex;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 use serde::Serialize;
 use taskbar_lyric::TaskbarService;
@@ -87,7 +89,10 @@ pub fn open_taskbar_lyric(app: tauri::AppHandle) {
                         SWP_NOZORDER,
                     );
                 }
-                mouse_forward::update_cached_bounds();
+                tauri::async_runtime::spawn(async move {
+                    tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+                    mouse_forward::update_cached_bounds();
+                });
             }
         }
     });
@@ -127,13 +132,6 @@ pub fn open_taskbar_lyric(app: tauri::AppHandle) {
                 let hwnd_ptr = hwnd.0 as usize;
                 let top_hwnd = HWND(hwnd.0.cast());
 
-                if let Some(webview_hwnd) = webview_finder::find_webview_hwnd(top_hwnd) {
-                    mouse_forward::init_mouse_forwarding_state(top_hwnd, webview_hwnd);
-                    mouse_forward::start_mouse_hook_thread();
-                } else {
-                    warn!("未能找到 WebView 句柄");
-                }
-
                 if let Some(state) = app_clone.try_state::<TaskbarLyricState>()
                     && let Some(srv) = state.service.lock().unwrap().as_ref()
                 {
@@ -141,16 +139,32 @@ pub fn open_taskbar_lyric(app: tauri::AppHandle) {
                     srv.update(300);
                 }
 
+                if let Some(webview_hwnd) = webview_finder::find_webview_hwnd(top_hwnd) {
+                    mouse_forward::init_mouse_forwarding_state(top_hwnd, webview_hwnd);
+                    mouse_forward::start_mouse_hook_thread();
+                } else {
+                    warn!("未能找到 WebView 句柄");
+                }
+
                 if let Some(state) = app_clone.try_state::<TaskbarLyricState>() {
                     let mut watchers = state.watchers.lock().unwrap();
 
+                    let uia_counter = Arc::new(AtomicUsize::new(0));
                     let win_clone = app_clone.clone();
                     let uia_cb = Box::new(move || {
-                        if let Some(s) = win_clone.try_state::<TaskbarLyricState>()
-                            && let Some(srv) = s.service.lock().unwrap().as_ref()
-                        {
-                            srv.update(300);
-                        }
+                        let current = uia_counter.fetch_add(1, Ordering::SeqCst) + 1;
+                        let counter_clone = uia_counter.clone();
+                        let win_clone_inner = win_clone.clone();
+
+                        tauri::async_runtime::spawn(async move {
+                            tokio::time::sleep(std::time::Duration::from_millis(300)).await;
+                            if counter_clone.load(Ordering::SeqCst) == current
+                                && let Some(s) = win_clone_inner.try_state::<TaskbarLyricState>()
+                                && let Some(srv) = s.service.lock().unwrap().as_ref()
+                            {
+                                srv.update(300);
+                            }
+                        });
                     });
 
                     let win_clone2 = app_clone.clone();
@@ -162,13 +176,25 @@ pub fn open_taskbar_lyric(app: tauri::AppHandle) {
                         }
                     });
 
+                    let reg_counter = Arc::new(AtomicUsize::new(0));
                     let win_clone3 = app_clone.clone();
                     let reg_cb = Box::new(move || {
-                        if let Some(s) = win_clone3.try_state::<TaskbarLyricState>()
-                            && let Some(srv) = s.service.lock().unwrap().as_ref()
-                        {
-                            srv.update(300);
-                        }
+                        let _ = win_clone3.emit("taskbar-lyric:fade-out", ());
+
+                        let current = reg_counter.fetch_add(1, Ordering::SeqCst) + 1;
+                        let counter_clone = reg_counter.clone();
+                        let win_clone_inner = win_clone3.clone();
+
+                        tauri::async_runtime::spawn(async move {
+                            tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+                            if counter_clone.load(Ordering::SeqCst) == current
+                                && let Some(s) = win_clone_inner.try_state::<TaskbarLyricState>()
+                                && let Some(srv) = s.service.lock().unwrap().as_ref()
+                            {
+                                srv.update(300);
+                                let _ = win_clone_inner.emit("taskbar-lyric:fade-in", ());
+                            }
+                        });
                     });
 
                     *watchers = Some(TaskbarLyricWatchers {

@@ -48,6 +48,9 @@ export const CTRL_NEXT_EVENT = "taskbar-lyric:ctrl-next";
 
 export const REQUEST_UPDATE_EVENT = "taskbar-lyric:request-update";
 
+export const FADE_OUT_EVENT = "taskbar-lyric:fade-out";
+export const FADE_IN_EVENT = "taskbar-lyric:fade-in";
+
 export const TASKBAR_LAYOUT_EXTRA_EVENT = "taskbar-layout-extra";
 export const SYSTEM_THEME_CHANGED_EVENT = "system-theme-changed";
 
