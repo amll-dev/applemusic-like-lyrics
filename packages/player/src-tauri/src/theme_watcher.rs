@@ -8,7 +8,7 @@ use std::{
 
 use anyhow::{Result, anyhow};
 use tauri::{AppHandle, Emitter};
-use tracing::{debug, error};
+use tracing::error;
 use windows::{
     Win32::{
         Foundation::{CloseHandle, HANDLE, WAIT_OBJECT_0},
@@ -161,7 +161,6 @@ impl ThemeWatcher {
                     }
                     1 => {
                         if let Some(is_light) = Self::read_light_theme_value(h_key) {
-                            debug!("系统主题变更 {is_light}");
                             let _ = app.emit(
                                 EVENT_NAME,
                                 ThemePayload {

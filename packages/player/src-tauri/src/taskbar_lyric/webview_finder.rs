@@ -1,4 +1,4 @@
-use tracing::{debug, warn};
+use tracing::warn;
 use windows::{
     Win32::{
         Foundation::{HWND, LPARAM},
@@ -24,7 +24,6 @@ pub fn find_webview_hwnd(parent_hwnd: HWND) -> Option<HWND> {
         warn!("未找到 Chrome_RenderWidgetHostHWND");
         None
     } else {
-        debug!("找到 WebView 渲染窗口 {target_hwnd:?}");
         Some(target_hwnd)
     }
 }

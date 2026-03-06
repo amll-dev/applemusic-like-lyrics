@@ -1,6 +1,5 @@
 use std::sync::atomic::{AtomicBool, AtomicIsize, AtomicU32, Ordering};
 
-use tracing::debug;
 use windows::Win32::{
     Foundation::{HWND, LPARAM, LRESULT, POINT, RECT, WPARAM},
     Graphics::Gdi::ClientToScreen,
@@ -94,8 +93,6 @@ pub fn init_mouse_forwarding_state(top_hwnd: HWND, webview_hwnd: HWND) {
     IS_FORWARDING.store(true, Ordering::Relaxed);
 
     update_cached_bounds();
-
-    debug!("事件转发初始化 Top({top_hwnd:?}), WebView({webview_hwnd:?})");
 }
 
 pub fn start_mouse_hook_thread() {
