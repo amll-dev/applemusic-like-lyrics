@@ -345,12 +345,32 @@
 				}
 			},
 			"taskbarLyric": {
+				"align": {
+					"auto": "Auto",
+					"description": "Align direction of the taskbar lyric",
+					"label": "Align direction",
+					"left": "Left",
+					"right": "Right"
+				},
 				"enable": {
 					"description": "Display the lyrics of the currently playing song on the Windows taskbar.",
 					"label": "Enable taskbar lyrics"
 				},
+				"mode": {
+					"auto": "Auto",
+					"double": "Double Line",
+					"label": "Number of lines displayed",
+					"single": "Single Line"
+				},
 				"openDevtools": "Open DevTools",
-				"subtitle": "Taskbar Lyrics"
+				"subtitle": "Taskbar Lyrics",
+				"theme": {
+					"auto": "Follow taskbar",
+					"dark": "Dark",
+					"description": "Overrides the color theme of the taskbar lyric",
+					"label": "Theme setting",
+					"light": "Light"
+				}
 			}
 		},
 		"song": {

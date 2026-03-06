@@ -20,11 +20,11 @@ export interface TaskbarLyricPositionPayload {
 }
 
 export interface TaskbarLyricThemePayload {
-	theme: "dark" | "light";
+	theme: "dark" | "light" | "auto";
 }
 
 export interface TaskbarLyricAlignmentPayload {
-	align: "left" | "right";
+	align: "left" | "right" | "auto";
 }
 
 export interface TaskbarLayoutExtraPayload {
@@ -36,11 +36,16 @@ export interface SystemThemeChangedPayload {
 	isLightTheme: boolean;
 }
 
+export interface TaskbarLyricModePayload {
+	mode: "auto" | "single" | "double";
+}
+
 export const METADATA_EVENT = "taskbar-lyric:metadata";
 export const PLAY_STATUS_EVENT = "taskbar-lyric:play-status";
 export const POSITION_EVENT = "taskbar-lyric:position";
 export const THEME_EVENT = "taskbar-lyric:theme";
 export const ALIGN_EVENT = "taskbar-lyric:alignment";
+export const MODE_EVENT = "taskbar-lyric:mode";
 
 export const CTRL_PREV_EVENT = "taskbar-lyric:ctrl-prev";
 export const CTRL_PLAY_OR_RESUME_EVENT = "taskbar-lyric:ctrl-play-or-resume";

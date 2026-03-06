@@ -345,12 +345,32 @@
 				}
 			},
 			"taskbarLyric": {
+				"align": {
+					"auto": "自动",
+					"description": "任务栏歌词的对齐方向",
+					"label": "对齐方向",
+					"left": "左对齐",
+					"right": "右对齐"
+				},
 				"enable": {
 					"description": "在 Windows 任务栏上显示当前播放的歌词",
 					"label": "启用任务栏歌词"
 				},
+				"mode": {
+					"auto": "自动",
+					"double": "双行模式",
+					"label": "歌词行数",
+					"single": "单行模式"
+				},
 				"openDevtools": "打开 DevTools",
-				"subtitle": "任务栏歌词"
+				"subtitle": "任务栏歌词",
+				"theme": {
+					"auto": "跟随任务栏",
+					"dark": "深色",
+					"description": "覆盖任务栏歌词的颜色主题",
+					"label": "主题设置",
+					"light": "浅色"
+				}
 			}
 		},
 		"song": {

@@ -94,3 +94,14 @@ export const enableTaskbarLyricAtom = atomWithStorage(
 );
 
 export const audioQualityDialogOpenedAtom = atom(false);
+
+export const taskbarLyricThemeSettingAtom = atomWithStorage<
+	"auto" | "light" | "dark"
+>("amll-player.taskbarLyricTheme", "auto");
+export const taskbarLyricAlignSettingAtom = atomWithStorage<
+	"auto" | "left" | "right"
+>("amll-player.taskbarLyricAlign", "auto");
+
+export const taskbarLyricModeSettingAtom = atomWithStorage<
+	"auto" | "single" | "double"
+>("amll-player.taskbarLyricMode", "auto");

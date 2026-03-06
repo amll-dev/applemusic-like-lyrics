@@ -275,6 +275,14 @@
 	min-width: 0;
 }
 
+.container[data-single-line="true"] .ghostPanel {
+	min-height: 1.2em;
+}
+
+.container[data-orientation="vertical"][data-single-line="true"] .ghostPanel {
+	min-width: 1.2em;
+}
+
 .ghostLine {
 	white-space: nowrap;
 	text-align: left;

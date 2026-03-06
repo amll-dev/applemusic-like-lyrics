@@ -77,6 +77,9 @@ import {
 	enableMediaControlsAtom,
 	enableTaskbarLyricAtom,
 	showStatJSFrameAtom,
+	taskbarLyricAlignSettingAtom,
+	taskbarLyricModeSettingAtom,
+	taskbarLyricThemeSettingAtom,
 	updateInfoAtom,
 } from "../../states/appAtoms.ts";
 import { restartApp } from "../../utils/player.ts";
@@ -1078,6 +1081,9 @@ const OthersSettings = () => {
 const TaskbarLyricSettings = () => {
 	const { t } = useTranslation();
 	const [enabled, setEnabled] = useAtom(enableTaskbarLyricAtom);
+	const [themeSetting, setThemeSetting] = useAtom(taskbarLyricThemeSettingAtom);
+	const [alignSetting, setAlignSetting] = useAtom(taskbarLyricAlignSettingAtom);
+	const [modeSetting, setModeSetting] = useAtom(taskbarLyricModeSettingAtom);
 
 	return (
 		<>
@@ -1093,6 +1099,83 @@ const TaskbarLyricSettings = () => {
 			>
 				<Switch checked={enabled} onCheckedChange={setEnabled} />
 			</SettingEntry>
+
+			<SettingEntry
+				label={t("page.settings.taskbarLyric.theme.label", "主题设置")}
+				description={t(
+					"page.settings.taskbarLyric.theme.description",
+					"覆盖任务栏歌词的颜色主题",
+				)}
+			>
+				<Select.Root
+					value={themeSetting}
+					onValueChange={(v) => setThemeSetting(v as "auto" | "dark" | "light")}
+				>
+					<Select.Trigger />
+					<Select.Content>
+						<Select.Item value="auto">
+							{t("page.settings.taskbarLyric.theme.auto", "跟随任务栏")}
+						</Select.Item>
+						<Select.Item value="light">
+							{t("page.settings.taskbarLyric.theme.light", "浅色")}
+						</Select.Item>
+						<Select.Item value="dark">
+							{t("page.settings.taskbarLyric.theme.dark", "深色")}
+						</Select.Item>
+					</Select.Content>
+				</Select.Root>
+			</SettingEntry>
+
+			<SettingEntry
+				label={t("page.settings.taskbarLyric.align.label", "对齐方向")}
+				description={t(
+					"page.settings.taskbarLyric.align.description",
+					"任务栏歌词的对齐方向",
+				)}
+			>
+				<Select.Root
+					value={alignSetting}
+					onValueChange={(v) => setAlignSetting(v as "auto" | "left" | "right")}
+				>
+					<Select.Trigger />
+					<Select.Content>
+						<Select.Item value="auto">
+							{t("page.settings.taskbarLyric.align.auto", "自动")}
+						</Select.Item>
+						<Select.Item value="left">
+							{t("page.settings.taskbarLyric.align.left", "左对齐")}
+						</Select.Item>
+						<Select.Item value="right">
+							{t("page.settings.taskbarLyric.align.right", "右对齐")}
+						</Select.Item>
+					</Select.Content>
+				</Select.Root>
+			</SettingEntry>
+
+			<SettingEntry
+				label={t("page.settings.taskbarLyric.mode.label", "歌词行数")}
+			>
+				<Select.Root
+					value={modeSetting}
+					onValueChange={(v) =>
+						setModeSetting(v as "auto" | "single" | "double")
+					}
+				>
+					<Select.Trigger />
+					<Select.Content>
+						<Select.Item value="auto">
+							{t("page.settings.taskbarLyric.mode.auto", "自动")}
+						</Select.Item>
+						<Select.Item value="single">
+							{t("page.settings.taskbarLyric.mode.single", "单行模式")}
+						</Select.Item>
+						<Select.Item value="double">
+							{t("page.settings.taskbarLyric.mode.double", "双行模式")}
+						</Select.Item>
+					</Select.Content>
+				</Select.Root>
+			</SettingEntry>
+
 			{import.meta.env.DEV && (
 				<Button
 					my="2"

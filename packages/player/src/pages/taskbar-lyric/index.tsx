@@ -26,6 +26,7 @@ import {
 	FADE_IN_EVENT,
 	FADE_OUT_EVENT,
 	METADATA_EVENT,
+	MODE_EVENT,
 	PLAY_STATUS_EVENT,
 	POSITION_EVENT,
 	REQUEST_UPDATE_EVENT,
@@ -35,6 +36,7 @@ import {
 	type TaskbarLayoutExtraPayload,
 	type TaskbarLyricAlignmentPayload,
 	type TaskbarLyricMetadataPayload,
+	type TaskbarLyricModePayload,
 	type TaskbarLyricPlayStatusPayload,
 	type TaskbarLyricPositionPayload,
 	type TaskbarLyricThemePayload,
@@ -85,16 +87,24 @@ interface AppState {
 	lyricLines: LyricLine[];
 	currentLyricIndex: number;
 	jumpState: { lastIndex: number; jumpId: number };
-	theme: "dark" | "light";
-	align: "left" | "right";
+	systemTheme: "dark" | "light";
+	themeSetting: "dark" | "light" | "auto";
+	systemAlign: "left" | "right";
+	alignSetting: "left" | "right" | "auto";
+	systemMode: "single" | "double";
+	modeSetting: "auto" | "single" | "double";
 }
 
 type Action =
 	| { type: "SYNC_METADATA"; payload: TaskbarLyricMetadataPayload }
 	| { type: "UPDATE_INDEX"; payload: number }
 	| { type: "UPDATE_PLAY_STATUS"; payload: boolean }
-	| { type: "UPDATE_THEME"; payload: "dark" | "light" }
-	| { type: "UPDATE_ALIGN"; payload: "left" | "right" };
+	| { type: "UPDATE_SYSTEM_THEME"; payload: "dark" | "light" }
+	| { type: "UPDATE_THEME_SETTING"; payload: "dark" | "light" | "auto" }
+	| { type: "UPDATE_SYSTEM_ALIGN"; payload: "left" | "right" }
+	| { type: "UPDATE_ALIGN_SETTING"; payload: "left" | "right" | "auto" }
+	| { type: "UPDATE_SYSTEM_MODE"; payload: "single" | "double" }
+	| { type: "UPDATE_MODE_SETTING"; payload: "auto" | "single" | "double" };
 
 function reducer(state: AppState, action: Action): AppState {
 	switch (action.type) {
@@ -133,17 +143,20 @@ function reducer(state: AppState, action: Action): AppState {
 			return { ...state, musicPlaying: action.payload };
 		}
 
-		case "UPDATE_THEME": {
-			return { ...state, theme: action.payload };
-		}
-
-		case "UPDATE_ALIGN": {
-			return { ...state, align: action.payload };
-		}
-
-		default: {
+		case "UPDATE_SYSTEM_THEME":
+			return { ...state, systemTheme: action.payload };
+		case "UPDATE_THEME_SETTING":
+			return { ...state, themeSetting: action.payload };
+		case "UPDATE_SYSTEM_ALIGN":
+			return { ...state, systemAlign: action.payload };
+		case "UPDATE_ALIGN_SETTING":
+			return { ...state, alignSetting: action.payload };
+		case "UPDATE_SYSTEM_MODE":
+			return { ...state, systemMode: action.payload };
+		case "UPDATE_MODE_SETTING":
+			return { ...state, modeSetting: action.payload };
+		default:
 			return state;
-		}
 	}
 }
 
@@ -156,8 +169,12 @@ const initialState: AppState = {
 	lyricLines: [],
 	currentLyricIndex: -1,
 	jumpState: { lastIndex: -1, jumpId: 0 },
-	theme: "light",
-	align: "left",
+	systemTheme: "light",
+	themeSetting: "auto",
+	systemAlign: "left",
+	alignSetting: "auto",
+	systemMode: "double",
+	modeSetting: "auto",
 };
 
 export const TaskbarLyricApp = () => {
@@ -227,13 +244,15 @@ export const TaskbarLyricApp = () => {
 
 	useEffect(() => {
 		const handleResize = () => {
-			if (window.innerHeight > window.innerWidth) {
-				setOrientation("vertical");
-			} else {
-				setOrientation("horizontal");
-			}
-		};
+			const isVert = window.innerHeight > window.innerWidth;
+			setOrientation(isVert ? "vertical" : "horizontal");
 
+			const thickness = isVert ? window.innerWidth : window.innerHeight;
+			dispatch({
+				type: "UPDATE_SYSTEM_MODE",
+				payload: thickness < 45 ? "single" : "double",
+			});
+		};
 		handleResize();
 
 		window.addEventListener("resize", handleResize);
@@ -248,7 +267,7 @@ export const TaskbarLyricApp = () => {
 		});
 
 		fetchSystemTheme().then((theme) => {
-			dispatch({ type: "UPDATE_THEME", payload: theme });
+			dispatch({ type: "UPDATE_SYSTEM_THEME", payload: theme });
 		});
 	}, []);
 
@@ -283,20 +302,21 @@ export const TaskbarLyricApp = () => {
 		const unlistenTheme = listen<TaskbarLyricThemePayload>(
 			THEME_EVENT,
 			(evt) => {
-				dispatch({ type: "UPDATE_THEME", payload: evt.payload.theme });
+				dispatch({ type: "UPDATE_THEME_SETTING", payload: evt.payload.theme });
 			},
 		);
 
 		const unlistenAlign = listen<TaskbarLyricAlignmentPayload>(
 			ALIGN_EVENT,
-			(evt) => dispatch({ type: "UPDATE_ALIGN", payload: evt.payload.align }),
+			(evt) =>
+				dispatch({ type: "UPDATE_ALIGN_SETTING", payload: evt.payload.align }),
 		);
 
 		const unlistenLayoutExtra = listen<TaskbarLayoutExtraPayload>(
 			TASKBAR_LAYOUT_EXTRA_EVENT,
 			(evt) => {
 				dispatch({
-					type: "UPDATE_ALIGN",
+					type: "UPDATE_SYSTEM_ALIGN",
 					payload: evt.payload.isCentered ? "left" : "right",
 				});
 			},
@@ -306,10 +326,14 @@ export const TaskbarLyricApp = () => {
 			SYSTEM_THEME_CHANGED_EVENT,
 			(evt) => {
 				dispatch({
-					type: "UPDATE_THEME",
+					type: "UPDATE_SYSTEM_THEME",
 					payload: evt.payload.isLightTheme ? "light" : "dark",
 				});
 			},
+		);
+
+		const unlistenMode = listen<TaskbarLyricModePayload>(MODE_EVENT, (evt) =>
+			dispatch({ type: "UPDATE_MODE_SETTING", payload: evt.payload.mode }),
 		);
 
 		const unlistenFadeOut = listen(FADE_OUT_EVENT, () => {
@@ -330,6 +354,7 @@ export const TaskbarLyricApp = () => {
 			unlistenSystemTheme.then((fn) => fn());
 			unlistenFadeOut.then((fn) => fn());
 			unlistenFadeIn.then((fn) => fn());
+			unlistenMode.then((fn) => fn());
 		};
 	}, [updateAnchor]);
 
@@ -366,13 +391,22 @@ export const TaskbarLyricApp = () => {
 		lyricLines,
 		currentLyricIndex,
 		jumpState,
-		theme,
-		align,
+		systemTheme,
+		themeSetting,
+		systemAlign,
+		alignSetting,
+		systemMode,
+		modeSetting,
 	} = state;
+
+	const theme = themeSetting === "auto" ? systemTheme : themeSetting;
+	const align = alignSetting === "auto" ? systemAlign : alignSetting;
 
 	const hasLyrics = lyricLines.length > 0;
 	const isMetadataMode = currentLyricIndex < 0 || !hasLyrics;
 	const displayAsMetadata = isMetadataMode || isHovered;
+	const isSingleLineMode =
+		modeSetting === "auto" ? systemMode === "single" : modeSetting === "single";
 
 	const currentLine =
 		currentLyricIndex >= 0 ? lyricLines[currentLyricIndex] : null;
@@ -406,31 +440,33 @@ export const TaskbarLyricApp = () => {
 				isActive: true,
 			});
 
-			if (hasSubLyric) {
-				items.push({
-					key: `lyric-${currentLyricIndex}-sub`,
-					text: subLyricText,
-					status: "secondary",
-					startTime: currentLine.startTime,
-					endTime: currentLine.endTime,
-					nextStartTime: nextLine?.startTime,
-					isActive: true,
-				});
-			} else if (nextLine) {
-				const nextNextLine =
-					currentLyricIndex + 2 < lyricLines.length
-						? lyricLines[currentLyricIndex + 2]
-						: undefined;
+			if (!isSingleLineMode) {
+				if (hasSubLyric) {
+					items.push({
+						key: `lyric-${currentLyricIndex}-sub`,
+						text: subLyricText,
+						status: "secondary",
+						startTime: currentLine.startTime,
+						endTime: currentLine.endTime,
+						nextStartTime: nextLine?.startTime,
+						isActive: true,
+					});
+				} else if (nextLine) {
+					const nextNextLine =
+						currentLyricIndex + 2 < lyricLines.length
+							? lyricLines[currentLyricIndex + 2]
+							: undefined;
 
-				items.push({
-					key: `lyric-${currentLyricIndex + 1}`,
-					text: getLyricText(nextLine),
-					status: "secondary",
-					startTime: nextLine.startTime,
-					endTime: nextLine.endTime,
-					nextStartTime: nextNextLine?.startTime,
-					isActive: false,
-				});
+					items.push({
+						key: `lyric-${currentLyricIndex + 1}`,
+						text: getLyricText(nextLine),
+						status: "secondary",
+						startTime: nextLine.startTime,
+						endTime: nextLine.endTime,
+						nextStartTime: nextNextLine?.startTime,
+						isActive: false,
+					});
+				}
 			}
 		}
 		return items;
@@ -485,7 +521,7 @@ export const TaskbarLyricApp = () => {
 	}, []);
 
 	const isVert = orientation === "vertical";
-	const isSingleLine = lyricItems.length === 1;
+	const isOnlyOneItem = lyricItems.length === 1;
 
 	return (
 		<div
@@ -500,6 +536,7 @@ export const TaskbarLyricApp = () => {
 				data-theme={theme}
 				data-align={align}
 				data-orientation={orientation}
+				data-single-line={isSingleLineMode}
 				onMouseEnter={handleMouseEnter}
 				onMouseLeave={handleMouseLeave}
 			>
@@ -628,7 +665,9 @@ export const TaskbarLyricApp = () => {
 								{displayAsMetadata ? (
 									<>
 										<div className={styles.ghostLine}>{musicName}</div>
-										<div className={styles.ghostLine}>{musicArtists}</div>
+										{!isSingleLineMode && (
+											<div className={styles.ghostLine}>{musicArtists}</div>
+										)}
 									</>
 								) : (
 									lyricItems.map((item) => (
@@ -653,18 +692,20 @@ export const TaskbarLyricApp = () => {
 									>
 										{musicName}
 									</div>
-									<div
-										className={styles.animatedLine}
-										data-status="secondary"
-										style={{
-											transform: isVert
-												? "translateX(-1.8em) scale(0.85)"
-												: "translateY(1.2em) scale(0.85)",
-											opacity: 1,
-										}}
-									>
-										{musicArtists}
-									</div>
+									{!isSingleLineMode && (
+										<div
+											className={styles.animatedLine}
+											data-status="secondary"
+											style={{
+												transform: isVert
+													? "translateX(-1.8em) scale(0.85)"
+													: "translateY(1.2em) scale(0.85)",
+												opacity: 1,
+											}}
+										>
+											{musicArtists}
+										</div>
+									)}
 								</>
 							) : (
 								<AnimatePresence initial={false}>
@@ -674,17 +715,25 @@ export const TaskbarLyricApp = () => {
 											className={styles.animatedLine}
 											data-status={item.status}
 											initial={{
-												x: isVert ? "-2.5em" : 0,
-												y: isVert ? 0 : "2.5em",
+												x: isVert
+													? isSingleLineMode
+														? "-1.5em"
+														: "-2.5em"
+													: 0,
+												y: isVert ? 0 : isSingleLineMode ? "1.5em" : "2.5em",
 												opacity: 0,
-												scale: 0.8,
+												scale: isSingleLineMode ? 1 : 0.8,
 												filter: "blur(0px)",
 											}}
 											animate={
 												item.status === "primary"
 													? {
 															x: isVert ? "-0.2em" : 0,
-															y: isVert ? 0 : isSingleLine ? "0.5em" : 0,
+															y: isVert
+																? 0
+																: !isSingleLineMode && isOnlyOneItem
+																	? "0.5em"
+																	: 0,
 															opacity: 1,
 															scale: 1,
 															filter: "blur(0px)",
@@ -698,8 +747,8 @@ export const TaskbarLyricApp = () => {
 														}
 											}
 											exit={{
-												x: isVert ? "0.8em" : 0,
-												y: isVert ? 0 : "-0.8em",
+												x: isVert ? (isSingleLineMode ? "1.5em" : "0.8em") : 0,
+												y: isVert ? 0 : isSingleLineMode ? "-1.5em" : "-0.8em",
 												opacity: 0,
 												scale: 1,
 												filter: "blur(4px)",
