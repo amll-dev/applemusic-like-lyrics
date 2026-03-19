@@ -381,6 +381,7 @@ pub fn run() {
             Ok(())
         })
         .on_window_event(|window, event| {
+            #[cfg(target_os = "windows")]
             if let tauri::WindowEvent::Destroyed = event
                 && window.label() == "main"
                 && let Some(taskbar_win) = window.app_handle().get_webview_window("taskbar-lyric")
