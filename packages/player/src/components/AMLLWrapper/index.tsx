@@ -1,6 +1,5 @@
 import {
 	isLyricPageOpenedAtom,
-	musicIdAtom,
 	PrebuiltLyricPlayer,
 } from "@applemusic-like-lyrics/react-full";
 import { ContextMenu } from "@radix-ui/themes";
@@ -15,7 +14,6 @@ import styles from "./index.module.css";
 
 export const AMLLWrapper: FC = () => {
 	const isLyricPageOpened = useAtomValue(isLyricPageOpenedAtom);
-	const musicId = useAtomValue(musicIdAtom);
 
 	useTitlebarAutoHide(isLyricPageOpened);
 
@@ -31,14 +29,18 @@ export const AMLLWrapper: FC = () => {
 		<>
 			<ContextMenu.Root>
 				<ContextMenu.Trigger>
-					<PrebuiltLyricPlayer
-						key={musicId}
-						id="amll-lyric-player"
+					<div
 						className={classnames(
 							styles.lyricPage,
 							isLyricPageOpened && styles.opened,
 						)}
-					/>
+						id="amll-lyric-player-wrapper"
+					>
+						<PrebuiltLyricPlayer
+							id="amll-lyric-player"
+							style={{ width: "100%", height: "100%" }}
+						/>
+					</div>
 				</ContextMenu.Trigger>
 				<AMLLContextMenuContent />
 			</ContextMenu.Root>
