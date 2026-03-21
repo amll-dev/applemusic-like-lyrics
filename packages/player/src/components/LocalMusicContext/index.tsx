@@ -1,13 +1,3 @@
-import type { LyricLine as CoreLyricLine } from "@applemusic-like-lyrics/core";
-import {
-	type LyricLine,
-	parseEslrc,
-	parseLrc,
-	parseLys,
-	parseQrc,
-	parseTTML,
-	parseYrc,
-} from "@applemusic-like-lyrics/lyric";
 import {
 	AudioQualityType,
 	currentPlaylistAtom,
@@ -48,11 +38,15 @@ import { type FC, useEffect, useLayoutEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import { db } from "../../dexie.ts";
+import { useLyricParser } from "../../hooks/useLyricParser.ts";
 import {
-	advanceLyricDynamicLyricTimeAtom,
 	audioQualityDialogOpenedAtom,
 	enableMediaControlsAtom,
 } from "../../states/appAtoms.ts";
+import {
+	SyncStatus,
+	syncLyricsDatabase,
+} from "../../utils/lyric-sync-manager.ts";
 import {
 	type AudioQuality,
 	type AudioThreadEvent,
@@ -144,59 +138,6 @@ export const FFTToLowPassContext: FC = () => {
 	return null;
 };
 
-type TransLine = {
-	[K in keyof CoreLyricLine]: CoreLyricLine[K] extends string ? K : never;
-}[keyof CoreLyricLine];
-
-function pairLyric(line: LyricLine, lines: CoreLyricLine[], key: TransLine) {
-	if (
-		line.words
-			.map((v) => v.word)
-			.join("")
-			.trim().length === 0
-	)
-		return;
-	interface PairedLine {
-		startTime: number;
-		lineText: string;
-		origIndex: number;
-		original: CoreLyricLine;
-	}
-	const processed: PairedLine[] = lines.map((v, i) => ({
-		startTime: Math.min(v.startTime, ...v.words.map((v) => v.startTime)),
-		origIndex: i,
-		lineText: v.words
-			.map((v) => v.word)
-			.join("")
-			.trim(),
-		original: v,
-	}));
-	let nearestLine: PairedLine | undefined;
-	for (const coreLine of processed) {
-		if (coreLine.lineText.length > 0) {
-			if (coreLine.startTime === line.words[0].startTime) {
-				nearestLine = coreLine;
-				break;
-			}
-			if (
-				nearestLine &&
-				Math.abs(nearestLine.startTime - line.words[0].startTime) >
-					Math.abs(coreLine.startTime - line.words[0].startTime)
-			) {
-				nearestLine = coreLine;
-			} else if (nearestLine === undefined) {
-				nearestLine = coreLine;
-			}
-		}
-	}
-	if (nearestLine) {
-		const joined = line.words.map((w) => w.word).join("");
-		if (nearestLine.original[key].length > 0)
-			nearestLine.original[key] += joined;
-		else nearestLine.original[key] = joined;
-	}
-}
-
 const MusicQualityTagText: FC = () => {
 	const { t } = useTranslation();
 	const musicQuality = useAtomValue<MusicQualityState>(musicQualityAtom);
@@ -235,291 +176,51 @@ const MusicQualityTagText: FC = () => {
 
 	return null;
 };
-const TTML_LOG_TAG = chalk.bgHex("#FF5577").hex("#FFFFFF")(" TTML DB ");
 const LYRIC_LOG_TAG = chalk.bgHex("#FF4444").hex("#FFFFFF")(" LYRIC ");
-
-interface GitHubContent {
-	name: string;
-	path: string;
-	type: "file" | "dir";
-	sha: string;
-}
 
 const LyricContext: FC = () => {
 	const musicId = useAtomValue(musicIdAtom);
-	const advanceLyricDynamicLyricTime = useAtomValue(
-		advanceLyricDynamicLyricTimeAtom,
-	);
 	const setLyricLines = useSetAtom(musicLyricLinesAtom);
 	const setHideLyricView = useSetAtom(hideLyricViewAtom);
-	const song = useLiveQuery(() => db.songs.get(musicId), [musicId]);
+	const song = useLiveQuery(
+		() => (musicId ? db.songs.get(musicId) : undefined),
+		[musicId],
+	);
+	const store = useStore();
 
 	useEffect(() => {
-		const sig = new AbortController();
-
-		console.log(TTML_LOG_TAG, "同步 TTML DB 歌词库中");
-
-		(async () => {
-			const fileListRes = await fetch(
-				"https://api.github.com/repos/Steve-xmh/amll-ttml-db/contents",
-				{
-					signal: sig.signal,
-					redirect: "follow",
-				},
-			);
-
-			if (fileListRes.status < 200 || fileListRes.status > 399) {
-				console.warn(
-					TTML_LOG_TAG,
-					"TTML DB 歌词库同步失败：获取根目录文件列表失败",
-					fileListRes.status,
-					fileListRes.statusText,
-				);
-				return;
+		syncLyricsDatabase(store).then((result) => {
+			switch (result.status) {
+				case SyncStatus.Updated:
+					console.log(
+						LYRIC_LOG_TAG,
+						`歌词库更新完成，新增 ${result.count} 个歌词`,
+					);
+					break;
+				// case SyncStatus.Skipped:
+				// 	console.log(LYRIC_LOG_TAG, "歌词库已是最新");
+				// 	break;
+				// case SyncStatus.Failed:
+				// 	console.warn(LYRIC_LOG_TAG, "歌词库同步失败", result.error);
+				// 	break;
+				// case SyncStatus.Empty:
+				// 	console.log(LYRIC_LOG_TAG, "远程歌词库为空");
+				// 	break;
 			}
-
-			const fileList: GitHubContent[] = await fileListRes.json();
-			const rawLyricsEntry = fileList.find(
-				(v) => v.name === "raw-lyrics" && v.type === "dir",
-			);
-
-			if (!rawLyricsEntry) {
-				console.warn(TTML_LOG_TAG, "未找到 raw-lyrics 目录");
-				return;
-			}
-			console.log(
-				TTML_LOG_TAG,
-				"raw-lyric 目录已找到，SHA 为",
-				rawLyricsEntry.sha,
-			);
-
-			const lyricFileListRes = await fetch(
-				`https://api.github.com/repos/Steve-xmh/amll-ttml-db/git/trees/${rawLyricsEntry.sha}`,
-				{
-					signal: sig.signal,
-					redirect: "follow",
-				},
-			);
-
-			if (lyricFileListRes.status < 200 || lyricFileListRes.status > 399) {
-				console.warn(
-					TTML_LOG_TAG,
-					"TTML DB 歌词库同步失败：获取 raw-lyrics 文件夹下的文件列表失败",
-					lyricFileListRes.status,
-					lyricFileListRes.statusText,
-				);
-				return;
-			}
-
-			const lyricFileList: { tree: GitHubContent[] } =
-				await lyricFileListRes.json();
-
-			const fileMap = Object.fromEntries(
-				lyricFileList.tree.map((v) => [v.path, v]),
-			);
-			console.log(fileMap);
-
-			const localFileList = new Set<string>();
-			const remoteFileList = new Set<string>(
-				lyricFileList.tree.map((v) => v.path),
-			);
-
-			await db.ttmlDB.each((obj) => {
-				localFileList.add(obj.name);
-			});
-
-			console.log(TTML_LOG_TAG, "本地已同步歌词数量", localFileList.size);
-			console.log(TTML_LOG_TAG, "远程仓库歌词数量", remoteFileList.size);
-
-			const shouldFetchList = remoteFileList.difference(localFileList);
-
-			console.log(
-				TTML_LOG_TAG,
-				"需要下载的歌词数量",
-				shouldFetchList.size,
-				shouldFetchList,
-			);
-
-			let synced = 0;
-			let errored = 0;
-
-			const fetchTasks = [];
-
-			// Safari 目前不支持对迭代器对象使用 map 方法
-			for (const fileName of shouldFetchList.keys()) {
-				if (!(fileName in fileMap)) continue;
-				fetchTasks.push(
-					(async () => {
-						const lyricRes = await fetch(
-							`https://raw.githubusercontent.com/Steve-xmh/amll-ttml-db/main/raw-lyrics/${fileMap[fileName].path}`,
-							{
-								signal: sig.signal,
-								redirect: "follow",
-							},
-						);
-
-						if (fileListRes.status < 200 || fileListRes.status > 399) {
-							console.warn(
-								"同步歌词文件",
-								fileName,
-								"失败",
-								fileListRes.status,
-								fileListRes.statusText,
-							);
-							errored++;
-							return;
-						}
-
-						const lyricContent = await lyricRes.text();
-
-						try {
-							const ttml = parseTTML(lyricContent);
-							db.ttmlDB.add({
-								name: fileName,
-								content: ttml,
-								raw: lyricContent,
-							});
-							synced++;
-						} catch (err) {
-							console.warn("下载并解析歌词文件", fileName, "失败", err);
-							errored++;
-						}
-					})(),
-				);
-			}
-
-			await Promise.all(fetchTasks);
-
-			console.log(
-				TTML_LOG_TAG,
-				"歌词同步完成，已同步 ",
-				synced,
-				" 首歌曲，有 ",
-				errored,
-				" 首歌词导入失败",
-			);
-		})();
-
-		return () => {
-			sig.abort("useEffect Cleared");
-		};
+		});
 	}, []);
 
+	const { lyricLines, hasLyrics } = useLyricParser(
+		song?.lyric,
+		song?.lyricFormat,
+		song?.translatedLrc,
+		song?.romanLrc,
+	);
+
 	useEffect(() => {
-		if (song) {
-			try {
-				let parsedLyricLines: LyricLine[] = [];
-				switch (song.lyricFormat) {
-					case "lrc": {
-						parsedLyricLines = parseLrc(song.lyric);
-						console.log(LYRIC_LOG_TAG, "解析出 LyRiC 歌词", parsedLyricLines);
-						break;
-					}
-					case "eslrc": {
-						parsedLyricLines = parseEslrc(song.lyric);
-						console.log(LYRIC_LOG_TAG, "解析出 ESLyRiC 歌词", parsedLyricLines);
-						break;
-					}
-					case "yrc": {
-						parsedLyricLines = parseYrc(song.lyric);
-						console.log(LYRIC_LOG_TAG, "解析出 YRC 歌词", parsedLyricLines);
-						break;
-					}
-					case "qrc": {
-						parsedLyricLines = parseQrc(song.lyric);
-						console.log(LYRIC_LOG_TAG, "解析出 QRC 歌词", parsedLyricLines);
-						break;
-					}
-					case "lys": {
-						parsedLyricLines = parseLys(song.lyric);
-						console.log(
-							LYRIC_LOG_TAG,
-							"解析出 Lyricify Syllable 歌词",
-							parsedLyricLines,
-						);
-						break;
-					}
-					case "ttml": {
-						parsedLyricLines = parseTTML(song.lyric).lines;
-						console.log(LYRIC_LOG_TAG, "解析出 TTML 歌词", parsedLyricLines);
-						break;
-					}
-					default: {
-						setLyricLines([]);
-						setHideLyricView(true);
-						return;
-					}
-				}
-				const compatibleLyricLines: CoreLyricLine[] = parsedLyricLines.map(
-					(line) => ({
-						...line,
-						words: line.words.map((word) => ({
-							...word,
-							obscene: false,
-						})),
-					}),
-				);
-				if (song.translatedLrc) {
-					try {
-						const translatedLyricLines = parseLrc(song.translatedLrc);
-						for (const line of translatedLyricLines) {
-							pairLyric(
-								{
-									...line,
-									words: line.words.map((word) => ({
-										...word,
-										obscene: false,
-									})),
-								},
-								compatibleLyricLines,
-								"translatedLyric",
-							);
-						}
-						console.log(LYRIC_LOG_TAG, "已匹配翻译歌词");
-					} catch (err) {
-						console.warn(LYRIC_LOG_TAG, "解析翻译歌词时出现错误", err);
-					}
-				}
-				if (song.romanLrc) {
-					try {
-						const romanLyricLines = parseLrc(song.romanLrc);
-						for (const line of romanLyricLines) {
-							pairLyric(
-								{
-									...line,
-									words: line.words.map((word) => ({
-										...word,
-										obscene: false,
-									})),
-								},
-								compatibleLyricLines,
-								"romanLyric",
-							);
-						}
-						console.log(LYRIC_LOG_TAG, "已匹配音译歌词");
-					} catch (err) {
-						console.warn(LYRIC_LOG_TAG, "解析音译歌词时出现错误", err);
-					}
-				}
-				const processedLines: CoreLyricLine[] = compatibleLyricLines;
-				if (advanceLyricDynamicLyricTime) {
-					for (const line of processedLines) {
-						line.startTime = Math.max(0, line.startTime - 400);
-						line.endTime = Math.max(0, line.endTime - 400);
-					}
-				}
-				setLyricLines(processedLines);
-				setHideLyricView(processedLines.length === 0);
-			} catch (e) {
-				console.warn("解析歌词时出现错误", e);
-				setLyricLines([]);
-				setHideLyricView(true);
-			}
-		} else {
-			setLyricLines([]);
-			setHideLyricView(true);
-		}
-	}, [song, advanceLyricDynamicLyricTime, setLyricLines, setHideLyricView]);
+		setLyricLines(lyricLines);
+		setHideLyricView(!hasLyrics);
+	}, [lyricLines, hasLyrics, setLyricLines, setHideLyricView]);
 
 	return null;
 };

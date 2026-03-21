@@ -5,7 +5,7 @@
 		"isolatedModules": true,
 		"composite": true
 	},
-	"include": ["src", "hooks", "i18next.config.ts"],
+	"include": ["src", "i18next.config.ts"],
 	"references": [
 		{ "path": "../core" },
 		{ "path": "../react" },

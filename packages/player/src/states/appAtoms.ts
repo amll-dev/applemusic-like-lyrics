@@ -29,6 +29,16 @@ export const musicContextModeAtom = atomWithStorage(
 	MusicContextMode.Local,
 );
 
+/**
+ * 歌词库的版本号，从 version.json 的 commit 字段获得
+ */
+export const lyricDBVersionAtom = atomWithStorage<string | null>(
+	"amll-player.lyricDBVersion",
+	null,
+	undefined,
+	{ getOnInit: true },
+);
+
 export const advanceLyricDynamicLyricTimeAtom = atomWithStorage(
 	"amll-player.advanceLyricDynamicLyricTimeAtom",
 	false,
