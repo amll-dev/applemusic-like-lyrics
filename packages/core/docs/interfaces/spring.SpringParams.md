@@ -23,7 +23,7 @@ MIT License github.com/pushkine/
 
 #### Defined in
 
-[packages/core/src/utils/spring.ts:4](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/utils/spring.ts#L4)
+[packages/core/src/utils/spring.ts:4](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/utils/spring.ts#L4)
 
 ___
 
@@ -33,7 +33,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/utils/spring.ts:3](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/utils/spring.ts#L3)
+[packages/core/src/utils/spring.ts:3](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/utils/spring.ts#L3)
 
 ___
 
@@ -43,7 +43,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/utils/spring.ts:6](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/utils/spring.ts#L6)
+[packages/core/src/utils/spring.ts:6](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/utils/spring.ts#L6)
 
 ___
 
@@ -53,4 +53,4 @@ ___
 
 #### Defined in
 
-[packages/core/src/utils/spring.ts:5](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/utils/spring.ts#L5)
+[packages/core/src/utils/spring.ts:5](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/utils/spring.ts#L5)

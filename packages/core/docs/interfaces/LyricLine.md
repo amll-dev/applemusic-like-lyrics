@@ -26,7 +26,7 @@
 
 #### Defined in
 
-[packages/core/src/interfaces.ts:51](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/interfaces.ts#L51)
+[packages/core/src/interfaces.ts:51](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/interfaces.ts#L51)
 
 ___
 
@@ -38,7 +38,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/interfaces.ts:53](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/interfaces.ts#L53)
+[packages/core/src/interfaces.ts:53](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/interfaces.ts#L53)
 
 ___
 
@@ -50,7 +50,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/interfaces.ts:55](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/interfaces.ts#L55)
+[packages/core/src/interfaces.ts:55](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/interfaces.ts#L55)
 
 ___
 
@@ -62,7 +62,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/interfaces.ts:47](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/interfaces.ts#L47)
+[packages/core/src/interfaces.ts:47](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/interfaces.ts#L47)
 
 ___
 
@@ -74,7 +74,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/interfaces.ts:49](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/interfaces.ts#L49)
+[packages/core/src/interfaces.ts:49](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/interfaces.ts#L49)
 
 ___
 
@@ -86,7 +86,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/interfaces.ts:45](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/interfaces.ts#L45)
+[packages/core/src/interfaces.ts:45](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/interfaces.ts#L45)
 
 ___
 
@@ -99,4 +99,4 @@ ___
 
 #### Defined in
 
-[packages/core/src/interfaces.ts:43](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/interfaces.ts#L43)
+[packages/core/src/interfaces.ts:43](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/interfaces.ts#L43)

@@ -22,7 +22,7 @@
 
 #### Defined in
 
-[packages/core/src/interfaces.ts:32](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/interfaces.ts#L32)
+[packages/core/src/interfaces.ts:32](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/interfaces.ts#L32)
 
 ___
 
@@ -34,7 +34,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/interfaces.ts:30](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/interfaces.ts#L30)
+[packages/core/src/interfaces.ts:30](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/interfaces.ts#L30)
 
 ___
 
@@ -46,4 +46,4 @@ ___
 
 #### Defined in
 
-[packages/core/src/interfaces.ts:34](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/interfaces.ts#L34)
+[packages/core/src/interfaces.ts:34](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/interfaces.ts#L34)

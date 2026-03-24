@@ -78,7 +78,7 @@
 
 #### Defined in
 
-[packages/core/src/bg-render/eplor-renderer.ts:410](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L410)
+[packages/core/src/bg-render/eplor-renderer.ts:410](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L410)
 
 ## Properties
 
@@ -88,7 +88,7 @@
 
 #### Defined in
 
-[packages/core/src/bg-render/eplor-renderer.ts:353](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L353)
+[packages/core/src/bg-render/eplor-renderer.ts:353](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L353)
 
 ___
 
@@ -102,7 +102,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/eplor-renderer.ts:410](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L410)
+[packages/core/src/bg-render/eplor-renderer.ts:410](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L410)
 
 ___
 
@@ -112,7 +112,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/eplor-renderer.ts:358](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L358)
+[packages/core/src/bg-render/eplor-renderer.ts:358](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L358)
 
 ___
 
@@ -126,7 +126,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/base.ts:48](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/base.ts#L48)
+[packages/core/src/bg-render/base.ts:48](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/base.ts#L48)
 
 ___
 
@@ -140,7 +140,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/base.ts:47](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/base.ts#L47)
+[packages/core/src/bg-render/base.ts:47](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/base.ts#L47)
 
 ___
 
@@ -150,7 +150,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/eplor-renderer.ts:329](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L329)
+[packages/core/src/bg-render/eplor-renderer.ts:329](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L329)
 
 ___
 
@@ -160,7 +160,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/eplor-renderer.ts:377](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L377)
+[packages/core/src/bg-render/eplor-renderer.ts:377](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L377)
 
 ___
 
@@ -170,7 +170,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/eplor-renderer.ts:325](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L325)
+[packages/core/src/bg-render/eplor-renderer.ts:325](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L325)
 
 ___
 
@@ -180,7 +180,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/eplor-renderer.ts:348](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L348)
+[packages/core/src/bg-render/eplor-renderer.ts:348](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L348)
 
 ___
 
@@ -190,7 +190,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/eplor-renderer.ts:324](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L324)
+[packages/core/src/bg-render/eplor-renderer.ts:324](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L324)
 
 ___
 
@@ -200,7 +200,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/eplor-renderer.ts:327](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L327)
+[packages/core/src/bg-render/eplor-renderer.ts:327](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L327)
 
 ___
 
@@ -210,7 +210,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/eplor-renderer.ts:326](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L326)
+[packages/core/src/bg-render/eplor-renderer.ts:326](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L326)
 
 ___
 
@@ -220,7 +220,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/eplor-renderer.ts:330](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L330)
+[packages/core/src/bg-render/eplor-renderer.ts:330](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L330)
 
 ___
 
@@ -230,7 +230,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/eplor-renderer.ts:332](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L332)
+[packages/core/src/bg-render/eplor-renderer.ts:332](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L332)
 
 ___
 
@@ -240,7 +240,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/eplor-renderer.ts:328](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L328)
+[packages/core/src/bg-render/eplor-renderer.ts:328](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L328)
 
 ___
 
@@ -250,7 +250,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/eplor-renderer.ts:331](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L331)
+[packages/core/src/bg-render/eplor-renderer.ts:331](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L331)
 
 ___
 
@@ -260,7 +260,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/eplor-renderer.ts:370](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L370)
+[packages/core/src/bg-render/eplor-renderer.ts:370](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L370)
 
 ___
 
@@ -270,7 +270,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/eplor-renderer.ts:368](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L368)
+[packages/core/src/bg-render/eplor-renderer.ts:368](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L368)
 
 ___
 
@@ -280,7 +280,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/eplor-renderer.ts:364](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L364)
+[packages/core/src/bg-render/eplor-renderer.ts:364](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L364)
 
 ## Methods
 
@@ -302,7 +302,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/base.ts:110](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/base.ts#L110)
+[packages/core/src/bg-render/base.ts:110](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/base.ts#L110)
 
 ___
 
@@ -322,7 +322,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/eplor-renderer.ts:508](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L508)
+[packages/core/src/bg-render/eplor-renderer.ts:508](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L508)
 
 ___
 
@@ -342,7 +342,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/eplor-renderer.ts:449](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L449)
+[packages/core/src/bg-render/eplor-renderer.ts:449](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L449)
 
 ___
 
@@ -362,7 +362,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/eplor-renderer.ts:401](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L401)
+[packages/core/src/bg-render/eplor-renderer.ts:401](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L401)
 
 ___
 
@@ -391,7 +391,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/eplor-renderer.ts:384](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L384)
+[packages/core/src/bg-render/eplor-renderer.ts:384](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L384)
 
 ___
 
@@ -411,7 +411,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/eplor-renderer.ts:333](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L333)
+[packages/core/src/bg-render/eplor-renderer.ts:333](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L333)
 
 ___
 
@@ -431,7 +431,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/eplor-renderer.ts:438](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L438)
+[packages/core/src/bg-render/eplor-renderer.ts:438](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L438)
 
 ___
 
@@ -445,7 +445,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/eplor-renderer.ts:396](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L396)
+[packages/core/src/bg-render/eplor-renderer.ts:396](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L396)
 
 ___
 
@@ -465,7 +465,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/eplor-renderer.ts:445](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L445)
+[packages/core/src/bg-render/eplor-renderer.ts:445](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L445)
 
 ___
 
@@ -491,7 +491,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/eplor-renderer.ts:458](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L458)
+[packages/core/src/bg-render/eplor-renderer.ts:458](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L458)
 
 ___
 
@@ -519,7 +519,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/eplor-renderer.ts:435](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L435)
+[packages/core/src/bg-render/eplor-renderer.ts:435](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L435)
 
 ___
 
@@ -545,7 +545,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/base.ts:82](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/base.ts#L82)
+[packages/core/src/bg-render/base.ts:82](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/base.ts#L82)
 
 ___
 
@@ -573,7 +573,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/base.ts:59](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/base.ts#L59)
+[packages/core/src/bg-render/base.ts:59](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/base.ts#L59)
 
 ___
 
@@ -599,7 +599,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/eplor-renderer.ts:432](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L432)
+[packages/core/src/bg-render/eplor-renderer.ts:432](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L432)
 
 ___
 
@@ -613,4 +613,4 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/eplor-renderer.ts:421](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L421)
+[packages/core/src/bg-render/eplor-renderer.ts:421](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/eplor-renderer.ts#L421)

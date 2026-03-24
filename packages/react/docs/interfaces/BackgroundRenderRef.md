@@ -21,7 +21,7 @@
 
 #### Defined in
 
-[packages/react/src/bg-render.tsx:43](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/3f124db/packages/react/src/bg-render.tsx#L43)
+[packages/react/src/bg-render.tsx:43](https://github.com/amll-dev/applemusic-like-lyrics/blob/3f124db/packages/react/src/bg-render.tsx#L43)
 
 ___
 
@@ -33,4 +33,4 @@ ___
 
 #### Defined in
 
-[packages/react/src/bg-render.tsx:47](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/3f124db/packages/react/src/bg-render.tsx#L47)
+[packages/react/src/bg-render.tsx:47](https://github.com/amll-dev/applemusic-like-lyrics/blob/3f124db/packages/react/src/bg-render.tsx#L47)

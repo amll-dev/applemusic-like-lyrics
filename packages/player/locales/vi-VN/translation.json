@@ -86,7 +86,7 @@
 	},
 	"page": {
 		"about": {
-			"credits": "Được phát triển bởi SteveXMH và các cộng tác viên khác trên Github\nhttps://github.com/Steve-xmh/applemusic-like-lyrics",
+			"credits": "Được phát triển bởi SteveXMH và các cộng tác viên khác trên Github\nhttps://github.com/amll-dev/applemusic-like-lyrics",
 			"downloading": "Đang tải xuống bản cập nhật {progressText}",
 			"installing": "Đang cài đặt cập nhật, sẽ tự động khởi động lại, vui lòng chờ...",
 			"installUpdate": "Cập nhật và cài đặt",

@@ -63,7 +63,7 @@
 
 #### Defined in
 
-[packages/core/src/bg-render/pixi-renderer.ts:86](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/pixi-renderer.ts#L86)
+[packages/core/src/bg-render/pixi-renderer.ts:86](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/pixi-renderer.ts#L86)
 
 ## Properties
 
@@ -73,7 +73,7 @@
 
 #### Defined in
 
-[packages/core/src/bg-render/pixi-renderer.ts:15](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/pixi-renderer.ts#L15)
+[packages/core/src/bg-render/pixi-renderer.ts:15](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/pixi-renderer.ts#L15)
 
 ___
 
@@ -87,7 +87,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/pixi-renderer.ts:86](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/pixi-renderer.ts#L86)
+[packages/core/src/bg-render/pixi-renderer.ts:86](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/pixi-renderer.ts#L86)
 
 ___
 
@@ -97,7 +97,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/pixi-renderer.ts:16](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/pixi-renderer.ts#L16)
+[packages/core/src/bg-render/pixi-renderer.ts:16](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/pixi-renderer.ts#L16)
 
 ___
 
@@ -111,7 +111,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/base.ts:48](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/base.ts#L48)
+[packages/core/src/bg-render/base.ts:48](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/base.ts#L48)
 
 ___
 
@@ -125,7 +125,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/base.ts:47](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/base.ts#L47)
+[packages/core/src/bg-render/base.ts:47](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/base.ts#L47)
 
 ___
 
@@ -135,7 +135,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/pixi-renderer.ts:18](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/pixi-renderer.ts#L18)
+[packages/core/src/bg-render/pixi-renderer.ts:18](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/pixi-renderer.ts#L18)
 
 ___
 
@@ -145,7 +145,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/pixi-renderer.ts:17](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/pixi-renderer.ts#L17)
+[packages/core/src/bg-render/pixi-renderer.ts:17](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/pixi-renderer.ts#L17)
 
 ## Methods
 
@@ -167,7 +167,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/pixi-renderer.ts:233](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/pixi-renderer.ts#L233)
+[packages/core/src/bg-render/pixi-renderer.ts:233](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/pixi-renderer.ts#L233)
 
 ___
 
@@ -187,7 +187,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/pixi-renderer.ts:239](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/pixi-renderer.ts#L239)
+[packages/core/src/bg-render/pixi-renderer.ts:239](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/pixi-renderer.ts#L239)
 
 ___
 
@@ -216,7 +216,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/pixi-renderer.ts:100](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/pixi-renderer.ts#L100)
+[packages/core/src/bg-render/pixi-renderer.ts:100](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/pixi-renderer.ts#L100)
 
 ___
 
@@ -236,7 +236,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/pixi-renderer.ts:19](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/pixi-renderer.ts#L19)
+[packages/core/src/bg-render/pixi-renderer.ts:19](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/pixi-renderer.ts#L19)
 
 ___
 
@@ -256,7 +256,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/pixi-renderer.ts:176](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/pixi-renderer.ts#L176)
+[packages/core/src/bg-render/pixi-renderer.ts:176](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/pixi-renderer.ts#L176)
 
 ___
 
@@ -270,7 +270,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/pixi-renderer.ts:110](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/pixi-renderer.ts#L110)
+[packages/core/src/bg-render/pixi-renderer.ts:110](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/pixi-renderer.ts#L110)
 
 ___
 
@@ -290,7 +290,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/pixi-renderer.ts:181](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/pixi-renderer.ts#L181)
+[packages/core/src/bg-render/pixi-renderer.ts:181](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/pixi-renderer.ts#L181)
 
 ___
 
@@ -316,7 +316,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/pixi-renderer.ts:185](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/pixi-renderer.ts#L185)
+[packages/core/src/bg-render/pixi-renderer.ts:185](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/pixi-renderer.ts#L185)
 
 ___
 
@@ -344,7 +344,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/pixi-renderer.ts:172](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/pixi-renderer.ts#L172)
+[packages/core/src/bg-render/pixi-renderer.ts:172](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/pixi-renderer.ts#L172)
 
 ___
 
@@ -370,7 +370,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/base.ts:82](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/base.ts#L82)
+[packages/core/src/bg-render/base.ts:82](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/base.ts#L82)
 
 ___
 
@@ -398,7 +398,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/pixi-renderer.ts:106](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/pixi-renderer.ts#L106)
+[packages/core/src/bg-render/pixi-renderer.ts:106](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/pixi-renderer.ts#L106)
 
 ___
 
@@ -424,4 +424,4 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/pixi-renderer.ts:167](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/pixi-renderer.ts#L167)
+[packages/core/src/bg-render/pixi-renderer.ts:167](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/pixi-renderer.ts#L167)

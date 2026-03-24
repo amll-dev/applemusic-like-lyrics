@@ -13,7 +13,7 @@
 	},
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/Steve-xmh/applemusic-like-lyrics"
+		"url": "https://github.com/amll-dev/applemusic-like-lyrics"
 	},
 	"scripts": {
 		"build": "wasm-pack build --release",

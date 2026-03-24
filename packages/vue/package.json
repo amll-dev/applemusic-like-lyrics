@@ -3,7 +3,7 @@
 	"version": "0.2.1",
 	"description": "AMLL 组件库的 Vue 绑定",
 	"repository": {
-		"url": "https://github.com/Steve-xmh/applemusic-like-lyrics.git",
+		"url": "https://github.com/amll-dev/applemusic-like-lyrics.git",
 		"directory": "packages/vue",
 		"type": "git"
 	},

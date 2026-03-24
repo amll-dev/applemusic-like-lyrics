@@ -21,7 +21,7 @@
 
 #### Defined in
 
-[packages/react/src/lyric-player.tsx:80](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/3f124db/packages/react/src/lyric-player.tsx#L80)
+[packages/react/src/lyric-player.tsx:80](https://github.com/amll-dev/applemusic-like-lyrics/blob/3f124db/packages/react/src/lyric-player.tsx#L80)
 
 ___
 
@@ -33,4 +33,4 @@ ___
 
 #### Defined in
 
-[packages/react/src/lyric-player.tsx:84](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/3f124db/packages/react/src/lyric-player.tsx#L84)
+[packages/react/src/lyric-player.tsx:84](https://github.com/amll-dev/applemusic-like-lyrics/blob/3f124db/packages/react/src/lyric-player.tsx#L84)

@@ -46,7 +46,7 @@
 
 #### Defined in
 
-[packages/core/src/utils/spring.ts:30](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/utils/spring.ts#L30)
+[packages/core/src/utils/spring.ts:30](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/utils/spring.ts#L30)
 
 ## Properties
 
@@ -56,7 +56,7 @@
 
 #### Defined in
 
-[packages/core/src/utils/spring.ts:12](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/utils/spring.ts#L12)
+[packages/core/src/utils/spring.ts:12](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/utils/spring.ts#L12)
 
 ___
 
@@ -80,7 +80,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/utils/spring.ts:16](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/utils/spring.ts#L16)
+[packages/core/src/utils/spring.ts:16](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/utils/spring.ts#L16)
 
 ___
 
@@ -90,7 +90,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/utils/spring.ts:14](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/utils/spring.ts#L14)
+[packages/core/src/utils/spring.ts:14](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/utils/spring.ts#L14)
 
 ___
 
@@ -114,7 +114,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/utils/spring.ts:17](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/utils/spring.ts#L17)
+[packages/core/src/utils/spring.ts:17](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/utils/spring.ts#L17)
 
 ___
 
@@ -138,7 +138,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/utils/spring.ts:18](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/utils/spring.ts#L18)
+[packages/core/src/utils/spring.ts:18](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/utils/spring.ts#L18)
 
 ___
 
@@ -148,7 +148,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/utils/spring.ts:15](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/utils/spring.ts#L15)
+[packages/core/src/utils/spring.ts:15](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/utils/spring.ts#L15)
 
 ___
 
@@ -158,7 +158,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/utils/spring.ts:19](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/utils/spring.ts#L19)
+[packages/core/src/utils/spring.ts:19](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/utils/spring.ts#L19)
 
 ___
 
@@ -168,7 +168,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/utils/spring.ts:24](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/utils/spring.ts#L24)
+[packages/core/src/utils/spring.ts:24](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/utils/spring.ts#L24)
 
 ___
 
@@ -178,7 +178,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/utils/spring.ts:13](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/utils/spring.ts#L13)
+[packages/core/src/utils/spring.ts:13](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/utils/spring.ts#L13)
 
 ## Methods
 
@@ -192,7 +192,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/utils/spring.ts:50](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/utils/spring.ts#L50)
+[packages/core/src/utils/spring.ts:50](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/utils/spring.ts#L50)
 
 ___
 
@@ -206,7 +206,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/utils/spring.ts:116](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/utils/spring.ts#L116)
+[packages/core/src/utils/spring.ts:116](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/utils/spring.ts#L116)
 
 ___
 
@@ -220,7 +220,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/utils/spring.ts:37](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/utils/spring.ts#L37)
+[packages/core/src/utils/spring.ts:37](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/utils/spring.ts#L37)
 
 ___
 
@@ -240,7 +240,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/utils/spring.ts:59](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/utils/spring.ts#L59)
+[packages/core/src/utils/spring.ts:59](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/utils/spring.ts#L59)
 
 ___
 
@@ -261,7 +261,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/utils/spring.ts:103](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/utils/spring.ts#L103)
+[packages/core/src/utils/spring.ts:103](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/utils/spring.ts#L103)
 
 ___
 
@@ -281,7 +281,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/utils/spring.ts:66](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/utils/spring.ts#L66)
+[packages/core/src/utils/spring.ts:66](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/utils/spring.ts#L66)
 
 ___
 
@@ -302,4 +302,4 @@ ___
 
 #### Defined in
 
-[packages/core/src/utils/spring.ts:87](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/utils/spring.ts#L87)
+[packages/core/src/utils/spring.ts:87](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/utils/spring.ts#L87)

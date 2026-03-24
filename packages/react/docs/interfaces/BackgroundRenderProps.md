@@ -24,7 +24,7 @@
 
 #### Defined in
 
-[packages/react/src/bg-render.tsx:17](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/3f124db/packages/react/src/bg-render.tsx#L17)
+[packages/react/src/bg-render.tsx:17](https://github.com/amll-dev/applemusic-like-lyrics/blob/3f124db/packages/react/src/bg-render.tsx#L17)
 
 ___
 
@@ -36,7 +36,7 @@ ___
 
 #### Defined in
 
-[packages/react/src/bg-render.tsx:29](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/3f124db/packages/react/src/bg-render.tsx#L29)
+[packages/react/src/bg-render.tsx:29](https://github.com/amll-dev/applemusic-like-lyrics/blob/3f124db/packages/react/src/bg-render.tsx#L29)
 
 ___
 
@@ -48,7 +48,7 @@ ___
 
 #### Defined in
 
-[packages/react/src/bg-render.tsx:21](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/3f124db/packages/react/src/bg-render.tsx#L21)
+[packages/react/src/bg-render.tsx:21](https://github.com/amll-dev/applemusic-like-lyrics/blob/3f124db/packages/react/src/bg-render.tsx#L21)
 
 ___
 
@@ -60,7 +60,7 @@ ___
 
 #### Defined in
 
-[packages/react/src/bg-render.tsx:25](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/3f124db/packages/react/src/bg-render.tsx#L25)
+[packages/react/src/bg-render.tsx:25](https://github.com/amll-dev/applemusic-like-lyrics/blob/3f124db/packages/react/src/bg-render.tsx#L25)
 
 ___
 
@@ -72,4 +72,4 @@ ___
 
 #### Defined in
 
-[packages/react/src/bg-render.tsx:33](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/3f124db/packages/react/src/bg-render.tsx#L33)
+[packages/react/src/bg-render.tsx:33](https://github.com/amll-dev/applemusic-like-lyrics/blob/3f124db/packages/react/src/bg-render.tsx#L33)

@@ -32,7 +32,7 @@
 
 #### Defined in
 
-[packages/react/src/lyric-player.tsx:31](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/3f124db/packages/react/src/lyric-player.tsx#L31)
+[packages/react/src/lyric-player.tsx:31](https://github.com/amll-dev/applemusic-like-lyrics/blob/3f124db/packages/react/src/lyric-player.tsx#L31)
 
 ___
 
@@ -45,7 +45,7 @@ ___
 
 #### Defined in
 
-[packages/react/src/lyric-player.tsx:52](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/3f124db/packages/react/src/lyric-player.tsx#L52)
+[packages/react/src/lyric-player.tsx:52](https://github.com/amll-dev/applemusic-like-lyrics/blob/3f124db/packages/react/src/lyric-player.tsx#L52)
 
 ___
 
@@ -59,7 +59,7 @@ ___
 
 #### Defined in
 
-[packages/react/src/lyric-player.tsx:23](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/3f124db/packages/react/src/lyric-player.tsx#L23)
+[packages/react/src/lyric-player.tsx:23](https://github.com/amll-dev/applemusic-like-lyrics/blob/3f124db/packages/react/src/lyric-player.tsx#L23)
 
 ___
 
@@ -71,7 +71,7 @@ ___
 
 #### Defined in
 
-[packages/react/src/lyric-player.tsx:43](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/3f124db/packages/react/src/lyric-player.tsx#L43)
+[packages/react/src/lyric-player.tsx:43](https://github.com/amll-dev/applemusic-like-lyrics/blob/3f124db/packages/react/src/lyric-player.tsx#L43)
 
 ___
 
@@ -87,7 +87,7 @@ ___
 
 #### Defined in
 
-[packages/react/src/lyric-player.tsx:39](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/3f124db/packages/react/src/lyric-player.tsx#L39)
+[packages/react/src/lyric-player.tsx:39](https://github.com/amll-dev/applemusic-like-lyrics/blob/3f124db/packages/react/src/lyric-player.tsx#L39)
 
 ___
 
@@ -103,7 +103,7 @@ ___
 
 #### Defined in
 
-[packages/react/src/lyric-player.tsx:58](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/3f124db/packages/react/src/lyric-player.tsx#L58)
+[packages/react/src/lyric-player.tsx:58](https://github.com/amll-dev/applemusic-like-lyrics/blob/3f124db/packages/react/src/lyric-player.tsx#L58)
 
 ___
 
@@ -119,7 +119,7 @@ ___
 
 #### Defined in
 
-[packages/react/src/lyric-player.tsx:64](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/3f124db/packages/react/src/lyric-player.tsx#L64)
+[packages/react/src/lyric-player.tsx:64](https://github.com/amll-dev/applemusic-like-lyrics/blob/3f124db/packages/react/src/lyric-player.tsx#L64)
 
 ___
 
@@ -135,7 +135,7 @@ ___
 
 #### Defined in
 
-[packages/react/src/lyric-player.tsx:70](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/3f124db/packages/react/src/lyric-player.tsx#L70)
+[packages/react/src/lyric-player.tsx:70](https://github.com/amll-dev/applemusic-like-lyrics/blob/3f124db/packages/react/src/lyric-player.tsx#L70)
 
 ___
 
@@ -147,4 +147,4 @@ ___
 
 #### Defined in
 
-[packages/react/src/lyric-player.tsx:47](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/3f124db/packages/react/src/lyric-player.tsx#L47)
+[packages/react/src/lyric-player.tsx:47](https://github.com/amll-dev/applemusic-like-lyrics/blob/3f124db/packages/react/src/lyric-player.tsx#L47)

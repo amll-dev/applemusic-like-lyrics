@@ -14,7 +14,7 @@ List of functions/features：
 
 ## Install and use
 
-Since the player is still compatible, the development build can only be downloaded through [Github Action](https://github.com/Steve-xmh/applemusic-like-lyrics/actions/workflows/build-player.yaml), and the official version will be released in the future.
+Since the player is still compatible, the development build can only be downloaded through [Github Action](https://github.com/amll-dev/applemusic-like-lyrics/actions/workflows/build-player.yaml), and the official version will be released in the future.
 
 ## Why is there this？
 

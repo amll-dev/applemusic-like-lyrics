@@ -20,7 +20,7 @@ Although the goal of this project is not to imitate it completely, it will polis
 /
 [AMLL TTML Tool - TTML Syllable Lyric Editor](https://github.com/Steve-xmh/amll-ttml-tool)
 
-[Projects that references AMLL](https://github.com/Steve-xmh/applemusic-like-lyrics/discussions/397)
+[Projects that references AMLL](https://github.com/amll-dev/applemusic-like-lyrics/discussions/397)
 
 </div>
 

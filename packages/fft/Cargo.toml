@@ -3,7 +3,7 @@ name = "fft"
 version = "0.1.0"
 authors = ["SteveXMH <39523898+Steve-xmh@users.noreply.github.com>"]
 edition = "2024"
-repository = "https://github.com/Steve-xmh/applemusic-like-lyrics"
+repository = "https://github.com/amll-dev/applemusic-like-lyrics"
 description = "一个音频可视化模块，用于将传入的音频原始波形数据转换成便于观赏显示的频谱"
 license = "GPL-3.0"
 

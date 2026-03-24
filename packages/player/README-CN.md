@@ -12,7 +12,7 @@
 
 ## 安装使用
 
-由于播放器还在兼容状态，所以仅可通过 [Github Action](https://github.com/Steve-xmh/applemusic-like-lyrics/actions/workflows/build-player.yaml) 下载开发构建，日后会推出正式版。
+由于播放器还在兼容状态，所以仅可通过 [Github Action](https://github.com/amll-dev/applemusic-like-lyrics/actions/workflows/build-player.yaml) 下载开发构建，日后会推出正式版。
 
 ## 为什么会有这个？
 

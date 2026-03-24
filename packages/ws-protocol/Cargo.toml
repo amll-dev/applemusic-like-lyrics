@@ -3,7 +3,7 @@ name = "ws-protocol"
 version = "0.0.2"
 authors = ["SteveXMH <39523898+Steve-xmh@users.noreply.github.com>"]
 edition = "2024"
-repository = "https://github.com/Steve-xmh/applemusic-like-lyrics"
+repository = "https://github.com/amll-dev/applemusic-like-lyrics"
 description = "一个歌词播放器协议库，用于不同播放软件与实现本协议的歌词播放器同步播放进度和播放信息"
 license = "GPL-3.0"
 

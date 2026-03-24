@@ -62,7 +62,7 @@
 
 #### Defined in
 
-[packages/core/src/bg-render/base.ts:49](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/base.ts#L49)
+[packages/core/src/bg-render/base.ts:49](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/base.ts#L49)
 
 ## Properties
 
@@ -72,7 +72,7 @@
 
 #### Defined in
 
-[packages/core/src/bg-render/base.ts:49](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/base.ts#L49)
+[packages/core/src/bg-render/base.ts:49](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/base.ts#L49)
 
 ___
 
@@ -82,7 +82,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/base.ts:48](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/base.ts#L48)
+[packages/core/src/bg-render/base.ts:48](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/base.ts#L48)
 
 ___
 
@@ -92,7 +92,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/base.ts:47](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/base.ts#L47)
+[packages/core/src/bg-render/base.ts:47](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/base.ts#L47)
 
 ___
 
@@ -102,7 +102,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/base.ts:46](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/base.ts#L46)
+[packages/core/src/bg-render/base.ts:46](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/base.ts#L46)
 
 ## Methods
 
@@ -124,7 +124,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/base.ts:110](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/base.ts#L110)
+[packages/core/src/bg-render/base.ts:110](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/base.ts#L110)
 
 ___
 
@@ -144,7 +144,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/base.ts:42](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/base.ts#L42)
+[packages/core/src/bg-render/base.ts:42](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/base.ts#L42)
 
 ___
 
@@ -169,7 +169,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/base.ts:74](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/base.ts#L74)
+[packages/core/src/bg-render/base.ts:74](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/base.ts#L74)
 
 ___
 
@@ -189,7 +189,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/base.ts:100](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/base.ts#L100)
+[packages/core/src/bg-render/base.ts:100](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/base.ts#L100)
 
 ___
 
@@ -209,7 +209,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/base.ts:104](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/base.ts#L104)
+[packages/core/src/bg-render/base.ts:104](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/base.ts#L104)
 
 ___
 
@@ -235,7 +235,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/base.ts:109](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/base.ts#L109)
+[packages/core/src/bg-render/base.ts:109](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/base.ts#L109)
 
 ___
 
@@ -263,7 +263,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/base.ts:96](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/base.ts#L96)
+[packages/core/src/bg-render/base.ts:96](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/base.ts#L96)
 
 ___
 
@@ -289,7 +289,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/base.ts:82](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/base.ts#L82)
+[packages/core/src/bg-render/base.ts:82](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/base.ts#L82)
 
 ___
 
@@ -317,7 +317,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/base.ts:59](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/base.ts#L59)
+[packages/core/src/bg-render/base.ts:59](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/base.ts#L59)
 
 ___
 
@@ -343,4 +343,4 @@ ___
 
 #### Defined in
 
-[packages/core/src/bg-render/base.ts:89](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/base.ts#L89)
+[packages/core/src/bg-render/base.ts:89](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/bg-render/base.ts#L89)

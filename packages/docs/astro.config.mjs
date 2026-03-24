@@ -135,7 +135,7 @@ export default defineConfig({
 				{
 					icon: "github",
 					label: "GitHub",
-					href: "https://github.com/Steve-xmh/applemusic-like-lyrics",
+					href: "https://github.com/amll-dev/applemusic-like-lyrics",
 				},
 			],
 			plugins: [

@@ -91,7 +91,7 @@ MouseEvent.constructor
 
 #### Defined in
 
-[packages/core/src/lyric-player/index.ts:26](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/lyric-player/index.ts#L26)
+[packages/core/src/lyric-player/index.ts:26](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/lyric-player/index.ts#L26)
 
 ## Properties
 
@@ -415,7 +415,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/lyric-player/index.ts:34](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/lyric-player/index.ts#L34)
+[packages/core/src/lyric-player/index.ts:34](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/lyric-player/index.ts#L34)
 
 ___
 
@@ -427,7 +427,7 @@ ___
 
 #### Defined in
 
-[packages/core/src/lyric-player/index.ts:30](https://github.com/Steve-xmh/applemusic-like-lyrics/blob/98c389d/packages/core/src/lyric-player/index.ts#L30)
+[packages/core/src/lyric-player/index.ts:30](https://github.com/amll-dev/applemusic-like-lyrics/blob/98c389d/packages/core/src/lyric-player/index.ts#L30)
 
 ___
 
