@@ -341,7 +341,8 @@ function getLyricFontSizeFromPreset(preset: LyricSizePreset): string {
 const PrebuiltCoreLyricPlayer: FC<{
 	alignPosition: number;
 	alignAnchor: "center" | "bottom" | "top";
-}> = ({ alignPosition, alignAnchor }) => {
+	bottomLine?: React.ReactNode;
+}> = ({ alignPosition, alignAnchor, bottomLine }) => {
 	const amllPlayerRef = useRef<LyricPlayerRef>(null);
 	const musicIsPlaying = useAtomValue(musicPlayingAtom);
 	const lyricLines = useAtomValue(musicLyricLinesAtom);
@@ -447,6 +448,7 @@ const PrebuiltCoreLyricPlayer: FC<{
 			onLyricLineContextMenu={(evt) =>
 				onLyricLineContextMenu?.(evt, amllPlayerRef.current)
 			}
+			bottomLine={bottomLine}
 		/>
 	);
 };
@@ -500,10 +502,11 @@ const PrebuiltMusicControls: FC<
 /**
  * 已经部署好所有组件的歌词播放器组件，在正确设置所有的 Jotai 状态后可以开箱即用
  */
-export const PrebuiltLyricPlayer: FC<HTMLProps<HTMLDivElement>> = ({
-	className,
-	...rest
-}) => {
+export const PrebuiltLyricPlayer: FC<
+	HTMLProps<HTMLDivElement> & {
+		bottomLineSlot?: React.ReactNode;
+	}
+> = ({ className, bottomLineSlot, ...rest }) => {
 	const [hideLyricView, setHideLyricView] = useAtom(hideLyricViewAtom);
 	const musicCover = useAtomValue(musicCoverAtom);
 	const musicCoverIsVideo = useAtomValue(musicCoverIsVideoAtom);
@@ -685,6 +688,7 @@ export const PrebuiltLyricPlayer: FC<HTMLProps<HTMLDivElement>> = ({
 					<PrebuiltCoreLyricPlayer
 						alignPosition={alignPosition}
 						alignAnchor={alignAnchor}
+						bottomLine={bottomLineSlot}
 					/>
 				}
 				hideLyric={hideLyricView}
