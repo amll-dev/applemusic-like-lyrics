@@ -655,14 +655,28 @@ export abstract class LyricPlayerBase
 		const removedHotIds = new Set<number>();
 		const removedIds = new Set<number>();
 		const addedIds = new Set<number>();
+		const syncMainAndBackgroundLines =
+			this.optimizeOptions.syncMainAndBackgroundLines !== false;
 
 		// 先检索当前已经超出时间范围的缓冲行，列入待删除集内
 		for (const lastHotId of this.hotLines) {
 			const line = this.processedLines[lastHotId];
 			if (line) {
-				if (line.isBG) continue;
+				if (line.isBG) {
+					if (
+						!syncMainAndBackgroundLines &&
+						(line.startTime > time || line.endTime <= time)
+					) {
+						this.hotLines.delete(lastHotId);
+						removedHotIds.add(lastHotId);
+						if (isSeek) {
+							this.currentLyricLineObjects[lastHotId]?.disable();
+						}
+					}
+					continue;
+				}
 				const nextLine = this.processedLines[lastHotId + 1];
-				if (nextLine?.isBG) {
+				if (syncMainAndBackgroundLines && nextLine?.isBG) {
 					const nextMainLine = this.processedLines[lastHotId + 2];
 					const startTime = Math.min(line.startTime, nextLine?.startTime);
 					const endTime = Math.min(
@@ -706,7 +720,7 @@ export abstract class LyricPlayerBase
 						lineObj.enable();
 					}
 
-					if (arr[id + 1]?.getLine()?.isBG) {
+					if (syncMainAndBackgroundLines && arr[id + 1]?.getLine()?.isBG) {
 						this.hotLines.add(id + 1);
 						addedIds.add(id + 1);
 						if (isSeek) {
@@ -714,6 +728,24 @@ export abstract class LyricPlayerBase
 						} else {
 							arr[id + 1].enable();
 						}
+					}
+				}
+			} else if (
+				!syncMainAndBackgroundLines &&
+				line.isBG &&
+				line.startTime <= time &&
+				line.endTime > time
+			) {
+				if (isSeek) {
+					lineObj.enable(time, this.isPlaying);
+				}
+
+				if (!this.hotLines.has(id)) {
+					this.hotLines.add(id);
+					addedIds.add(id);
+
+					if (!isSeek) {
+						lineObj.enable();
 					}
 				}
 			}
