@@ -7,11 +7,12 @@ import wasm from "vite-plugin-wasm";
 export default defineConfig({
 	build: {
 		sourcemap: true,
+		minify: false,
 		lib: {
 			entry: "src/index.ts",
 			name: "AppleMusicLikeLyricsVue",
 			fileName: "amll-vue",
-			formats: ["es", "cjs"],
+			formats: ["es"],
 		},
 		rollupOptions: {
 			external: ["vue", "@applemusic-like-lyrics/core"],

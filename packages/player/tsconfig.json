@@ -1,13 +1,4 @@
 {
 	"extends": "../../tsconfig.base.json",
-	"include": ["src", "i18next.config.ts", "vite.config.ts"],
-	"compilerOptions": {
-		"declaration": false,
-		"composite": false
-	},
-	"references": [
-		{ "path": "../core" },
-		{ "path": "../react" },
-		{ "path": "../react-full" }
-	]
+	"include": ["src", "i18next.config.ts", "vite.config.ts"]
 }

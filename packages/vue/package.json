@@ -9,6 +9,11 @@
 	},
 	"type": "module",
 	"license": "GPL-3.0",
+	"nx": {
+		"tags": [
+			"library"
+		]
+	},
 	"files": [
 		"dist"
 	],
@@ -36,6 +41,7 @@
 		"vue": "*"
 	},
 	"devDependencies": {
+		"@applemusic-like-lyrics/core": "workspace:^",
 		"@applemusic-like-lyrics/lyric": "workspace:^",
 		"@biomejs/biome": "catalog:",
 		"@pixi/app": "^7.4.3",

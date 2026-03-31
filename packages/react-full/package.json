@@ -69,14 +69,16 @@
 		"@types/react-dom": "catalog:",
 		"@types/ungap__structured-clone": "^1.2.0",
 		"@vitejs/plugin-react": "catalog:",
-		"babel-plugin-react-compiler": "19.1.0-rc.3",
-		"react-compiler-runtime": "19.1.0-rc.3",
+		"babel-plugin-react-compiler": "^1.0.0",
+		"react-compiler-runtime": "^1.0.0",
 		"typedoc": "catalog:",
 		"typedoc-plugin-markdown": "catalog:",
 		"typescript": "catalog:",
+		"jotai-babel": "catalog:",
 		"vite": "catalog:",
 		"vite-plugin-dts": "catalog:",
 		"vite-plugin-svgr": "catalog:",
-		"vite-plugin-wasm": "catalog:"
+		"vite-plugin-wasm": "catalog:",
+		"vite-plugin-babel": "catalog:"
 	}
 }

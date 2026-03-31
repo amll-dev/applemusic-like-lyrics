@@ -86,7 +86,7 @@
 		"jotai-babel": "^0.1.0",
 		"typescript": "catalog:",
 		"vite": "catalog:",
-		"vite-plugin-babel": "^1.6.0",
+		"vite-plugin-babel": "catalog:",
 		"vite-plugin-i18next-loader": "^3.1.3"
 	}
 }
