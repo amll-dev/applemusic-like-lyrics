@@ -54,7 +54,7 @@
 }
 
 .commonTagText {
-	font-family: "SF Pro Text", "Pingfang SC";
+	font-family: /* 苹果系使用自身字体 */ -apple-system, BlinkMacSystemFont, "SF Pro Display", /* 开源西文替代 */ Inter, "PingFang SC", system-ui, sans-serif;
 	font-size: 11px;
 	font-weight: 500;
 	letter-spacing: 0.01809em;
