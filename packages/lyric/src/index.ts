@@ -1,3 +1,3 @@
-export function foo() {
-	console.log("Hello, Lyric!");
-}
+export { parseLRC, stringifyLRC } from "./formats/lrc";
+
+export type { LyricLine, LyricWord, TTMLLyric } from "./types";
