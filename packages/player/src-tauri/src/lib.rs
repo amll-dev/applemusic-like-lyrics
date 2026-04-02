@@ -64,6 +64,26 @@ fn restart_app<R: Runtime>(app: AppHandle<R>) {
     tauri::process::restart(&app.env())
 }
 
+#[tauri::command]
+fn set_window_always_on_top<R: Runtime>(
+    enabled: bool,
+    app: AppHandle<R>,
+) -> Result<(), String> {
+    #[cfg(target_os = "windows")]
+    {
+        if let Some(window) = app.get_webview_window("main") {
+            window.set_always_on_top(enabled).map_err(|e| e.to_string())
+        } else {
+            Err("Main window not found.".to_string())
+        }
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        let _ = (enabled, app);
+        Err("Unsupported on this platform.".to_string())
+    }
+}
+
 #[derive(Default, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MusicInfo {
@@ -406,6 +426,8 @@ pub fn run() {
             resolve_content_uri,
             read_local_music_metadata,
             restart_app,
+            #[cfg(target_os = "windows")]
+            set_window_always_on_top,
             #[cfg(target_os = "windows")]
             taskbar_lyric::mouse_forward::set_click_interception,
             #[cfg(target_os = "windows")]

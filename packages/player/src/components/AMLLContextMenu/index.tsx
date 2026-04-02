@@ -13,10 +13,11 @@ import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import type { FC } from "react";
 import { Trans } from "react-i18next";
 import { router } from "../../router.tsx";
-import { recordPanelOpenedAtom } from "../../states/appAtoms.ts";
+import { enableAlwaysOnTopAtom, recordPanelOpenedAtom } from "../../states/appAtoms.ts";
 
 export const AMLLContextMenuContent: FC = () => {
 	const [hideLyricView, setHideLyricView] = useAtom(hideLyricViewAtom);
+	const [alwaysOnTop, setAlwaysOnTop] = useAtom(enableAlwaysOnTopAtom);
 	const setLyricPageOpened = useSetAtom(isLyricPageOpenedAtom);
 	const setRecordPanelOpened = useSetAtom(recordPanelOpenedAtom);
 	const onRequestPrevSong = useAtomValue(onRequestPrevSongAtom).onEmit;
@@ -48,6 +49,12 @@ export const AMLLContextMenuContent: FC = () => {
 					全屏 / 取消全屏
 				</Trans>
 			</ContextMenu.Item>
+			<ContextMenu.CheckboxItem
+				checked={alwaysOnTop}
+				onCheckedChange={(e) => setAlwaysOnTop(!!e)}
+			>
+				<Trans i18nKey="amll.contextMenu.windowAlwaysOnTop">窗口置顶</Trans>
+			</ContextMenu.CheckboxItem>
 			<ContextMenu.Separator />
 			<ContextMenu.CheckboxItem
 				checked={!hideLyricView}

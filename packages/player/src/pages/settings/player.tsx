@@ -56,6 +56,7 @@ import {
 } from "@radix-ui/themes";
 import { getVersion } from "@tauri-apps/api/app";
 import { invoke } from "@tauri-apps/api/core";
+import { platform } from "@tauri-apps/plugin-os";
 import { atom, useAtom, useAtomValue, type WritableAtom } from "jotai";
 import { loadable } from "jotai/utils";
 import React, {
@@ -63,6 +64,7 @@ import React, {
 	type PropsWithChildren,
 	type ReactNode,
 	Suspense,
+	useEffect,
 	useLayoutEffect,
 	useMemo,
 	useState,
@@ -76,6 +78,7 @@ import {
 	bottomLyricDisplayModeAtom,
 	DarkMode,
 	darkModeAtom,
+	enableAlwaysOnTopAtom,
 	enableMediaControlsAtom,
 	enableTaskbarLyricAtom,
 	showStatJSFrameAtom,
@@ -303,6 +306,11 @@ function SliderSettings<T extends number | number[]>({
 const GeneralSettings = () => {
 	const { t, i18n } = useTranslation();
 	const [mode, setMode] = useAtom(darkModeAtom);
+	const [os, setOs] = useState<string | null>(null);
+
+	useEffect(() => {
+		setOs(platform());
+	}, []);
 
 	const supportedLanguagesMenu = useMemo(() => {
 		function collectLocaleKey(
@@ -409,6 +417,19 @@ const GeneralSettings = () => {
 					</Select.Content>
 				</Select.Root>
 			</SettingEntry>
+			{os === "windows" && (
+				<SwitchSettings
+					label={t(
+						"page.settings.general.windowAlwaysOnTop.label",
+						"启用窗口置顶",
+					)}
+					description={t(
+						"page.settings.general.windowAlwaysOnTop.description",
+						"将应用窗口设置为始终置顶",
+					)}
+					configAtom={enableAlwaysOnTopAtom}
+				/>
+			)}
 		</>
 	);
 };

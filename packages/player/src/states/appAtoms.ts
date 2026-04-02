@@ -59,6 +59,21 @@ export const enableMediaControlsAtom = atom(
 	},
 );
 
+const enableAlwaysOnTopInternalAtom = atomWithStorage(
+	"amll-player.enableAlwaysOnTop",
+	false,
+);
+
+export const enableAlwaysOnTopAtom = atom(
+	(get) => get(enableAlwaysOnTopInternalAtom),
+	(_get, set, enabled: boolean) => {
+		set(enableAlwaysOnTopInternalAtom, enabled);
+		invoke("set_window_always_on_top", { enabled }).catch((err) => {
+			console.error("设置窗口置顶状态失败", err);
+		});
+	},
+);
+
 export const wsProtocolListenAddrAtom = atomWithStorage(
 	"amll-player.wsProtocolListenAddr",
 	"localhost:11444",
