@@ -1,7 +1,6 @@
 [workspace]
 resolver = "3"
 members = [
-    "./packages/lyric",
     "./packages/fft",
     "./packages/ws-protocol",
 ]
