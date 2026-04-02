@@ -27,3 +27,33 @@ export const parseTime = (time: string): number =>
 			.reverse()
 			.reduce((acc, cur, idx) => acc + cur * 60 ** idx, 0) * 1000,
 	);
+
+export const formatTime = (ms: number): string => {
+	const min = Math.floor(ms / 60000)
+		.toString()
+		.padStart(2, "0");
+	const sec = Math.floor((ms % 60000) / 1000)
+		.toString()
+		.padStart(2, "0");
+	const msPart = Math.round(ms % 1000)
+		.toString()
+		.padStart(3, "0");
+	return `${min}:${sec}.${msPart}`;
+};
+
+/**
+ * Returns consecutive pairs from the given iterable.
+ *
+ * Example: `0, 1, 2, 3` -> `[0, 1], [1, 2], [2, 3]`
+ */
+export function* pairwise<T>(
+	iterable: Iterable<T>,
+): Generator<[T, T], void, unknown> {
+	let prev: T | undefined;
+	let hasPrev = false;
+	for (const curr of iterable) {
+		if (hasPrev) yield [prev as T, curr];
+		prev = curr;
+		hasPrev = true;
+	}
+}
