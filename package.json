@@ -4,6 +4,10 @@
 	"license": "GPL-3.0",
 	"devDependencies": {
 		"@biomejs/biome": "catalog:",
+		"@nx/js": "22.6.0",
+		"@swc-node/register": "^1.11.1",
+		"@swc/core": "^1.15.21",
+		"@swc/helpers": "~0.5.18",
 		"lerna": "^9.0.7",
 		"nx": "^22.6.0",
 		"typescript": "catalog:"
@@ -23,5 +27,6 @@
 			"nx",
 			"sharp"
 		]
-	}
+	},
+	"dependencies": {}
 }

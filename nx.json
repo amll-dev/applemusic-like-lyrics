@@ -25,5 +25,35 @@
 			"outputs": ["{projectRoot}/dist", "{projectRoot}/pkg"]
 		}
 	},
-	"analytics": false
+	"analytics": false,
+	"release": {
+		"versionPlans": true,
+		"projectsRelationship": "independent",
+		"projects": [
+			"packages/core",
+			"packages/react",
+			"packages/react-full",
+			"packages/vue",
+			"packages/fft",
+			"packages/lyric",
+			"packages/ttml",
+			"packages/ws-protocol"
+		]
+	},
+	"plugins": [
+		{
+			"plugin": "@nx/js/typescript",
+			"options": {
+				"typecheck": {
+					"targetName": "typecheck"
+				},
+				"build": {
+					"targetName": "build",
+					"configName": "tsconfig.lib.json",
+					"buildDepsName": "build-deps",
+					"watchDepsName": "watch-deps"
+				}
+			}
+		}
+	]
 }
