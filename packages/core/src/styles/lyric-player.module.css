@@ -169,7 +169,7 @@
 .lyricSubLine {
 	font-size: max(0.5em, 10px);
 	line-height: 1.5em;
-	transition: opacity 0.2s 0.25s;
+	transition: opacity 0.2s 0.1s;
 	opacity: 0.3;
 }
 
