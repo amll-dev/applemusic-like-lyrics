@@ -23,6 +23,7 @@ concurrency:
 jobs:
   validate:
     name: Validate release metadata and build libraries
+    if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
 
     steps:
