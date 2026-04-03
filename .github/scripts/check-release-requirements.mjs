@@ -90,7 +90,12 @@ if (allIgnored && !hasNoReleaseLabel) {
 
 if (!allIgnored && hasNoReleaseLabel) {
 	throw new Error(
-		"The no-release label is only allowed when every changed file is ignored by release plan checks.",
+		"The no-release label is only allowed when every changed file is ignored by release plan checks.\n" +
+			`Found ${nonIgnoredFiles.length} non-ignored changed file(s): (showing first 30)\n` +
+			nonIgnoredFiles
+				.slice(0, 30)
+				.map((file) => `  - ${file}`)
+				.join("\n"),
 	);
 }
 
