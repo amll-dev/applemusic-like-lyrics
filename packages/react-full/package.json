@@ -8,11 +8,17 @@
     "type": "git"
   },
   "license": "GPL-3.0",
-  "nx": {
-    "tags": [
-      "library"
-    ]
-  },
+	"nx": {
+		"tags": [
+			"library"
+		],
+		"targets": {
+			"nx-release-publish": {
+				"executor": "@nx/js:release-publish",
+				"dependsOn": []
+			}
+		}
+	},
   "type": "module",
   "main": "dist/amll-react-framework.cjs",
   "module": "./dist/amll-react-framework.js",

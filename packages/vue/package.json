@@ -9,11 +9,17 @@
   },
   "type": "module",
   "license": "GPL-3.0",
-  "nx": {
-    "tags": [
-      "library"
-    ]
-  },
+	"nx": {
+		"tags": [
+			"library"
+		],
+		"targets": {
+			"nx-release-publish": {
+				"executor": "@nx/js:release-publish",
+				"dependsOn": []
+			}
+		}
+	},
   "files": [
     "dist"
   ],

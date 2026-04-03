@@ -6,11 +6,17 @@
   "description": "一个音频可视化模块，用于将传入的音频原始波形数据转换成便于观赏显示的频谱",
   "version": "0.2.0",
   "license": "GPL-3.0",
-  "nx": {
-    "tags": [
-      "library"
-    ]
-  },
+	"nx": {
+		"tags": [
+			"library"
+		],
+		"targets": {
+			"nx-release-publish": {
+				"executor": "@nx/js:release-publish",
+				"dependsOn": []
+			}
+		}
+	},
   "repository": {
     "type": "git",
     "url": "https://github.com/amll-dev/applemusic-like-lyrics"

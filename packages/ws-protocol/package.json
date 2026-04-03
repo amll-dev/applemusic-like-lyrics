@@ -6,6 +6,17 @@
   "description": "一个歌词播放器协议库，用于不同播放软件与实现本协议的歌词播放器同步播放进度和播放信息",
   "version": "0.3.0",
   "license": "GPL-3.0",
+  "nx": {
+    "tags": [
+      "library"
+    ],
+    "targets": {
+      "nx-release-publish": {
+        "executor": "@nx/js:release-publish",
+        "dependsOn": []
+      }
+    }
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/amll-dev/applemusic-like-lyrics"

@@ -6,11 +6,17 @@
   "description": "一个歌词解析/生成模块，着重于歌词内容解析，支持多种格式",
   "version": "0.4.0",
   "license": "GPL-3.0",
-  "nx": {
-    "tags": [
-      "library"
-    ]
-  },
+	"nx": {
+		"tags": [
+			"library"
+		],
+		"targets": {
+			"nx-release-publish": {
+				"executor": "@nx/js:release-publish",
+				"dependsOn": []
+			}
+		}
+	},
   "repository": {
     "type": "git",
     "url": "https://github.com/amll-dev/applemusic-like-lyrics"
