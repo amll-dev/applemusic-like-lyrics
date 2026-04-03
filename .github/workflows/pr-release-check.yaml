@@ -1,4 +1,4 @@
-name: Validate PR Release Requirements
+name: Validate PR
 
 on:
   pull_request:
@@ -21,8 +21,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  validate:
-    name: Validate release metadata and build libraries
+  release-metadata:
+    name: Release metadata
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
 
@@ -49,12 +49,14 @@ jobs:
         uses: pnpm/action-setup@v4
 
       - name: Setup cached Node.js for pnpm
+        if: steps.release-requirements.outputs.requires_release_plan == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: lts/*
           cache: pnpm
 
       - name: Install dependencies
+        if: steps.release-requirements.outputs.requires_release_plan == 'true'
         run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Set Nx SHAs
@@ -64,6 +66,29 @@ jobs:
       - name: Check release plans
         if: steps.release-requirements.outputs.requires_release_plan == 'true'
         run: pnpm release:plan:check --base="${{ env.NX_BASE }}" --head="${{ env.NX_HEAD }}"
+
+  build-libraries:
+    name: Build libs
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@v1
