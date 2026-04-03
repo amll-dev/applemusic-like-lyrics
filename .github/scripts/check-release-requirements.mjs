@@ -14,6 +14,8 @@ const ignoredMatchers = [
 	(file) => file.endsWith(".mdx"),
 	(file) => file.startsWith(".github/"),
 	(file) => file.startsWith(".nx/version-plans/"),
+	(file) => file.startsWith("packages/player"),
+	(file) => file.startsWith("packages/skia-player"),
 	(file) => file === ".editorconfig",
 	(file) => file === ".gitignore",
 	(file) => file === "biome.json",
@@ -31,7 +33,8 @@ const ignoredMatchers = [
 	(file) => /^packages\/[^/]+\/docs\//.test(file),
 ];
 
-const isIgnoredFile = (file) => ignoredMatchers.some((matcher) => matcher(file));
+const isIgnoredFile = (file) =>
+	ignoredMatchers.some((matcher) => matcher(file));
 
 const apiBaseUrl = `https://api.github.com/repos/${repository}`;
 
@@ -45,7 +48,9 @@ async function requestJson(path) {
 	});
 
 	if (!response.ok) {
-		throw new Error(`GitHub API request failed: ${response.status} ${response.statusText}`);
+		throw new Error(
+			`GitHub API request failed: ${response.status} ${response.statusText}`,
+		);
 	}
 
 	return response.json();
@@ -94,4 +99,6 @@ appendFileSync(
 	`requires_release_plan=${allIgnored ? "false" : "true"}\n`,
 );
 
-console.log(JSON.stringify({ changedFiles, nonIgnoredFiles, hasNoReleaseLabel }, null, 2));
+console.log(
+	JSON.stringify({ changedFiles, nonIgnoredFiles, hasNoReleaseLabel }, null, 2),
+);
