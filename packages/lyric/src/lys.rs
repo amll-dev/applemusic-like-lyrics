@@ -81,7 +81,7 @@ pub fn parse_word(src: &str) -> IResult<&str, LyricWord<'_>> {
                     start_time,
                     end_time: start_time + duration,
                     word: Cow::Borrowed(&src[..i]),
-                    roman_word: std::borrow::Cow::Borrowed(""),
+                    roman_word: None,
                 },
             ));
         }

@@ -26,7 +26,7 @@ pub fn parse_line(src: &str) -> IResult<&str, LyricLine<'_>> {
             start_time,
             end_time,
             word: word.into(),
-            roman_word: std::borrow::Cow::Borrowed(""),
+            roman_word: None,
         });
         src = s;
         start_time = end_time;

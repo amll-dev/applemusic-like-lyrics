@@ -39,7 +39,8 @@ pub struct LyricWord<'a> {
     pub start_time: u64,
     pub end_time: u64,
     pub word: Cow<'a, str>,
-    pub roman_word: Cow<'a, str>,
+    #[cfg_attr(feature = "serde", serde(default, skip_serializing_if = "Option::is_none"))]
+    pub roman_word: Option<Cow<'a, str>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -49,7 +50,8 @@ pub struct LyricWordOwned {
     pub start_time: u64,
     pub end_time: u64,
     pub word: String,
-    pub roman_word: String,
+    #[cfg_attr(feature = "serde", serde(default, skip_serializing_if = "Option::is_none"))]
+    pub roman_word: Option<String>,
 }
 
 impl<'a> From<LyricWord<'a>> for LyricWordOwned {
@@ -58,7 +60,7 @@ impl<'a> From<LyricWord<'a>> for LyricWordOwned {
             start_time: value.start_time,
             end_time: value.end_time,
             word: value.word.into_owned(),
-            roman_word: value.roman_word.into_owned(),
+            roman_word: value.roman_word.map(|v| v.into_owned()),
         }
     }
 }
@@ -69,7 +71,7 @@ impl LyricWord<'_> {
             start_time: self.start_time,
             end_time: self.end_time,
             word: self.word.clone().into_owned(),
-            roman_word: self.roman_word.clone().into_owned(),
+            roman_word: self.roman_word.clone().map(|v| v.into_owned()),
         }
     }
 
@@ -84,7 +86,7 @@ impl LyricWordOwned {
             start_time: self.start_time,
             end_time: self.end_time,
             word: self.word.as_str().into(),
-            roman_word: self.roman_word.as_str().into(),
+            roman_word: self.roman_word.as_deref().map(Into::into),
         }
     }
 
