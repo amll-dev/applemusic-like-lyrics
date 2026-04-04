@@ -179,6 +179,23 @@ const referenceSidebar = [
 	},
 ];
 
+const contributeSidebar = [
+	{
+		label: "开发指南",
+		items: [
+			{ slug: "contribute/development/environments" },
+			{ slug: "contribute/development/structure" },
+		],
+	},
+	{
+		label: "仓库规范",
+		items: [
+			{ slug: "contribute/guidelines/pr" },
+			{ slug: "contribute/guidelines/publishing" },
+		],
+	},
+];
+
 export default defineConfig({
 	site: "https://amll.dev",
 	integrations: [
@@ -225,6 +242,16 @@ export default defineConfig({
 						link: "/reference/",
 						icon: "information",
 						items: referenceSidebar,
+					},
+					{
+						id: "contribute",
+						label: {
+							"zh-CN": "贡献指南",
+							en: "Contributing",
+						},
+						link: "/contribute/",
+						icon: "rocket",
+						items: contributeSidebar,
 					},
 				]),
 				{
