@@ -118,7 +118,7 @@ export const AMLLPreview = () => {
 								filter: "blur(0px)",
 							},
 							{
-								duration: 500,
+								duration: 300,
 								easing: "ease-in-out",
 								fill: "forwards",
 							},
@@ -126,7 +126,7 @@ export const AMLLPreview = () => {
 							if (canceled) return;
 							requestAnimationFrame(onFrame);
 						};
-					}, 1000);
+					}, 600);
 				};
 			} else {
 				setCurrentTime((time - startTime) | 0);

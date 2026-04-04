@@ -2,12 +2,19 @@
 	--sl-color-accent-high: #f96868;
 	--sl-color-text-invert: #fee;
 	--sl-color-accent: #ff4040;
+	--sl-color-bg-nav: #eee8;
+	--sl-color-bg-sidebar: #bbb1;
 }
 
 :root[data-theme="dark"] {
 	--sl-color-accent-high: #f96868;
 	--sl-color-text-invert: #fffefe;
 	--sl-color-accent: #ff4040;
-	--sl-color-bg: #111111;
-	--sl-color-bg-nav: #111111;
+	--sl-color-bg: #151515;
+	--sl-color-bg-nav: #2228;
+	--sl-color-bg-sidebar: #2228;
+}
+
+header {
+	backdrop-filter: blur(15px);
 }

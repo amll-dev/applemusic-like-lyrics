@@ -20,7 +20,8 @@
 		"astro": "^6.1.3",
 		"react": "catalog:",
 		"react-dom": "catalog:",
-		"sharp": "catalog:"
+		"sharp": "catalog:",
+		"starlight-sidebar-topics": "^0.7.1"
 	},
 	"devDependencies": {
 		"typedoc": "catalog:",

@@ -3,8 +3,8 @@
 import react from "@astrojs/react";
 import starlight from "@astrojs/starlight";
 import { defineConfig } from "astro/config";
+import starlightSidebarTopics from "starlight-sidebar-topics";
 import { Application, PageEvent } from "typedoc";
-import {} from "typedoc-plugin-markdown";
 
 /** @type {import('typedoc').TypeDocOptions & import('typedoc-plugin-markdown').PluginOptions} */
 const typeDocConfigBaseOptions = {
@@ -113,13 +113,79 @@ async function generateDoc() {
 }
 
 // https://astro.build/config
+const docsSidebar = [
+	{
+		label: "核心组件",
+		items: [{ slug: "guides/core/introduction" }],
+	},
+	{
+		label: "React 绑定",
+		items: [
+			{ slug: "guides/react/introduction" },
+			{ slug: "guides/react/quick-start" },
+			{ slug: "guides/react/lyric-player" },
+			{ slug: "guides/react/bg-render" },
+		],
+	},
+	{
+		label: "AMLL TTML Tools",
+		items: [
+			{ slug: "guides/ttml-tools/introduction" },
+			{ slug: "guides/ttml-tools/tips" },
+		],
+	},
+];
+
+const referenceSidebar = [
+	{
+		label: "Core 核心",
+		collapsed: true,
+		autogenerate: {
+			directory: "reference/core",
+			collapsed: true,
+		},
+	},
+	{
+		label: "React 绑定",
+		collapsed: true,
+		autogenerate: {
+			directory: "reference/react",
+			collapsed: true,
+		},
+	},
+	{
+		label: "React Full 组件库",
+		collapsed: true,
+		autogenerate: {
+			directory: "reference/react-full",
+			collapsed: true,
+		},
+	},
+	{
+		label: "Vue 绑定",
+		collapsed: true,
+		autogenerate: {
+			directory: "reference/vue",
+			collapsed: true,
+		},
+	},
+	{
+		label: "Lyric 歌词处理",
+		collapsed: true,
+		autogenerate: {
+			directory: "reference/lyric",
+			collapsed: true,
+		},
+	},
+];
+
 export default defineConfig({
 	site: "https://amll.dev",
 	integrations: [
 		react(),
 		starlight({
 			favicon: "favicon.ico",
-			title: "Apple Music-like Lyrics",
+			title: "AppleMusic-like Lyrics",
 			customCss: ["./src/styles/custom.css"],
 			locales: {
 				root: {
@@ -139,6 +205,28 @@ export default defineConfig({
 				},
 			],
 			plugins: [
+				starlightSidebarTopics([
+					{
+						id: "docs",
+						label: {
+							"zh-CN": "使用文档",
+							en: "Guides",
+						},
+						link: "/guides/",
+						icon: "open-book",
+						items: docsSidebar,
+					},
+					{
+						id: "reference",
+						label: {
+							"zh-CN": "API 参考",
+							en: "API Reference",
+						},
+						link: "/reference/",
+						icon: "information",
+						items: referenceSidebar,
+					},
+				]),
 				{
 					name: "typedoc",
 					hooks: {
@@ -148,78 +236,6 @@ export default defineConfig({
 							cfg.logger.info("Finished typedoc generation");
 						},
 					},
-				},
-			],
-			sidebar: [
-				{
-					label: "核心组件",
-					items: [{ slug: "guides/core/introduction" }],
-				},
-				{
-					label: "React 绑定",
-					items: [
-						{ slug: "guides/react/introduction" },
-						{ slug: "guides/react/quick-start" },
-						{ slug: "guides/react/lyric-player" },
-						{ slug: "guides/react/bg-render" },
-					],
-				},
-				{
-					label: "AMLL TTML Tools",
-					items: [
-						{ slug: "guides/ttml-tools/introduction" },
-						{ slug: "guides/ttml-tools/tips" },
-					],
-				},
-				{
-					label: "接口参考",
-					items: [
-						{
-							label: "Core 核心模块",
-							collapsed: true,
-							autogenerate: {
-								directory: "reference/core",
-								collapsed: true,
-							},
-						},
-						{
-							label: "React 绑定模块",
-							collapsed: true,
-							autogenerate: {
-								directory: "reference/react",
-								collapsed: true,
-							},
-						},
-						{
-							label: "React Full 组件库模块",
-							collapsed: true,
-							autogenerate: {
-								directory: "reference/react-full",
-								collapsed: true,
-							},
-						},
-						{
-							label: "Vue 绑定模块",
-							collapsed: true,
-							autogenerate: {
-								directory: "reference/vue",
-								collapsed: true,
-							},
-						},
-						{
-							label: "Lyric 歌词模块",
-							collapsed: true,
-							autogenerate: {
-								directory: "reference/lyric",
-								collapsed: true,
-							},
-						},
-						// coreTypeDocSidebarGroup,
-						// reactTypeDocSidebarGroup,
-						// vueTypeDocSidebarGroup,
-						// reactFullTypeDocSidebarGroup,
-						// lyricTypeDocSidebarGroup,
-					],
 				},
 			],
 		}),
