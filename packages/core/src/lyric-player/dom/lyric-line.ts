@@ -1070,16 +1070,10 @@ export class LyricLineEl extends LyricLineBase {
 		this.scale = scale;
 		this.delay = (delay * 1000) | 0;
 		const main = this.element.children[0] as HTMLDivElement;
-		const trans = this.element.children[1] as HTMLDivElement;
-		const roman = this.element.children[2] as HTMLDivElement;
 		// main.style.opacity = `${opacity *
 		// 	(!this.hasFaded ? 1 : this.lyricPlayer._getIsNonDynamic() ? 1 : 0.3)
 		// 	}`;
-		const subopacity =
-			opacity * (this.lyricPlayer._getIsNonDynamic() ? 0.5 : 0.3);
 		main.style.opacity = `${opacity}`;
-		trans.style.opacity = `${subopacity}`;
-		roman.style.opacity = `${subopacity}`;
 		if (force || !enableSpring) {
 			this.blur = Math.min(32, blur);
 			// if (force) this.element.classList.add(styles.tmpDisableTransition);
