@@ -66,7 +66,7 @@ pub fn parse_words(src: &str) -> IResult<&str, Vec<LyricWord<'_>>> {
             start_time: x.0.0,
             end_time: x.0.0 + x.0.1,
             word: Cow::Borrowed(x.1),
-            roman_word: std::borrow::Cow::Borrowed(""),
+            roman_word: None,
         })
         .collect();
     Ok((src, words))

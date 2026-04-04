@@ -1,79 +1,85 @@
 {
-	"name": "@applemusic-like-lyrics/core",
-	"version": "0.2.1",
-	"description": "AMLL 的纯 JS 核心组件框架，包括歌词显示组件和背景组件等其它可以复用的组件",
-	"repository": {
-		"url": "https://github.com/amll-dev/applemusic-like-lyrics.git",
-		"directory": "packages/core",
-		"type": "git"
-	},
-	"license": "GPL-3.0",
-	"nx": {
-		"tags": [
-			"library"
-		]
-	},
-	"files": [
-		"dist/**/*.js",
-		"dist/**/*.ts",
-		"dist/**/*.cjs",
-		"dist/**/*.css",
-		"dist/**/*.map"
-	],
-	"scripts": {
-		"build:docs": "typedoc --plugin typedoc-plugin-markdown --out docs src/index.ts",
-		"build": "vite build",
-		"build:dev": "vite build",
-		"fmt": "biome format --write ./src",
-		"dev": "vite dev",
-		"preinstall": "npx only-allow pnpm"
-	},
-	"type": "module",
-	"main": "./dist/amll-core.cjs",
-	"module": "./dist/amll-core.js",
-	"typings": "./dist/index.d.ts",
-	"exports": {
-		".": {
-			"types": "./dist/index.d.ts",
-			"import": "./dist/amll-core.js",
-			"require": "./dist/amll-core.cjs"
-		},
-		"./style.css": {
-			"import": "./dist/amll-core.css",
-			"require": "./dist/amll-core.css"
-		}
-	},
-	"devDependencies": {
-		"@applemusic-like-lyrics/lyric": "^0.3.0",
-		"@applemusic-like-lyrics/ttml": "workspace:^",
-		"@biomejs/biome": "catalog:",
-		"@types/deep-freeze": "^0.1.5",
-		"@types/stats.js": "^0.17.3",
-		"@types/ungap__structured-clone": "^1.2.0",
-		"lil-gui": "^0.21.0",
-		"stats.js": "^0.17.0",
-		"typedoc": "catalog:",
-		"typedoc-plugin-markdown": "catalog:",
-		"typescript": "catalog:",
-		"vite": "catalog:",
-		"vite-plugin-dts": "catalog:",
-		"vite-plugin-glsl": "^1.5.6",
-		"vite-plugin-top-level-await": "^1.6.0",
-		"vite-plugin-wasm": "catalog:"
-	},
-	"peerDependencies": {
-		"@pixi/app": "*",
-		"@pixi/core": "*",
-		"@pixi/display": "*",
-		"@pixi/filter-blur": "*",
-		"@pixi/filter-bulge-pinch": "*",
-		"@pixi/filter-color-matrix": "*",
-		"@pixi/sprite": "*"
-	},
-	"dependencies": {
-		"@ungap/structured-clone": "catalog:",
-		"bezier-easing": "^3.0.0",
-		"deep-freeze": "^0.0.1",
-		"gl-matrix": "4.0.0-beta.2"
-	}
+  "name": "@applemusic-like-lyrics/core",
+  "version": "0.3.1",
+  "description": "AMLL 的纯 JS 核心组件框架，包括歌词显示组件和背景组件等其它可以复用的组件",
+  "repository": {
+    "url": "https://github.com/amll-dev/applemusic-like-lyrics.git",
+    "directory": "packages/core",
+    "type": "git"
+  },
+  "license": "GPL-3.0",
+  "nx": {
+    "tags": [
+      "library"
+    ],
+    "targets": {
+      "nx-release-publish": {
+        "executor": "@nx/js:release-publish",
+        "dependsOn": []
+      }
+    }
+  },
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*.ts",
+    "dist/**/*.cjs",
+    "dist/**/*.css",
+    "dist/**/*.map"
+  ],
+  "scripts": {
+    "build:docs": "typedoc --plugin typedoc-plugin-markdown --out docs src/index.ts",
+    "build": "vite build",
+    "build:dev": "vite build",
+    "fmt": "biome format --write ./src",
+    "dev": "vite dev",
+    "preinstall": "npx only-allow pnpm"
+  },
+  "type": "module",
+  "main": "./dist/amll-core.cjs",
+  "module": "./dist/amll-core.js",
+  "typings": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/amll-core.js",
+      "require": "./dist/amll-core.cjs"
+    },
+    "./style.css": {
+      "import": "./dist/amll-core.css",
+      "require": "./dist/amll-core.css"
+    }
+  },
+  "devDependencies": {
+    "@applemusic-like-lyrics/lyric": "workspace:^",
+    "@applemusic-like-lyrics/ttml": "workspace:^",
+    "@biomejs/biome": "catalog:",
+    "@types/deep-freeze": "^0.1.5",
+    "@types/stats.js": "^0.17.3",
+    "@types/ungap__structured-clone": "^1.2.0",
+    "lil-gui": "^0.21.0",
+    "stats.js": "^0.17.0",
+    "typedoc": "catalog:",
+    "typedoc-plugin-markdown": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vite-plugin-dts": "catalog:",
+    "vite-plugin-glsl": "^1.5.6",
+    "vite-plugin-top-level-await": "^1.6.0",
+    "vite-plugin-wasm": "catalog:"
+  },
+  "peerDependencies": {
+    "@pixi/app": "*",
+    "@pixi/core": "*",
+    "@pixi/display": "*",
+    "@pixi/filter-blur": "*",
+    "@pixi/filter-bulge-pinch": "*",
+    "@pixi/filter-color-matrix": "*",
+    "@pixi/sprite": "*"
+  },
+  "dependencies": {
+    "@ungap/structured-clone": "catalog:",
+    "bezier-easing": "^3.0.0",
+    "deep-freeze": "^0.0.1",
+    "gl-matrix": "4.0.0-beta.2"
+  }
 }

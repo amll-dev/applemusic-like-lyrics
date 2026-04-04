@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-  <string name="all_files_access_required_text">请在设置中启用完全存储访问权限，否则本地音乐将无法正确加载。\n如果您只使用 AMLL Player 的 WS Protocol 功能，则可以忽略此提示。</string>
-  <string name="all_files_access_required_title">需要完全存储访问权限</string>
-  <string name="all_files_access_required_go_to_setting">前往设置</string>
-  <string name="all_files_access_required_ignore">忽略</string>
-</resources>

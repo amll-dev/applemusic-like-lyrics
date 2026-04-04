@@ -92,7 +92,7 @@ export interface LyricWord {
 	/** 单词 */
 	word: string;
 	/** 单词的音译 */
-	romanWord: string;
+	romanWord?: string;
 }
 
 /**

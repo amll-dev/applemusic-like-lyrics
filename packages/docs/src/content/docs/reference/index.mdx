@@ -1,0 +1,35 @@
+---
+title: API 参考
+description: 按模块浏览 API 文档
+editUrl: false
+---
+
+import { CardGrid, LinkCard } from "@astrojs/starlight/components";
+
+<CardGrid>
+  <LinkCard
+    title="Core"
+    description="框架无关的歌词播放器"
+    href="./core/"
+  />
+  <LinkCard
+    title="React"
+    description="Core 的 React 绑定与组件"
+    href="./react/"
+  />
+  <LinkCard
+    title="React Full"
+    description="更完整的 React 组件库"
+    href="./react-full/"
+  />
+  <LinkCard
+    title="Vue"
+    description="Core 的 Vue 绑定与组件"
+    href="./vue/"
+  />
+  <LinkCard
+    title="Lyric"
+    description="歌词工具库"
+    href="./lyric/"
+  />
+</CardGrid>

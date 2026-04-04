@@ -1,6 +1,0 @@
-project_id: "710461"
-files:
-    - source: /packages/player/locales/zh-CN/translation.json
-      translation: /packages/player/locales/%locale%/%file_name%.json
-bundles:
-    - 2

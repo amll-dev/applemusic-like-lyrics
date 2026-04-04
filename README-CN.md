@@ -19,9 +19,6 @@
 [AMLL TTML Tool 逐词歌词编辑器](https://github.com/amll-dev/amll-ttml-tool)
 /
 [AMLL Editor 下一代逐词歌词编辑器](https://github.com/amll-dev/amll-editor)
-
-[AMLL Player 本地播放器](./packages/player/README-CN.md)
-/
 [AMLL Page 网页播放器](https://github.com/apoint123/amll-page)
 
 
@@ -75,10 +72,6 @@ GPU 性能在以下状况下能够以预期尺寸下满 60 帧运行：
 -   [Rust 工具链](https://rustup.rs/)
 -   [wasm-pack](https://rustwasm.github.io/wasm-pack/)
 
-如需构建 **AMLL Player** 桌面端应用，还需额外安装：
-
--   对应平台的 [Tauri 前置依赖](https://tauri.app/start/prerequisites/)
-
 ### 构建组件库
 
 克隆本仓库后，在项目根目录执行以下指令：
@@ -99,14 +92,6 @@ pnpm nx run @applemusic-like-lyrics/core:build
 
 # 示例：开发构建 @applemusic-like-lyrics/lyric
 pnpm nx run @applemusic-like-lyrics/lyric:build:dev
-```
-
-### 构建 AMLL Player 桌面端应用
-
-```bash
-cd packages/player
-pnpm tauri build   # 发行构建
-pnpm tauri dev     # 开发模式
 ```
 
 ## 鸣谢

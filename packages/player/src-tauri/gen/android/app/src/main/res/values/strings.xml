@@ -1,8 +1,0 @@
-<resources>
-  <string name="app_name" translatable="false">AMLL Player</string>
-  <string name="main_activity_title" translatable="false">AMLL Player</string>
-  <string name="all_files_access_required_text">Please enable full storage access for this app in the settings. Or local music won\'t be loaded properly.\nYou can ignored this if you are just use AMLL Player for WS Protocol.</string>
-  <string name="all_files_access_required_title">Full Storage Access Required</string>
-  <string name="all_files_access_required_go_to_setting">Go to Settings</string>
-  <string name="all_files_access_required_ignore">Ignore</string>
-</resources>

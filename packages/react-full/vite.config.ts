@@ -1,7 +1,8 @@
 import react from "@vitejs/plugin-react";
-import jotaiDebugLabel from "jotai/babel/plugin-debug-label";
-import jotaiReactRefresh from "jotai/babel/plugin-react-refresh";
+import jotaiDebugLabel from "jotai-babel/plugin-debug-label";
+import jotaiReactRefresh from "jotai-babel/plugin-react-refresh";
 import { defineConfig } from "vite";
+import babel from "vite-plugin-babel";
 import dts from "vite-plugin-dts";
 import svgr from "vite-plugin-svgr";
 import wasm from "vite-plugin-wasm";
@@ -13,11 +14,12 @@ const ReactCompilerConfig = {
 export default defineConfig({
 	build: {
 		sourcemap: true,
+		minify: false,
 		lib: {
 			entry: "src/index.ts",
 			name: "AppleMusicLikeLyricsReactFramework",
 			fileName: "amll-react-framework",
-			formats: ["es", "cjs"],
+			formats: ["es"],
 		},
 		rollupOptions: {
 			external: [
@@ -29,15 +31,12 @@ export default defineConfig({
 				"jotai",
 			],
 		},
-		cssMinify: "lightningcss",
-	},
-	css: {
-		transformer: "lightningcss",
 	},
 	plugins: [
 		wasm(),
-		react({
-			babel: {
+		react(),
+		babel({
+			babelConfig: {
 				plugins: [
 					["babel-plugin-react-compiler", ReactCompilerConfig],
 					jotaiDebugLabel,

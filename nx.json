@@ -25,5 +25,69 @@
 			"outputs": ["{projectRoot}/dist", "{projectRoot}/pkg"]
 		}
 	},
-	"analytics": false
+	"analytics": false,
+	"release": {
+		"versionPlans": {
+			"ignorePatternsForPlanCheck": [
+				"**/*.md",
+				".github/**",
+				".nx/version-plans/**",
+				".editorconfig",
+				".gitignore",
+				"biome.json",
+				"Cargo.lock",
+				"Cargo.toml",
+				"lerna.json",
+				"LICENSE",
+				"nx.json",
+				"package.json",
+				"pnpm-lock.yaml",
+				"pnpm-workspace.yaml",
+				"tsconfig.json",
+				"tsconfig.base.json",
+				"packages/docs/**",
+				"packages/*/docs/**"
+			]
+		},
+		"version": {
+			"conventionalCommits": false,
+			"preVersionCommand": "pnpm build:libs"
+		},
+		"changelog": {
+			"workspaceChangelog": false,
+			"projectChangelogs": false
+		},
+		"git": {
+			"commit": true,
+			"tag": true
+		},
+		"releaseTag": {
+			"pattern": "{projectName}@{version}",
+			"requireSemver": true
+		},
+		"groups": {
+			"core-bundle": {
+				"projects": [
+					"@applemusic-like-lyrics/core",
+					"@applemusic-like-lyrics/react",
+					"@applemusic-like-lyrics/vue"
+				],
+				"projectsRelationship": "fixed",
+				"releaseTag": {
+					"pattern": "core-bundle@{version}",
+					"requireSemver": true
+				}
+			},
+			"libraries": {
+				"projects": [
+					"@applemusic-like-lyrics/fft",
+					"@applemusic-like-lyrics/lyric",
+					"@applemusic-like-lyrics/react-full",
+					"@applemusic-like-lyrics/ttml",
+					"@applemusic-like-lyrics/ws-protocol"
+				],
+				"projectsRelationship": "independent"
+			}
+		}
+	}
 }

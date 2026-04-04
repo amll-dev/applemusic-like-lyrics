@@ -42,8 +42,8 @@ import { parseTTML } from "@applemusic-like-lyrics/lyric";
 import { onMounted, reactive, ref } from "vue";
 import {
 	BackgroundRender,
-	LyricPlayer,
 	type BackgroundRenderRef,
+	LyricPlayer,
 	type LyricPlayerRef,
 } from ".";
 

@@ -8,7 +8,7 @@ English / [简体中文](./README-CN.md)
 
 <div align=center>
 
-A lyric player component library that aims to look similar to iPad version of Apple Music. With [DOM](./packages/core/README.md), [React](./packages/react/README.md) and [Vue](./packages/vue/README.md) bindings. [Also there's a standalone player based on it!](./packages/player/README.md)
+A lyric player component library that aims to look similar to iPad version of Apple Music. With [DOM](./packages/core/README.md), [React](./packages/react/README.md) and [Vue](./packages/vue/README.md) bindings.
 
 This is perhaps the most iPad Apple Music-like lyric page you've seen in frontend.
 
@@ -32,10 +32,6 @@ Although the goal of this project is not to imitate it completely, it will polis
 -   [![AMLL-React](https://img.shields.io/badge/React-%23149eca?label=Apple%20Music-like%20Lyrics&labelColor=%23FB5C74)](./packages/react/README.md): AMLL React binding, provides React component forms of lyric display and dynamic fluid background components
 -   [![AMLL-Vue](https://img.shields.io/badge/Vue-%2342d392?label=Apple%20Music-like%20Lyrics&labelColor=%23FB5C74)](./packages/vue/README.md): AMLL Vue binding, provides Vue component forms of lyric display and dynamic fluid background components
 -   [![AMLL-Lyric](https://img.shields.io/badge/Lyric-%23FB8C84?label=Apple%20Music-like%20Lyrics&labelColor=%23FB5C74)](./packages/lyric/README.md): AMLL lyric parsing module, provides parsing and serialization support for various lyric formats including LyRiC, YRC, QRC, and Lyricify Syllable
-
-## AMLL Player Preview Gallery
-
-![AMLL Player Preview](https://github.com/user-attachments/assets/2b93b28f-7f79-4092-a0a5-bc7c66e731a9)
 
 ## Browser compatibility alerts
 
@@ -74,10 +70,6 @@ GPU performance capable of running at full 60 fps at the expected sizes under th
 -   [Rust toolchain](https://rustup.rs/)
 -   [wasm-pack](https://rustwasm.github.io/wasm-pack/)
 
-For building the standalone **AMLL Player** desktop application, additionally install:
-
--   [Tauri prerequisites](https://tauri.app/start/prerequisites/) for your platform
-
 ### Building the component libraries
 
 Clone this repository, then run the following commands in the project root:
@@ -98,14 +90,6 @@ pnpm nx run @applemusic-like-lyrics/core:build
 
 # Example: development build of @applemusic-like-lyrics/lyric
 pnpm nx run @applemusic-like-lyrics/lyric:build:dev
-```
-
-### Building the AMLL Player desktop application
-
-```bash
-cd packages/player
-pnpm tauri build          # Production build
-pnpm tauri dev            # Development mode
 ```
 
 ## Acknowledgements

@@ -1,11 +1,12 @@
+import path from "node:path";
 import { defineConfig } from "vite";
 import dts from "vite-plugin-dts";
 import wasm from "vite-plugin-wasm";
-import path from "path";
 
 export default defineConfig({
 	build: {
 		sourcemap: true,
+		minify: false,
 		lib: {
 			entry: "src/index.ts",
 			name: "AppleMusicLikeLyricsCore",

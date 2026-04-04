@@ -800,7 +800,7 @@ impl<'a, R: BufRead> TTMLParser<'a, R> {
                                 let trimmed = String::from_utf8_lossy(piece.as_ref())
                                     .trim_end()
                                     .to_string();
-                                line.words[*wi].roman_word = trimmed.into();
+                                line.words[*wi].roman_word = Some(trimmed.into());
                             }
                         }
                     }

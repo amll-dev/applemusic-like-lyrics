@@ -2,10 +2,8 @@ name: "构建并部署开发文档"
 
 on:
   push:
-    paths:
-      - 'packages/docs/**'
     branches:
-      - full-refractor
+      - main
       - dev
   workflow_dispatch:
 

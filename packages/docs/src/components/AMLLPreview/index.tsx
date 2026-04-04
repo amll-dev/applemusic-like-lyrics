@@ -5,17 +5,16 @@ import { useLayoutEffect, useRef, useState } from "react";
 
 const buildLyricLines = (
 	lyric: string,
-	startTime = 1000,
+	startTime: number,
 	otherParams: Partial<LyricLine> = {},
 ): LyricLine => {
 	let curTime = startTime;
 	const words = [];
 	for (const word of lyric.split("|")) {
 		const [text, duration] = word.split(",");
-		const endTime = curTime + Number.parseInt(duration);
+		const endTime = curTime + Number(duration);
 		words.push({
 			word: text,
-			romanWord: "",
 			startTime: curTime,
 			endTime,
 			obscene: false,
@@ -24,7 +23,7 @@ const buildLyricLines = (
 	}
 	return {
 		startTime,
-		endTime: curTime + 3000,
+		endTime: curTime + 500,
 		translatedLyric: "",
 		romanLyric: "",
 		isBG: false,
@@ -37,31 +36,27 @@ const buildLyricLines = (
 const DEMO_LYRICS: LyricLine[][] = [
 	[
 		buildLyricLines(
-			"Apple ,750|Music ,500|Like ,500|Ly,400|ri,500|cs ,250",
-			1000,
-			{
-				translatedLyric: "类苹果歌词",
-			},
+			"Apple ,350|Music ,300|Like ,300|Ly,500|ri,900|cs ,250",
+			2000,
+			{ translatedLyric: "类苹果歌词" },
 		),
 		// A lyric component library for the web
 		buildLyricLines(
-			"A ,400|ly,500|ric ,250|com,500|po,500|nent ,500|li,500|bra,500|ry ,500|for ,500|the ,500|web ,500",
-			7000,
-			{
-				translatedLyric: "为 Web 而生的歌词组件库",
-			},
+			"A ,200|ly,100|ric ,250|com,200|po,200|nent ,200|li,100|bra,200|ry ,100|for ,100|the ,200|web ,600",
+			5000,
+			{ translatedLyric: "为 Web 而生的歌词组件库" },
 		),
 		// Brought to you with
-		buildLyricLines("Brought ,500|to ,250|you ,800|with ,600", 16000, {
+		buildLyricLines("Brought ,300|to ,250|you ,800|with ,600", 8000, {
 			translatedLyric: "为你带来",
 		}),
 		// Background Lyric Line
-		buildLyricLines("Background ,750|Lyric ,300|Line ,500", 16500, {
+		buildLyricLines("Background ,750|lyric ,300|line ,500", 8500, {
 			translatedLyric: "背景歌词行",
 			isBG: true,
 		}),
 		// And Duet Lyric Line
-		buildLyricLines("And ,300|Duet ,500|Lyric ,500|Line ,750", 21150, {
+		buildLyricLines("And ,300|Duet ,300|lyric ,500|line ,650", 10500, {
 			translatedLyric: "还有对唱歌词行",
 			isDuet: true,
 		}),
@@ -118,7 +113,7 @@ export const AMLLPreview = () => {
 								filter: "blur(0px)",
 							},
 							{
-								duration: 500,
+								duration: 300,
 								easing: "ease-in-out",
 								fill: "forwards",
 							},
@@ -126,7 +121,7 @@ export const AMLLPreview = () => {
 							if (canceled) return;
 							requestAnimationFrame(onFrame);
 						};
-					}, 1000);
+					}, 600);
 				};
 			} else {
 				setCurrentTime((time - startTime) | 0);

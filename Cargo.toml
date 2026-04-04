@@ -4,12 +4,7 @@ members = [
     "./packages/lyric",
     "./packages/fft",
     "./packages/ws-protocol",
-    "./packages/player-core",
 ]
-exclude = ["./packages/player/src-tauri", "./packages/skia-player"]
-
-[patch.crates-io]
-ffmpeg-sys-next = { git = "https://github.com/apoint123/rust-ffmpeg-sys" }
 
 # [profile.dev]
 # opt-level = 1

@@ -1,8 +1,0 @@
-.radixTheme,
-.body {
-	--default-font-family: var(--amll-font-family);
-	--code-font-family:
-		"Menlo", "Consolas (Custom)", "Bitstream Vera Sans Mono",
-		var(--amll-font-family), monospace, "Apple Color Emoji", "Segoe UI Emoji";
-	--color-panel-solid: var(--color-panel-translucent);
-}
