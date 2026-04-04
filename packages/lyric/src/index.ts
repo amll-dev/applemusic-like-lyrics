@@ -4,5 +4,6 @@ export { parseYRC, stringifyYRC } from "./formats/yrc";
 export { parseQRC, stringifyQRC } from "./formats/qrc";
 export { parseLYL, stringifyLYL } from "./formats/lyl";
 export { parseLYS, stringifyLYS } from "./formats/lys";
+export { parseLQE, stringifyLQE } from "./formats/lqe";
 
 export type { LyricLine, LyricWord, TTMLLyric } from "./types";
