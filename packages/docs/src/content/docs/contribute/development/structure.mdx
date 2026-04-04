@@ -1,0 +1,50 @@
+---
+title: 仓库结构介绍
+---
+
+import { FileTree } from "@astrojs/starlight/components";
+
+## Monorepo 结构
+
+仓库使用 `Nx` 管理任务编排，`pnpm workspace` 管理依赖，主要目录如下：
+
+<FileTree>
+
+- packages/
+  - core/
+  - react/
+  - react-full/
+  - vue/
+  - lyric/ Rust + wasm-pack
+  - fft/ Rust + wasm-pack
+  - ws-protocol/ Rust + wasm-pack
+  - ttml/
+  - docs/ Astro + Starlight 文档站
+- .github/
+  - workflows/
+- nx.json
+- pnpm-workspace.yaml
+
+</FileTree>
+
+## 包分层（概览）
+
+- 渲染与框架绑定：`core`、`react`、`react-full`、`vue`
+- 歌词与协议能力：`lyric`、`ttml`、`ws-protocol`
+- 音频可视化：`fft`
+- 文档站：`docs`
+
+## Nx 与发布分组
+
+`nx.json` 中的发布配置包含两个主要 group：
+
+- `core-bundle`（固定版本）：
+  - `@applemusic-like-lyrics/core`
+  - `@applemusic-like-lyrics/react`
+  - `@applemusic-like-lyrics/vue`
+- `libraries`（独立版本）：
+  - `@applemusic-like-lyrics/fft`
+  - `@applemusic-like-lyrics/lyric`
+  - `@applemusic-like-lyrics/react-full`
+  - `@applemusic-like-lyrics/ttml`
+  - `@applemusic-like-lyrics/ws-protocol`
