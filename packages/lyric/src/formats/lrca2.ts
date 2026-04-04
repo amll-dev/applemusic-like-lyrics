@@ -1,3 +1,11 @@
+/**
+ * @fileoverview LRC A2（增强 LRC）格式解析与生成。
+ * 在普通 LRC 行级时间戳基础上，支持词级/音节级时间戳；同一行内时间需连续，词时间由左右时间戳界定。
+ *
+ * 格式示例：
+ * [02:38.850]<02:38.850>Words <02:39.030>are <02:39.120>made <02:39.360>of <02:39.420>plastic<02:40.080>
+ * [02:40.080]<02:40.080>Come <02:40.290>back <02:40.470>like <02:40.680>elastic<02:41.370>
+ */
 import type { LyricLine, LyricWord } from "../types";
 import { createLine, createWord, formatTime, parseTime } from "../utils";
 

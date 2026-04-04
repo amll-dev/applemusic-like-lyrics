@@ -1,3 +1,11 @@
+/**
+ * @fileoverview YRC（网易云音乐逐词歌词）格式解析与生成。
+ * 行开头为 [startTime,duration]，每个词为 (startTime,duration,0)word
+ *
+ * 格式示例：
+ * [190871,1984](190871,361,0)For (191232,172,0)the (191404,376,0)first (191780,1075,0)time
+ * [193459,4198](193459,412,0)What's (193871,574,0)past (194445,506,0)is (194951,2706,0)past
+ */
 import type { LyricLine, LyricWord } from "../types";
 import { createLine, createWord } from "../utils";
 

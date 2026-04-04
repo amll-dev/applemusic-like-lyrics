@@ -1,3 +1,12 @@
+/**
+ * @fileoverview 基础 LRC 格式解析与生成。
+ * 该格式只支持行级时间戳，不支持词级/音节级时间戳；若需要词级时间戳请使用 LRC A2 等扩展。
+ *
+ * 格式示例：
+ * [01:56.439]Life goes on, through tides of time
+ * [02:01.079]Get in the line, to dream alive
+ * [02:06.103][02:08.916][02:11.135]On the journey
+ */
 import type { LyricLine } from "../types";
 import {
 	createLine,

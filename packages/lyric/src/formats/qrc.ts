@@ -1,3 +1,11 @@
+/**
+ * @fileoverview QRC（QQ 音乐逐词歌词）格式解析与生成。
+ * 行开头为 [startTime,duration]，每个词为 word(startTime,duration)
+ *
+ * 格式示例：
+ * [190871,1984]For (190871,361)the (191232,172)first (191404,376)time(191780,1075)
+ * [193459,4198]What's (193459,412)past (193871,574)is (194445,506)past(194951,2706)
+ */
 import type { LyricLine, LyricWord } from "../types";
 import { createLine, createWord } from "../utils";
 

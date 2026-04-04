@@ -1,3 +1,22 @@
+/**
+ * @fileoverview Lyricify Syllable（LYS）格式解析与生成。
+ * 支持词级时间戳、背景人声与对唱属性。每行以属性位 `[prop]` 开头，后续为 `文本(start,duration)` 序列。
+ *
+ * 属性位说明：
+ * 0: 未设置
+ * 1: 左对齐
+ * 2: 右对齐（对唱）
+ * 3: 非背景，未设置对齐
+ * 4: 非背景，左对齐
+ * 5: 非背景，右对齐（对唱）
+ * 6: 背景，未设置对齐
+ * 7: 背景，左对齐
+ * 8: 背景，右对齐（对唱）
+ *
+ * 格式示例：
+ * [0]Lately (358,1336)I've (1694,487)been, (2181,673)I've (2854,268)been (3122,280)losing (3402,345)sleep(3747,1186)
+ * [0]Dreaming (5245,696)about (5941,471)the (6412,306)things (6718,458)that (7176,292)we (7468,511)could (7979,393)be(8372,737)
+ */
 import type { LyricLine, LyricWord } from "../types";
 import { createLine, createWord } from "../utils";
 

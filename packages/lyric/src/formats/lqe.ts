@@ -1,3 +1,20 @@
+/**
+ * @fileoverview Lyricify Quick Export（LQE）格式解析与生成。
+ * 该格式本质是组合格式：`lyrics` 部分使用 LYS；`translation`/`pronunciation` 部分使用 LRC。
+ *
+ * 格式示例：
+ * [Lyricify Quick Export]
+ * [version:1.0]
+ *
+ * [lyrics: format@Lyricify Syllable]
+ * [4]A(365,350)ni(715,307)ro(1022,312)dham (1334,419)a(3203,337)nut(3540,350)pā(3890,306)dam(4196,382)
+ *
+ * [translation: format@LRC]
+ * [00:00.365]不生亦不灭
+ *
+ * [pronunciation: format@LRC, language@romaji]
+ * [00:00.365]阿难罗昙 阿耨钵昙
+ */
 import type { LyricLine } from "../types";
 import { formatTime, parseTime } from "../utils";
 import { parseLYS, stringifyLYS } from "./lys";
