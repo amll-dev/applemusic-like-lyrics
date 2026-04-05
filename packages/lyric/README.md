@@ -2,6 +2,12 @@
 
 English / [简体中文](./README-CN.md)
 
+This is a refactored version of the original lyrics pack. Docs not finished yet.
+
+Below is the original docs.
+
+---
+
 > Warning: This is a personal project and is still under development. There may still be many issues, so please do not use it directly in production environments!
 
 ![AMLL-Lyric](https://img.shields.io/badge/Lyric-%23FB8C84?label=Apple%20Music-like%20Lyrics&labelColor=%23FB5C74)
@@ -14,18 +20,20 @@ Since this module focuses only on lyric content, it discards all information unr
 
 Lyric format support table:
 
-| Source Format＼Target Format          | Parse Own Format | LyRiC Format `.lrc` | ESLyric Word-by-word Format `.lrc` | NetEase Cloud Music Word-by-word Format `.yrc` | QQ Music Word-by-word Format `.qrc` | Lyricify Syllable Word-by-word Format `.lys` | TTML Lyric Format `.ttml` | ASS Subtitle Format `.ass` |
-| ------------------------------------- | --------------- | ------------------- | ---------------------------------- | --------------------------------------------- | ---------------------------------- | -------------------------------------------- | ------------------------ | -------------------------- |
-| LyRiC Format `.lrc`                     | ✅              | ／                  | ✅                                 | ✅                                            | ✅                                 | ✅                                           | ✅                       | ✅                         |
-| ESLyric Word-by-word Format `.lrc`      | ✅              | ✅                  | ／                                 | ✅                                            | ✅                                 | ✅                                           | ✅                       | ✅                         |
-| NetEase Cloud Music Word-by-word Format `.yrc` | ✅       | ✅ [^1]             | ✅ [^1]                            | ／                                            | ✅                                 | ✅                                           | ✅                       | ✅                         |
-| QQ Music Word-by-word Format `.qrc`     | ✅              | ✅ [^1]             | ✅ [^1]                            | ✅                                            | ／                                 | ✅                                           | ✅                       | ✅                         |
-| Lyricify Syllable Word-by-word Format `.lys` | ✅         | ✅ [^1]             | ✅ [^1]                            | ✅ [^2]                                       | ✅ [^2]                            | ／                                           | ✅                       | ✅                         |
-| TTML Lyric Format `.ttml`               | ✅              | ✅ [^1]             | ✅ [^1]                            | ✅ [^2]                                       | ✅ [^2]                            | ✅ [^3]                                      | ／                       | ✅                         |
-| ASS Subtitle Format `.ass`              | ❌              | ❌                  | ❌                                 | ❌                                            | ❌                                 | ❌                                           | ❌                       | ／                         |
+| Source Format＼Target Format                   | Parse Own Format | LyRiC Format `.lrc` | ESLyric Word-by-word Format `.lrc` | NetEase Cloud Music Word-by-word Format `.yrc` | QQ Music Word-by-word Format `.qrc` | Lyricify Syllable Word-by-word Format `.lys` | TTML Lyric Format `.ttml` | ASS Subtitle Format `.ass` |
+| ---------------------------------------------- | ---------------- | ------------------- | ---------------------------------- | ---------------------------------------------- | ----------------------------------- | -------------------------------------------- | ------------------------- | -------------------------- |
+| LyRiC Format `.lrc`                            | ✅               | ／                  | ✅                                 | ✅                                             | ✅                                  | ✅                                           | ✅                        | ✅                         |
+| ESLyric Word-by-word Format `.lrc`             | ✅               | ✅                  | ／                                 | ✅                                             | ✅                                  | ✅                                           | ✅                        | ✅                         |
+| NetEase Cloud Music Word-by-word Format `.yrc` | ✅               | ✅ [^1]             | ✅ [^1]                            | ／                                             | ✅                                  | ✅                                           | ✅                        | ✅                         |
+| QQ Music Word-by-word Format `.qrc`            | ✅               | ✅ [^1]             | ✅ [^1]                            | ✅                                             | ／                                  | ✅                                           | ✅                        | ✅                         |
+| Lyricify Syllable Word-by-word Format `.lys`   | ✅               | ✅ [^1]             | ✅ [^1]                            | ✅ [^2]                                        | ✅ [^2]                             | ／                                           | ✅                        | ✅                         |
+| TTML Lyric Format `.ttml`                      | ✅               | ✅ [^1]             | ✅ [^1]                            | ✅ [^2]                                        | ✅ [^2]                             | ✅ [^3]                                      | ／                        | ✅                         |
+| ASS Subtitle Format `.ass`                     | ❌               | ❌                  | ❌                                 | ❌                                             | ❌                                  | ❌                                           | ❌                        | ／                         |
 
 [^1]: Will lose word-by-word timing data, vocal attributes (background vocals, duet vocals) and AMLL metadata
+
 [^2]: Will lose vocal attributes (background vocals, duet vocals) and AMLL metadata
+
 [^3]: Will lose AMLL metadata
 
 ## Using with Core Lyric Component
