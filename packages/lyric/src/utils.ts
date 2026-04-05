@@ -15,7 +15,6 @@ export const createWord = (word: Partial<LyricWord>): LyricWord => ({
 	startTime: 0,
 	endTime: 0,
 	word: "",
-	romanWord: "",
 	...word,
 });
 
