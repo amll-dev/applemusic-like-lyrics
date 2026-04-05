@@ -52,8 +52,6 @@ export function parseLYS(lys: string): LyricLine[] {
 	const propRegex = /^\[(\d+)\]/;
 	const wordRegex = /(.*?)\((\d+),(\d+)\)/g;
 
-	const getSpaceWord = () => createWord({ word: " " });
-
 	for (const lineStr of lines) {
 		const propMatch = lineStr.match(propRegex);
 		if (!propMatch) continue;
@@ -68,13 +66,8 @@ export function parseLYS(lys: string): LyricLine[] {
 			const startTime = Number(startStr);
 			const duration = Number(durStr);
 			const endTime = startTime + duration;
-			const sourceText = rawWord;
-			const wordText = sourceText.trim();
-
-			if (sourceText.startsWith(" ") && words[words.length - 1]?.word !== " ")
-				words.push(getSpaceWord());
+			const wordText = rawWord;
 			words.push(createWord({ word: wordText, startTime, endTime }));
-			if (sourceText.endsWith(" ")) words.push(getSpaceWord());
 		}
 
 		const lineStartTime = words[0]?.startTime ?? 0;
@@ -82,9 +75,9 @@ export function parseLYS(lys: string): LyricLine[] {
 		if (!words.length) continue;
 
 		if (props.isBG && words.length) {
-			words[0].word = words[0].word.replace(/^\(/, "");
+			words[0].word = words[0].word.replace(/^[(（]/, "");
 			words[words.length - 1].word = words[words.length - 1].word.replace(
-				/\)$/,
+				/[）)]$/,
 				"",
 			);
 		}
@@ -99,19 +92,14 @@ export function parseLYS(lys: string): LyricLine[] {
 			}),
 		);
 	}
-
 	return lyricLines;
 }
 
-function getPropMaker(allLines: LyricLine[]) {
-	const hasDuet = allLines.some((l) => l.isDuet);
-	const hasBackground = allLines.some((l) => l.isBG);
-	return (line: LyricLine) => {
-		let prop = 0;
-		if (hasDuet) prop += line.isDuet ? 2 : 1;
-		if (hasBackground) prop += line.isBG ? 6 : 3;
-		return prop;
-	};
+function makeProp(line: LyricLine): number {
+	let prop = 0;
+	prop += line.isDuet ? 2 : 1;
+	prop += line.isBG ? 6 : 3;
+	return prop;
 }
 
 /**
@@ -120,10 +108,9 @@ function getPropMaker(allLines: LyricLine[]) {
  * @returns LYS 格式的字符串
  */
 export function stringifyLYS(lines: LyricLine[]): string {
-	const getProp = getPropMaker(lines);
 	return lines
 		.map((line) => {
-			const prop = getProp(line);
+			const prop = makeProp(line);
 			const printWords: {
 				startTime: number;
 				duration: number;

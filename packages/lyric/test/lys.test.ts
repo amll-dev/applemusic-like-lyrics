@@ -10,7 +10,7 @@ describe("lys", () => {
 		expect(lines[0].endTime).toBe(2000);
 		expect(lines[0].isBG).toBe(false);
 		expect(lines[0].isDuet).toBe(false);
-		expect(lines[0].words.map((w) => w.word)).toEqual(["Hello", " ", "World"]);
+		expect(lines[0].words.map((w) => w.word)).toEqual(["Hello", " World"]);
 	});
 
 	it("parses bg + duet flags from prop and strips bg wrappers", () => {
@@ -24,7 +24,7 @@ describe("lys", () => {
 
 	it("handles CRLF and ignores lines without valid prop prefix", () => {
 		const lines = parseLYS(
-			"no prop\r\n#comment\r\n{meta:true}\r\n[0]Hello(1000,500)World(1500,500)",
+			"no prop\r\n#comment\r\n{meta:true}\r\n[4]Hello(1000,500)World(1500,500)",
 		);
 
 		expect(lines).toHaveLength(1);
@@ -59,7 +59,7 @@ describe("lys", () => {
 			},
 		]);
 
-		expect(result).toBe("[0]Hello (1000,500)World(1500,500)");
+		expect(result).toBe("[4]Hello (1000,500)World(1500,500)");
 	});
 
 	it("stringifies props according to duet/background presence", () => {
@@ -113,11 +113,11 @@ describe("lys", () => {
 			},
 		]);
 
-		expect(result).toBe("[0]Hello(0,0)World(0,0)");
+		expect(result).toBe("[4]Hello(0,0)World(0,0)");
 	});
 
 	it("keeps parse -> stringify -> parse stable for content and timing", () => {
-		const input = "[0]Hello(1000,500) World(1500,500)\n[8](Again(3000,500))";
+		const input = "[4]Hello(1000,500) World(1500,500)\n[8](Again(3000,500))";
 		const first = parseLYS(input);
 		const text = stringifyLYS(first);
 		const second = parseLYS(text);
