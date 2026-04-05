@@ -32,8 +32,13 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "catalog:",
+		"@types/node": "^25.5.2",
+		"@types/pako": "^2.0.4",
 		"typescript": "^5.9.3",
 		"vite": "catalog:",
 		"vite-plugin-dts": "^4.3.0"
+	},
+	"dependencies": {
+		"pako": "^2.1.0"
 	}
 }
