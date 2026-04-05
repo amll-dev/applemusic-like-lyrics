@@ -10,22 +10,28 @@
 	"license": "GPL-3.0",
 	"type": "module",
 	"files": [
-		"dist"
+		"dist",
+		"pkg"
 	],
 	"main": "./dist/amll-lyric.umd.cjs",
 	"module": "./dist/amll-lyric.js",
 	"types": "./dist/index.d.ts",
 	"exports": {
-		"types": "./dist/index.d.ts",
-		"import": "./dist/amll-lyric.js",
-		"require": "./dist/amll-lyric.umd.cjs"
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/amll-lyric.js",
+			"require": "./dist/amll-lyric.umd.cjs"
+		}
 	},
 	"scripts": {
 		"build:docs": "typedoc --plugin typedoc-plugin-markdown --out docs src/index.ts",
 		"typecheck": "tsc --noEmit",
-		"build-only": "vite build",
-		"build": "run-p typecheck \"build-only {@}\" --",
-		"build:dev": "vite build",
+		"build:wasm": "wasm-pack build rust --target bundler --release --out-dir ../pkg --out-name amll_lyric",
+		"build:wasm:dev": "wasm-pack build rust --target bundler --dev --out-dir ../pkg --out-name amll_lyric",
+		"vite-build:main": "vite build",
+		"build-only": "run-s build:wasm vite-build:main",
+		"build": "run-s build:wasm typecheck vite-build:main",
+		"build:dev": "run-s build:wasm:dev typecheck vite-build:main",
 		"fmt": "biome format --write ./src",
 		"dev": "vite dev",
 		"preinstall": "npx only-allow pnpm"
@@ -34,6 +40,7 @@
 		"@biomejs/biome": "catalog:",
 		"typescript": "^5.9.3",
 		"vite": "catalog:",
-		"vite-plugin-dts": "^4.3.0"
+		"vite-plugin-dts": "^4.3.0",
+		"vite-plugin-wasm": "catalog:"
 	}
 }

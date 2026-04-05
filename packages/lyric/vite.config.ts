@@ -1,5 +1,6 @@
 import { defineConfig } from "vite";
 import dts from "vite-plugin-dts";
+import wasm from "vite-plugin-wasm";
 
 export default defineConfig({
 	build: {
@@ -9,8 +10,13 @@ export default defineConfig({
 			fileName: "amll-lyric",
 		},
 		rollupOptions: {
-			external: ["@applemusic-like-lyrics/core"],
+			external: [
+				"@applemusic-like-lyrics/core",
+				"../../pkg/amll_lyric.js",
+				"../pkg/amll_lyric.js",
+				"./pkg/amll_lyric.js",
+			],
 		},
 	},
-	plugins: [dts()],
+	plugins: [wasm(), dts()],
 });
