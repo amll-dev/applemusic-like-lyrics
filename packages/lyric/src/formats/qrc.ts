@@ -34,7 +34,7 @@ function trimBGParentheses(words: LyricWord[]): void {
  * @returns 成功解析出来的歌词
  */
 export function parseQRC(qrc: string): LyricLine[] {
-	const wordPattern = /^(.*?)\((\d+),(\d+)\)/;
+	const wordPattern = /(.*?)\((\d+),(\d+)\)/g;
 	const linePattern = /^\[(\d+),(\d+)\]/;
 
 	const lines = qrc
@@ -53,15 +53,16 @@ export function parseQRC(qrc: string): LyricLine[] {
 			const lineEnd = lineStart + lineDuration;
 
 			const words: LyricWord[] = [];
-			let lineContent = lineStr.slice(linePrefix.length);
+			const lineContent = lineStr.slice(linePrefix.length);
 			let lastEnd = lineStart;
-			while (true) {
-				const wordMatch = lineContent.match(wordPattern);
-				if (!wordMatch) break;
+			let lastMatchEndIndex = 0;
+
+			for (const wordMatch of lineContent.matchAll(wordPattern)) {
 				const [fullMatch, wordText, wordStartStr, wordDurStr] = wordMatch;
 				const wordStart = Number(wordStartStr);
 				const wordDur = Number(wordDurStr);
 				const wordEnd = wordStart + wordDur;
+
 				words.push(
 					createWord({
 						word: wordText,
@@ -69,17 +70,21 @@ export function parseQRC(qrc: string): LyricLine[] {
 						endTime: wordEnd,
 					}),
 				);
-				lineContent = lineContent.slice(fullMatch.length);
+
 				lastEnd = wordEnd;
+				lastMatchEndIndex = wordMatch.index + fullMatch.length;
 			}
-			if (lineContent.trim())
+
+			const remainingContent = lineContent.slice(lastMatchEndIndex);
+			if (remainingContent.trim()) {
 				words.push(
 					createWord({
-						word: lineContent,
+						word: remainingContent,
 						startTime: lastEnd,
 						endTime: lastEnd < lineEnd ? lineEnd : lastEnd,
 					}),
 				);
+			}
 
 			const isBG = checkIsBG(words);
 			if (isBG) trimBGParentheses(words);
