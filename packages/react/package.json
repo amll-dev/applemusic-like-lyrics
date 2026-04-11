@@ -31,7 +31,7 @@
     "build": "vite build",
     "build:dev": "vite build",
     "fmt": "biome format --write ./src",
-    "dev": "vite dev",
+    "dev": "nx run @applemusic-like-lyrics/playground-react:dev",
     "preinstall": "npx only-allow pnpm"
   },
   "main": "./dist/amll-react.cjs",
@@ -45,7 +45,6 @@
     }
   },
   "devDependencies": {
-    "@applemusic-like-lyrics/lyric": "workspace:^",
     "@biomejs/biome": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",

@@ -1,0 +1,30 @@
+{
+  "name": "@applemusic-like-lyrics/playground-react",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "nx": {
+    "tags": ["playground"]
+  },
+  "scripts": {
+    "dev": "vite dev"
+  },
+  "devDependencies": {
+    "@applemusic-like-lyrics/core": "workspace:^",
+    "@applemusic-like-lyrics/lyric": "workspace:^",
+    "@applemusic-like-lyrics/react": "workspace:^",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "@pixi/app": "^7.4.3",
+    "@pixi/core": "^7.4.3",
+    "@pixi/display": "^7.4.3",
+    "@pixi/filter-blur": "^7.4.3",
+    "@pixi/filter-color-matrix": "^7.4.3",
+    "@pixi/sprite": "^7.4.3"
+  }
+}

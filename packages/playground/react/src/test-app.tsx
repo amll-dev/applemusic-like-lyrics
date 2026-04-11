@@ -5,8 +5,8 @@ import {
 } from "@applemusic-like-lyrics/lyric";
 import type { FC } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { BackgroundRender } from "./bg-render";
-import { LyricPlayer, type LyricPlayerRef } from "./lyric-player";
+import { BackgroundRender } from "@applemusic-like-lyrics/react";
+import { LyricPlayer, type LyricPlayerRef } from "@applemusic-like-lyrics/react";
 
 const mapTTMLLyric = (line: RawLyricLine): LyricLine => ({
 	...line,
