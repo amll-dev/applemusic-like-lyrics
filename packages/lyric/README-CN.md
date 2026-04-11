@@ -2,6 +2,12 @@
 
 [English](./README.md) / 简体中文
 
+此为基于 TypeScript 的重构版本 Lyrics 包，文档未完成。
+
+以下是原文档：
+
+---
+
 > 警告：此为个人项目，且尚未完成开发，可能仍有大量问题，所以请勿直接用于生产环境！
 
 ![AMLL-Lyric](https://img.shields.io/badge/Lyric-%23FB8C84?label=Apple%20Music-like%20Lyrics&labelColor=%23FB5C74)
@@ -26,7 +32,9 @@
 | ASS 字幕格式 `.ass`                   | ❌           | ❌                | ❌                          | ❌                            | ❌                         | ❌                                    | ❌                    | ／                  |
 
 [^1]: 会丢失逐词时间数据、演唱属性（背景人声，对唱人声）和 AMLL 元数据
+
 [^2]: 会丢失演唱属性（背景人声，对唱人声）和 AMLL 元数据
+
 [^3]: 会丢失 AMLL 元数据
 
 ## 与 Core 歌词组件一起使用
