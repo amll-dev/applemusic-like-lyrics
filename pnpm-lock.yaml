@@ -228,6 +228,9 @@ importers:
 
   packages/lyric:
     dependencies:
+      '@applemusic-like-lyrics/ttml':
+        specifier: workspace:^
+        version: link:../ttml
       pako:
         specifier: ^2.1.0
         version: 2.1.0
