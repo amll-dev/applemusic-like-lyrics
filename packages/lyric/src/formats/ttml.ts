@@ -1,6 +1,6 @@
 import {
-	parseTTML as parseTTMLPacked,
 	exportTTML,
+	parseTTML as parseTTMLPacked,
 } from "@applemusic-like-lyrics/ttml";
 import type { TTMLLyric } from "../types";
 
@@ -10,11 +10,7 @@ import type { TTMLLyric } from "../types";
  * @returns 成功解析出来的 TTML 歌词对象
  */
 export function parseTTML(ttmlText: string): TTMLLyric {
-	const result = parseTTMLPacked(ttmlText);
-	return {
-		lines: result.lyricLines,
-		metadata: result.metadata.map(({ key, value }) => [key, value]),
-	};
+	return parseTTMLPacked(ttmlText);
 }
 
 /**
@@ -22,8 +18,5 @@ export function parseTTML(ttmlText: string): TTMLLyric {
  * @param lyric TTML 歌词对象
  */
 export function stringifyTTML(ttmlLyric: TTMLLyric): string {
-	return exportTTML({
-		lyricLines: ttmlLyric.lines,
-		metadata: ttmlLyric.metadata.map(([key, value]) => ({ key, value })),
-	});
+	return exportTTML(ttmlLyric);
 }

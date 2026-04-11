@@ -550,6 +550,9 @@ importers:
       '@biomejs/biome':
         specifier: 'catalog:'
         version: 2.4.8
+      typedoc:
+        specifier: 'catalog:'
+        version: 0.28.18(typescript@5.9.3)
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
