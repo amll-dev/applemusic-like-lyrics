@@ -6,6 +6,7 @@
 		"@biomejs/biome": "catalog:",
 		"@nx/js": "^22.6.4",
 		"lerna": "^9.0.7",
+		"npm-run-all2": "^8.0.4",
 		"nx": "^22.6.0",
 		"typescript": "catalog:"
 	},
@@ -26,6 +27,5 @@
 			"nx",
 			"sharp"
 		]
-	},
-	"dependencies": {}
+	}
 }
