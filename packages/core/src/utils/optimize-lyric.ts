@@ -102,7 +102,7 @@ function syncMainAndBackgroundLines(lines: LyricLine[]) {
 /**
  * 清洗非刻意的重叠
  *
- * 如果重叠大于100ms 且 重叠超过下一行时长的10%，则截断
+ * 如果重叠大于100ms 且 重叠超过下一行时长的10%，则视为刻意重叠，否则将结束时间设为下一行的开始时间
  */
 function cleanUnintentionalOverlaps(lines: LyricLine[]) {
 	for (let i = 0; i < lines.length - 1; i++) {
