@@ -38,7 +38,7 @@ yarn add @applemusic-like-lyrics/vue # 使用 yarn
 
 （或者参考 React 绑定，二者属性和引用方式完全一致）
 
-一个测试用途的程序可以在 [./src/test.ts](./src/test.ts) 里找到。
+一个测试用途的程序可以在 [../playground/vue/src/test.ts](../playground/vue/src/test.ts) 里找到。
 
 ```vue
 <tamplate>

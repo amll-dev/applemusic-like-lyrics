@@ -38,7 +38,7 @@ Since Vue components are not convenient for generating API documentation, please
 
 (Or refer to the React binding, as both have identical properties and reference methods)
 
-A test program can be found in [./src/test.ts](./src/test.ts).
+A test program can be found in [../playground/vue/src/test.ts](../playground/vue/src/test.ts).
 
 ```vue
 <tamplate>

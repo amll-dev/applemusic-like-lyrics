@@ -27,7 +27,7 @@
     "build": "vite build",
     "build:dev": "vite build",
     "fmt": "biome format --write ./src",
-    "dev": "vite dev",
+    "dev": "nx run @applemusic-like-lyrics/playground-vue:dev",
     "preinstall": "npx only-allow pnpm"
   },
   "main": "./dist/amll-vue.cjs",
@@ -48,7 +48,6 @@
   },
   "devDependencies": {
     "@applemusic-like-lyrics/core": "workspace:^",
-    "@applemusic-like-lyrics/lyric": "workspace:^",
     "@biomejs/biome": "catalog:",
     "@pixi/app": "^7.4.3",
     "@pixi/core": "^7.4.3",

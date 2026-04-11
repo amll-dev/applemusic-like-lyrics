@@ -1,0 +1,29 @@
+{
+  "name": "@applemusic-like-lyrics/playground-vue",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "nx": {
+    "tags": ["playground"]
+  },
+  "scripts": {
+    "dev": "vite dev"
+  },
+  "devDependencies": {
+    "@applemusic-like-lyrics/core": "workspace:^",
+    "@applemusic-like-lyrics/lyric": "workspace:^",
+    "@applemusic-like-lyrics/vue": "workspace:^",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "@vitejs/plugin-vue": "^6.0.5",
+    "@vitejs/plugin-vue-jsx": "^5.1.5",
+    "@vue/tsconfig": "^0.9.0",
+    "vue": "^3.5.30",
+    "@pixi/app": "^7.4.3",
+    "@pixi/core": "^7.4.3",
+    "@pixi/display": "^7.4.3",
+    "@pixi/filter-blur": "^7.4.3",
+    "@pixi/filter-color-matrix": "^7.4.3",
+    "@pixi/sprite": "^7.4.3"
+  }
+}

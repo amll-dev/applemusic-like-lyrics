@@ -1,5 +1,6 @@
 packages:
   - packages/*
+  - packages/playground/*
 
 catalog:
   "@biomejs/biome": ^2.4.8

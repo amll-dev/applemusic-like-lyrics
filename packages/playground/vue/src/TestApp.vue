@@ -45,7 +45,7 @@ import {
 	type BackgroundRenderRef,
 	LyricPlayer,
 	type LyricPlayerRef,
-} from ".";
+} from "@applemusic-like-lyrics/vue";
 
 const audioRef = ref<HTMLAudioElement>();
 const state = reactive({
