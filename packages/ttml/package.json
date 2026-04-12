@@ -35,7 +35,10 @@
 		"build:docs": "typedoc --plugin typedoc-plugin-markdown --out docs src/index.ts",
 		"build": "vite build",
 		"build:dev": "vite build",
-		"fmt": "biome format --write ./src"
+		"fmt": "biome format --write ./src",
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"test:coverage": "vitest run --coverage"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "catalog:",

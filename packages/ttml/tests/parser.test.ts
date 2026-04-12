@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { DOMImplementation, DOMParser, XMLSerializer } from "@xmldom/xmldom";
-import { beforeAll, describe, expect, test } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 import type { AmllLyricLine, SubLyricContent, TTMLResult } from "../src/index";
 import {
 	TTMLGenerator,
@@ -53,7 +53,7 @@ describe("TTML Integration Test", () => {
 		return roman;
 	};
 
-	test("Metadata: 应当解析全局语言和时间模式", () => {
+	it("parses global language and timing mode", () => {
 		expect(result.metadata.language).toBe("ja");
 		expect(result.metadata.timingMode).toBe("Word");
 		expect(result.metadata.title).toHaveLength(2);
@@ -63,43 +63,43 @@ describe("TTML Integration Test", () => {
 		]);
 	});
 
-	test("Metadata: 应当解析平台 IDs", () => {
+	it("parses platform IDs", () => {
 		expect(result.metadata.platformIds?.ncmMusicId).toContain("123456789");
 		expect(result.metadata.platformIds?.qqMusicId).toContain("987654321");
 		expect(result.metadata.platformIds?.spotifyId).toContain("abc123xyz");
 		expect(result.metadata.platformIds?.appleMusicId).toContain("999888777");
 	});
 
-	test("Metadata: 应当解析 Artists 列表", () => {
+	it("parses artists list", () => {
 		expect(result.metadata.artist).toHaveLength(2);
 		expect(result.metadata.artist).toContain("Vocalist A (Taro)");
 		expect(result.metadata.artist).toContain("Vocalist B (Hanako)");
 	});
 
-	test("Metadata: 应当建立 Agent 映射表", () => {
+	it("builds an agent map", () => {
 		expect(result.metadata.agents?.v1?.name).toBe("Vocalist A (Taro)");
 		expect(result.metadata.agents?.v1000?.name).toBe("Chorus Group");
 	});
 
-	test("应当能正确解析 Songwriters 列表", () => {
+	it("parses songwriters list", () => {
 		expect(result.metadata.songwriters).toBeInstanceOf(Array);
 		expect(result.metadata.songwriters).toHaveLength(2);
 		expect(result.metadata.songwriters).toContain("作曲者1号");
 		expect(result.metadata.songwriters).toContain("作曲者2号");
 	});
 
-	test("Metadata: 应当解析 ISRC", () => {
+	it("parses ISRC", () => {
 		expect(result.metadata.isrc).toBeInstanceOf(Array);
 		expect(result.metadata.isrc).toContain("JPXX02500001");
 	});
 
-	test("L1: 应当处理 Verse 和 Agent", () => {
+	it("parses verse and agent in L1", () => {
 		const l1 = getLine("L1");
 		expect(l1.songPart).toBe("Verse");
 		expect(l1.agentId).toBe("v1");
 	});
 
-	test("L1: 应当合并 Head 中的翻译", () => {
+	it("merges translations from Head in L1", () => {
 		const l1 = getLine("L1");
 		const transEn = getTranslation(l1, "en-US");
 		const transZh = getTranslation(l1, "zh-Hans-CN");
@@ -108,7 +108,7 @@ describe("TTML Integration Test", () => {
 		expect(transZh.text).toBe("这是第一行歌词 (演唱者A)");
 	});
 
-	test("L1: 应当合并 Head 中的逐字音译", () => {
+	it("merges word-level romanization from Head", () => {
 		const l1 = getLine("L1");
 		const roman = getRomanization(l1, "ja-Latn");
 
@@ -126,7 +126,7 @@ describe("TTML Integration Test", () => {
 		]);
 	});
 
-	test("L1: 应当处理显式的空格 Span", () => {
+	it("handles explicit whitespace spans in L1", () => {
 		const l1 = getLine("L1");
 		expect(l1.words).toMatchObject([
 			{ text: "これ" },
@@ -135,7 +135,7 @@ describe("TTML Integration Test", () => {
 		]);
 	});
 
-	test("L3: 应当处理复杂的背景人声嵌套", () => {
+	it("handles complex background vocal nesting in L3", () => {
 		const l3 = getLine("L3");
 		expect(l3.songPart).toBe("Chorus");
 		expect(l3.agentId).toBe("v1000");
@@ -157,7 +157,7 @@ describe("TTML Integration Test", () => {
 		expect(roman.text).toBe("haikei");
 	});
 
-	test("L3: 应当同时保留 Body 内联翻译(en)和 Head 注入翻译(en-US)", () => {
+	it("keeps both inline Body translation (en) and Head translation (en-US) in L3", () => {
 		const l3 = getLine("L3");
 		const bg = l3.backgroundVocal;
 		if (!bg) throw new Error("背景人声数组中未找到数据");
@@ -169,7 +169,7 @@ describe("TTML Integration Test", () => {
 		expect(transEnUS.text).toBe("With background");
 	});
 
-	test("Lines: 应当解析所有歌词行", () => {
+	it("parses all lyric lines", () => {
 		expect(result.lines).toBeInstanceOf(Array);
 		expect(result.lines).toHaveLength(3);
 
@@ -179,7 +179,7 @@ describe("TTML Integration Test", () => {
 		expect(lineIds).toContain("L3");
 	});
 
-	test("L2: 应当正确解析第二行数据", () => {
+	it("parses the second line in L2", () => {
 		const l2 = getLine("L2");
 
 		expect(l2.songPart).toBe("Verse");
@@ -189,7 +189,7 @@ describe("TTML Integration Test", () => {
 		expect(l2.text).toContain("ライン");
 	});
 
-	test("L2: 应当解析逐字音节的时间", () => {
+	it("parses word-level timings in L2", () => {
 		const l2 = getLine("L2");
 
 		expect(l2.words).toMatchObject([
@@ -199,7 +199,7 @@ describe("TTML Integration Test", () => {
 		]);
 	});
 
-	test("Timing: 应当验证所有行的时间范围", () => {
+	it("validates time ranges for all lines", () => {
 		const l1 = getLine("L1");
 		expect(l1.startTime).toBe(10000);
 		expect(l1.endTime).toBe(12000);
@@ -213,7 +213,7 @@ describe("TTML Integration Test", () => {
 		expect(l3.endTime).toBe(25000);
 	});
 
-	test("L1: 应当验证逐字音节的时间准确性", () => {
+	it("validates word-level timing accuracy in L1", () => {
 		const l1 = getLine("L1");
 
 		expect(l1.words).toMatchObject([
@@ -223,13 +223,13 @@ describe("TTML Integration Test", () => {
 		]);
 	});
 
-	test("Metadata: 应当解析专辑信息", () => {
+	it("parses album metadata", () => {
 		expect(result.metadata.album).toBeInstanceOf(Array);
 		expect(result.metadata.album).toHaveLength(1);
 		expect(result.metadata.album?.[0]).toBe("AMLL Parser Test Suite");
 	});
 
-	test("Metadata: 应当解析作者信息", () => {
+	it("parses author metadata", () => {
 		expect(result.metadata.authorIds).toBeInstanceOf(Array);
 		expect(result.metadata.authorIds).toHaveLength(1);
 		expect(result.metadata.authorIds?.[0]).toBe("10001");
@@ -239,7 +239,7 @@ describe("TTML Integration Test", () => {
 		expect(result.metadata.authorNames?.[0]).toBe("TestUser");
 	});
 
-	test("L2: 应当合并翻译和音译", () => {
+	it("merges translations and romanization in L2", () => {
 		const l2 = getLine("L2");
 
 		const transEn = getTranslation(l2, "en-US");
@@ -253,7 +253,7 @@ describe("TTML Integration Test", () => {
 		expect(roman.words).toHaveLength(3);
 	});
 
-	test("L2: 应当正确解析音译的逐字时间", () => {
+	it("parses word-level romanization timings in L2", () => {
 		const l2 = getLine("L2");
 		const roman = getRomanization(l2, "ja-Latn");
 
@@ -269,7 +269,7 @@ describe("TTML Integration Test", () => {
 		]);
 	});
 
-	test("L3: 应当正确解析主歌词的逐字时间", () => {
+	it("parses word-level timings for main lyrics in L3", () => {
 		const l3 = getLine("L3");
 
 		expect(l3.words).toMatchObject([
@@ -283,7 +283,7 @@ describe("TTML Integration Test", () => {
 		]);
 	});
 
-	test("L3: 应当解析背景人声的时间和逐字信息", () => {
+	it("parses background vocal timing and words in L3", () => {
 		const l3 = getLine("L3");
 		const bg = l3.backgroundVocal;
 		if (!bg) throw new Error("未找到背景人声");
@@ -296,7 +296,7 @@ describe("TTML Integration Test", () => {
 		]);
 	});
 
-	test("L3: 应当解析背景人声音译的逐字时间", () => {
+	it("parses word-level timings for background romanization in L3", () => {
 		const l3 = getLine("L3");
 		const bg = l3.backgroundVocal;
 		if (!bg) throw new Error("未找到背景人声");
@@ -311,7 +311,7 @@ describe("TTML Integration Test", () => {
 		]);
 	});
 
-	test("L3: 应当同时保留内嵌的逐行音译(Body)和Sidecar的逐字音译(Head)", () => {
+	it("keeps both inline Body romanization and Head sidecar word-level romanization in L3", () => {
 		const l3 = getLine("L3");
 		const bg = l3.backgroundVocal;
 		if (!bg) throw new Error("未找到背景人声");
@@ -330,7 +330,7 @@ describe("TTML Integration Test", () => {
 		]);
 	});
 
-	test("L3: 应当解析翻译中的背景角色标记", () => {
+	it("parses background role markers in translations in L3", () => {
 		const l3 = getLine("L3");
 
 		const transEn = getTranslation(l3, "en-US");
@@ -340,7 +340,7 @@ describe("TTML Integration Test", () => {
 		expect(transZh.text).toContain("这是合唱部分");
 	});
 
-	test("L3: 翻译对象本身应当包含结构化的背景人声数据", () => {
+	it("includes structured background vocal data in L3", () => {
 		const l3 = getLine("L3");
 		const translation = getTranslation(l3, "en-US");
 
@@ -349,13 +349,13 @@ describe("TTML Integration Test", () => {
 		expect(translation.backgroundVocal?.text).toBe("With background");
 	});
 
-	test("Text: 应当正确拼接完整文本", () => {
+	it("composes full text correctly", () => {
 		expect(getLine("L1").text).toBe("これは テスト");
 		expect(getLine("L2").text).toBe("二つ目 の ライン");
 		expect(getLine("L3").text).toBe("コーラス です");
 	});
 
-	test("Agents: 应当正确映射所有演唱者", () => {
+	it("maps all vocalists correctly", () => {
 		expect(result.metadata.agents).toBeDefined();
 		expect(Object.keys(result.metadata.agents ?? {})).toHaveLength(3);
 
@@ -364,13 +364,13 @@ describe("TTML Integration Test", () => {
 		expect(result.metadata.agents?.v1000?.name).toBe("Chorus Group");
 	});
 
-	test("Romanization: 应当解析音译的合并文本", () => {
+	it("parses merged romanized text", () => {
 		const l1 = getLine("L1");
 		const roman = getRomanization(l1, "ja-Latn");
 		expect(roman.text).toBe("Kore wa tesuto");
 	});
 
-	test("Translation: 应当解析翻译的合并文本", () => {
+	it("parses merged translation text", () => {
 		const l1 = getLine("L1");
 		expect(getTranslation(l1, "en-US").text).toBe(
 			"This is the first line (Vocalist A)",
@@ -380,7 +380,7 @@ describe("TTML Integration Test", () => {
 		);
 	});
 
-	test("L1: 应当正确解析普通音节的不雅用语标记 (amll:obscene)", () => {
+	it("parses obscene marker on regular syllables (amll:obscene) in L1", () => {
 		const l1 = getLine("L1");
 		expect(l1.words).toBeDefined();
 
@@ -391,7 +391,7 @@ describe("TTML Integration Test", () => {
 		expect(l1.words?.[1].obscene).toBeUndefined();
 	});
 
-	test("L1: 应当正确解析普通音节的空拍标记 (amll:empty-beat)", () => {
+	it("parses empty-beat marker on regular syllables (amll:empty-beat) in L1", () => {
 		const l1 = getLine("L1");
 		expect(l1.words).toBeDefined();
 
@@ -402,7 +402,7 @@ describe("TTML Integration Test", () => {
 		expect(l1.words?.[1].emptyBeat).toBeUndefined();
 	});
 
-	test("Edge Cases: 应当验证所有时间都是有效数字", () => {
+	it("ensures all timings are valid numbers", () => {
 		for (const line of result.lines) {
 			expect(typeof line.startTime).toBe("number");
 			expect(typeof line.endTime).toBe("number");
@@ -427,7 +427,7 @@ describe("TTML Integration Test", () => {
 		}
 	});
 
-	test("Edge Cases: 应当验证所有文本字段都是有效字符串", () => {
+	it("ensures all text fields are valid strings", () => {
 		for (const line of result.lines) {
 			expect(typeof line.text).toBe("string");
 			expect(line.text.length).toBeGreaterThan(0);
@@ -441,7 +441,7 @@ describe("TTML Integration Test", () => {
 		}
 	});
 
-	test("Round Trip: Parse -> Generate -> Parse 应当保持数据结构完全一致", () => {
+	it("preserve the data structure in Parse -> Generate -> Parse round-trip", () => {
 		const originalResult = parser.parse(XML);
 
 		const generator = new TTMLGenerator({
@@ -469,12 +469,12 @@ describe("toAmllLyrics Conversion", () => {
 		amllLines = toAmllLyrics(result).lines;
 	});
 
-	test("Structure: 应当转换为扁平化的数组结构", () => {
+	it("converts to a flattened array", () => {
 		expect(amllLines).toBeInstanceOf(Array);
 		expect(amllLines).toHaveLength(4);
 	});
 
-	test("Structure: 应当正确排序", () => {
+	it("bes sorted correctly", () => {
 		for (let i = 0; i < amllLines.length - 1; i++) {
 			expect(amllLines[i].startTime).toBeLessThanOrEqual(
 				amllLines[i + 1].startTime,
@@ -482,7 +482,7 @@ describe("toAmllLyrics Conversion", () => {
 		}
 	});
 
-	test("Main Lyrics: 应当正确处理 L1 的逐字对齐", () => {
+	it("preserves word alignment for L1", () => {
 		const l1 = amllLines[0];
 		expect(l1.words).toMatchObject([
 			{ romanWord: "Ko" },
@@ -491,20 +491,20 @@ describe("toAmllLyrics Conversion", () => {
 		]);
 	});
 
-	test("Main Lyrics: 应当处理 duets 标记", () => {
+	it("handles duet flags", () => {
 		expect(amllLines[0].isDuet).toBe(false);
 		expect(amllLines[1].isDuet).toBe(true);
 		expect(amllLines[2].isDuet).toBe(false);
 	});
 
-	test("Background: 应当设置 isBG 标记", () => {
+	it("sets the isBG flag", () => {
 		const bgLine = amllLines[3];
 		expect(bgLine.isBG).toBe(true);
 		expect(bgLine.translatedLyric).toBe("Background");
 		expect(bgLine.romanLyric).toBe("haikei");
 	});
 
-	test("Main Lyrics: 应当正确将 obscene 属性透传到 AmllLyricWord", () => {
+	it("passs through obscene to AmllLyricWord", () => {
 		const l1 = amllLines[0];
 
 		expect(l1.words[0].word).toBe("これ");
@@ -514,7 +514,7 @@ describe("toAmllLyrics Conversion", () => {
 		expect(l1.words[1].obscene).toBeUndefined();
 	});
 
-	test("Main Lyrics: 应当正确将 emptyBeat 属性透传到 AmllLyricWord", () => {
+	it("passs through emptyBeat to AmllLyricWord", () => {
 		const l1 = amllLines[0];
 
 		expect(l1.words[2].word).toBe("テスト");
@@ -536,10 +536,13 @@ describe("toAmllLyrics Conversion", () => {
 			return `[${time}s] ${position} ${typeMark} : ${text}`;
 		});
 
-	test.each([
-		["带多个演唱者的 Apple Music 风格的对唱左右位置", "apple-music-duet.ttml"],
-		["带 v2000 other 的 Apple Music TTML", "apple-music-other-duet.ttml"],
-	])("Duet Alignment: 应当能正确计算%s", (_, fixture) => {
+	it.each([
+		[
+			"left-right duet layout in Apple Music style with multiple singers",
+			"apple-music-duet.ttml",
+		],
+		["Apple Music TTML with v2000 other agent", "apple-music-other-duet.ttml"],
+	])("computes %s correctly in duet alignment", (_, fixture) => {
 		const xml = readFileSync(
 			join(import.meta.dirname, "fixtures", fixture),
 			"utf-8",
@@ -548,7 +551,7 @@ describe("toAmllLyrics Conversion", () => {
 		expect(toLayoutSnapshot(lines)).toMatchSnapshot();
 	});
 
-	test("Ruby: 应当正确将 Syllable.ruby 转换为 AmllLyricWord.ruby", () => {
+	it("converts Syllable.ruby to AmllLyricWord.ruby", () => {
 		const mockRubyResult: TTMLResult = {
 			metadata: {},
 			lines: [
@@ -601,13 +604,13 @@ describe("TTML Ruby Integration Test", () => {
 		result = parser.parse(RUBY_XML);
 	});
 
-	test("应当正确解析整行文本（包含 Ruby Base 文本）", () => {
+	it("parses full line text including ruby base text", () => {
 		const l1 = result.lines.find((l) => l.id === "L1");
 		expect(l1).toBeDefined();
 		expect(l1?.text).toBe("これは所詮");
 	});
 
-	test("应当提取 Ruby 容器为独立的 Syllable，并推导正确的时间", () => {
+	it("extracts ruby containers as standalone syllables with inferred timings", () => {
 		const l1 = result.lines.find((l) => l.id === "L1");
 		const words = l1?.words;
 
@@ -626,7 +629,7 @@ describe("TTML Ruby Integration Test", () => {
 		expect(words?.[2].endTime).toBe(27950);
 	});
 
-	test("应当正确提取 Ruby 标注数组 (RubyTags)", () => {
+	it("extracts ruby annotation arrays (RubyTags)", () => {
 		const l1 = result.lines.find((l) => l.id === "L1");
 		const words = l1?.words;
 
@@ -654,7 +657,7 @@ describe("TTML Ruby Integration Test", () => {
 		});
 	});
 
-	test("普通的 Syllable 不应包含 ruby 属性", () => {
+	it("excludes ruby from regular syllables", () => {
 		const l1 = result.lines.find((l) => l.id === "L1");
 		const words = l1?.words;
 
@@ -663,7 +666,7 @@ describe("TTML Ruby Integration Test", () => {
 });
 
 describe("toTTMLResult Conversion", () => {
-	test("Ruby: 应当正确将 AmllLyricWord.ruby 转换为 Syllable.ruby", () => {
+	it("converts AmllLyricWord.ruby to Syllable.ruby", () => {
 		const mockAmllLines: AmllLyricLine[] = [
 			{
 				startTime: 0,

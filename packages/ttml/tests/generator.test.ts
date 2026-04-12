@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { DOMImplementation, DOMParser, XMLSerializer } from "@xmldom/xmldom";
-import { beforeAll, describe, expect, test } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 import type { AmllLyricLine, AmllMetadata, TTMLResult } from "../src/index";
 import { TTMLGenerator, TTMLParser, toTTMLResult } from "../src/index";
 
@@ -10,7 +10,7 @@ const XML = readFileSync(
 	"utf-8",
 );
 
-describe("TTML Generator Integration Test", () => {
+describe("TTML Generator Integration", () => {
 	let parser: TTMLParser;
 	let generator: TTMLGenerator;
 	let originalResult: TTMLResult;
@@ -29,7 +29,7 @@ describe("TTML Generator Integration Test", () => {
 		parsedGeneratedResult = parser.parse(generatedXML);
 	});
 
-	test("应当成功生成 XML 字符串", () => {
+	it("generates an XML string", () => {
 		expect(generatedXML).toBeDefined();
 		expect(typeof generatedXML).toBe("string");
 		expect(generatedXML.length).toBeGreaterThan(0);
@@ -37,11 +37,11 @@ describe("TTML Generator Integration Test", () => {
 		expect(generatedXML).toContain("</tt>");
 	});
 
-	test("生成的 XML 字符串应与快照匹配", () => {
+	it("matches the XML snapshot", () => {
 		expect(generatedXML).toMatchSnapshot();
 	});
 
-	test("Metadata: 生成后重新解析的元数据应与原始数据一致", () => {
+	it("preserves metadata after round-trip generation", () => {
 		expect(parsedGeneratedResult.metadata.language).toBe(
 			originalResult.metadata.language,
 		);
@@ -77,13 +77,13 @@ describe("TTML Generator Integration Test", () => {
 		);
 	});
 
-	test("Lines: 生成后重新解析的歌词行数应与原始数据一致", () => {
+	it("preserves line count after round-trip generation", () => {
 		expect(parsedGeneratedResult.lines.length).toBe(
 			originalResult.lines.length,
 		);
 	});
 
-	test("Lines: 生成后重新解析的歌词行内容应与原始数据一致", () => {
+	it("preserves line content after round-trip generation", () => {
 		for (let i = 0; i < originalResult.lines.length; i++) {
 			const originalLine = originalResult.lines[i];
 			const generatedLine = parsedGeneratedResult.lines[i];
@@ -139,7 +139,7 @@ describe("TTML Generator Integration Test", () => {
 	});
 });
 
-describe("TTML Generator - toTTMLResult Integration Test", () => {
+describe("TTML Generator - toTTMLResult", () => {
 	let generator: TTMLGenerator;
 	let parser: TTMLParser;
 
@@ -151,7 +151,7 @@ describe("TTML Generator - toTTMLResult Integration Test", () => {
 		parser = new TTMLParser({ domParser: new DOMParser() });
 	});
 
-	test("应当能从 AMLL 数据结构生成 TTMLResult 并成功序列化为 XML", () => {
+	it("generates TTMLResult from AMLL data and serialize it to XML", () => {
 		const amllMetadata: AmllMetadata[] = [
 			["musicName", ["Test Song"]],
 			["artists", ["Artist A", "Artist B"]],
@@ -208,7 +208,7 @@ describe("TTML Generator - toTTMLResult Integration Test", () => {
 	});
 });
 
-describe("TTML Generator - 行 ID 自动生成逻辑测试", () => {
+describe("TTML Generator - Line ID Generation", () => {
 	let generator: TTMLGenerator;
 
 	beforeAll(() => {
@@ -225,7 +225,7 @@ describe("TTML Generator - 行 ID 自动生成逻辑测试", () => {
 		lines: lines as TTMLResult["lines"],
 	});
 
-	test("当所有行都没有提供 id 时，应自动生成从 L1 开始的行号", () => {
+	it("auto-generates line IDs from L1 when all IDs are missing", () => {
 		const result = createMockResult([
 			{ startTime: 0, endTime: 1000, text: "Line 1" },
 			{ startTime: 1000, endTime: 2000, text: "Line 2" },
@@ -237,7 +237,7 @@ describe("TTML Generator - 行 ID 自动生成逻辑测试", () => {
 		expect(xml).toContain('itunes:key="L2"');
 	});
 
-	test("当部分行提供 id，部分没有时，应忽略已提供的 id 并统一重新生成行号", () => {
+	it("regenerates all line IDs when only some IDs are provided", () => {
 		const result = createMockResult([
 			{ id: "Custom1", startTime: 0, endTime: 1000, text: "Line 1" },
 			{ startTime: 1000, endTime: 2000, text: "Line 2" },
@@ -254,7 +254,7 @@ describe("TTML Generator - 行 ID 自动生成逻辑测试", () => {
 		expect(xml).toContain('itunes:key="L3"');
 	});
 
-	test("当所有行都提供了有效的 id 时，应保留并使用原有的 id", () => {
+	it("keeps existing line IDs when all valid IDs are provided", () => {
 		const result = createMockResult([
 			{ id: "Custom1", startTime: 0, endTime: 1000, text: "Line 1" },
 			{ id: "Custom2", startTime: 1000, endTime: 2000, text: "Line 2" },
@@ -268,7 +268,7 @@ describe("TTML Generator - 行 ID 自动生成逻辑测试", () => {
 	});
 });
 
-describe("TTML Generator - Agent 自动生成与补全逻辑测试", () => {
+describe("TTML Generator - Agent Inference and Completion", () => {
 	let generator: TTMLGenerator;
 
 	beforeAll(() => {
@@ -278,7 +278,7 @@ describe("TTML Generator - Agent 自动生成与补全逻辑测试", () => {
 		});
 	});
 
-	test("当未提供 meta.agents 且歌词行未提供 agentId 时，应默认推断并生成 v1", () => {
+	it("infers and generate default v1 when meta.agents and line agentId are missing", () => {
 		const result: TTMLResult = {
 			metadata: {},
 			lines: [
@@ -294,7 +294,7 @@ describe("TTML Generator - Agent 自动生成与补全逻辑测试", () => {
 		expect(pTagMatches?.length).toBe(2);
 	});
 
-	test("当未提供 meta.agents 但歌词行提供了不同的 agentId 时，应自动提取所有出现的 agentId 并去重", () => {
+	it("infers unique agents from line agentIds when meta.agents is missing", () => {
 		const result: TTMLResult = {
 			metadata: {},
 			lines: [
@@ -317,7 +317,7 @@ describe("TTML Generator - Agent 自动生成与补全逻辑测试", () => {
 		expect(v2AgentDeclMatches?.length).toBe(1);
 	});
 
-	test("当提供了 meta.agents 时，应以提供的 agents 为准，不进行自动推断", () => {
+	it("uses provided meta.agents without auto-inference", () => {
 		const result: TTMLResult = {
 			metadata: {
 				agents: {
@@ -346,7 +346,7 @@ describe("TTML Generator - Agent 自动生成与补全逻辑测试", () => {
 		);
 	});
 
-	test("当歌词行中有 ID 为 v1000 的演唱者时，推断生成的 agent 类型应为 group", () => {
+	it("infers v1000 as a group agent", () => {
 		const result: TTMLResult = {
 			metadata: {},
 			lines: [
@@ -378,7 +378,7 @@ describe("TTML Generator - Agent 自动生成与补全逻辑测试", () => {
 	});
 });
 
-describe("TTML Generator - Ruby 振假名生成逻辑测试", () => {
+describe("TTML Generator - Ruby Generation", () => {
 	let generator: TTMLGenerator;
 	let parser: TTMLParser;
 
@@ -390,7 +390,7 @@ describe("TTML Generator - Ruby 振假名生成逻辑测试", () => {
 		parser = new TTMLParser({ domParser: new DOMParser() });
 	});
 
-	test("应当正确生成包含 tts 命名空间和四层嵌套的 Ruby XML，并支持 Round-Trip", () => {
+	it("generates ruby XML with tts namespace and four-level nesting for round-trip", () => {
 		const rubyResult: TTMLResult = {
 			metadata: {
 				title: ["Ruby Generation Test"],
@@ -466,7 +466,7 @@ describe("TTML Generator - Ruby 振假名生成逻辑测试", () => {
 	});
 });
 
-describe("TTML Generator - Obscene (不雅用语) 生成与转换逻辑测试", () => {
+describe("TTML Generator - Obscene words", () => {
 	let generator: TTMLGenerator;
 	let parser: TTMLParser;
 
@@ -478,7 +478,7 @@ describe("TTML Generator - Obscene (不雅用语) 生成与转换逻辑测试", 
 		parser = new TTMLParser({ domParser: new DOMParser() });
 	});
 
-	test("应当在生成的 XML 中正确注入 amll:obscene 属性，并支持 Round-Trip", () => {
+	it("injects amll:obscene in generated XML and supports round-trip", () => {
 		const result: TTMLResult = {
 			metadata: {},
 			lines: [
@@ -523,7 +523,7 @@ describe("TTML Generator - Obscene (不雅用语) 生成与转换逻辑测试", 
 		expect(parsedWords?.[2].obscene).toBe(true);
 	});
 
-	test("toTTMLResult: 应当从 AMLL 降级结构正确恢复 obscene 属性", () => {
+	it("restores obscene from AMLL fallback structure", () => {
 		const amllLines: AmllLyricLine[] = [
 			{
 				startTime: 0,
@@ -561,7 +561,7 @@ describe("TTML Generator - Obscene (不雅用语) 生成与转换逻辑测试", 
 	});
 });
 
-describe("TTML Generator - Empty Beat (空拍) 生成与转换逻辑测试", () => {
+describe("TTML Generator - Empty Beat", () => {
 	let generator: TTMLGenerator;
 	let parser: TTMLParser;
 
@@ -573,7 +573,7 @@ describe("TTML Generator - Empty Beat (空拍) 生成与转换逻辑测试", () 
 		parser = new TTMLParser({ domParser: new DOMParser() });
 	});
 
-	test("应当在生成的 XML 中正确注入 amll:empty-beat 属性，并支持 Round-Trip", () => {
+	it("injects amll:empty-beat in generated XML and support round-trip", () => {
 		const result: TTMLResult = {
 			metadata: {},
 			lines: [
@@ -604,7 +604,7 @@ describe("TTML Generator - Empty Beat (空拍) 生成与转换逻辑测试", () 
 		expect(parsedWords?.[1].emptyBeat).toBeUndefined();
 	});
 
-	test("toTTMLResult: 应当从 AMLL 降级结构正确恢复 emptyBeat 属性", () => {
+	it("restores emptyBeat from AMLL fallback structure", () => {
 		const amllLines: AmllLyricLine[] = [
 			{
 				startTime: 0,
