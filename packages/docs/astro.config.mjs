@@ -36,13 +36,55 @@ const typeDocConfigBaseOptions = {
 
 async function generateDoc() {
 	/**
+	 * Convert a TypeDoc markdown file link (e.g. Interface.Foo.md#bar)
+	 * to the Starlight route (e.g. /reference/core/interfacefoo/#bar).
+	 * @param {string} href
+	 * @param {string} routeBase
+	 */
+	function convertTypeDocHrefToRoute(href, routeBase) {
+		const trimmedHref = href.trim();
+		if (
+			trimmedHref.startsWith("#") ||
+			trimmedHref.startsWith("http://") ||
+			trimmedHref.startsWith("https://") ||
+			trimmedHref.startsWith("mailto:")
+		) {
+			return href;
+		}
+
+		const [filePartRaw, hashPart] = trimmedHref.split("#", 2);
+		const filePart = filePartRaw.replace(/^\.?\//, "");
+		if (!filePart.toLowerCase().endsWith(".md")) return href;
+
+		const fileName = filePart.split("/").pop();
+		if (!fileName) return href;
+
+		const stem = fileName.replace(/\.md$/i, "");
+		const normalizedBase = routeBase.endsWith("/")
+			? routeBase.slice(0, -1)
+			: routeBase;
+
+		if (stem.toLowerCase() === "index") {
+			return hashPart
+				? `${normalizedBase}/#${hashPart}`
+				: `${normalizedBase}/`;
+		}
+
+		const slug = stem.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+		const route = `${normalizedBase}/${slug}/`;
+		return hashPart ? `${route}#${hashPart}` : route;
+	}
+
+	/**
 	 * @param {import('typedoc').TypeDocOptions & import('typedoc-plugin-markdown').PluginOptions} cfg
 	 */
 	async function generateOneDoc(cfg) {
+		const { routeBase = "", ...typedocConfig } = cfg;
+
 		/** @type {import('typedoc').TypeDocOptions & import('typedoc-plugin-markdown').PluginOptions} */
 		const config = {
 			...typeDocConfigBaseOptions,
-			...cfg,
+			...typedocConfig,
 		};
 		const app =
 			/** @type {import('typedoc-plugin-markdown').MarkdownApplication} */ (
@@ -67,7 +109,21 @@ async function generateDoc() {
 			// content.push("    variant: tip");
 			content.push("---");
 			content.push("<!-- This file is generated, do not edit directly! -->");
-			content.push(evt.contents || "");
+
+			let docContent = evt.contents || "";
+			if (routeBase) {
+				docContent = docContent
+					.replace(/\]\(([^)\n]+)\)/g, (raw, href) => {
+						const converted = convertTypeDocHrefToRoute(href, routeBase);
+						return `](${converted})`;
+					})
+					.replace(/href="([^"\n]+)"/g, (raw, href) => {
+						const converted = convertTypeDocHrefToRoute(href, routeBase);
+						return `href="${converted}"`;
+					});
+			}
+
+			content.push(docContent);
 			evt.contents = content.join("\n");
 		}
 
@@ -84,31 +140,36 @@ async function generateDoc() {
 		entryPoints: ["../core/src/index.ts"],
 		tsconfig: "../core/tsconfig.json",
 		out: "./src/content/docs/reference/core",
+		routeBase: "/reference/core",
 	});
 
 	await generateOneDoc({
 		entryPoints: ["../react/src/index.ts"],
 		tsconfig: "../react/tsconfig.json",
 		out: "./src/content/docs/reference/react",
+		routeBase: "/reference/react",
 	});
 
 	await generateOneDoc({
 		entryPoints: ["../vue/src/index.ts"],
 		tsconfig: "../vue/tsconfig.json",
 		out: "./src/content/docs/reference/vue",
+		routeBase: "/reference/vue",
 	});
 
 	await generateOneDoc({
 		entryPoints: ["../react-full/src/index.ts"],
 		tsconfig: "../react-full/tsconfig.json",
 		out: "./src/content/docs/reference/react-full",
+		routeBase: "/reference/react-full",
 	});
 
 	await generateOneDoc({
-		// entryPoints: ["../lyric/pkg/amll_lyric.d.ts"],
-		entryPoints: ["../lyric/src/types.d.ts"],
+		entryPoints: ["../lyric/src/index.ts"],
 		tsconfig: "../lyric/tsconfig.json",
+		skipErrorChecking: true,
 		out: "./src/content/docs/reference/lyric",
+		routeBase: "/reference/lyric",
 	});
 }
 
