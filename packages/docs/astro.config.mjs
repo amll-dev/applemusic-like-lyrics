@@ -76,7 +76,7 @@ async function generateDoc() {
 	}
 
 	/**
-	 * @param {import('typedoc').TypeDocOptions & import('typedoc-plugin-markdown').PluginOptions} cfg
+	 * @param {import('typedoc').TypeDocOptions & import('typedoc-plugin-markdown').PluginOptions & { routeBase?: string }} cfg
 	 */
 	async function generateOneDoc(cfg) {
 		const { routeBase = "", ...typedocConfig } = cfg;
@@ -171,6 +171,14 @@ async function generateDoc() {
 		out: "./src/content/docs/reference/lyric",
 		routeBase: "/reference/lyric",
 	});
+
+	await generateOneDoc({
+		entryPoints: ["../ttml/src/index.ts"],
+		tsconfig: "../ttml/tsconfig.json",
+		skipErrorChecking: true,
+		out: "./src/content/docs/reference/ttml",
+		routeBase: "/reference/ttml",
+	});
 }
 
 // https://astro.build/config
@@ -235,6 +243,14 @@ const referenceSidebar = [
 		collapsed: true,
 		autogenerate: {
 			directory: "reference/lyric",
+			collapsed: true,
+		},
+	},
+	{
+		label: "TTML 歌词处理",
+		collapsed: true,
+		autogenerate: {
+			directory: "reference/ttml",
 			collapsed: true,
 		},
 	},
