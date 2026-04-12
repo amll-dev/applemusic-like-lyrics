@@ -45,7 +45,7 @@
 	},
 	"scripts": {
 		"build:docs": "typedoc --plugin typedoc-plugin-markdown --out docs src/index.ts",
-		"typecheck": "tsc",
+		"typecheck": "tsgo -b",
 		"build-only": "tsdown",
 		"build": "run-p typecheck \"build-only {@}\" --",
 		"build:dev": "tsdown",
@@ -59,8 +59,7 @@
 		"@biomejs/biome": "catalog:",
 		"@types/node": "^25.5.2",
 		"@types/pako": "^2.0.4",
-		"tsdown": "catalog:",
-		"typescript": "^5.9.3"
+		"tsdown": "catalog:"
 	},
 	"dependencies": {
 		"pako": "^2.1.0",

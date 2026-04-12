@@ -1,33 +1,32 @@
 {
-  "name": "@applemusic-like-lyrics/playground-core",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
-  "nx": {
-    "tags": [
-      "playground"
-    ]
-  },
-  "scripts": {
-    "dev": "vite dev"
-  },
-  "devDependencies": {
-    "@applemusic-like-lyrics/core": "workspace:^",
-    "@applemusic-like-lyrics/lyric": "workspace:^",
-    "@applemusic-like-lyrics/ttml": "workspace:^",
-    "@pixi/app": "^7.4.3",
-    "@pixi/core": "^7.4.3",
-    "@pixi/display": "^7.4.3",
-    "@pixi/filter-blur": "^7.4.3",
-    "@pixi/filter-bulge-pinch": "^5.1.1",
-    "@pixi/filter-color-matrix": "^7.4.3",
-    "@pixi/sprite": "^7.4.3",
-    "lil-gui": "^0.21.0",
-    "stats.js": "^0.17.0",
-    "typescript": "catalog:",
-    "vite": "catalog:"
-  },
-  "dependencies": {
-    "@types/stats.js": "^0.17.4"
-  }
+	"name": "@applemusic-like-lyrics/playground-core",
+	"private": true,
+	"version": "0.0.0",
+	"type": "module",
+	"nx": {
+		"tags": [
+			"playground"
+		]
+	},
+	"scripts": {
+		"dev": "vite dev"
+	},
+	"devDependencies": {
+		"@applemusic-like-lyrics/core": "workspace:^",
+		"@applemusic-like-lyrics/lyric": "workspace:^",
+		"@applemusic-like-lyrics/ttml": "workspace:^",
+		"@pixi/app": "^7.4.3",
+		"@pixi/core": "^7.4.3",
+		"@pixi/display": "^7.4.3",
+		"@pixi/filter-blur": "^7.4.3",
+		"@pixi/filter-bulge-pinch": "^5.1.1",
+		"@pixi/filter-color-matrix": "^7.4.3",
+		"@pixi/sprite": "^7.4.3",
+		"lil-gui": "^0.21.0",
+		"stats.js": "^0.17.0",
+		"vite": "catalog:"
+	},
+	"dependencies": {
+		"@types/stats.js": "^0.17.4"
+	}
 }

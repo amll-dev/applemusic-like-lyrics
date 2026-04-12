@@ -28,7 +28,7 @@
 	],
 	"scripts": {
 		"build:docs": "typedoc --plugin typedoc-plugin-markdown --out docs src/index.ts",
-		"typecheck": "tsc",
+		"typecheck": "tsgo -b",
 		"build-only": "tsdown",
 		"build": "run-p typecheck \"build-only {@}\" --",
 		"build:dev": "tsdown",
@@ -65,8 +65,7 @@
 		"typedoc": "catalog:",
 		"typedoc-plugin-markdown": "catalog:",
 		"@tsdown/css": "catalog:",
-		"tsdown": "catalog:",
-		"typescript": "catalog:"
+		"tsdown": "catalog:"
 	},
 	"peerDependencies": {
 		"@pixi/app": "*",

@@ -8,10 +8,10 @@
         "@biomejs/biome": "catalog:",
         "@nx/js": "^22.6.4",
         "@types/bun": "^1.3.12",
+        "@typescript/native-preview": "^7.0.0-dev.20260412.1",
         "npm-run-all2": "^8.0.4",
         "nx": "^22.6.0",
         "tsdown": "catalog:",
-        "typescript": "catalog:",
       },
     },
     "packages/core": {
@@ -34,7 +34,6 @@
         "tsdown": "catalog:",
         "typedoc": "catalog:",
         "typedoc-plugin-markdown": "catalog:",
-        "typescript": "catalog:",
       },
       "peerDependencies": {
         "@pixi/app": "*",
@@ -86,7 +85,6 @@
         "@types/node": "^25.5.2",
         "@types/pako": "^2.0.4",
         "tsdown": "catalog:",
-        "typescript": "^5.9.3",
       },
     },
     "packages/playground/core": {
@@ -108,7 +106,6 @@
         "@pixi/sprite": "^7.4.3",
         "lil-gui": "^0.21.0",
         "stats.js": "^0.17.0",
-        "typescript": "catalog:",
         "vite": "catalog:",
       },
     },
@@ -130,7 +127,6 @@
         "@vitejs/plugin-react": "catalog:",
         "react": "catalog:",
         "react-dom": "catalog:",
-        "typescript": "catalog:",
         "vite": "catalog:",
       },
     },
@@ -150,7 +146,6 @@
         "@vitejs/plugin-vue": "^6.0.5",
         "@vitejs/plugin-vue-jsx": "^5.1.5",
         "@vue/tsconfig": "^0.9.0",
-        "typescript": "catalog:",
         "vite": "catalog:",
         "vue": "^3.5.30",
       },
@@ -170,7 +165,6 @@
         "tsdown": "catalog:",
         "typedoc": "catalog:",
         "typedoc-plugin-markdown": "catalog:",
-        "typescript": "catalog:",
       },
       "peerDependencies": {
         "@pixi/app": "*",
@@ -211,7 +205,6 @@
         "tsdown": "catalog:",
         "typedoc": "catalog:",
         "typedoc-plugin-markdown": "catalog:",
-        "typescript": "catalog:",
       },
       "peerDependencies": {
         "jotai": "^2",
@@ -227,7 +220,6 @@
         "@xmldom/xmldom": "^0.8.12",
         "tsdown": "catalog:",
         "typedoc": "catalog:",
-        "typescript": "^5.9.3",
       },
     },
     "packages/vue": {
@@ -247,11 +239,9 @@
         "@pixi/sprite": "^7.4.3",
         "@rolldown/plugin-babel": "catalog:",
         "@vue/babel-plugin-jsx": "^1.3.5",
-        "@vue/tsconfig": "^0.9.0",
         "tsdown": "catalog:",
         "typedoc": "^0.28.17",
         "typedoc-plugin-markdown": "catalog:",
-        "typescript": "^5.9.3",
         "vue": "^3.5.30",
       },
       "peerDependencies": {
@@ -288,7 +278,6 @@
     "tsdown": "^0.21.7",
     "typedoc": "^0.28.18",
     "typedoc-plugin-markdown": "^4.11.0",
-    "typescript": "^5.9.3",
     "vite": "^8.0.1",
   },
   "packages": {
@@ -1139,6 +1128,22 @@
     "@types/ungap__structured-clone": ["@types/ungap__structured-clone@1.2.0", "", {}, "sha512-ZoaihZNLeZSxESbk9PUAPZOlSpcKx81I1+4emtULDVmBLkYutTcMlCj2K9VNlf9EWODxdO6gkAqEaLorXwZQVA=="],
 
     "@types/unist": ["@types/unist@3.0.3", "", {}, "sha512-ko/gIFJRv177XgZsZcBwnqJN5x/Gien8qNOn0D5bQU/zAzVf9Zt3BlcUiLqhV9y4ARk0GbT3tnUiPNgnTXzc/Q=="],
+
+    "@typescript/native-preview": ["@typescript/native-preview@7.0.0-dev.20260412.1", "", { "optionalDependencies": { "@typescript/native-preview-darwin-arm64": "7.0.0-dev.20260412.1", "@typescript/native-preview-darwin-x64": "7.0.0-dev.20260412.1", "@typescript/native-preview-linux-arm": "7.0.0-dev.20260412.1", "@typescript/native-preview-linux-arm64": "7.0.0-dev.20260412.1", "@typescript/native-preview-linux-x64": "7.0.0-dev.20260412.1", "@typescript/native-preview-win32-arm64": "7.0.0-dev.20260412.1", "@typescript/native-preview-win32-x64": "7.0.0-dev.20260412.1" }, "bin": { "tsgo": "bin/tsgo.js" } }, "sha512-tDw3XZt2BkjAlt/MJmnFGmbe9lgKmc5wezmrMoBIEvJcqz+/KVpVBVvjbkZoaiABnJmuG3G3b6IUFrEveTw6UQ=="],
+
+    "@typescript/native-preview-darwin-arm64": ["@typescript/native-preview-darwin-arm64@7.0.0-dev.20260412.1", "", { "os": "darwin", "cpu": "arm64" }, "sha512-sSkFG+hjtRWffg6FddF3dEkk7N3TRMEqfiUpixwcWhXgyocMdPw8wutTvQRBxQdgxeL9y01M2SO8A8YPPiEgVg=="],
+
+    "@typescript/native-preview-darwin-x64": ["@typescript/native-preview-darwin-x64@7.0.0-dev.20260412.1", "", { "os": "darwin", "cpu": "x64" }, "sha512-m2BTeaLkrHEEDg0D9snigddy01qTY+wgx+W+GpXAfx36PPvW4xWuGXNVWfSaB8bqAC9C8NeLnT/C9/G/rJ5v2w=="],
+
+    "@typescript/native-preview-linux-arm": ["@typescript/native-preview-linux-arm@7.0.0-dev.20260412.1", "", { "os": "linux", "cpu": "arm" }, "sha512-wDLekbfsfmKMWORg7CTnEnpKj8oXpU/6AEBrtVN9CEUCiQAe6yH878nZHhJNzWQXHtrtFf3lY49Yplqmdxja3w=="],
+
+    "@typescript/native-preview-linux-arm64": ["@typescript/native-preview-linux-arm64@7.0.0-dev.20260412.1", "", { "os": "linux", "cpu": "arm64" }, "sha512-JAdsG6MlVV1hoAUKPy8zxAL7xLeNxz8JgCbLCJVqW8EyH29R9FD4cFTqr7CSIRTNUEDzDTrgnXUyoRtDe1gr+w=="],
+
+    "@typescript/native-preview-linux-x64": ["@typescript/native-preview-linux-x64@7.0.0-dev.20260412.1", "", { "os": "linux", "cpu": "x64" }, "sha512-gYgppiQIqid3jZ7D8THh4k3Q+4bwidrQH6SL9Xgbk1qfP6/jwv8twuPqDOfZ+cK2OD55lQHp15fOh2lMNAC40Q=="],
+
+    "@typescript/native-preview-win32-arm64": ["@typescript/native-preview-win32-arm64@7.0.0-dev.20260412.1", "", { "os": "win32", "cpu": "arm64" }, "sha512-TOh7rH5H3jisHJqRXJSjmUGMzcbNBocS/hufhXPQIv+g3pdG5IKZoSnv3SV62I5d12FFDSS5KQon5MQPnOKAHg=="],
+
+    "@typescript/native-preview-win32-x64": ["@typescript/native-preview-win32-x64@7.0.0-dev.20260412.1", "", { "os": "win32", "cpu": "x64" }, "sha512-u+70wL89wspN1wKoX6FVNUATRGCG3BpleByP3H/UqOZvlwuMm8N7Gy8hEbM0U8bDyAuyP/daUfTBVkqXjjv9mA=="],
 
     "@ungap/structured-clone": ["@ungap/structured-clone@1.3.0", "", {}, "sha512-WmoN8qaIAo7WTYWbAZuG8PYEhn5fkz7dZrqTBZ7dtt//lL2Gwms1IcnQ5yHqjDfX8Ft5j4YzDM23f87zBfDe9g=="],
 

@@ -53,7 +53,7 @@
 	],
 	"scripts": {
 		"build:docs": "typedoc --plugin typedoc-plugin-markdown --out docs src/index.ts",
-		"typecheck": "tsc",
+		"typecheck": "tsgo -b",
 		"build-only": "tsdown",
 		"build": "run-p typecheck \"build-only {@}\" --",
 		"build:dev": "tsdown",
@@ -89,7 +89,6 @@
 		"react-compiler-runtime": "^1.0.0",
 		"tsdown": "catalog:",
 		"typedoc": "catalog:",
-		"typedoc-plugin-markdown": "catalog:",
-		"typescript": "catalog:"
+		"typedoc-plugin-markdown": "catalog:"
 	}
 }

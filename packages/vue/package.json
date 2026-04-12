@@ -24,7 +24,7 @@
 		"dist"
 	],
 	"scripts": {
-		"typecheck": "tsc",
+		"typecheck": "tsgo -b",
 		"build-only": "tsdown",
 		"build": "run-p typecheck \"build-only {@}\" --",
 		"build:dev": "tsdown",
@@ -63,11 +63,9 @@
 		"@pixi/sprite": "^7.4.3",
 		"@rolldown/plugin-babel": "catalog:",
 		"@vue/babel-plugin-jsx": "^1.3.5",
-		"@vue/tsconfig": "^0.9.0",
 		"tsdown": "catalog:",
 		"typedoc": "^0.28.17",
 		"typedoc-plugin-markdown": "catalog:",
-		"typescript": "^5.9.3",
 		"vue": "^3.5.30"
 	}
 }
