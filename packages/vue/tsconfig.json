@@ -1,21 +1,8 @@
 {
-	"compilerOptions": {
-		"target": "ESNext",
-		"jsx": "preserve",
-		"jsxImportSource": "vue",
-		"useDefineForClassFields": true,
-		"strictNullChecks": true,
-		"lib": ["DOM", "DOM.Iterable", "ESNext"],
-		"allowJs": false,
-		"skipLibCheck": true,
-		"allowSyntheticDefaultImports": true,
-		"strict": true,
-		"forceConsistentCasingInFileNames": true,
-		"module": "ESNext",
-		"moduleResolution": "bundler",
-		"resolveJsonModule": true,
-		"noEmit": true
-	},
+	"extends": "../../tsconfig.base.json",
 	"include": ["src"],
-	"extends": "@vue/tsconfig/tsconfig.dom.json"
+	"compilerOptions": {
+		"jsxImportSource": "vue",
+		"jsx": "preserve"
+	}
 }

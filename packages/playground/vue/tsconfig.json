@@ -1,20 +1,8 @@
 {
-  "extends": "@vue/tsconfig/tsconfig.dom.json",
-  "compilerOptions": {
-    "target": "ESNext",
-    "jsx": "preserve",
-    "jsxImportSource": "vue",
-    "strictNullChecks": true,
-    "lib": ["DOM", "DOM.Iterable", "ESNext"],
-    "allowJs": false,
-    "skipLibCheck": true,
-    "allowSyntheticDefaultImports": true,
-    "strict": true,
-    "forceConsistentCasingInFileNames": true,
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "resolveJsonModule": true,
-    "noEmit": true
-  },
-  "include": ["src"]
+	"extends": "../../../tsconfig.base.json",
+	"include": ["src"],
+	"compilerOptions": {
+		"jsxImportSource": "vue",
+		"jsx": "preserve"
+	}
 }
