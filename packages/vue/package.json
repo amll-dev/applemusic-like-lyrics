@@ -24,7 +24,7 @@
     "dist"
   ],
   "scripts": {
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc",
     "build-only": "vite build",
     "build": "run-p typecheck \"build-only {@}\" --",
     "build:dev": "vite build",
