@@ -1,4 +1,13 @@
-import { appendFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import {
+	appendFileSync,
+	mkdtempSync,
+	readFileSync,
+	rmSync,
+	writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 const githubToken = process.env.GITHUB_TOKEN;
 const repository = process.env.GITHUB_REPOSITORY;
@@ -9,35 +18,71 @@ if (!githubToken || !repository || !prNumber || !outputPath) {
 	throw new Error("Missing required GitHub Actions environment variables.");
 }
 
-const ignoredMatchers = [
-	(file) => file.endsWith(".md"),
-	(file) => file.endsWith(".mdx"),
-	(file) => file.startsWith(".github/"),
-	(file) => file.startsWith(".nx/version-plans/"),
-	(file) => file === ".editorconfig",
-	(file) => file === ".gitignore",
-	(file) => file === "biome.json",
-	(file) => file === "Cargo.lock",
-	(file) => file === "Cargo.toml",
-	(file) => file === "lerna.json",
-	(file) => file === "LICENSE",
-	(file) => file === "nx.json",
-	(file) => file === "package.json",
-	(file) => file === "pnpm-lock.yaml",
-	(file) => file === "pnpm-workspace.yaml",
-	(file) => file === "tsconfig.base.json",
-	(file) => file === "tsconfig.json",
-	(file) => file.startsWith("packages/docs/"),
-	(file) => /^packages\/[^/]+\/docs\//.test(file),
+function loadIgnorePatternsForPlanCheck() {
+	const nxJsonText = readFileSync(new URL("../../nx.json", import.meta.url), {
+		encoding: "utf8",
+	});
+	const nxJson = JSON.parse(nxJsonText);
+	const patterns = nxJson?.release?.versionPlans?.ignorePatternsForPlanCheck;
 
-	// legacy: AMLL Player
-	(file) => file.startsWith("packages/player"),
-	(file) => file.startsWith("packages/skia-player"),
-	(file) => file === "crowdin.yml",
-];
+	if (
+		!Array.isArray(patterns) ||
+		patterns.some((pattern) => typeof pattern !== "string")
+	) {
+		throw new Error(
+			"Invalid nx.json: release.versionPlans.ignorePatternsForPlanCheck must be an array of strings.",
+		);
+	}
+	return patterns;
+}
 
-const isIgnoredFile = (file) =>
-	ignoredMatchers.some((matcher) => matcher(file));
+function getIgnoredFilesByGitignorePatterns(files, patterns) {
+	const tempRepoDir = mkdtempSync(join(tmpdir(), "release-plan-ignore-check-"));
+
+	try {
+		const initResult = spawnSync(
+			"git",
+			["-C", tempRepoDir, "init", "--quiet"],
+			{
+				encoding: "utf8",
+			},
+		);
+		if (initResult.status !== 0) {
+			throw new Error(
+				`Failed to initialize temporary git repository.\n${initResult.stderr || initResult.stdout}`,
+			);
+		}
+
+		writeFileSync(join(tempRepoDir, ".gitignore"), `${patterns.join("\n")}\n`, {
+			encoding: "utf8",
+		});
+
+		const stdin = `${files.map((file) => file.replaceAll("\\", "/")).join("\n")}\n`;
+		const checkResult = spawnSync(
+			"git",
+			["-C", tempRepoDir, "check-ignore", "--no-index", "--stdin"],
+			{
+				encoding: "utf8",
+				input: stdin,
+			},
+		);
+
+		if (checkResult.status !== 0 && checkResult.status !== 1) {
+			throw new Error(
+				`Failed to evaluate ignore patterns with git check-ignore.\n${checkResult.stderr || checkResult.stdout}`,
+			);
+		}
+
+		return new Set(
+			checkResult.stdout
+				.split(/\r?\n/)
+				.map((line) => line.trim())
+				.filter(Boolean),
+		);
+	} finally {
+		rmSync(tempRepoDir, { recursive: true, force: true });
+	}
+}
 
 const apiBaseUrl = `https://api.github.com/repos/${repository}`;
 
@@ -76,12 +121,17 @@ async function getAllChangedFiles() {
 const pullRequest = await requestJson(`/pulls/${prNumber}`);
 const labels = new Set((pullRequest.labels ?? []).map((label) => label.name));
 const changedFiles = await getAllChangedFiles();
+const ignorePatternsForPlanCheck = loadIgnorePatternsForPlanCheck();
+const ignoredFiles = getIgnoredFilesByGitignorePatterns(
+	changedFiles,
+	ignorePatternsForPlanCheck,
+);
 
 if (changedFiles.length === 0) {
 	throw new Error("Pull request does not contain any changed files.");
 }
 
-const nonIgnoredFiles = changedFiles.filter((file) => !isIgnoredFile(file));
+const nonIgnoredFiles = changedFiles.filter((file) => !ignoredFiles.has(file));
 const hasNoReleaseLabel = labels.has("no-release");
 const allIgnored = nonIgnoredFiles.length === 0;
 

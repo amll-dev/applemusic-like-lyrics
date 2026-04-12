@@ -30,6 +30,7 @@
 		"versionPlans": {
 			"ignorePatternsForPlanCheck": [
 				"**/*.md",
+				"**/*.mdx",
 				".github/**",
 				".nx/version-plans/**",
 				".editorconfig",
