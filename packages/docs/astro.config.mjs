@@ -105,9 +105,9 @@ async function generateDoc() {
 	});
 
 	await generateOneDoc({
-		// entryPoints: ["../lyric/pkg/amll_lyric.d.ts"],
-		entryPoints: ["../lyric/src/types.d.ts"],
+		entryPoints: ["../lyric/src/index.ts"],
 		tsconfig: "../lyric/tsconfig.json",
+		skipErrorChecking: true,
 		out: "./src/content/docs/reference/lyric",
 	});
 }
