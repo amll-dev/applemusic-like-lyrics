@@ -20,11 +20,7 @@
 		}
 	},
 	"files": [
-		"dist/**/*.js",
-		"dist/**/*.ts",
-		"dist/**/*.cjs",
-		"dist/**/*.css",
-		"dist/**/*.map"
+		"dist"
 	],
 	"scripts": {
 		"build:docs": "typedoc --plugin typedoc-plugin-markdown --out docs src/index.ts",

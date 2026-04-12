@@ -44,12 +44,7 @@
 		"*.css"
 	],
 	"files": [
-		"dist/**/*.mjs",
-		"dist/**/*.cjs",
-		"dist/**/*.d.mts",
-		"dist/**/*.d.cts",
-		"dist/**/*.css",
-		"dist/**/*.map"
+		"dist"
 	],
 	"scripts": {
 		"build:docs": "typedoc --plugin typedoc-plugin-markdown --out docs src/index.ts",
