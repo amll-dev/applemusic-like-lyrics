@@ -15,7 +15,7 @@ import { createLine, createWord, normalizeTimestamp } from "../utils";
  * @param lyl 歌词字符串
  * @returns 成功解析出来的歌词
  */
-export function parseLYL(lyl: string): LyricLine[] {
+export function parseLyl(lyl: string): LyricLine[] {
 	const lines = lyl
 		.split(/\r?\n/)
 		.map((l) => l.trim())
@@ -57,7 +57,7 @@ export function parseLYL(lyl: string): LyricLine[] {
  * @param lines 歌词数组
  * @returns LYL 格式的字符串
  */
-export function stringifyLYL(lines: LyricLine[]): string {
+export function stringifyLyl(lines: LyricLine[]): string {
 	const header = "[type:LyricifyLines]";
 	const body = lines.map((line) => {
 		const text = line.words.map((w) => w.word).join("");

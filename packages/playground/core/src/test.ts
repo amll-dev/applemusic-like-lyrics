@@ -15,10 +15,10 @@ import {
 } from "@applemusic-like-lyrics/core";
 import * as lyrics from "@applemusic-like-lyrics/lyric";
 import {
-	parseLRC,
-	parseLYS,
-	parseQRC,
-	parseYRC,
+	parseLrc,
+	parseLys,
+	parseQrc,
+	parseYrc,
 	type LyricLine as RawLyricLine,
 } from "@applemusic-like-lyrics/lyric";
 import { parseTTML } from "@applemusic-like-lyrics/ttml";
@@ -371,13 +371,13 @@ async function loadLyric() {
 	if (lyricSource.endsWith(".ttml")) {
 		lyricPlayer.setLyricLines(parseTTML(content).lines);
 	} else if (lyricSource.endsWith(".lrc")) {
-		lyricPlayer.setLyricLines(parseLRC(content).map(mapLyric));
+		lyricPlayer.setLyricLines(parseLrc(content).map(mapLyric));
 	} else if (lyricSource.endsWith(".yrc")) {
-		lyricPlayer.setLyricLines(parseYRC(content).map(mapLyric));
+		lyricPlayer.setLyricLines(parseYrc(content).map(mapLyric));
 	} else if (lyricSource.endsWith(".lys")) {
-		lyricPlayer.setLyricLines(parseLYS(content).map(mapLyric));
+		lyricPlayer.setLyricLines(parseLys(content).map(mapLyric));
 	} else if (lyricSource.endsWith(".qrc")) {
-		lyricPlayer.setLyricLines(parseQRC(content).map(mapLyric));
+		lyricPlayer.setLyricLines(parseQrc(content).map(mapLyric));
 	} else if (lyricFile === "bug") {
 		const buildLyricLines = (
 			lyric: string,

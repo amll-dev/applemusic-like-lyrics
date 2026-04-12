@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { stringifyASS } from "../src/formats/ass";
+import { stringifyAss } from "../src/formats/ass";
 
 describe("ass", () => {
 	it("stringifies basic timed words into dialogue with k tags", () => {
-		const result = stringifyASS([
+		const result = stringifyAss([
 			{
 				startTime: 0,
 				endTime: 0,
@@ -25,7 +25,7 @@ describe("ass", () => {
 	});
 
 	it("stringifies duet/bg speaker and trans/roman lines", () => {
-		const result = stringifyASS([
+		const result = stringifyAss([
 			{
 				startTime: 0,
 				endTime: 0,
@@ -49,7 +49,7 @@ describe("ass", () => {
 	});
 
 	it("skips lines without any valid timed words", () => {
-		const result = stringifyASS([
+		const result = stringifyAss([
 			{
 				startTime: 0,
 				endTime: 0,
@@ -67,7 +67,7 @@ describe("ass", () => {
 	});
 
 	it("normalizes invalid timestamps when stringifying", () => {
-		const result = stringifyASS([
+		const result = stringifyAss([
 			{
 				startTime: 0,
 				endTime: 0,

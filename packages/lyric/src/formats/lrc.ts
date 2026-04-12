@@ -23,7 +23,7 @@ import {
  * @param lrc 歌词字符串
  * @returns 成功解析出来的歌词
  */
-export function parseLRC(lrc: string): LyricLine[] {
+export function parseLrc(lrc: string): LyricLine[] {
 	const tagRegex = /^\[([a-z]+):([^\]]+)\]$/;
 	const timeRegex = /^\[((?:\d+:)*\d+(?:\.\d+)?)\](.*)$/;
 	const bgRegex = /^[(（](.+)[)）]$/;
@@ -70,7 +70,7 @@ export function parseLRC(lrc: string): LyricLine[] {
  * @param lines 歌词数组
  * @returns LyRiC 格式的字符串
  */
-export function stringifyLRC(lines: LyricLine[]): string {
+export function stringifyLrc(lines: LyricLine[]): string {
 	return lines
 		.map((line) => {
 			const text = line.words.map((w) => w.word).join("");

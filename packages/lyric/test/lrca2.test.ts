@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { parseLRCa2, stringifyLRCa2 } from "../src/formats/lrca2";
+import { parseLrcA2, stringifylrcA2 } from "../src/formats/lrca2";
 import { timeStampsTestCases } from "./timestampcase.fixture";
 
 describe("lrca2", () => {
 	it("parses basic word-timestamped line", () => {
-		const lines = parseLRCa2(
+		const lines = parseLrcA2(
 			"[00:01.000]<00:01.000>Hello <00:01.500>World<00:02.000>",
 		);
 
@@ -21,7 +21,7 @@ describe("lrca2", () => {
 	});
 
 	it("handles CRLF and ignores non-lyric lines", () => {
-		const lines = parseLRCa2(
+		const lines = parseLrcA2(
 			"[ar: Artist]\r\n#comment\r\n{meta:true}\r\n[00:01.000]<00:01.000>Hello<00:02.000>",
 		);
 
@@ -32,7 +32,7 @@ describe("lrca2", () => {
 	});
 
 	it("ignores lines with bad timestamps", () => {
-		const lines = parseLRCa2(
+		const lines = parseLrcA2(
 			"[00:01.000]<00:01.000>Hello<00:02.000>\n[invalid]<00:03.000>Bad<00:04.000>\n[-1:00.000]<00:03.000>Bad<00:04.000>\n[NaN:NaN]<00:03.000>Bad<00:04.000>\n[00:03.000]<00:03.000>World<00:04.000>",
 		);
 
@@ -49,7 +49,7 @@ describe("lrca2", () => {
 		const input = timeStampsTestCases
 			.map(([ts]) => `[${ts}]<${ts}>Word<${ts}>`)
 			.join("\n");
-		const lines = parseLRCa2(input);
+		const lines = parseLrcA2(input);
 
 		expect(lines).toHaveLength(timeStampsTestCases.length);
 		lines.forEach((line, i) => {
@@ -59,7 +59,7 @@ describe("lrca2", () => {
 	});
 
 	it("ignores empty lines and lines with only whitespace", () => {
-		const lines = parseLRCa2(
+		const lines = parseLrcA2(
 			"[00:00.000]   \n[00:01.000]<00:01.000>Hello<00:02.000>\n   \n\n[00:03.000]<00:03.000>World<00:04.000>\n   \n",
 		);
 		expect(lines).toHaveLength(2);
@@ -68,7 +68,7 @@ describe("lrca2", () => {
 	});
 
 	it("stringifies words and preserves spaces", () => {
-		const result = stringifyLRCa2([
+		const result = stringifylrcA2([
 			{
 				startTime: 1000,
 				endTime: 3000,
@@ -90,7 +90,7 @@ describe("lrca2", () => {
 	});
 
 	it("stringifies empty-word line as bare line timestamp", () => {
-		const result = stringifyLRCa2([
+		const result = stringifylrcA2([
 			{
 				startTime: 1000,
 				endTime: 1000,
@@ -106,7 +106,7 @@ describe("lrca2", () => {
 	});
 
 	it("normalizes invalid timestamps when stringifying", () => {
-		const result = stringifyLRCa2([
+		const result = stringifylrcA2([
 			{
 				startTime: Number.NaN,
 				endTime: 0,
@@ -131,16 +131,16 @@ describe("lrca2", () => {
 	it("keeps parse -> stringify -> parse stable for content and timing", () => {
 		const input =
 			"[00:01.000]<00:01.000>Hello <00:01.500>World<00:02.000>\n[00:03.000]<00:03.000>Again<00:03.500>";
-		const first = parseLRCa2(input);
-		const text = stringifyLRCa2(first);
-		const second = parseLRCa2(text);
+		const first = parseLrcA2(input);
+		const text = stringifylrcA2(first);
+		const second = parseLrcA2(text);
 
 		expect(second).toEqual(first);
 	});
 
 	it("keeps exactly one space between adjacent words in '<time> word <time> word' pattern", () => {
 		const input = "[00:01.000]<00:01.000> word <00:01.500> word<00:02.000>";
-		const output = stringifyLRCa2(parseLRCa2(input));
+		const output = stringifylrcA2(parseLrcA2(input));
 
 		expect(output).toBe("[00:01.000]<00:01.000>word <00:01.500>word<00:02.000>");
 		expect(output).not.toContain("  ");

@@ -26,7 +26,7 @@ function parseTimestampPrefix(
 	return { time: parseTime(timeStr), length: raw.length };
 }
 
-function parseESLRCLine(rawLine: string): LyricLine | null {
+function parseEslrcLine(rawLine: string): LyricLine | null {
 	let src = rawLine.trim();
 	const first = parseTimestampPrefix(src);
 	if (!first) return null;
@@ -62,10 +62,10 @@ function parseESLRCLine(rawLine: string): LyricLine | null {
  * @param eslrc 歌词字符串
  * @returns 成功解析出来的歌词
  */
-export function parseESLRC(eslrc: string): LyricLine[] {
+export function parseEslrc(eslrc: string): LyricLine[] {
 	const result: LyricLine[] = [];
 	for (const rawLine of eslrc.split(/\r?\n/)) {
-		const line = parseESLRCLine(rawLine);
+		const line = parseEslrcLine(rawLine);
 		if (line) result.push(line);
 	}
 
@@ -94,7 +94,7 @@ export function parseESLRC(eslrc: string): LyricLine[] {
  * @param lines 歌词数组
  * @returns ESLyric 逐词歌词格式字符串
  */
-export function stringifyESLRC(lines: LyricLine[]): string {
+export function stringifyEslrc(lines: LyricLine[]): string {
 	return lines
 		.map((line) => {
 			if (!line.words.length) return "";

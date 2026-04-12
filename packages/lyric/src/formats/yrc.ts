@@ -33,7 +33,7 @@ function trimBGParentheses(words: LyricWord[]): void {
  * @param yrc 歌词字符串
  * @returns 成功解析出来的歌词
  */
-export function parseYRC(yrc: string): LyricLine[] {
+export function parseYrc(yrc: string): LyricLine[] {
 	const wordPattern = /^(.*?)\((\d+),(\d+),0\)/;
 	const linePattern = /^\[(\d+),(\d+)\]/;
 
@@ -104,7 +104,7 @@ function makeParenthesesFull(text: string): string {
  * @param lines 歌词数组
  * @returns YRC 格式的字符串
  */
-export function stringifyYRC(lines: LyricLine[]): string {
+export function stringifyYrc(lines: LyricLine[]): string {
 	return lines
 		.map((line) => {
 			const lineStart = normalizeTimestamp(line.startTime);

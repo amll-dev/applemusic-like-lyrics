@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { decryptQrcHex, encryptQrcHex } from "../src/formats/eqrc";
-import { parseQRC } from "../src/formats/qrc";
+import { parseQrc } from "../src/formats/qrc";
 
 function decodeXmlEntities(text: string): string {
 	return text
@@ -31,7 +31,7 @@ describe("eqrc", () => {
 		const decrypted = decryptQrcHex(hex);
 		const sha256 = createHash("sha256").update(decrypted).digest("hex");
 		const qrcText = extractQrcPayload(decrypted);
-		const lines = parseQRC(qrcText);
+		const lines = parseQrc(qrcText);
 
 		expect(hex.length).toBe(7136);
 		expect(decrypted.length).toBe(7188);

@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { parseLYL, stringifyLYL } from "../src/formats/lyl";
+import { parseLyl, stringifyLyl } from "../src/formats/lyl";
 
 describe("lyl", () => {
 	it("parses basic line-timestamped lines", () => {
-		const lines = parseLYL("[1000,2000]Hello\n[3000,4000]World");
+		const lines = parseLyl("[1000,2000]Hello\n[3000,4000]World");
 
 		expect(lines).toHaveLength(2);
 		expect(lines[0].startTime).toBe(1000);
@@ -15,7 +15,7 @@ describe("lyl", () => {
 	});
 
 	it("handles CRLF and ignores non-lyric lines", () => {
-		const lines = parseLYL(
+		const lines = parseLyl(
 			"[type:LyricifyLines]\r\n#comment\r\n{meta:true}\r\nno timestamp\r\n[1000,2000]Hello",
 		);
 
@@ -26,7 +26,7 @@ describe("lyl", () => {
 	});
 
 	it("ignores lines with bad timestamps", () => {
-		const lines = parseLYL(
+		const lines = parseLyl(
 			"[1000,2000]Hello\n[invalid,2000]Bad\n[-1,2000]Bad\n[NaN,NaN]Bad\n[3000,4000]World",
 		);
 
@@ -40,7 +40,7 @@ describe("lyl", () => {
 	});
 
 	it("identifies background lines with parentheses", () => {
-		const lines = parseLYL("[1000,2000](Hello)\n[3000,4000]（Hi）\n[5000,6000]World");
+		const lines = parseLyl("[1000,2000](Hello)\n[3000,4000]（Hi）\n[5000,6000]World");
 
 		expect(lines).toHaveLength(3);
 		expect(lines[0].isBG).toBe(true);
@@ -52,7 +52,7 @@ describe("lyl", () => {
 	});
 
 	it("trims whitespace from lines and ignore empty lines", () => {
-		const lines = parseLYL(
+		const lines = parseLyl(
 			"[0,500]\n[600,1000]   \n[1000,2000]   Hello   \n\n[3000,4000] World \n[5000,6000]   \n",
 		);
 		expect(lines).toHaveLength(2);
@@ -61,7 +61,7 @@ describe("lyl", () => {
 	});
 
 	it("stringifies with header and bg markers", () => {
-		const result = stringifyLYL([
+		const result = stringifyLyl([
 			{
 				startTime: 1000,
 				endTime: 2000,
@@ -88,7 +88,7 @@ describe("lyl", () => {
 	});
 
 	it("normalizes invalid timestamps when stringifying", () => {
-		const result = stringifyLYL([
+		const result = stringifyLyl([
 			{
 				startTime: Number.NaN,
 				endTime: Number.POSITIVE_INFINITY,
@@ -114,9 +114,9 @@ describe("lyl", () => {
 
 	it("keeps parse -> stringify -> parse stable for content and timing", () => {
 		const input = "[1000,2000]Hello\n[3000,4000](World)";
-		const first = parseLYL(input);
-		const text = stringifyLYL(first);
-		const second = parseLYL(text);
+		const first = parseLyl(input);
+		const text = stringifyLyl(first);
+		const second = parseLyl(text);
 
 		expect(second).toEqual(first);
 	});

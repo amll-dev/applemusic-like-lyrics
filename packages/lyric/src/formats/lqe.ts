@@ -17,7 +17,7 @@
  */
 import type { LyricLine } from "../types";
 import { formatTime, parseTime } from "../utils";
-import { parseLYS, stringifyLYS } from "./lys";
+import { parseLys, stringifyLys } from "./lys";
 
 type AttrType = "translatedLyric" | "romanLyric";
 
@@ -69,7 +69,7 @@ function parseAttr(
  * @param lqe 歌词字符串
  * @returns 成功解析出来的歌词
  */
-export function parseLQE(lqe: string): LyricLine[] {
+export function parseLqe(lqe: string): LyricLine[] {
 	const lines = lqe
 		.split(/\r?\n/)
 		.map((line) => line.trim())
@@ -99,7 +99,7 @@ export function parseLQE(lqe: string): LyricLine[] {
 		headerMatches[lyricHeaderIndex].index + 1,
 		headerMatches[lyricHeaderIndex + 1].index,
 	);
-	const parsedLines = parseLYS(lyricLines.join("\n"));
+	const parsedLines = parseLys(lyricLines.join("\n"));
 
 	parseAttr("translatedLyric", headerMatches, lines, parsedLines);
 	parseAttr("romanLyric", headerMatches, lines, parsedLines);
@@ -128,9 +128,9 @@ function stringifyAttr(lines: LyricLine[], attr: AttrType): string | null {
  * @param lines 歌词数组
  * @returns LQE 格式的字符串
  */
-export function stringifyLQE(lines: LyricLine[]): string {
+export function stringifyLqe(lines: LyricLine[]): string {
 	const header = "[Lyricify Quick Export]\n[version:1.0]";
-	const lyricSection = `[lyrics: format@Lyricify Syllable]\n${stringifyLYS(lines)}`;
+	const lyricSection = `[lyrics: format@Lyricify Syllable]\n${stringifyLys(lines)}`;
 	const translationSection = stringifyAttr(lines, "translatedLyric");
 	const romanizationSection = stringifyAttr(lines, "romanLyric");
 	const body = [lyricSection, translationSection, romanizationSection]

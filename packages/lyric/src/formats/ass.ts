@@ -43,7 +43,7 @@ function writeLyricDialogue(
  * @param lines 歌词数组
  * @returns ASS 字幕格式字符串
  */
-export function stringifyASS(lines: LyricLine[]): string {
+export function stringifyAss(lines: LyricLine[]): string {
 	const result: string[] = [
 		"[Script Info]",
 		"[Events]",

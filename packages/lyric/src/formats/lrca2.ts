@@ -20,7 +20,7 @@ import {
  * @param lrc 歌词字符串
  * @returns 成功解析出来的歌词
  */
-export function parseLRCa2(lrc: string): LyricLine[] {
+export function parseLrcA2(lrc: string): LyricLine[] {
 	const lines = lrc
 		.split(/\r?\n/)
 		.map((l) => l.trim())
@@ -89,7 +89,7 @@ export function parseLRCa2(lrc: string): LyricLine[] {
  * @param lines 歌词数组
  * @returns LRC A2 格式的字符串
  */
-export function stringifyLRCa2(lines: LyricLine[]): string {
+export function stringifylrcA2(lines: LyricLine[]): string {
 	return lines
 		.map((line) => {
 			const normalizedLineStartTime = normalizeTimestamp(line.startTime);

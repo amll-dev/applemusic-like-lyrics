@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { parseLYS, stringifyLYS } from "../src/formats/lys";
+import { parseLys, stringifyLys } from "../src/formats/lys";
 
 describe("lys", () => {
 	it("parses basic word-timestamped line", () => {
-		const lines = parseLYS("[0]Hello(1000,500) World(1500,500)");
+		const lines = parseLys("[0]Hello(1000,500) World(1500,500)");
 
 		expect(lines).toHaveLength(1);
 		expect(lines[0].startTime).toBe(1000);
@@ -14,7 +14,7 @@ describe("lys", () => {
 	});
 
 	it("parses bg + duet flags from prop and strips bg wrappers", () => {
-		const lines = parseLYS("[8](Hello(1000,500)World(1500,500))");
+		const lines = parseLys("[8](Hello(1000,500)World(1500,500))");
 
 		expect(lines).toHaveLength(1);
 		expect(lines[0].isBG).toBe(true);
@@ -23,7 +23,7 @@ describe("lys", () => {
 	});
 
 	it("handles CRLF and ignores lines without valid prop prefix", () => {
-		const lines = parseLYS(
+		const lines = parseLys(
 			"no prop\r\n#comment\r\n{meta:true}\r\n[4]Hello(1000,500)World(1500,500)",
 		);
 
@@ -33,7 +33,7 @@ describe("lys", () => {
 	});
 
 	it("ignores lines with bad word timestamps", () => {
-		const lines = parseLYS(
+		const lines = parseLys(
 			"[0]Hello(1000,500)\n[0]Bad(a,b)\n[0]AlsoBad(1000,-10)\n[0]World(2000,500)",
 		);
 
@@ -43,7 +43,7 @@ describe("lys", () => {
 	});
 
 	it("ignores empty lines and lines with only whitespace", () => {
-		const lines = parseLYS(
+		const lines = parseLys(
 			"[0]   \n[3]\n[0]Hello(1000,500) World(1500,500)\n   \n\n[0]Next(2000,500) line(2500,500)\n   \n",
 		);
 		expect(lines).toHaveLength(2);
@@ -52,7 +52,7 @@ describe("lys", () => {
 	});
 
 	it("stringifies words and preserves spaces", () => {
-		const result = stringifyLYS([
+		const result = stringifyLys([
 			{
 				startTime: 1000,
 				endTime: 2000,
@@ -72,7 +72,7 @@ describe("lys", () => {
 	});
 
 	it("stringifies props according to duet/background presence", () => {
-		const result = stringifyLYS([
+		const result = stringifyLys([
 			{
 				startTime: 0,
 				endTime: 0,
@@ -97,7 +97,7 @@ describe("lys", () => {
 	});
 
 	it("normalizes invalid timestamps when stringifying", () => {
-		const result = stringifyLYS([
+		const result = stringifyLys([
 			{
 				startTime: 0,
 				endTime: 0,
@@ -127,9 +127,9 @@ describe("lys", () => {
 
 	it("keeps parse -> stringify -> parse stable for content and timing", () => {
 		const input = "[4]Hello(1000,500) World(1500,500)\n[8](Again(3000,500))";
-		const first = parseLYS(input);
-		const text = stringifyLYS(first);
-		const second = parseLYS(text);
+		const first = parseLys(input);
+		const text = stringifyLys(first);
+		const second = parseLys(text);
 
 		expect(second).toEqual(first);
 	});

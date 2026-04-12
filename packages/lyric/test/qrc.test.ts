@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { parseQRC, stringifyQRC } from "../src/formats/qrc";
+import { parseQrc, stringifyQrc } from "../src/formats/qrc";
 
 describe("qrc", () => {
 	it("parses basic word-timestamped line", () => {
-		const lines = parseQRC(
+		const lines = parseQrc(
 			"[1000,1000]Hello(1000,500)World(1500,500)\n[3000,1000]Again(3000,1000)",
 		);
 
@@ -20,7 +20,7 @@ describe("qrc", () => {
 	});
 
 	it("handles CRLF and ignores lines without valid line timestamp", () => {
-		const lines = parseQRC(
+		const lines = parseQrc(
 			"no timestamp\r\n[invalid,100]Bad(0,100)\r\n[-1,100]Bad(0,100)\r\n[1000,1000]Hello(1000,1000)",
 		);
 
@@ -31,7 +31,7 @@ describe("qrc", () => {
 	});
 
 	it("ignores empty lines and lines with only whitespace", () => {
-		const lines = parseQRC(
+		const lines = parseQrc(
 			"[0,20]   \n[0,20]\n[0,20]Test(10,10)\n   \n\n[0,20]   \n",
 		);
 		expect(lines).toHaveLength(1);
@@ -39,7 +39,7 @@ describe("qrc", () => {
 	});
 
 	it("stringifies words and preserves spaces", () => {
-		const result = stringifyQRC([
+		const result = stringifyQrc([
 			{
 				startTime: 1000,
 				endTime: 3000,
@@ -59,7 +59,7 @@ describe("qrc", () => {
 	});
 
 	it("stringifies bg lines with full-width wrapping parentheses", () => {
-		const result = stringifyQRC([
+		const result = stringifyQrc([
 			{
 				startTime: 1000,
 				endTime: 2000,
@@ -78,18 +78,18 @@ describe("qrc", () => {
 
 	it("parses and keeps bg wrapper lines stable", () => {
 		const input = "[1000,1000]（Hello,(1000,1000) world）(2000,2000)";
-		const lines = parseQRC(input);
+		const lines = parseQrc(input);
 
 		expect(lines).toHaveLength(1);
 		expect(lines[0].isBG).toBe(true);
 		expect(lines[0].words).toHaveLength(2);
 		expect(lines[0].words[0].word).toBe("Hello,");
 		expect(lines[0].words[1].word).toBe(" world");
-		expect(stringifyQRC(lines)).toBe(input);
+		expect(stringifyQrc(lines)).toBe(input);
 	});
 
 	it("keeps parenthesized fragments in plain word text", () => {
-		const lines = parseQRC("[0,20]A(x)B(0,10) C(10,10)");
+		const lines = parseQrc("[0,20]A(x)B(0,10) C(10,10)");
 
 		expect(lines).toHaveLength(1);
 		expect(lines[0].words.map((w) => w.word)).toEqual(["A(x)B", " C"]);
@@ -100,7 +100,7 @@ describe("qrc", () => {
 	});
 
 	it("normalizes invalid timestamps when stringifying", () => {
-		const result = stringifyQRC([
+		const result = stringifyQrc([
 			{
 				startTime: Number.NaN,
 				endTime: Number.POSITIVE_INFINITY,
@@ -125,9 +125,9 @@ describe("qrc", () => {
 	it("keeps parse -> stringify -> parse stable for content and timing", () => {
 		const input =
 			"[1000,1000]Hello (1000,500)World(1500,500)\n[3000,1000]Again(3000,1000)";
-		const first = parseQRC(input);
-		const text = stringifyQRC(first);
-		const second = parseQRC(text);
+		const first = parseQrc(input);
+		const text = stringifyQrc(first);
+		const second = parseQrc(text);
 
 		expect(second).toEqual(first);
 	});

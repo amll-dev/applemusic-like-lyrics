@@ -46,7 +46,7 @@ function parseProp(prop: number): {
  * @param lys 歌词字符串
  * @returns 成功解析出来的歌词
  */
-export function parseLYS(lys: string): LyricLine[] {
+export function parseLys(lys: string): LyricLine[] {
 	const lines = lys
 		.split(/\r?\n/)
 		.map((l) => l.trim())
@@ -116,7 +116,7 @@ function makeProp(line: LyricLine): number {
  * @param lines 歌词数组
  * @returns LYS 格式的字符串
  */
-export function stringifyLYS(lines: LyricLine[]): string {
+export function stringifyLys(lines: LyricLine[]): string {
 	return lines
 		.map((line) => {
 			const prop = makeProp(line);

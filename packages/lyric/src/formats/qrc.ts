@@ -19,7 +19,7 @@ import {
  * @param qrc 歌词字符串
  * @returns 成功解析出来的歌词
  */
-export function parseQRC(qrc: string): LyricLine[] {
+export function parseQrc(qrc: string): LyricLine[] {
 	const wordPattern = /(.*?)\((\d+),(\d+)\)/g;
 	const linePattern = /^\[(\d+),(\d+)\]/;
 
@@ -83,7 +83,7 @@ export function parseQRC(qrc: string): LyricLine[] {
  * @param lines 歌词数组
  * @returns QRC 格式的字符串
  */
-export function stringifyQRC(lines: LyricLine[]): string {
+export function stringifyQrc(lines: LyricLine[]): string {
 	return lines
 		.map((line) => {
 			const lineStart = normalizeTimestamp(line.startTime);
