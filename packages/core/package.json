@@ -29,25 +29,30 @@
 	"scripts": {
 		"build:docs": "typedoc --plugin typedoc-plugin-markdown --out docs src/index.ts",
 		"typecheck": "tsc",
-		"build-only": "vite build",
+		"build-only": "tsdown",
 		"build": "run-p typecheck \"build-only {@}\" --",
-		"build:dev": "vite build",
+		"build:dev": "tsdown",
 		"fmt": "biome format --write ./src",
 		"dev": "nx run @applemusic-like-lyrics/playground-core:dev"
 	},
 	"type": "module",
 	"main": "./dist/amll-core.cjs",
-	"module": "./dist/amll-core.js",
-	"typings": "./dist/index.d.ts",
+	"module": "./dist/amll-core.mjs",
+	"typings": "./dist/amll-core.d.mts",
 	"exports": {
 		".": {
-			"types": "./dist/index.d.ts",
-			"import": "./dist/amll-core.js",
-			"require": "./dist/amll-core.cjs"
+			"import": {
+				"types": "./dist/amll-core.d.mts",
+				"default": "./dist/amll-core.mjs"
+			},
+			"require": {
+				"types": "./dist/amll-core.d.cts",
+				"default": "./dist/amll-core.cjs"
+			}
 		},
 		"./style.css": {
-			"import": "./dist/amll-core.css",
-			"require": "./dist/amll-core.css"
+			"import": "./dist/style.css",
+			"require": "./dist/style.css"
 		}
 	},
 	"devDependencies": {
@@ -59,12 +64,9 @@
 		"stats.js": "^0.17.0",
 		"typedoc": "catalog:",
 		"typedoc-plugin-markdown": "catalog:",
-		"typescript": "catalog:",
-		"vite": "catalog:",
-		"vite-plugin-dts": "catalog:",
-		"vite-plugin-glsl": "^1.5.6",
-		"vite-plugin-top-level-await": "^1.6.0",
-		"vite-plugin-wasm": "catalog:"
+		"@tsdown/css": "catalog:",
+		"tsdown": "catalog:",
+		"typescript": "catalog:"
 	},
 	"peerDependencies": {
 		"@pixi/app": "*",

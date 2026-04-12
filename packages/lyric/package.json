@@ -30,20 +30,25 @@
 	"files": [
 		"dist"
 	],
-	"main": "./dist/amll-lyric.umd.cjs",
-	"module": "./dist/amll-lyric.js",
-	"types": "./dist/index.d.ts",
+	"main": "./dist/amll-lyric.cjs",
+	"module": "./dist/amll-lyric.mjs",
+	"types": "./dist/amll-lyric.d.mts",
 	"exports": {
-		"types": "./dist/index.d.ts",
-		"import": "./dist/amll-lyric.js",
-		"require": "./dist/amll-lyric.umd.cjs"
+		"import": {
+			"types": "./dist/amll-lyric.d.mts",
+			"default": "./dist/amll-lyric.mjs"
+		},
+		"require": {
+			"types": "./dist/amll-lyric.d.cts",
+			"default": "./dist/amll-lyric.cjs"
+		}
 	},
 	"scripts": {
 		"build:docs": "typedoc --plugin typedoc-plugin-markdown --out docs src/index.ts",
 		"typecheck": "tsc",
-		"build-only": "vite build",
+		"build-only": "tsdown",
 		"build": "run-p typecheck \"build-only {@}\" --",
-		"build:dev": "vite build",
+		"build:dev": "tsdown",
 		"fmt": "biome format --write ./src",
 		"dev": "vite dev",
 		"test": "bun test",
@@ -54,9 +59,8 @@
 		"@biomejs/biome": "catalog:",
 		"@types/node": "^25.5.2",
 		"@types/pako": "^2.0.4",
-		"typescript": "^5.9.3",
-		"vite": "catalog:",
-		"vite-plugin-dts": "^4.3.0"
+		"tsdown": "catalog:",
+		"typescript": "^5.9.3"
 	},
 	"dependencies": {
 		"pako": "^2.1.0",

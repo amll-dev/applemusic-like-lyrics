@@ -23,20 +23,25 @@
 	"files": [
 		"dist"
 	],
-	"main": "./dist/amll-ttml.umd.cjs",
-	"module": "./dist/amll-ttml.js",
-	"types": "./dist/index.d.ts",
+	"main": "./dist/amll-ttml.cjs",
+	"module": "./dist/amll-ttml.mjs",
+	"types": "./dist/amll-ttml.d.mts",
 	"exports": {
-		"types": "./dist/index.d.ts",
-		"import": "./dist/amll-ttml.js",
-		"require": "./dist/amll-ttml.umd.cjs"
+		"import": {
+			"types": "./dist/amll-ttml.d.mts",
+			"default": "./dist/amll-ttml.mjs"
+		},
+		"require": {
+			"types": "./dist/amll-ttml.d.cts",
+			"default": "./dist/amll-ttml.cjs"
+		}
 	},
 	"scripts": {
 		"build:docs": "typedoc --plugin typedoc-plugin-markdown --out docs src/index.ts",
 		"typecheck": "tsc",
-		"build-only": "vite build",
+		"build-only": "tsdown",
 		"build": "run-p typecheck \"build-only {@}\" --",
-		"build:dev": "vite build",
+		"build:dev": "tsdown",
 		"fmt": "biome format --write ./src",
 		"test": "bun test",
 		"test:watch": "bun test --watch",
@@ -46,8 +51,7 @@
 		"@biomejs/biome": "catalog:",
 		"@xmldom/xmldom": "^0.8.12",
 		"typedoc": "catalog:",
-		"typescript": "^5.9.3",
-		"vite": "catalog:",
-		"vite-plugin-dts": "^4.3.0"
+		"tsdown": "catalog:",
+		"typescript": "^5.9.3"
 	}
 }

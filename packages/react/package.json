@@ -29,34 +29,37 @@
 	"scripts": {
 		"build:docs": "typedoc --plugin typedoc-plugin-markdown --out docs src/index.ts",
 		"typecheck": "tsc",
-		"build-only": "vite build",
+		"build-only": "tsdown",
 		"build": "run-p typecheck \"build-only {@}\" --",
-		"build:dev": "vite build",
+		"build:dev": "tsdown",
 		"fmt": "biome format --write ./src",
 		"dev": "nx run @applemusic-like-lyrics/playground-react:dev"
 	},
 	"main": "./dist/amll-react.cjs",
-	"module": "./dist/amll-react.js",
-	"typings": "./dist/index.d.ts",
+	"module": "./dist/amll-react.mjs",
+	"typings": "./dist/amll-react.d.mts",
 	"exports": {
 		".": {
-			"import": "./dist/amll-react.js",
-			"require": "./dist/amll-react.cjs",
-			"types": "./dist/index.d.ts"
+			"import": {
+				"types": "./dist/amll-react.d.mts",
+				"default": "./dist/amll-react.mjs"
+			},
+			"require": {
+				"types": "./dist/amll-react.d.cts",
+				"default": "./dist/amll-react.cjs"
+			}
 		}
 	},
 	"devDependencies": {
 		"@biomejs/biome": "catalog:",
 		"@types/react": "catalog:",
 		"@types/react-dom": "catalog:",
-		"@vitejs/plugin-react": "catalog:",
 		"react": "catalog:",
 		"react-dom": "catalog:",
+		"tsdown": "catalog:",
 		"typedoc": "catalog:",
 		"typedoc-plugin-markdown": "catalog:",
-		"typescript": "catalog:",
-		"vite": "catalog:",
-		"vite-plugin-dts": "catalog:"
+		"typescript": "catalog:"
 	},
 	"dependencies": {
 		"@applemusic-like-lyrics/core": "workspace:^"

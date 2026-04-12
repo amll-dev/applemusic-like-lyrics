@@ -25,20 +25,25 @@
 	],
 	"scripts": {
 		"typecheck": "tsc",
-		"build-only": "vite build",
+		"build-only": "tsdown",
 		"build": "run-p typecheck \"build-only {@}\" --",
-		"build:dev": "vite build",
+		"build:dev": "tsdown",
 		"fmt": "biome format --write ./src",
 		"dev": "nx run @applemusic-like-lyrics/playground-vue:dev"
 	},
 	"main": "./dist/amll-vue.cjs",
-	"module": "./dist/amll-vue.js",
-	"typings": "./dist/index.d.ts",
+	"module": "./dist/amll-vue.mjs",
+	"typings": "./dist/amll-vue.d.mts",
 	"exports": {
 		".": {
-			"import": "./dist/amll-vue.js",
-			"require": "./dist/amll-vue.cjs",
-			"types": "./dist/index.d.ts"
+			"import": {
+				"types": "./dist/amll-vue.d.mts",
+				"default": "./dist/amll-vue.mjs"
+			},
+			"require": {
+				"types": "./dist/amll-vue.d.cts",
+				"default": "./dist/amll-vue.cjs"
+			}
 		}
 	},
 	"dependencies": {
@@ -56,16 +61,13 @@
 		"@pixi/filter-blur": "^7.4.3",
 		"@pixi/filter-color-matrix": "^7.4.3",
 		"@pixi/sprite": "^7.4.3",
-		"@vitejs/plugin-vue": "^6.0.5",
-		"@vitejs/plugin-vue-jsx": "^5.1.5",
+		"@rolldown/plugin-babel": "catalog:",
+		"@vue/babel-plugin-jsx": "^1.3.5",
 		"@vue/tsconfig": "^0.9.0",
+		"tsdown": "catalog:",
 		"typedoc": "^0.28.17",
 		"typedoc-plugin-markdown": "catalog:",
 		"typescript": "^5.9.3",
-		"vite": "catalog:",
-		"vite-plugin-dts": "^4.5.3",
-		"vite-plugin-top-level-await": "^1.6.0",
-		"vite-plugin-wasm": "catalog:",
 		"vue": "^3.5.30"
 	}
 }

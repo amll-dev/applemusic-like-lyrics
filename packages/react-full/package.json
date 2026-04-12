@@ -20,37 +20,43 @@
 		}
 	},
 	"type": "module",
-	"main": "dist/amll-react-framework.cjs",
-	"module": "./dist/amll-react-framework.js",
-	"typings": "./dist/index.d.ts",
-	"style": "./dist/amll-react-framework.css",
+	"main": "./dist/amll-react-framework.cjs",
+	"module": "./dist/amll-react-framework.mjs",
+	"typings": "./dist/amll-react-framework.d.mts",
+	"style": "./dist/style.css",
 	"exports": {
 		".": {
-			"import": "./dist/amll-react-framework.js",
-			"require": "./dist/amll-react-framework.cjs",
-			"types": "./dist/index.d.ts"
+			"import": {
+				"types": "./dist/amll-react-framework.d.mts",
+				"default": "./dist/amll-react-framework.mjs"
+			},
+			"require": {
+				"types": "./dist/amll-react-framework.d.cts",
+				"default": "./dist/amll-react-framework.cjs"
+			}
 		},
 		"./style.css": {
-			"import": "./dist/amll-react-framework.css",
-			"require": "./dist/amll-react-framework.css"
+			"import": "./dist/style.css",
+			"require": "./dist/style.css"
 		}
 	},
 	"sideEffects": [
 		"*.css"
 	],
 	"files": [
-		"dist/**/*.js",
-		"dist/**/*.ts",
+		"dist/**/*.mjs",
 		"dist/**/*.cjs",
+		"dist/**/*.d.mts",
+		"dist/**/*.d.cts",
 		"dist/**/*.css",
 		"dist/**/*.map"
 	],
 	"scripts": {
 		"build:docs": "typedoc --plugin typedoc-plugin-markdown --out docs src/index.ts",
 		"typecheck": "tsc",
-		"build-only": "vite build",
+		"build-only": "tsdown",
 		"build": "run-p typecheck \"build-only {@}\" --",
-		"build:dev": "vite build",
+		"build:dev": "tsdown",
 		"fmt": "biome format --write ./src",
 		"dev": "vite dev"
 	},
@@ -72,20 +78,18 @@
 		"@applemusic-like-lyrics/lyric": "workspace:^",
 		"@biomejs/biome": "catalog:",
 		"@radix-ui/themes": "^3.3.0",
+		"@rolldown/plugin-babel": "catalog:",
+		"@svgr/rollup": "^8.1.0",
+		"@tsdown/css": "catalog:",
 		"@types/react": "catalog:",
 		"@types/react-dom": "catalog:",
 		"@types/ungap__structured-clone": "^1.2.0",
-		"@vitejs/plugin-react": "catalog:",
 		"babel-plugin-react-compiler": "^1.0.0",
+		"jotai-babel": "catalog:",
 		"react-compiler-runtime": "^1.0.0",
+		"tsdown": "catalog:",
 		"typedoc": "catalog:",
 		"typedoc-plugin-markdown": "catalog:",
-		"typescript": "catalog:",
-		"jotai-babel": "catalog:",
-		"vite": "catalog:",
-		"vite-plugin-dts": "catalog:",
-		"vite-plugin-svgr": "catalog:",
-		"vite-plugin-wasm": "catalog:",
-		"vite-plugin-babel": "catalog:"
+		"typescript": "catalog:"
 	}
 }
