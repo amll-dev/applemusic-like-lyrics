@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tt xmlns="http://www.w3.org/ns/ttml"
+    xmlns:ttm="http://www.w3.org/ns/ttml#metadata"
+    xmlns:itunes="http://itunes.apple.com/lyric-ttml-extensions"
+    xmlns:amll="http://www.example.com/ns/amll"
+    xml:lang="ja"
+    itunes:timing="Word">
+
+    <head>
+        <metadata>
+            <ttm:title>Complex Test Song</ttm:title>
+
+            <ttm:agent type="person" xml:id="v1">
+                <ttm:name type="full">Vocalist A (Taro)</ttm:name>
+            </ttm:agent>
+            <ttm:agent type="person" xml:id="v2">
+                <ttm:name type="full">Vocalist B (Hanako)</ttm:name>
+            </ttm:agent>
+            <ttm:agent type="group" xml:id="v1000">
+                <ttm:name type="full">Chorus Group</ttm:name>
+            </ttm:agent>
+
+            <amll:meta key="musicName" value="複雑なテストソング" />
+            <amll:meta key="artists" value="Vocalist A (Taro)" />
+            <amll:meta key="artists" value="Vocalist B (Hanako)" />
+            <amll:meta key="album" value="AMLL Parser Test Suite" />
+            <amll:meta key="isrc" value="JPXX02500001" />
+
+            <amll:meta key="ncmMusicId" value="123456789" />
+            <amll:meta key="qqMusicId" value="987654321" />
+            <amll:meta key="spotifyId" value="abc123xyz" />
+            <amll:meta key="appleMusicId" value="999888777" />
+
+            <amll:meta key="ttmlAuthorGithub" value="10001" />
+            <amll:meta key="ttmlAuthorGithubLogin" value="TestUser" />
+
+            <iTunesMetadata xmlns="http://music.apple.com/lyric-ttml-internal">
+                <songwriters>
+                    <songwriter>作曲者1号</songwriter>
+                    <songwriter>作曲者2号</songwriter>
+                </songwriters>
+                <translations>
+                    <translation type="subtitle" xml:lang="en-US">
+                        <text for="L1">This is the first line (Vocalist A)</text>
+                        <text for="L2">This is the second line (Vocalist B)</text>
+                        <text for="L3"> This is the chorus line <span ttm:role="x-bg">(With
+                            background)</span>
+                        </text>
+                    </translation>
+                    <translation type="subtitle" xml:lang="zh-Hans-CN">
+                        <text for="L1">这是第一行歌词 (演唱者A)</text>
+                        <text for="L2">这是第二行歌词 (演唱者B)</text>
+                        <text for="L3"> 这是合唱部分 <span ttm:role="x-bg">(带背景音)</span>
+                        </text>
+                    </translation>
+                </translations>
+
+                <transliterations>
+                    <transliteration xml:lang="ja-Latn">
+                        <text for="L1">
+                            <span begin="00:10.000" end="00:10.500">Ko</span>
+                            <span begin="00:10.500" end="00:10.800">re </span>
+                            <span begin="00:10.800" end="00:11.000">wa </span>
+                            <span begin="00:11.200" end="00:11.800">tesuto</span>
+                        </text>
+                        <text for="L2">
+                            <span begin="00:15.000" end="00:15.800">Futatsume </span>
+                            <span begin="00:16.000" end="00:16.500">no </span>
+                            <span begin="00:16.500" end="00:17.000">rain</span>
+                        </text>
+                        <text for="L3">
+                            <span begin="00:20.000" end="00:21.500">Kōrasu </span>
+                            <span begin="00:21.500" end="00:22.000">desu</span>
+                            <span ttm:role="x-bg">
+                                <span begin="00:22.500" end="00:23.800">(haikei)</span>
+                            </span>
+                        </text>
+                    </transliteration>
+                </transliterations>
+            </iTunesMetadata>
+        </metadata>
+    </head>
+
+    <body dur="00:30.000">
+        <div begin="00:08.000" end="00:18.000" itunes:song-part="Verse">
+            <p begin="00:10.000" end="00:12.000" itunes:key="L1" ttm:agent="v1">
+                <span begin="00:10.000" end="00:10.500" amll:obscene="true">これ</span>
+                <span begin="00:10.500" end="00:10.800">は </span>
+                <span begin="00:11.200" end="00:11.800" amll:empty-beat="5">テスト</span>
+            </p>
+
+            <p begin="00:15.000" end="00:17.000" itunes:key="L2" ttm:agent="v2">
+                <span begin="00:15.000" end="00:15.800">二つ目 </span>
+                <span begin="00:16.000" end="00:16.500">の </span>
+                <span begin="00:16.500" end="00:17.000">ライン</span>
+            </p>
+        </div>
+
+        <div begin="00:19.000" end="00:30.000" itunes:song-part="Chorus">
+            <p begin="00:20.000" end="00:25.000" itunes:key="L3" ttm:agent="v1000">
+                <span begin="00:20.000" end="00:21.500">コーラス </span>
+                <span begin="00:21.500" end="00:22.000">です</span>
+
+                <span ttm:role="x-bg" begin="00:22.500" end="00:23.800" ttm:agent="v1">
+                    <span begin="00:22.500" end="00:23.800">(背景)</span>
+                    <span ttm:role="x-translation" xml:lang="en">Background</span>
+                    <span ttm:role="x-roman" xml:lang="ja-Latn">haikei</span>
+                </span>
+            </p>
+        </div>
+    </body>
+</tt>

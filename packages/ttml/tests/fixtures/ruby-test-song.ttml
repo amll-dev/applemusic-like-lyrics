@@ -1,0 +1,32 @@
+<tt xmlns="http://www.w3.org/ns/ttml"
+    xmlns:ttm="http://www.w3.org/ns/ttml#metadata"
+    xmlns:tts="http://www.w3.org/ns/ttml#styling"
+    xmlns:itunes="http://music.apple.com/lyric-ttml-internal"
+    itunes:timing="Word"
+    xml:lang="ja">
+    <head>
+        <metadata>
+            <ttm:agent type="person" xml:id="v1" />
+        </metadata>
+    </head>
+    <body dur="28.000">
+        <div begin="27.000" end="28.000">
+            <p begin="27.000" end="28.000" itunes:key="L1" ttm:agent="v1">
+                <span begin="27.000" end="27.500">これは</span>
+                <span tts:ruby="container">
+                    <span tts:ruby="base">所</span>
+                    <span tts:ruby="textContainer">
+                        <span tts:ruby="text" begin="27.690" end="27.820">しょ</span>
+                    </span>
+                </span>
+                <span tts:ruby="container">
+                    <span tts:ruby="base">詮</span>
+                    <span tts:ruby="textContainer">
+                        <span tts:ruby="text" begin="27.820" end="27.880">せ</span>
+                        <span tts:ruby="text" begin="27.880" end="27.950">ん</span>
+                    </span>
+                </span>
+            </p>
+        </div>
+    </body>
+</tt>
