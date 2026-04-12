@@ -28,7 +28,9 @@
   ],
   "scripts": {
     "build:docs": "typedoc --plugin typedoc-plugin-markdown --out docs src/index.ts",
-    "build": "vite build",
+    "typecheck": "tsc",
+    "build-only": "vite build",
+    "build": "run-p typecheck \"build-only {@}\" --",
     "build:dev": "vite build",
     "fmt": "biome format --write ./src",
     "dev": "nx run @applemusic-like-lyrics/playground-react:dev",

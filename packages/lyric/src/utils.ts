@@ -52,8 +52,10 @@ export const normalizeDuration = (duration: number): number => {
 
 export const MAX_LRC_TIMESTAMP = 60_039_999; // 999:99.999
 
-export const clampTimestamp = (ms: number, max = MAX_LRC_TIMESTAMP): number =>
-	Math.min(max, normalizeTimestamp(ms));
+export const clampTimestamp = (
+	ms: number,
+	max: number = MAX_LRC_TIMESTAMP,
+): number => Math.min(max, normalizeTimestamp(ms));
 
 /**
  * Returns consecutive pairs from the given iterable.

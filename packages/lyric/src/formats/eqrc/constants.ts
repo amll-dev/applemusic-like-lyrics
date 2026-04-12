@@ -6,9 +6,9 @@
  */
 
 // 解密使用的3个8字节的DES密钥
-export const KEY_1 = new TextEncoder().encode("!@#)(*$%");
-export const KEY_2 = new TextEncoder().encode("123ZXC!@");
-export const KEY_3 = new TextEncoder().encode("!@#)(NHL");
+export const KEY_1: Uint8Array = new TextEncoder().encode("!@#)(*$%");
+export const KEY_2: Uint8Array = new TextEncoder().encode("123ZXC!@");
+export const KEY_3: Uint8Array = new TextEncoder().encode("!@#)(NHL");
 
 // --- QQ 音乐使用的非标准 S 盒定义 ---
 

@@ -24,7 +24,9 @@
     "dist"
   ],
   "scripts": {
-    "build": "vite build",
+    "typecheck": "tsc",
+    "build-only": "vite build",
+    "build": "run-p typecheck \"build-only {@}\" --",
     "build:dev": "vite build",
     "fmt": "biome format --write ./src",
     "dev": "nx run @applemusic-like-lyrics/playground-vue:dev",
