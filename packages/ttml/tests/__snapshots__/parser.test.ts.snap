@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`toAmllLyrics Conversion > Duet Alignment: 应当能正确计算带 v2000 other 的 Apple Music TTML 1`] = `
+exports[`toAmllLyrics Conversion > computes Apple Music TTML with v2000 other agent correctly in duet alignment 1`] = `
 [
   "[  0.36s] 右 [main] : Baby, you've gone far away",
   "[  5.83s] 右 [main] : You've gone far away",
@@ -76,7 +76,7 @@ exports[`toAmllLyrics Conversion > Duet Alignment: 应当能正确计算带 v200
 ]
 `;
 
-exports[`toAmllLyrics Conversion > Duet Alignment: 应当能正确计算带多个演唱者的 Apple Music 风格的对唱左右位置 1`] = `
+exports[`toAmllLyrics Conversion > computes left-right duet layout in Apple Music style with multiple singers correctly in duet alignment 1`] = `
 [
   "[  1.15s] 左 [main] : We don't talk about Bruno, no, no, no",
   "[  5.84s] 左 [main] : We don't talk about Bruno, but",
