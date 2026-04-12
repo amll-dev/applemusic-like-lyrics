@@ -1,3 +1,7 @@
+/**
+ * 解析器所使用的较复杂的数据结构
+ * @module ttml-types
+ */
 export type * from "./amll";
 
 /**
@@ -36,8 +40,7 @@ export interface GeneratorOptions {
 	 * 对于逐行翻译/音译，是否将其放入 Head (Apple Music 风格)
 	 *
 	 * 注意逐字翻译/音译将始终强制放入 Head，无论此值如何
-	 *
-	 * 默认为 false
+	 * @default false
 	 */
 	useSidecar?: boolean;
 }

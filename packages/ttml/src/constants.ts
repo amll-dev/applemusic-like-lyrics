@@ -1,3 +1,9 @@
+/**
+ * 一些常量定义
+ * @module constants
+ * @internal
+ */
+
 export const NS = {
 	TT: "http://www.w3.org/ns/ttml",
 	TTM: "http://www.w3.org/ns/ttml#metadata",

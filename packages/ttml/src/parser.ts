@@ -1,4 +1,8 @@
 /** biome-ignore-all lint/suspicious/noAssignInExpressions: intentional */
+/**
+ * 核心的 TTML 生成器实现
+ * @module generator
+ */
 
 import {
 	Attributes,
@@ -38,6 +42,12 @@ interface IParsedState {
 	backgroundVocal?: LyricBase;
 }
 
+/**
+ * TTML 歌词生成器类
+ *
+ * 用于将 AMLL 项目使用的 TTML 字符串解析为结构化的 {@link TTMLResult} 数据结构
+ * @see https://github.com/amll-dev/amll-ttml-db/wiki/%E6%A0%BC%E5%BC%8F%E8%A7%84%E8%8C%83
+ */
 export class TTMLParser {
 	private domParser: DOMParser;
 
@@ -56,6 +66,13 @@ export class TTMLParser {
 		return trim ? normalized.trim() : normalized;
 	}
 
+	/**
+	 * 构造一个 TTML 解析器实例
+	 *
+	 * @param options 生成器配置选项
+	 *
+	 * 在 Node.js 环境下必须注入 `domParser` 实例（例如用 `@xmldom/xmldom` 等）
+	 */
 	constructor(options?: TTMLParserOptions) {
 		if (options?.domParser) {
 			this.domParser = options.domParser;
@@ -68,11 +85,24 @@ export class TTMLParser {
 		}
 	}
 
+	/**
+	 * 解析 TTML 字符串的静态便捷方法
+	 * @param xmlStr 需要解析的 TTML XML 字符串
+	 * @param options 解析器配置选项，用于注入 DOM 依赖
+	 * @returns 解析后的结构化 TTML 数据结构
+	 * @throws 当输入的 XML 字符串格式无效时抛出异常
+	 */
 	public static parse(xmlStr: string, options?: TTMLParserOptions): TTMLResult {
 		const instance = new TTMLParser(options);
 		return instance.parse(xmlStr);
 	}
 
+	/**
+	 * 解析 TTML 字符串
+	 * @param xmlStr 需要解析的 TTML XML 字符串
+	 * @returns 解析后的结构化 TTML 数据结构
+	 * @throws 当输入的 XML 字符串格式无效时抛出异常
+	 */
 	public parse(xmlStr: string): TTMLResult {
 		if (!xmlStr || typeof xmlStr !== "string") {
 			throw new Error("TTMLParser: Input must be a valid XML string.");

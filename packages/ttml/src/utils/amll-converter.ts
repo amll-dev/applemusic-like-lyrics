@@ -1,15 +1,21 @@
+/**
+ * 包含解析器内部的复杂数据结构和 AMLL 简单的数据结构的互转功能的模块
+ * @module amll-converter
+ */
+
 import { Elements, Values } from "../constants";
 import type {
-	AmllImportOptions,
 	AmllLyricLine,
+	AmllLyricResult,
 	AmllLyricWord,
 	AmllMetadata,
+	AmllToTTMLOptions,
 	LyricBase,
 	LyricLine,
 	Syllable,
-	TTMLLyric,
 	TTMLMetadata,
 	TTMLResult,
+	TTMLToAmllOptions,
 } from "../types";
 
 /**
@@ -17,8 +23,8 @@ import type {
  */
 export function toAmllLyrics(
 	result: TTMLResult,
-	options?: AmllImportOptions,
-): TTMLLyric {
+	options?: TTMLToAmllOptions,
+): AmllLyricResult {
 	const amllLines: AmllLyricLine[] = [];
 
 	const convertToAmllLine = (
@@ -218,20 +224,17 @@ function alignRomanization(amllWords: AmllLyricWord[], romanWords: Syllable[]) {
 export function toTTMLResult(
 	amllLines: AmllLyricLine[],
 	amllMetadata: AmllMetadata[],
-	options: AmllImportOptions = {},
+	options: AmllToTTMLOptions = {},
 ): TTMLResult {
 	const opts = {
 		translationLanguage: "zh-Hans",
-		romanizationLanguage: "ja-Latn",
-		defaultAgentId: Values.AgentDefault,
-		duetAgentId: Values.AgentDefaultDuet,
 		...options,
 	};
 
 	const metadata: TTMLMetadata = {
 		agents: {
-			[opts.defaultAgentId]: { id: opts.defaultAgentId },
-			[opts.duetAgentId]: { id: opts.duetAgentId },
+			[Values.AgentDefault]: { id: Values.AgentDefault },
+			[Values.AgentDefaultDuet]: { id: Values.AgentDefaultDuet },
 		},
 	};
 
@@ -315,7 +318,7 @@ export function toTTMLResult(
 			} else {
 				const inheritedAgentId = currentMainLine
 					? currentMainLine.agentId
-					: opts.defaultAgentId;
+					: Values.AgentDefault;
 
 				const promotedLine: LyricLine = {
 					agentId: inheritedAgentId,
@@ -324,7 +327,9 @@ export function toTTMLResult(
 				resultLines.push(promotedLine);
 			}
 		} else {
-			const agentId = amllLine.isDuet ? opts.duetAgentId : opts.defaultAgentId;
+			const agentId = amllLine.isDuet
+				? Values.AgentDefaultDuet
+				: Values.AgentDefault;
 
 			const lyricLine: LyricLine = {
 				agentId,

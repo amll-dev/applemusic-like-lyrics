@@ -1,3 +1,8 @@
+/**
+ * 核心的 TTML 生成器实现
+ * @module generator
+ */
+
 import {
 	Attributes,
 	Elements,
@@ -14,6 +19,12 @@ import type {
 	TTMLResult,
 } from "./types";
 
+/**
+ * TTML 歌词生成器类
+ *
+ * 用于将内部的 {@link TTMLResult} 数据结构序列化为 AMLL 项目使用的 TTML 字符串
+ * @see https://github.com/amll-dev/amll-ttml-db/wiki/%E6%A0%BC%E5%BC%8F%E8%A7%84%E8%8C%83
+ */
 export class TTMLGenerator {
 	private domImpl: DOMImplementation;
 	private options: GeneratorOptions;
@@ -21,6 +32,13 @@ export class TTMLGenerator {
 	private doc!: Document;
 	private timingMode: "Word" | "Line" = "Line";
 
+	/**
+	 * 构造一个 TTML 生成器实例
+	 *
+	 * @param options 生成器配置选项
+	 *
+	 * 在 Node.js 环境下必须注入 `domImplementation` 和 `xmlSerializer` 实例（例如用 `@xmldom/xmldom` 等）
+	 */
 	constructor(options: GeneratorOptions = {}) {
 		this.options = options;
 
@@ -45,6 +63,25 @@ export class TTMLGenerator {
 		}
 	}
 
+	/**
+	 * 生成 TTML 字符串的静态便捷方法
+	 * @param result 包含元数据和歌词行的 TTML 数据结构
+	 * @param options 生成器配置选项，用于注入 DOM 依赖及自定义部分生成行为
+	 * @returns 序列化后的 TTML 字符串
+	 */
+	public static generate(
+		result: TTMLResult,
+		options?: GeneratorOptions,
+	): string {
+		const instance = new TTMLGenerator(options);
+		return instance.generate(result);
+	}
+
+	/**
+	 * 生成 TTML 字符串
+	 * @param result 包含元数据和歌词行的 TTML 数据结构
+	 * @returns 序列化后的 TTML 字符串
+	 */
 	public generate(result: TTMLResult): string {
 		this.doc = this.domImpl.createDocument(NS.TT, Elements.TT, null);
 		this.timingMode = result.metadata.timingMode || "Line";
