@@ -66,7 +66,7 @@ function parseAttr(
 
 /**
  * 解析 LQE 格式的歌词字符串
- * @param src 歌词字符串
+ * @param lqe 歌词字符串
  * @returns 成功解析出来的歌词
  */
 export function parseLQE(lqe: string): LyricLine[] {

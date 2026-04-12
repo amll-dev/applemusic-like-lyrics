@@ -16,7 +16,7 @@ import {
 
 /**
  * 解析 QRC 格式的歌词字符串
- * @param src 歌词字符串
+ * @param qrc 歌词字符串
  * @returns 成功解析出来的歌词
  */
 export function parseQRC(qrc: string): LyricLine[] {

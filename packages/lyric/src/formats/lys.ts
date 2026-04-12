@@ -43,7 +43,7 @@ function parseProp(prop: number): {
 
 /**
  * 解析 LYS 格式的歌词字符串
- * @param src 歌词字符串
+ * @param lys 歌词字符串
  * @returns 成功解析出来的歌词
  */
 export function parseLYS(lys: string): LyricLine[] {

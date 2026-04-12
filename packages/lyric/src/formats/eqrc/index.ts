@@ -102,7 +102,7 @@ function decompress(data: Uint8Array): Uint8Array {
 /**
  * 解密十六进制字符串格式的 Qrc 歌词数据
  * 解密后可去头尾 XML 数据后通过调用 `parseQrc` 解析歌词行
- * @param hexData 十六进制格式的字符串，代表被加密的歌词数据
+ * @param encryptedHexString 十六进制格式的字符串，代表被加密的歌词数据
  * @returns 被解密出来的歌词字符串，是前后有 XML 混合的 QRC 歌词
  */
 export function decryptQrcHex(encryptedHexString: string): string {
