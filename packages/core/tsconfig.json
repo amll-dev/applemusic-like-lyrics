@@ -4,7 +4,6 @@
 	"compilerOptions": {
 		"outDir": "./dist",
 		"rootDir": "./src",
-		"composite": true,
-		"types": ["vite-plugin-glsl/ext"]
+		"composite": true
 	}
 }
