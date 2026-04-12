@@ -16,7 +16,7 @@
 			"test": {
 				"executor": "nx:run-commands",
 				"options": {
-					"command": "pnpm test",
+					"command": "bun test",
 					"cwd": "packages/lyric"
 				}
 			},
@@ -46,10 +46,9 @@
 		"build:dev": "vite build",
 		"fmt": "biome format --write ./src",
 		"dev": "vite dev",
-		"test": "vitest run",
-		"test:watch": "vitest",
-		"test:coverage": "vitest run --coverage",
-		"preinstall": "npx only-allow pnpm"
+		"test": "bun test",
+		"test:watch": "bun test --watch",
+		"test:coverage": "bun test --coverage"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "catalog:",
@@ -57,8 +56,7 @@
 		"@types/pako": "^2.0.4",
 		"typescript": "^5.9.3",
 		"vite": "catalog:",
-		"vite-plugin-dts": "^4.3.0",
-		"vitest": "^3.2.4"
+		"vite-plugin-dts": "^4.3.0"
 	},
 	"dependencies": {
 		"pako": "^2.1.0",

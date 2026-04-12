@@ -1,72 +1,71 @@
 {
-  "name": "@applemusic-like-lyrics/vue",
-  "version": "0.3.2",
-  "description": "AMLL 组件库的 Vue 绑定",
-  "repository": {
-    "url": "https://github.com/amll-dev/applemusic-like-lyrics.git",
-    "directory": "packages/vue",
-    "type": "git"
-  },
-  "type": "module",
-  "license": "GPL-3.0",
-  "nx": {
-    "tags": [
-      "library"
-    ],
-    "targets": {
-      "nx-release-publish": {
-        "executor": "@nx/js:release-publish",
-        "dependsOn": []
-      }
-    }
-  },
-  "files": [
-    "dist"
-  ],
-  "scripts": {
-    "typecheck": "tsc",
-    "build-only": "vite build",
-    "build": "run-p typecheck \"build-only {@}\" --",
-    "build:dev": "vite build",
-    "fmt": "biome format --write ./src",
-    "dev": "nx run @applemusic-like-lyrics/playground-vue:dev",
-    "preinstall": "npx only-allow pnpm"
-  },
-  "main": "./dist/amll-vue.cjs",
-  "module": "./dist/amll-vue.js",
-  "typings": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "import": "./dist/amll-vue.js",
-      "require": "./dist/amll-vue.cjs",
-      "types": "./dist/index.d.ts"
-    }
-  },
-  "dependencies": {
-    "@applemusic-like-lyrics/core": "workspace:^"
-  },
-  "peerDependencies": {
-    "vue": "*"
-  },
-  "devDependencies": {
-    "@applemusic-like-lyrics/core": "workspace:^",
-    "@biomejs/biome": "catalog:",
-    "@pixi/app": "^7.4.3",
-    "@pixi/core": "^7.4.3",
-    "@pixi/display": "^7.4.3",
-    "@pixi/filter-blur": "^7.4.3",
-    "@pixi/filter-color-matrix": "^7.4.3",
-    "@pixi/sprite": "^7.4.3",
-    "@vitejs/plugin-vue": "^6.0.5",
-    "@vitejs/plugin-vue-jsx": "^5.1.5",
-    "@vue/tsconfig": "^0.9.0",
-    "typedoc": "^0.28.17",
-    "typedoc-plugin-markdown": "catalog:",
-    "typescript": "^5.9.3",
-    "vite": "catalog:",
-    "vite-plugin-dts": "^4.5.3",
-    "vite-plugin-top-level-await": "^1.6.0",
-    "vite-plugin-wasm": "catalog:",
-    "vue": "^3.5.30"
-  }
+	"name": "@applemusic-like-lyrics/vue",
+	"version": "0.3.2",
+	"description": "AMLL 组件库的 Vue 绑定",
+	"repository": {
+		"url": "https://github.com/amll-dev/applemusic-like-lyrics.git",
+		"directory": "packages/vue",
+		"type": "git"
+	},
+	"type": "module",
+	"license": "GPL-3.0",
+	"nx": {
+		"tags": [
+			"library"
+		],
+		"targets": {
+			"nx-release-publish": {
+				"executor": "@nx/js:release-publish",
+				"dependsOn": []
+			}
+		}
+	},
+	"files": [
+		"dist"
+	],
+	"scripts": {
+		"typecheck": "tsc",
+		"build-only": "vite build",
+		"build": "run-p typecheck \"build-only {@}\" --",
+		"build:dev": "vite build",
+		"fmt": "biome format --write ./src",
+		"dev": "nx run @applemusic-like-lyrics/playground-vue:dev"
+	},
+	"main": "./dist/amll-vue.cjs",
+	"module": "./dist/amll-vue.js",
+	"typings": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"import": "./dist/amll-vue.js",
+			"require": "./dist/amll-vue.cjs",
+			"types": "./dist/index.d.ts"
+		}
+	},
+	"dependencies": {
+		"@applemusic-like-lyrics/core": "workspace:^"
+	},
+	"peerDependencies": {
+		"vue": "*"
+	},
+	"devDependencies": {
+		"@applemusic-like-lyrics/core": "workspace:^",
+		"@biomejs/biome": "catalog:",
+		"@pixi/app": "^7.4.3",
+		"@pixi/core": "^7.4.3",
+		"@pixi/display": "^7.4.3",
+		"@pixi/filter-blur": "^7.4.3",
+		"@pixi/filter-color-matrix": "^7.4.3",
+		"@pixi/sprite": "^7.4.3",
+		"@vitejs/plugin-vue": "^6.0.5",
+		"@vitejs/plugin-vue-jsx": "^5.1.5",
+		"@vue/tsconfig": "^0.9.0",
+		"typedoc": "^0.28.17",
+		"typedoc-plugin-markdown": "catalog:",
+		"typescript": "^5.9.3",
+		"vite": "catalog:",
+		"vite-plugin-dts": "^4.5.3",
+		"vite-plugin-top-level-await": "^1.6.0",
+		"vite-plugin-wasm": "catalog:",
+		"vue": "^3.5.30"
+	}
 }

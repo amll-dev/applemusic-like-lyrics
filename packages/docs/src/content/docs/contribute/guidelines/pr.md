@@ -14,12 +14,12 @@ title: PR 流程
 
 1. `Release metadata`
   - 判断本次 PR 是否需要 release plan。
-  - 在需要时执行 `pnpm release:plan:check --base=... --head=...`。
+  - 在需要时执行 `bun run release:plan:check --base=... --head=...`。
 
 2. `Build libs`
-  - 安装 Node/pnpm 依赖。
+  - 安装 Node/Bun 依赖。
   - 安装 Rust `stable`、`wasm32-unknown-unknown`、`wasm-pack@v0.13.1`。
-  - 执行 `pnpm ci:build:libs`。
+  - 执行 `bun run ci:build:libs`。
 
 ## 什么时候需要 release plan
 

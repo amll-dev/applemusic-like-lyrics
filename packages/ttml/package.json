@@ -38,18 +38,16 @@
 		"build": "run-p typecheck \"build-only {@}\" --",
 		"build:dev": "vite build",
 		"fmt": "biome format --write ./src",
-		"test": "vitest run",
-		"test:watch": "vitest",
-		"test:coverage": "vitest run --coverage"
+		"test": "bun test",
+		"test:watch": "bun test --watch",
+		"test:coverage": "bun test --coverage"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "catalog:",
-		"@types/node": "^25.5.2",
 		"@xmldom/xmldom": "^0.8.12",
 		"typedoc": "catalog:",
 		"typescript": "^5.9.3",
 		"vite": "catalog:",
-		"vite-plugin-dts": "^4.3.0",
-		"vitest": "^3.2.4"
+		"vite-plugin-dts": "^4.3.0"
 	}
 }

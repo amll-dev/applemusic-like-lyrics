@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { parseLyl, stringifyLyl } from "../src/formats/lyl";
 
 describe("lyl", () => {
@@ -40,7 +40,9 @@ describe("lyl", () => {
 	});
 
 	it("identifies background lines with parentheses", () => {
-		const lines = parseLyl("[1000,2000](Hello)\n[3000,4000]（Hi）\n[5000,6000]World");
+		const lines = parseLyl(
+			"[1000,2000](Hello)\n[3000,4000]（Hi）\n[5000,6000]World",
+		);
 
 		expect(lines).toHaveLength(3);
 		expect(lines[0].isBG).toBe(true);
@@ -65,7 +67,9 @@ describe("lyl", () => {
 			{
 				startTime: 1000,
 				endTime: 2000,
-				words: [{ startTime: 1000, endTime: 2000, word: "Hello", romanWord: "" }],
+				words: [
+					{ startTime: 1000, endTime: 2000, word: "Hello", romanWord: "" },
+				],
 				translatedLyric: "",
 				romanLyric: "",
 				isBG: true,
@@ -74,7 +78,9 @@ describe("lyl", () => {
 			{
 				startTime: 3000,
 				endTime: 4000,
-				words: [{ startTime: 3000, endTime: 4000, word: "World", romanWord: "" }],
+				words: [
+					{ startTime: 3000, endTime: 4000, word: "World", romanWord: "" },
+				],
 				translatedLyric: "",
 				romanLyric: "",
 				isBG: false,

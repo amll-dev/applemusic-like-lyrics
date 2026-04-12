@@ -5,18 +5,18 @@ title: 开发环境配置
 ## 必要环境
 
 - Node.js 22+（[官网](https://nodejs.org/)）
-- pnpm（[官网](https://pnpm.io/)）
+- bun（[官网](https://bun.sh/)）
 - Rust toolchain（[官网](https://www.rust-lang.org/tools/install)）
 - Rust target：`wasm32-unknown-unknown`。
 - wasm-pack（[仓库](https://github.com/rustwasm/wasm-pack)）
 
-另外，建议全局安装 Nx。全局安装后 Nx 相关命令直接为 `nx ...`，否则使用 `pnpm nx ...`。此后不再赘述。
+另外，建议全局安装 Nx。全局安装后 Nx 相关命令直接为 `nx ...`，否则使用 `bunx nx ...`。此后不再赘述。
 
 ### 版本自查
 
 ```bash
 node --version
-pnpm --version
+bun --version
 rustc --version
 cargo --version
 rustup --version
@@ -35,7 +35,7 @@ rustup target list --installed
 在仓库根目录执行：
 
 ```bash
-pnpm install --frozen-lockfile
+bun install --frozen-lockfile
 rustup toolchain install stable
 rustup target add wasm32-unknown-unknown
 cargo install wasm-pack
@@ -43,13 +43,13 @@ cargo install wasm-pack
 
 如果你没有安装 `wasm-pack`，可按官方方式安装后再继续。
 
-完成后，执行一次构建所有包：`pnpm build:libs`，若成功构建完成说明环境无误，可以开始工作。
+完成后，执行一次构建所有包：`bun run build:libs`，若成功构建完成说明环境无误，可以开始工作。
 
 ## 本地开发常用命令
 
 ```bash
 # 构建所有 library
-pnpm build:libs
+bun run build:libs
 
 # 构建某个包
 nx build core
@@ -87,8 +87,8 @@ rustup target add wasm32-unknown-unknown
 
 ### 依赖安装慢或失败
 
-优先确认 Node/pnpm 版本与锁文件一致，再重试：
+优先确认 Node/bun 版本与锁文件一致，再重试：
 
 ```bash
-pnpm install --frozen-lockfile
+bun install --frozen-lockfile
 ```

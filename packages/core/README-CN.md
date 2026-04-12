@@ -78,6 +78,6 @@ player.update(0) // 更新歌词组件动画（需要逐帧调用）
 ## 开发与构建
 
 ```bash
-pnpm -C packages/core dev
-pnpm -C packages/core build
+bun run --cwd packages/core dev
+bun run --cwd packages/core build
 ```

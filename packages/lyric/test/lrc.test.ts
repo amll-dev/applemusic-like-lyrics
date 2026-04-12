@@ -1,7 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { parseLrc, stringifyLrc } from "../src/formats/lrc";
-import { timeStampsTestCases } from "./timestampcase.fixture";
 import { MAX_LRC_TIMESTAMP } from "../src/utils";
+import { timeStampsTestCases } from "./timestampcase.fixture";
 
 describe("lrc", () => {
 	it("parses basic timestamped lines", () => {

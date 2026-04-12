@@ -22,12 +22,12 @@ npm 包发布通过 GitHub Actions 手动触发，工作流文件：
 ## 工作流执行步骤摘要
 
 1. 校验当前分支是 `main`。
-2. 安装依赖与发布环境（Node 24、pnpm、Rust、wasm-pack）。
-3. 执行 `pnpm nx release --dry-run`。
+2. 安装依赖与发布环境（Node 24、Bun、Rust、wasm-pack）。
+3. 执行 `bunx nx release --dry-run`。
 4. 当 `mode=publish` 时：
-  - 执行 `pnpm nx release --skip-publish` 创建 release commit 与 tags。
+  - 执行 `bunx nx release --skip-publish` 创建 release commit 与 tags。
   - `git push origin HEAD:main --follow-tags`。
-  - 执行 `pnpm nx release publish` 发布到 npm。
+  - 执行 `bunx nx release publish` 发布到 npm。
 
 ## 推荐发布流程
 

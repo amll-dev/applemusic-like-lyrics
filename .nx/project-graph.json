@@ -1,6 +1,123 @@
 {
   "graph": {
     "nodes": {
+      "@applemusic-like-lyrics/playground-react": {
+        "name": "@applemusic-like-lyrics/playground-react",
+        "type": "app",
+        "data": {
+          "root": "packages/playground/react",
+          "name": "@applemusic-like-lyrics/playground-react",
+          "tags": [
+            "npm:private",
+            "playground"
+          ],
+          "metadata": {
+            "targetGroups": {
+              "NPM Scripts": [
+                "dev"
+              ]
+            },
+            "js": {
+              "packageName": "@applemusic-like-lyrics/playground-react",
+              "packageVersion": "0.0.0",
+              "isInPackageManagerWorkspaces": true
+            }
+          },
+          "targets": {
+            "dev": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "dev"
+              },
+              "metadata": {
+                "scriptContent": "vite dev",
+                "runCommand": "bun run dev -- undefined"
+              },
+              "configurations": {},
+              "parallelism": true
+            }
+          },
+          "implicitDependencies": []
+        }
+      },
+      "@applemusic-like-lyrics/playground-core": {
+        "name": "@applemusic-like-lyrics/playground-core",
+        "type": "app",
+        "data": {
+          "root": "packages/playground/core",
+          "name": "@applemusic-like-lyrics/playground-core",
+          "tags": [
+            "npm:private",
+            "playground"
+          ],
+          "metadata": {
+            "targetGroups": {
+              "NPM Scripts": [
+                "dev"
+              ]
+            },
+            "js": {
+              "packageName": "@applemusic-like-lyrics/playground-core",
+              "packageVersion": "0.0.0",
+              "isInPackageManagerWorkspaces": true
+            }
+          },
+          "targets": {
+            "dev": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "dev"
+              },
+              "metadata": {
+                "scriptContent": "vite dev",
+                "runCommand": "bun run dev -- undefined"
+              },
+              "configurations": {},
+              "parallelism": true
+            }
+          },
+          "implicitDependencies": []
+        }
+      },
+      "@applemusic-like-lyrics/playground-vue": {
+        "name": "@applemusic-like-lyrics/playground-vue",
+        "type": "app",
+        "data": {
+          "root": "packages/playground/vue",
+          "name": "@applemusic-like-lyrics/playground-vue",
+          "tags": [
+            "npm:private",
+            "playground"
+          ],
+          "metadata": {
+            "targetGroups": {
+              "NPM Scripts": [
+                "dev"
+              ]
+            },
+            "js": {
+              "packageName": "@applemusic-like-lyrics/playground-vue",
+              "packageVersion": "0.0.0",
+              "isInPackageManagerWorkspaces": true
+            }
+          },
+          "targets": {
+            "dev": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "dev"
+              },
+              "metadata": {
+                "scriptContent": "vite dev",
+                "runCommand": "bun run dev -- undefined"
+              },
+              "configurations": {},
+              "parallelism": true
+            }
+          },
+          "implicitDependencies": []
+        }
+      },
       "@applemusic-like-lyrics/ws-protocol": {
         "name": "@applemusic-like-lyrics/ws-protocol",
         "type": "lib",
@@ -8,14 +125,14 @@
           "root": "packages/ws-protocol",
           "name": "@applemusic-like-lyrics/ws-protocol",
           "tags": [
-            "npm:public"
+            "npm:public",
+            "library"
           ],
           "metadata": {
             "targetGroups": {
               "NPM Scripts": [
                 "build",
-                "build:dev",
-                "preinstall"
+                "build:dev"
               ]
             },
             "description": "一个歌词播放器协议库，用于不同播放软件与实现本协议的歌词播放器同步播放进度和播放信息",
@@ -33,7 +150,7 @@
               },
               "metadata": {
                 "scriptContent": "wasm-pack build --release",
-                "runCommand": "pnpm run build"
+                "runCommand": "bun run build -- undefined"
               },
               "configurations": {},
               "parallelism": true,
@@ -54,7 +171,7 @@
               },
               "metadata": {
                 "scriptContent": "wasm-pack build --dev",
-                "runCommand": "pnpm run build:dev"
+                "runCommand": "bun run build:dev -- undefined"
               },
               "configurations": {},
               "parallelism": true,
@@ -68,25 +185,11 @@
                 "{projectRoot}/pkg"
               ]
             },
-            "preinstall": {
-              "executor": "nx:run-script",
-              "options": {
-                "script": "preinstall"
-              },
-              "metadata": {
-                "scriptContent": "npx only-allow pnpm",
-                "runCommand": "pnpm run preinstall"
-              },
-              "configurations": {},
-              "parallelism": true
-            },
             "nx-release-publish": {
               "executor": "@nx/js:release-publish",
-              "dependsOn": [
-                "^nx-release-publish"
-              ],
-              "options": {},
+              "dependsOn": [],
               "configurations": {},
+              "options": {},
               "parallelism": true
             }
           },
@@ -110,14 +213,13 @@
                 "build",
                 "build:dev",
                 "fmt",
-                "dev",
-                "preinstall"
+                "dev"
               ]
             },
             "description": "AMLL 组件库的 React 绑定，但是更加完备且高度灵活",
             "js": {
               "packageName": "@applemusic-like-lyrics/react-full",
-              "packageVersion": "0.2.0",
+              "packageVersion": "0.2.1",
               "packageExports": {
                 ".": {
                   "import": "./dist/amll-react-framework.js",
@@ -141,7 +243,7 @@
               },
               "metadata": {
                 "scriptContent": "typedoc --plugin typedoc-plugin-markdown --out docs src/index.ts",
-                "runCommand": "pnpm run build:docs"
+                "runCommand": "bun run build:docs -- undefined"
               },
               "configurations": {},
               "parallelism": true
@@ -153,7 +255,7 @@
               },
               "metadata": {
                 "scriptContent": "vite build",
-                "runCommand": "pnpm run build"
+                "runCommand": "bun run build -- undefined"
               },
               "configurations": {},
               "parallelism": true,
@@ -174,7 +276,7 @@
               },
               "metadata": {
                 "scriptContent": "vite build",
-                "runCommand": "pnpm run build:dev"
+                "runCommand": "bun run build:dev -- undefined"
               },
               "configurations": {},
               "parallelism": true,
@@ -195,7 +297,7 @@
               },
               "metadata": {
                 "scriptContent": "biome format --write ./src",
-                "runCommand": "pnpm run fmt"
+                "runCommand": "bun run fmt -- undefined"
               },
               "configurations": {},
               "parallelism": true,
@@ -211,30 +313,16 @@
               },
               "metadata": {
                 "scriptContent": "vite dev",
-                "runCommand": "pnpm run dev"
-              },
-              "configurations": {},
-              "parallelism": true
-            },
-            "preinstall": {
-              "executor": "nx:run-script",
-              "options": {
-                "script": "preinstall"
-              },
-              "metadata": {
-                "scriptContent": "npx only-allow pnpm",
-                "runCommand": "pnpm run preinstall"
+                "runCommand": "bun run dev -- undefined"
               },
               "configurations": {},
               "parallelism": true
             },
             "nx-release-publish": {
               "executor": "@nx/js:release-publish",
-              "dependsOn": [
-                "^nx-release-publish"
-              ],
-              "options": {},
+              "dependsOn": [],
               "configurations": {},
+              "options": {},
               "parallelism": true
             }
           },
@@ -254,28 +342,76 @@
           "metadata": {
             "targetGroups": {
               "NPM Scripts": [
+                "build:docs",
+                "typecheck",
+                "build-only",
                 "build",
                 "build:dev",
                 "fmt",
-                "preinstall"
+                "dev",
+                "test",
+                "test:watch",
+                "test:coverage"
               ]
             },
             "description": "一个歌词解析/生成模块，着重于歌词内容解析，支持多种格式",
             "js": {
               "packageName": "@applemusic-like-lyrics/lyric",
-              "packageVersion": "0.4.0",
+              "packageVersion": "0.4.1",
+              "packageExports": {
+                "types": "./dist/index.d.ts",
+                "import": "./dist/amll-lyric.js",
+                "require": "./dist/amll-lyric.umd.cjs"
+              },
+              "packageMain": "./dist/amll-lyric.umd.cjs",
               "isInPackageManagerWorkspaces": true
             }
           },
           "targets": {
+            "build:docs": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "build:docs"
+              },
+              "metadata": {
+                "scriptContent": "typedoc --plugin typedoc-plugin-markdown --out docs src/index.ts",
+                "runCommand": "bun run build:docs -- undefined"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "typecheck": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "typecheck"
+              },
+              "metadata": {
+                "scriptContent": "tsc --noEmit",
+                "runCommand": "bun run typecheck -- undefined"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "build-only": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "build-only"
+              },
+              "metadata": {
+                "scriptContent": "vite build",
+                "runCommand": "bun run build-only -- undefined"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
             "build": {
               "executor": "nx:run-script",
               "options": {
                 "script": "build"
               },
               "metadata": {
-                "scriptContent": "wasm-pack build --release",
-                "runCommand": "pnpm run build"
+                "scriptContent": "run-p typecheck \"build-only {@}\" --",
+                "runCommand": "bun run build -- undefined"
               },
               "configurations": {},
               "parallelism": true,
@@ -295,8 +431,8 @@
                 "script": "build:dev"
               },
               "metadata": {
-                "scriptContent": "wasm-pack build --dev",
-                "runCommand": "pnpm run build:dev"
+                "scriptContent": "vite build",
+                "runCommand": "bun run build:dev -- undefined"
               },
               "configurations": {},
               "parallelism": true,
@@ -316,8 +452,8 @@
                 "script": "fmt"
               },
               "metadata": {
-                "scriptContent": "cargo fmt",
-                "runCommand": "pnpm run fmt"
+                "scriptContent": "biome format --write ./src",
+                "runCommand": "bun run fmt -- undefined"
               },
               "configurations": {},
               "parallelism": true,
@@ -326,25 +462,56 @@
                 "{projectRoot}/src"
               ]
             },
-            "preinstall": {
+            "dev": {
               "executor": "nx:run-script",
               "options": {
-                "script": "preinstall"
+                "script": "dev"
               },
               "metadata": {
-                "scriptContent": "npx only-allow pnpm",
-                "runCommand": "pnpm run preinstall"
+                "scriptContent": "vite dev",
+                "runCommand": "bun run dev -- undefined"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "test": {
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "bun test",
+                "cwd": "packages/lyric"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "test:watch": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "test:watch"
+              },
+              "metadata": {
+                "scriptContent": "bun test --watch",
+                "runCommand": "bun run test:watch -- undefined"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "test:coverage": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "test:coverage"
+              },
+              "metadata": {
+                "scriptContent": "bun test --coverage",
+                "runCommand": "bun run test:coverage -- undefined"
               },
               "configurations": {},
               "parallelism": true
             },
             "nx-release-publish": {
               "executor": "@nx/js:release-publish",
-              "dependsOn": [
-                "^nx-release-publish"
-              ],
-              "options": {},
+              "dependsOn": [],
               "configurations": {},
+              "options": {},
               "parallelism": true
             }
           },
@@ -368,14 +535,13 @@
                 "build",
                 "build:dev",
                 "fmt",
-                "dev",
-                "preinstall"
+                "dev"
               ]
             },
             "description": "AMLL 组件库的 React 绑定",
             "js": {
               "packageName": "@applemusic-like-lyrics/react",
-              "packageVersion": "0.3.0",
+              "packageVersion": "0.3.2",
               "packageExports": {
                 ".": {
                   "import": "./dist/amll-react.js",
@@ -395,7 +561,7 @@
               },
               "metadata": {
                 "scriptContent": "typedoc --plugin typedoc-plugin-markdown --out docs src/index.ts",
-                "runCommand": "pnpm run build:docs"
+                "runCommand": "bun run build:docs -- undefined"
               },
               "configurations": {},
               "parallelism": true
@@ -407,7 +573,7 @@
               },
               "metadata": {
                 "scriptContent": "vite build",
-                "runCommand": "pnpm run build"
+                "runCommand": "bun run build -- undefined"
               },
               "configurations": {},
               "parallelism": true,
@@ -428,7 +594,7 @@
               },
               "metadata": {
                 "scriptContent": "vite build",
-                "runCommand": "pnpm run build:dev"
+                "runCommand": "bun run build:dev -- undefined"
               },
               "configurations": {},
               "parallelism": true,
@@ -449,7 +615,7 @@
               },
               "metadata": {
                 "scriptContent": "biome format --write ./src",
-                "runCommand": "pnpm run fmt"
+                "runCommand": "bun run fmt -- undefined"
               },
               "configurations": {},
               "parallelism": true,
@@ -464,31 +630,17 @@
                 "script": "dev"
               },
               "metadata": {
-                "scriptContent": "vite dev",
-                "runCommand": "pnpm run dev"
-              },
-              "configurations": {},
-              "parallelism": true
-            },
-            "preinstall": {
-              "executor": "nx:run-script",
-              "options": {
-                "script": "preinstall"
-              },
-              "metadata": {
-                "scriptContent": "npx only-allow pnpm",
-                "runCommand": "pnpm run preinstall"
+                "scriptContent": "nx run @applemusic-like-lyrics/playground-react:dev",
+                "runCommand": "bun run dev -- undefined"
               },
               "configurations": {},
               "parallelism": true
             },
             "nx-release-publish": {
               "executor": "@nx/js:release-publish",
-              "dependsOn": [
-                "^nx-release-publish"
-              ],
-              "options": {},
+              "dependsOn": [],
               "configurations": {},
+              "options": {},
               "parallelism": true
             }
           },
@@ -512,14 +664,13 @@
                 "build",
                 "build:dev",
                 "fmt",
-                "dev",
-                "preinstall"
+                "dev"
               ]
             },
             "description": "AMLL 的纯 JS 核心组件框架，包括歌词显示组件和背景组件等其它可以复用的组件",
             "js": {
               "packageName": "@applemusic-like-lyrics/core",
-              "packageVersion": "0.3.0",
+              "packageVersion": "0.3.2",
               "packageExports": {
                 ".": {
                   "types": "./dist/index.d.ts",
@@ -543,7 +694,7 @@
               },
               "metadata": {
                 "scriptContent": "typedoc --plugin typedoc-plugin-markdown --out docs src/index.ts",
-                "runCommand": "pnpm run build:docs"
+                "runCommand": "bun run build:docs -- undefined"
               },
               "configurations": {},
               "parallelism": true
@@ -555,7 +706,7 @@
               },
               "metadata": {
                 "scriptContent": "vite build",
-                "runCommand": "pnpm run build"
+                "runCommand": "bun run build -- undefined"
               },
               "configurations": {},
               "parallelism": true,
@@ -576,7 +727,7 @@
               },
               "metadata": {
                 "scriptContent": "vite build",
-                "runCommand": "pnpm run build:dev"
+                "runCommand": "bun run build:dev -- undefined"
               },
               "configurations": {},
               "parallelism": true,
@@ -597,7 +748,7 @@
               },
               "metadata": {
                 "scriptContent": "biome format --write ./src",
-                "runCommand": "pnpm run fmt"
+                "runCommand": "bun run fmt -- undefined"
               },
               "configurations": {},
               "parallelism": true,
@@ -612,31 +763,17 @@
                 "script": "dev"
               },
               "metadata": {
-                "scriptContent": "vite dev",
-                "runCommand": "pnpm run dev"
-              },
-              "configurations": {},
-              "parallelism": true
-            },
-            "preinstall": {
-              "executor": "nx:run-script",
-              "options": {
-                "script": "preinstall"
-              },
-              "metadata": {
-                "scriptContent": "npx only-allow pnpm",
-                "runCommand": "pnpm run preinstall"
+                "scriptContent": "nx run @applemusic-like-lyrics/playground-core:dev",
+                "runCommand": "bun run dev -- undefined"
               },
               "configurations": {},
               "parallelism": true
             },
             "nx-release-publish": {
               "executor": "@nx/js:release-publish",
-              "dependsOn": [
-                "^nx-release-publish"
-              ],
-              "options": {},
+              "dependsOn": [],
               "configurations": {},
+              "options": {},
               "parallelism": true
             }
           },
@@ -676,7 +813,7 @@
               },
               "metadata": {
                 "scriptContent": "astro dev",
-                "runCommand": "pnpm run dev"
+                "runCommand": "bun run dev -- undefined"
               },
               "configurations": {},
               "parallelism": true
@@ -688,7 +825,7 @@
               },
               "metadata": {
                 "scriptContent": "astro dev",
-                "runCommand": "pnpm run start"
+                "runCommand": "bun run start -- undefined"
               },
               "configurations": {},
               "parallelism": true
@@ -700,7 +837,7 @@
               },
               "metadata": {
                 "scriptContent": "astro build",
-                "runCommand": "pnpm run build"
+                "runCommand": "bun run build -- undefined"
               },
               "configurations": {},
               "parallelism": true,
@@ -721,7 +858,7 @@
               },
               "metadata": {
                 "scriptContent": "astro preview",
-                "runCommand": "pnpm run preview"
+                "runCommand": "bun run preview -- undefined"
               },
               "configurations": {},
               "parallelism": true
@@ -733,7 +870,7 @@
               },
               "metadata": {
                 "scriptContent": "astro",
-                "runCommand": "pnpm run astro"
+                "runCommand": "bun run astro -- undefined"
               },
               "configurations": {},
               "parallelism": true
@@ -758,7 +895,8 @@
           "root": "packages/ttml",
           "name": "@applemusic-like-lyrics/ttml",
           "tags": [
-            "npm:public"
+            "npm:public",
+            "library"
           ],
           "metadata": {
             "targetGroups": {
@@ -767,8 +905,9 @@
                 "build",
                 "build:dev",
                 "fmt",
-                "dev",
-                "preinstall"
+                "test",
+                "test:watch",
+                "test:coverage"
               ]
             },
             "description": "AMLL 的 TTML 歌词文件序列化和反序列化模块",
@@ -792,7 +931,7 @@
               },
               "metadata": {
                 "scriptContent": "typedoc --plugin typedoc-plugin-markdown --out docs src/index.ts",
-                "runCommand": "pnpm run build:docs"
+                "runCommand": "bun run build:docs -- undefined"
               },
               "configurations": {},
               "parallelism": true
@@ -804,7 +943,7 @@
               },
               "metadata": {
                 "scriptContent": "vite build",
-                "runCommand": "pnpm run build"
+                "runCommand": "bun run build -- undefined"
               },
               "configurations": {},
               "parallelism": true,
@@ -825,7 +964,7 @@
               },
               "metadata": {
                 "scriptContent": "vite build",
-                "runCommand": "pnpm run build:dev"
+                "runCommand": "bun run build:dev -- undefined"
               },
               "configurations": {},
               "parallelism": true,
@@ -846,7 +985,7 @@
               },
               "metadata": {
                 "scriptContent": "biome format --write ./src",
-                "runCommand": "pnpm run fmt"
+                "runCommand": "bun run fmt -- undefined"
               },
               "configurations": {},
               "parallelism": true,
@@ -855,37 +994,47 @@
                 "{projectRoot}/src"
               ]
             },
-            "dev": {
+            "test": {
               "executor": "nx:run-script",
               "options": {
-                "script": "dev"
+                "script": "test"
               },
               "metadata": {
-                "scriptContent": "vite dev",
-                "runCommand": "pnpm run dev"
+                "scriptContent": "bun test",
+                "runCommand": "bun run test -- undefined"
               },
               "configurations": {},
               "parallelism": true
             },
-            "preinstall": {
+            "test:watch": {
               "executor": "nx:run-script",
               "options": {
-                "script": "preinstall"
+                "script": "test:watch"
               },
               "metadata": {
-                "scriptContent": "npx only-allow pnpm",
-                "runCommand": "pnpm run preinstall"
+                "scriptContent": "bun test --watch",
+                "runCommand": "bun run test:watch -- undefined"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "test:coverage": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "test:coverage"
+              },
+              "metadata": {
+                "scriptContent": "bun test --coverage",
+                "runCommand": "bun run test:coverage -- undefined"
               },
               "configurations": {},
               "parallelism": true
             },
             "nx-release-publish": {
               "executor": "@nx/js:release-publish",
-              "dependsOn": [
-                "^nx-release-publish"
-              ],
-              "options": {},
+              "dependsOn": [],
               "configurations": {},
+              "options": {},
               "parallelism": true
             }
           },
@@ -907,8 +1056,7 @@
               "NPM Scripts": [
                 "build",
                 "build:dev",
-                "fmt",
-                "preinstall"
+                "fmt"
               ]
             },
             "description": "一个音频可视化模块，用于将传入的音频原始波形数据转换成便于观赏显示的频谱",
@@ -926,7 +1074,7 @@
               },
               "metadata": {
                 "scriptContent": "wasm-pack build --release",
-                "runCommand": "pnpm run build"
+                "runCommand": "bun run build -- undefined"
               },
               "configurations": {},
               "parallelism": true,
@@ -947,7 +1095,7 @@
               },
               "metadata": {
                 "scriptContent": "wasm-pack build --dev",
-                "runCommand": "pnpm run build:dev"
+                "runCommand": "bun run build:dev -- undefined"
               },
               "configurations": {},
               "parallelism": true,
@@ -968,7 +1116,7 @@
               },
               "metadata": {
                 "scriptContent": "cargo fmt",
-                "runCommand": "pnpm run fmt"
+                "runCommand": "bun run fmt -- undefined"
               },
               "configurations": {},
               "parallelism": true,
@@ -977,25 +1125,11 @@
                 "{projectRoot}/src"
               ]
             },
-            "preinstall": {
-              "executor": "nx:run-script",
-              "options": {
-                "script": "preinstall"
-              },
-              "metadata": {
-                "scriptContent": "npx only-allow pnpm",
-                "runCommand": "pnpm run preinstall"
-              },
-              "configurations": {},
-              "parallelism": true
-            },
             "nx-release-publish": {
               "executor": "@nx/js:release-publish",
-              "dependsOn": [
-                "^nx-release-publish"
-              ],
-              "options": {},
+              "dependsOn": [],
               "configurations": {},
+              "options": {},
               "parallelism": true
             }
           },
@@ -1018,14 +1152,13 @@
                 "build",
                 "build:dev",
                 "fmt",
-                "dev",
-                "preinstall"
+                "dev"
               ]
             },
             "description": "AMLL 组件库的 Vue 绑定",
             "js": {
               "packageName": "@applemusic-like-lyrics/vue",
-              "packageVersion": "0.3.0",
+              "packageVersion": "0.3.2",
               "packageExports": {
                 ".": {
                   "import": "./dist/amll-vue.js",
@@ -1045,7 +1178,7 @@
               },
               "metadata": {
                 "scriptContent": "vite build",
-                "runCommand": "pnpm run build"
+                "runCommand": "bun run build -- undefined"
               },
               "configurations": {},
               "parallelism": true,
@@ -1066,7 +1199,7 @@
               },
               "metadata": {
                 "scriptContent": "vite build",
-                "runCommand": "pnpm run build:dev"
+                "runCommand": "bun run build:dev -- undefined"
               },
               "configurations": {},
               "parallelism": true,
@@ -1087,7 +1220,7 @@
               },
               "metadata": {
                 "scriptContent": "biome format --write ./src",
-                "runCommand": "pnpm run fmt"
+                "runCommand": "bun run fmt -- undefined"
               },
               "configurations": {},
               "parallelism": true,
@@ -1102,31 +1235,17 @@
                 "script": "dev"
               },
               "metadata": {
-                "scriptContent": "vite dev",
-                "runCommand": "pnpm run dev"
-              },
-              "configurations": {},
-              "parallelism": true
-            },
-            "preinstall": {
-              "executor": "nx:run-script",
-              "options": {
-                "script": "preinstall"
-              },
-              "metadata": {
-                "scriptContent": "npx only-allow pnpm",
-                "runCommand": "pnpm run preinstall"
+                "scriptContent": "nx run @applemusic-like-lyrics/playground-vue:dev",
+                "runCommand": "bun run dev -- undefined"
               },
               "configurations": {},
               "parallelism": true
             },
             "nx-release-publish": {
               "executor": "@nx/js:release-publish",
-              "dependsOn": [
-                "^nx-release-publish"
-              ],
-              "options": {},
+              "dependsOn": [],
               "configurations": {},
+              "options": {},
               "parallelism": true
             }
           },
@@ -1135,6 +1254,57 @@
       }
     },
     "dependencies": {
+      "@applemusic-like-lyrics/playground-react": [
+        {
+          "source": "@applemusic-like-lyrics/playground-react",
+          "target": "@applemusic-like-lyrics/core",
+          "type": "static"
+        },
+        {
+          "source": "@applemusic-like-lyrics/playground-react",
+          "target": "@applemusic-like-lyrics/lyric",
+          "type": "static"
+        },
+        {
+          "source": "@applemusic-like-lyrics/playground-react",
+          "target": "@applemusic-like-lyrics/react",
+          "type": "static"
+        }
+      ],
+      "@applemusic-like-lyrics/playground-core": [
+        {
+          "source": "@applemusic-like-lyrics/playground-core",
+          "target": "@applemusic-like-lyrics/core",
+          "type": "static"
+        },
+        {
+          "source": "@applemusic-like-lyrics/playground-core",
+          "target": "@applemusic-like-lyrics/lyric",
+          "type": "static"
+        },
+        {
+          "source": "@applemusic-like-lyrics/playground-core",
+          "target": "@applemusic-like-lyrics/ttml",
+          "type": "static"
+        }
+      ],
+      "@applemusic-like-lyrics/playground-vue": [
+        {
+          "source": "@applemusic-like-lyrics/playground-vue",
+          "target": "@applemusic-like-lyrics/core",
+          "type": "static"
+        },
+        {
+          "source": "@applemusic-like-lyrics/playground-vue",
+          "target": "@applemusic-like-lyrics/lyric",
+          "type": "static"
+        },
+        {
+          "source": "@applemusic-like-lyrics/playground-vue",
+          "target": "@applemusic-like-lyrics/vue",
+          "type": "static"
+        }
+      ],
       "@applemusic-like-lyrics/ws-protocol": [],
       "@applemusic-like-lyrics/react-full": [
         {
@@ -1153,31 +1323,21 @@
           "type": "static"
         }
       ],
-      "@applemusic-like-lyrics/lyric": [],
-      "@applemusic-like-lyrics/react": [
+      "@applemusic-like-lyrics/lyric": [
         {
-          "source": "@applemusic-like-lyrics/react",
-          "target": "@applemusic-like-lyrics/lyric",
+          "source": "@applemusic-like-lyrics/lyric",
+          "target": "@applemusic-like-lyrics/ttml",
           "type": "static"
-        },
+        }
+      ],
+      "@applemusic-like-lyrics/react": [
         {
           "source": "@applemusic-like-lyrics/react",
           "target": "@applemusic-like-lyrics/core",
           "type": "static"
         }
       ],
-      "@applemusic-like-lyrics/core": [
-        {
-          "source": "@applemusic-like-lyrics/core",
-          "target": "@applemusic-like-lyrics/lyric",
-          "type": "static"
-        },
-        {
-          "source": "@applemusic-like-lyrics/core",
-          "target": "@applemusic-like-lyrics/ttml",
-          "type": "static"
-        }
-      ],
+      "@applemusic-like-lyrics/core": [],
       "@applemusic-like-lyrics/docs": [
         {
           "source": "@applemusic-like-lyrics/docs",
@@ -1201,11 +1361,6 @@
         {
           "source": "@applemusic-like-lyrics/vue",
           "target": "@applemusic-like-lyrics/core",
-          "type": "static"
-        },
-        {
-          "source": "@applemusic-like-lyrics/vue",
-          "target": "@applemusic-like-lyrics/lyric",
           "type": "static"
         }
       ]

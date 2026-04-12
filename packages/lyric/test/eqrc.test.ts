@@ -1,7 +1,7 @@
+import { describe, expect, it } from "bun:test";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { describe, expect, it } from "vitest";
 import { decryptQrcHex, encryptQrcHex } from "../src/formats/eqrc";
 import { parseQrc } from "../src/formats/qrc";
 

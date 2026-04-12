@@ -66,7 +66,7 @@ GPU performance capable of running at full 60 fps at the expected sizes under th
 ### Prerequisites
 
 -   [Node.js](https://nodejs.org/)
--   [pnpm](https://pnpm.io/)
+-   [Bun](https://bun.sh/)
 -   [Rust toolchain](https://rustup.rs/)
 -   [wasm-pack](https://rustwasm.github.io/wasm-pack/)
 
@@ -76,20 +76,20 @@ Clone this repository, then run the following commands in the project root:
 
 ```bash
 # Install dependencies
-pnpm install
+bun install
 
 # Production build (all library packages)
-pnpm build:libs
+bun run build:libs
 ```
 
 ### Building a single package
 
 ```bash
 # Example: build only @applemusic-like-lyrics/core
-pnpm nx run @applemusic-like-lyrics/core:build
+bunx nx run @applemusic-like-lyrics/core:build
 
 # Example: development build of @applemusic-like-lyrics/lyric
-pnpm nx run @applemusic-like-lyrics/lyric:build:dev
+bunx nx run @applemusic-like-lyrics/lyric:build:dev
 ```
 
 ## Acknowledgements

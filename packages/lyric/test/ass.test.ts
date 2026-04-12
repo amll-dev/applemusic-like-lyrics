@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { stringifyAss } from "../src/formats/ass";
 
 describe("ass", () => {
@@ -29,7 +29,9 @@ describe("ass", () => {
 			{
 				startTime: 0,
 				endTime: 0,
-				words: [{ startTime: 1000, endTime: 1500, word: "Hello", romanWord: "" }],
+				words: [
+					{ startTime: 1000, endTime: 1500, word: "Hello", romanWord: "" },
+				],
 				translatedLyric: "你好",
 				romanLyric: "ni hao",
 				isBG: true,

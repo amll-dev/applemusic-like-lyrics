@@ -1,75 +1,74 @@
 {
-  "name": "@applemusic-like-lyrics/react",
-  "version": "0.3.2",
-  "description": "AMLL 组件库的 React 绑定",
-  "repository": {
-    "url": "https://github.com/amll-dev/applemusic-like-lyrics.git",
-    "directory": "packages/react",
-    "type": "git"
-  },
-  "license": "GPL-3.0",
-  "nx": {
-    "tags": [
-      "library"
-    ],
-    "targets": {
-      "nx-release-publish": {
-        "executor": "@nx/js:release-publish",
-        "dependsOn": []
-      }
-    }
-  },
-  "type": "module",
-  "files": [
-    "dist/**/*.js",
-    "dist/**/*.ts",
-    "dist/**/*.cjs",
-    "dist/**/*.map"
-  ],
-  "scripts": {
-    "build:docs": "typedoc --plugin typedoc-plugin-markdown --out docs src/index.ts",
-    "typecheck": "tsc",
-    "build-only": "vite build",
-    "build": "run-p typecheck \"build-only {@}\" --",
-    "build:dev": "vite build",
-    "fmt": "biome format --write ./src",
-    "dev": "nx run @applemusic-like-lyrics/playground-react:dev",
-    "preinstall": "npx only-allow pnpm"
-  },
-  "main": "./dist/amll-react.cjs",
-  "module": "./dist/amll-react.js",
-  "typings": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "import": "./dist/amll-react.js",
-      "require": "./dist/amll-react.cjs",
-      "types": "./dist/index.d.ts"
-    }
-  },
-  "devDependencies": {
-    "@biomejs/biome": "catalog:",
-    "@types/react": "catalog:",
-    "@types/react-dom": "catalog:",
-    "@vitejs/plugin-react": "catalog:",
-    "react": "catalog:",
-    "react-dom": "catalog:",
-    "typedoc": "catalog:",
-    "typedoc-plugin-markdown": "catalog:",
-    "typescript": "catalog:",
-    "vite": "catalog:",
-    "vite-plugin-dts": "catalog:"
-  },
-  "dependencies": {
-    "@applemusic-like-lyrics/core": "workspace:^"
-  },
-  "peerDependencies": {
-    "@pixi/app": "*",
-    "@pixi/core": "*",
-    "@pixi/display": "*",
-    "@pixi/filter-blur": "*",
-    "@pixi/filter-color-matrix": "*",
-    "@pixi/sprite": "*",
-    "react": "*",
-    "react-dom": "*"
-  }
+	"name": "@applemusic-like-lyrics/react",
+	"version": "0.3.2",
+	"description": "AMLL 组件库的 React 绑定",
+	"repository": {
+		"url": "https://github.com/amll-dev/applemusic-like-lyrics.git",
+		"directory": "packages/react",
+		"type": "git"
+	},
+	"license": "GPL-3.0",
+	"nx": {
+		"tags": [
+			"library"
+		],
+		"targets": {
+			"nx-release-publish": {
+				"executor": "@nx/js:release-publish",
+				"dependsOn": []
+			}
+		}
+	},
+	"type": "module",
+	"files": [
+		"dist/**/*.js",
+		"dist/**/*.ts",
+		"dist/**/*.cjs",
+		"dist/**/*.map"
+	],
+	"scripts": {
+		"build:docs": "typedoc --plugin typedoc-plugin-markdown --out docs src/index.ts",
+		"typecheck": "tsc",
+		"build-only": "vite build",
+		"build": "run-p typecheck \"build-only {@}\" --",
+		"build:dev": "vite build",
+		"fmt": "biome format --write ./src",
+		"dev": "nx run @applemusic-like-lyrics/playground-react:dev"
+	},
+	"main": "./dist/amll-react.cjs",
+	"module": "./dist/amll-react.js",
+	"typings": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"import": "./dist/amll-react.js",
+			"require": "./dist/amll-react.cjs",
+			"types": "./dist/index.d.ts"
+		}
+	},
+	"devDependencies": {
+		"@biomejs/biome": "catalog:",
+		"@types/react": "catalog:",
+		"@types/react-dom": "catalog:",
+		"@vitejs/plugin-react": "catalog:",
+		"react": "catalog:",
+		"react-dom": "catalog:",
+		"typedoc": "catalog:",
+		"typedoc-plugin-markdown": "catalog:",
+		"typescript": "catalog:",
+		"vite": "catalog:",
+		"vite-plugin-dts": "catalog:"
+	},
+	"dependencies": {
+		"@applemusic-like-lyrics/core": "workspace:^"
+	},
+	"peerDependencies": {
+		"@pixi/app": "*",
+		"@pixi/core": "*",
+		"@pixi/display": "*",
+		"@pixi/filter-blur": "*",
+		"@pixi/filter-color-matrix": "*",
+		"@pixi/sprite": "*",
+		"react": "*",
+		"react-dom": "*"
+	}
 }

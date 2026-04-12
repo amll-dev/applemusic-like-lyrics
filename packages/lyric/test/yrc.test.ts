@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { parseYrc, stringifyYrc } from "../src/formats/yrc";
 
 describe("yrc", () => {

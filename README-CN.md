@@ -68,7 +68,7 @@ GPU 性能在以下状况下能够以预期尺寸下满 60 帧运行：
 ### 前置依赖
 
 -   [Node.js](https://nodejs.org/)
--   [pnpm](https://pnpm.io/)
+-   [Bun](https://bun.sh/)
 -   [Rust 工具链](https://rustup.rs/)
 -   [wasm-pack](https://rustwasm.github.io/wasm-pack/)
 
@@ -78,20 +78,20 @@ GPU 性能在以下状况下能够以预期尺寸下满 60 帧运行：
 
 ```bash
 # 安装依赖
-pnpm install
+bun install
 
 # 生产构建所有库包
-pnpm build:libs
+bun run build:libs
 ```
 
 ### 构建单个包
 
 ```bash
 # 示例：仅构建 @applemusic-like-lyrics/core
-pnpm nx run @applemusic-like-lyrics/core:build
+bunx nx run @applemusic-like-lyrics/core:build
 
 # 示例：开发构建 @applemusic-like-lyrics/lyric
-pnpm nx run @applemusic-like-lyrics/lyric:build:dev
+bunx nx run @applemusic-like-lyrics/lyric:build:dev
 ```
 
 ## 鸣谢

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { parseLrcA2, stringifylrcA2 } from "../src/formats/lrca2";
 import { timeStampsTestCases } from "./timestampcase.fixture";
 
@@ -142,7 +142,9 @@ describe("lrca2", () => {
 		const input = "[00:01.000]<00:01.000> word <00:01.500> word<00:02.000>";
 		const output = stringifylrcA2(parseLrcA2(input));
 
-		expect(output).toBe("[00:01.000]<00:01.000>word <00:01.500>word<00:02.000>");
+		expect(output).toBe(
+			"[00:01.000]<00:01.000>word <00:01.500>word<00:02.000>",
+		);
 		expect(output).not.toContain("  ");
 	});
 });

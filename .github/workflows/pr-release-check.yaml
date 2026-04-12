@@ -1,107 +1,99 @@
 name: Validate PR
 
 on:
-  pull_request:
-    branches:
-      - main
-    types:
-      - opened
-      - synchronize
-      - reopened
-      - labeled
-      - unlabeled
-      - ready_for_review
+    pull_request:
+        branches:
+            - main
+        types:
+            - opened
+            - synchronize
+            - reopened
+            - labeled
+            - unlabeled
+            - ready_for_review
 
 permissions:
-  contents: read
-  pull-requests: read
+    contents: read
+    pull-requests: read
 
 concurrency:
-  group: pr-release-check-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
+    group: pr-release-check-${{ github.event.pull_request.number }}
+    cancel-in-progress: true
 
 jobs:
-  release-metadata:
-    name: Release metadata
-    if: github.event.pull_request.draft == false
-    runs-on: ubuntu-latest
+    release-metadata:
+        name: Release metadata
+        if: github.event.pull_request.draft == false
+        runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: lts/*
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: lts/*
 
-      - name: Decide whether a release plan is required
-        id: release-requirements
-        run: node .github/scripts/check-release-requirements.mjs
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
+            - name: Decide whether a release plan is required
+              id: release-requirements
+              run: node .github/scripts/check-release-requirements.mjs
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  GITHUB_REPOSITORY: ${{ github.repository }}
+                  PR_NUMBER: ${{ github.event.pull_request.number }}
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+            - name: Setup Bun
+              uses: oven-sh/setup-bun@v2
 
-      - name: Setup cached Node.js for pnpm
-        if: steps.release-requirements.outputs.requires_release_plan == 'true'
-        uses: actions/setup-node@v4
-        with:
-          node-version: lts/*
-          cache: pnpm
+            - name: Install dependencies
+              if: steps.release-requirements.outputs.requires_release_plan == 'true'
+              run: bun install --frozen-lockfile
 
-      - name: Install dependencies
-        if: steps.release-requirements.outputs.requires_release_plan == 'true'
-        run: pnpm install --frozen-lockfile --ignore-scripts
+            - name: Set Nx SHAs
+              if: steps.release-requirements.outputs.requires_release_plan == 'true'
+              uses: nrwl/nx-set-shas@v4
 
-      - name: Set Nx SHAs
-        if: steps.release-requirements.outputs.requires_release_plan == 'true'
-        uses: nrwl/nx-set-shas@v4
+            - name: Check release plans
+              if: steps.release-requirements.outputs.requires_release_plan == 'true'
+              run: bun run release:plan:check --base="${{ env.NX_BASE }}" --head="${{ env.NX_HEAD }}"
 
-      - name: Check release plans
-        if: steps.release-requirements.outputs.requires_release_plan == 'true'
-        run: pnpm release:plan:check --base="${{ env.NX_BASE }}" --head="${{ env.NX_HEAD }}"
+    build-libraries:
+        name: Build libs
+        if: github.event.pull_request.draft == false
+        runs-on: ubuntu-latest
 
-  build-libraries:
-    name: Build libs
-    if: github.event.pull_request.draft == false
-    runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+            - name: Setup Bun
+              uses: oven-sh/setup-bun@v2
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: lts/*
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: lts/*
-          cache: pnpm
+            - name: Install dependencies
+              run: bun install --frozen-lockfile
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile --ignore-scripts
+            - name: Install Rust toolchain
+              uses: dtolnay/rust-toolchain@v1
+              with:
+                  toolchain: stable
+                  targets: wasm32-unknown-unknown
 
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@v1
-        with:
-          toolchain: stable
-          targets: wasm32-unknown-unknown
+            - name: Install wasm-pack
+              uses: jetli/wasm-pack-action@v0.4.0
+              with:
+                  version: v0.13.1
 
-      - name: Install wasm-pack
-        uses: jetli/wasm-pack-action@v0.4.0
-        with:
-          version: v0.13.1
-
-      - name: Build publishable libraries
-        run: pnpm ci:build:libs
-        env:
-          AMLL_GITHUB_IS_ACTION: true
+            - name: Build publishable libraries
+              run: bun run ci:build:libs
+              env:
+                  AMLL_GITHUB_IS_ACTION: true

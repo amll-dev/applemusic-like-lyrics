@@ -44,6 +44,7 @@
 				"package.json",
 				"pnpm-lock.yaml",
 				"pnpm-workspace.yaml",
+				"bun.lock",
 				"tsconfig.json",
 				"tsconfig.base.json",
 				"packages/docs/**",
@@ -52,7 +53,7 @@
 		},
 		"version": {
 			"conventionalCommits": false,
-			"preVersionCommand": "pnpm build:libs"
+			"preVersionCommand": "bun run build:libs"
 		},
 		"changelog": {
 			"workspaceChangelog": false,
