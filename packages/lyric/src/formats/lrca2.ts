@@ -17,7 +17,7 @@ import {
 
 /**
  * 解析 LRC A2 格式的歌词字符串
- * @param src 歌词字符串
+ * @param lrc 歌词字符串
  * @returns 成功解析出来的歌词
  */
 export function parseLRCa2(lrc: string): LyricLine[] {

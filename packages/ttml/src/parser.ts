@@ -1,605 +1,1035 @@
+/** biome-ignore-all lint/suspicious/noAssignInExpressions: intentional */
 /**
- * @fileoverview
- * 解析 TTML 歌词文档到歌词数组的解析器
- * 用于解析从 Apple Music 来的歌词文件，且扩展并支持翻译和音译文本。
- * @see https://www.w3.org/TR/2018/REC-ttml1-20181108/
+ * 核心的 TTML 生成器实现
+ * @module generator
  */
 
+import {
+	Attributes,
+	Elements,
+	NodeType,
+	NS,
+	QualifiedAttributes,
+	Values,
+} from "./constants";
 import type {
+	Agent,
+	LyricBase,
 	LyricLine,
-	LyricWord,
-	LyricWordBase,
-	TTMLLyric,
+	PlatformId,
+	SubLyricContent,
+	Syllable,
 	TTMLMetadata,
-} from "./ttml-types";
+	TTMLParserOptions,
+	TTMLResult,
+} from "./types";
 
-interface RomanWord {
-	startTime: number;
-	endTime: number;
-	text: string;
+/**
+ * 临时的用于关联 Apple Music 样式的翻译和音译与主歌词行的容器
+ */
+interface IExtensionSidecar {
+	[lineId: string]: {
+		translations?: SubLyricContent[];
+		romanizations?: SubLyricContent[];
+	};
 }
 
-interface LineMetadata {
-	main: string;
-	bg: string;
+interface IParsedState {
+	fullText: string;
+	words: Syllable[];
+	translations: SubLyricContent[];
+	romanizations: { text: string; language?: string }[];
+	backgroundVocal?: LyricBase;
 }
 
-interface WordRomanMetadata {
-	main: RomanWord[];
-	bg: RomanWord[];
-}
+/**
+ * TTML 歌词生成器类
+ *
+ * 用于将 AMLL 项目使用的 TTML 字符串解析为结构化的 {@link TTMLResult} 数据结构
+ * @see https://github.com/amll-dev/amll-ttml-db/wiki/%E6%A0%BC%E5%BC%8F%E8%A7%84%E8%8C%83
+ */
+export class TTMLParser {
+	private domParser: DOMParser;
 
-interface SpanNode {
-	text: string;
-	begin: string | null;
-	end: string | null;
-	role: string | null;
-	lang: string | null;
-	emptyBeat: string | null;
-	ruby: string | null;
-	children: SpanNode[];
-	tail: string;
-}
+	private static readonly TIME_REGEX =
+		/^(?:(?:(?<hours>\d+):)?(?<minutes>\d+):)?(?<seconds>\d+(?:\.\d+)?)$/;
+	private static readonly LEADING_SPACE_REGEX = /^\s/;
+	private static readonly TRAILING_SPACE_REGEX = /\s$/;
+	private static readonly MULTI_SPACE_REGEX = /\s+/g;
 
-function localName(el: Element): string {
-	return el.localName || el.tagName.split(":").pop() || el.tagName;
-}
-
-function getAttr(el: Element, target: string): string | null {
-	const direct = el.getAttribute(target);
-	if (direct !== null) {
-		return direct;
+	private normalizeText(
+		text: string | null | undefined,
+		trim: boolean = true,
+	): string {
+		if (!text) return "";
+		const normalized = text.replace(TTMLParser.MULTI_SPACE_REGEX, " ");
+		return trim ? normalized.trim() : normalized;
 	}
-	for (const attr of Array.from(el.attributes)) {
-		if (
-			attr.localName === target ||
-			attr.name === target ||
-			attr.name.endsWith(`:${target}`)
-		) {
-			return attr.value;
+
+	/**
+	 * 构造一个 TTML 解析器实例
+	 *
+	 * @param options 生成器配置选项
+	 *
+	 * 在 Node.js 环境下必须注入 `domParser` 实例（例如用 `@xmldom/xmldom` 等）
+	 */
+	constructor(options?: TTMLParserOptions) {
+		if (options?.domParser) {
+			this.domParser = options.domParser;
+		} else if (typeof DOMParser !== "undefined") {
+			this.domParser = new DOMParser();
+		} else {
+			throw new Error(
+				"No DOMParser found. If you are running in Node.js, please inject a DOMParser (e.g., @xmldom/xmldom).",
+			);
 		}
 	}
-	return null;
-}
 
-function parseTimespan(value: string): number {
-	const text = value.trim();
-	if (!text) return 0;
-	if (text.endsWith("s") && !text.includes(":")) {
-		const seconds = Number(text.slice(0, -1));
-		if (!Number.isFinite(seconds)) return 0;
-		return Math.round(seconds * 1000);
+	/**
+	 * 解析 TTML 字符串的静态便捷方法
+	 * @param xmlStr 需要解析的 TTML XML 字符串
+	 * @param options 解析器配置选项，用于注入 DOM 依赖
+	 * @returns 解析后的结构化 TTML 数据结构
+	 * @throws 当输入的 XML 字符串格式无效时抛出异常
+	 */
+	public static parse(xmlStr: string, options?: TTMLParserOptions): TTMLResult {
+		const instance = new TTMLParser(options);
+		return instance.parse(xmlStr);
 	}
-	const parts = text.split(":");
-	const last = parts[parts.length - 1] ?? "0";
-	const [secStr, fracStr] = last.split(".");
-	const seconds = Number(secStr || "0");
-	const milliseconds =
-		fracStr !== undefined ? Number(fracStr.padEnd(3, "0").slice(0, 3)) : 0;
-	let minutes = 0;
-	let hours = 0;
-	if (parts.length === 2) {
-		minutes = Number(parts[0] || "0");
-	} else if (parts.length >= 3) {
-		hours = Number(parts[0] || "0");
-		minutes = Number(parts[1] || "0");
+
+	/**
+	 * 解析 TTML 字符串
+	 * @param xmlStr 需要解析的 TTML XML 字符串
+	 * @returns 解析后的结构化 TTML 数据结构
+	 * @throws 当输入的 XML 字符串格式无效时抛出异常
+	 */
+	public parse(xmlStr: string): TTMLResult {
+		if (!xmlStr || typeof xmlStr !== "string") {
+			throw new Error("TTMLParser: Input must be a valid XML string.");
+		}
+
+		const doc = this.domParser.parseFromString(xmlStr, Values.MimeXML);
+		const { metadata, sidecar } = this.parseHead(doc);
+
+		const parserError = doc.getElementsByTagName(Elements.ParserError)[0];
+		if (parserError) {
+			throw new Error(
+				`TTMLParser: XML parsing error: ${parserError.textContent}`,
+			);
+		}
+
+		const result: TTMLResult = {
+			metadata: metadata,
+			lines: [],
+		};
+
+		const root = doc.documentElement;
+		if (root) {
+			const lang = this.getAttr(root, NS.XML, Attributes.Lang);
+			if (lang) {
+				result.metadata.language = lang;
+			}
+
+			const timing = this.getAttr(root, NS.ITUNES, Attributes.Timing);
+			if ((timing && timing === Values.Word) || timing === Values.Line) {
+				result.metadata.timingMode = timing;
+			}
+		}
+
+		this.parseBody(doc, result, sidecar);
+
+		result.metadata.timingMode ??= this.inferTimingMode(result.lines);
+
+		if (result.metadata.platformIds) {
+			result.metadata.platformIds = this.sortPlatformIds(
+				result.metadata.platformIds,
+			);
+		}
+
+		return result;
 	}
-	if (
-		!Number.isFinite(seconds) ||
-		!Number.isFinite(milliseconds) ||
-		!Number.isFinite(minutes) ||
-		!Number.isFinite(hours)
+
+	private inferTimingMode(lines: LyricLine[]): "Word" | "Line" {
+		const hasWordTiming = lines.some(
+			(line) =>
+				(line.words?.length ?? 0) > 1 ||
+				(line.backgroundVocal?.words?.length ?? 0) > 1,
+		);
+
+		return hasWordTiming ? "Word" : "Line";
+	}
+
+	private sortPlatformIds(
+		platformIds: Partial<Record<PlatformId, string[]>>,
+	): Partial<Record<PlatformId, string[]>> {
+		const preferredOrder: PlatformId[] = [
+			"ncmMusicId",
+			"qqMusicId",
+			"spotifyId",
+			"appleMusicId",
+		];
+
+		const orderedPlatformIds: Partial<Record<PlatformId, string[]>> = {};
+
+		for (const key of preferredOrder) {
+			if (platformIds[key]) {
+				orderedPlatformIds[key] = platformIds[key];
+			}
+		}
+
+		for (const key of Object.keys(platformIds) as PlatformId[]) {
+			if (!orderedPlatformIds[key]) {
+				orderedPlatformIds[key] = platformIds[key];
+			}
+		}
+
+		return orderedPlatformIds;
+	}
+
+	private parseHead(doc: Document): {
+		metadata: TTMLMetadata;
+		sidecar: IExtensionSidecar;
+	} {
+		const head = doc.getElementsByTagName(Elements.Head)[0];
+
+		const resultMeta: TTMLMetadata = {
+			title: [],
+			artist: [],
+			album: [],
+			isrc: [],
+			authorIds: [],
+			authorNames: [],
+			songwriters: [],
+			agents: {},
+			rawProperties: {},
+		};
+		const sidecar: IExtensionSidecar = {};
+
+		if (!head) {
+			return { metadata: resultMeta, sidecar };
+		}
+
+		this.parseTTMElements(head, resultMeta);
+		this.parseAMLLMeta(head, resultMeta);
+		this.parseiTunesExtensions(head, resultMeta, sidecar);
+		this.deduplicateMetadata(resultMeta);
+
+		return { metadata: resultMeta, sidecar };
+	}
+
+	private deduplicateMetadata(meta: TTMLMetadata) {
+		const dedupe = (arr?: string[]) => (arr ? Array.from(new Set(arr)) : []);
+
+		meta.title = dedupe(meta.title);
+		meta.artist = dedupe(meta.artist);
+		meta.album = dedupe(meta.album);
+		meta.isrc = dedupe(meta.isrc);
+		meta.authorIds = dedupe(meta.authorIds);
+		meta.authorNames = dedupe(meta.authorNames);
+		meta.songwriters = dedupe(meta.songwriters);
+
+		if (meta.platformIds) {
+			for (const key of Object.keys(meta.platformIds) as PlatformId[]) {
+				if (meta.platformIds[key]) {
+					meta.platformIds[key] = dedupe(meta.platformIds[key]);
+				}
+			}
+		}
+
+		if (meta.rawProperties) {
+			for (const key of Object.keys(meta.rawProperties)) {
+				if (meta.rawProperties[key]) {
+					meta.rawProperties[key] = dedupe(meta.rawProperties[key]);
+				}
+			}
+		}
+	}
+
+	private parseTTMElements(head: Element, meta: TTMLMetadata) {
+		const titles = head.getElementsByTagNameNS(NS.TTM, Elements.Title);
+		if (titles.length > 0 && titles[0].textContent) {
+			meta.title?.push(titles[0].textContent.trim());
+		}
+
+		const agents = Array.from(
+			head.getElementsByTagNameNS(NS.TTM, Elements.Agent),
+		);
+
+		for (const agent of agents) {
+			const id = this.getAttr(agent, NS.XML, Attributes.Id);
+
+			if (!id) continue;
+
+			const type = this.getAttr(
+				agent,
+				NS.TTM,
+				Attributes.Type,
+				Attributes.Type,
+			);
+
+			const names = agent.getElementsByTagNameNS(NS.TTM, Elements.Name);
+
+			const agentObj: Agent = {
+				id: id,
+			};
+
+			if (type) {
+				agentObj.type = type;
+			}
+
+			if (names.length > 0 && names[0].textContent) {
+				const rawName = names[0].textContent.trim();
+				if (rawName.length > 0) {
+					agentObj.name = rawName;
+				}
+			}
+
+			meta.agents ??= {};
+			meta.agents[id] = agentObj;
+		}
+	}
+
+	private parseAMLLMeta(head: Element, meta: TTMLMetadata) {
+		const metas = Array.from(
+			head.getElementsByTagNameNS(NS.AMLL, Elements.Meta),
+		);
+
+		const validMetas = metas.filter((el) => {
+			return (
+				this.getAttr(el, NS.AMLL, Attributes.Key) &&
+				this.getAttr(el, NS.AMLL, Attributes.Value)
+			);
+		});
+
+		for (const el of validMetas) {
+			const key = this.getAttr(el, NS.AMLL, Attributes.Key);
+			const value = this.getAttr(el, NS.AMLL, Attributes.Value)?.trim();
+
+			if (!key || !value) continue;
+
+			switch (key) {
+				case Values.MusicName:
+					meta.title?.push(value);
+					break;
+				case Values.Artists:
+					meta.artist?.push(value);
+					break;
+				case Values.Album:
+					meta.album?.push(value);
+					break;
+				case Values.ISRC:
+					meta.isrc?.push(value);
+					break;
+				case Values.TTMLAuthorGithub:
+					meta.authorIds?.push(value);
+					break;
+				case Values.TTMLAuthorGithubLogin:
+					meta.authorNames?.push(value);
+					break;
+				case Values.NCMMusicId:
+				case Values.QQMusicId:
+				case Values.SpotifyId:
+				case Values.AppleMusicId:
+					meta.platformIds ??= {};
+					(meta.platformIds[key] ??= []).push(value);
+					break;
+				default:
+					meta.rawProperties ??= {};
+					(meta.rawProperties[key] ??= []).push(value);
+					break;
+			}
+		}
+	}
+
+	private toTranslatedContent(
+		base: LyricBase,
+		ignoreWords: boolean = false,
+	): SubLyricContent {
+		const content: SubLyricContent = {
+			text: this.normalizeText(base.text),
+		};
+
+		if (!ignoreWords && base.words && base.words.length > 0) {
+			const isZeroFallback =
+				base.words.length === 1 &&
+				base.words[0].startTime === 0 &&
+				base.words[0].endTime === 0;
+
+			if (!isZeroFallback) {
+				content.words = base.words;
+			}
+		}
+
+		if (base.backgroundVocal) {
+			content.backgroundVocal = this.toTranslatedContent(
+				base.backgroundVocal,
+				ignoreWords,
+			);
+		}
+
+		return content;
+	}
+
+	private parseiTunesExtensions(
+		head: Element,
+		meta: TTMLMetadata,
+		sidecar: IExtensionSidecar,
 	) {
+		const iTunesMetas = Array.from(
+			head.getElementsByTagName(Elements.ITunesMetadata),
+		);
+		if (iTunesMetas.length === 0) return;
+
+		for (const iTunesMeta of iTunesMetas) {
+			const songwritersContainer = iTunesMeta.getElementsByTagName(
+				Elements.Songwriters,
+			)[0];
+			if (songwritersContainer) {
+				const writers = Array.from(
+					songwritersContainer.getElementsByTagName(Elements.Songwriter),
+				);
+				for (const writer of writers) {
+					const name = writer.textContent?.trim();
+					if (name) {
+						meta.songwriters?.push(name);
+					}
+				}
+			}
+
+			const processEntries = (
+				containerTagName: string,
+				itemTagName: string,
+				type: "translations" | "romanizations",
+			) => {
+				const container = iTunesMeta.getElementsByTagName(containerTagName)[0];
+				if (!container) return;
+
+				const items = Array.from(container.getElementsByTagName(itemTagName));
+				for (const item of items) {
+					const lang = this.getAttr(item, NS.XML, Attributes.Lang);
+
+					const textNodes = Array.from(
+						item.getElementsByTagName(Elements.Text),
+					);
+					for (const textNode of textNodes) {
+						const forId = textNode.getAttribute(Attributes.For);
+						const parsedContent = this.parseCommonContent(textNode);
+
+						if (forId && parsedContent.text) {
+							sidecar[forId] ??= {};
+							const content = this.toTranslatedContent(parsedContent);
+							content.language = lang || undefined;
+
+							(sidecar[forId][type] ??= []).push(content);
+						}
+					}
+				}
+			};
+
+			processEntries(
+				Elements.Translations,
+				Elements.Translation,
+				"translations",
+			);
+			processEntries(
+				Elements.Transliterations,
+				Elements.Transliteration,
+				"romanizations",
+			);
+		}
+	}
+
+	private parseTime(timeStr: string | null): number {
+		if (!timeStr) return 0;
+
+		const cleanStr = timeStr.trim();
+		if (cleanStr.length === 0) return 0;
+
+		if (cleanStr.endsWith("s")) {
+			const seconds = Number(cleanStr.slice(0, -1));
+			if (Number.isNaN(seconds)) {
+				return 0;
+			}
+			return Math.round(seconds * 1000);
+		}
+
+		const match = cleanStr.match(TTMLParser.TIME_REGEX);
+
+		if (match?.groups) {
+			const { seconds, minutes, hours } = match.groups;
+
+			const secNum = Number(seconds);
+			const minNum = minutes ? parseInt(minutes, 10) : 0;
+			const hrNum = hours ? parseInt(hours, 10) : 0;
+
+			if (
+				!Number.isNaN(secNum) &&
+				!Number.isNaN(minNum) &&
+				!Number.isNaN(hrNum)
+			) {
+				const totalSeconds = hrNum * 3600 + minNum * 60 + secNum;
+				return Math.round(totalSeconds * 1000);
+			}
+		}
 		return 0;
 	}
-	return ((hours * 60 + minutes) * 60 + seconds) * 1000 + milliseconds;
-}
 
-function parseSpan(spanEl: Element): SpanNode {
-	const span: SpanNode = {
-		text: "",
-		begin: getAttr(spanEl, "begin"),
-		end: getAttr(spanEl, "end"),
-		role: getAttr(spanEl, "role"),
-		lang: getAttr(spanEl, "lang"),
-		emptyBeat: getAttr(spanEl, "empty-beat"),
-		ruby: getAttr(spanEl, "ruby"),
-		children: [],
-		tail: "",
-	};
-	let lastChild: SpanNode | null = null;
-	for (const node of Array.from(spanEl.childNodes)) {
-		if (node.nodeType === Node.TEXT_NODE) {
-			const text = node.textContent ?? "";
-			if (lastChild) {
-				lastChild.tail += text;
-			} else {
-				span.text += text;
+	private parseBody(
+		doc: Document,
+		result: TTMLResult,
+		sidecar: IExtensionSidecar,
+	) {
+		const body = doc.getElementsByTagName(Elements.Body)[0];
+		if (!body) return;
+
+		const childNodes = Array.from(body.childNodes);
+
+		for (const node of childNodes) {
+			if (node.nodeType !== NodeType.ELEMENT_NODE) continue;
+			const el = node as Element;
+
+			const tagName = el.localName || el.tagName.toLowerCase().split(":").pop();
+
+			if (tagName === Elements.Div) {
+				const songPart =
+					this.getAttr(el, NS.ITUNES, Attributes.SongPartKebab) ||
+					this.getAttr(el, NS.ITUNES, Attributes.SongPart);
+
+				const pNodes = el.getElementsByTagNameNS(NS.TT, Elements.P);
+				const pList =
+					pNodes.length > 0
+						? Array.from(pNodes)
+						: Array.from(el.getElementsByTagName(Elements.P));
+
+				for (const p of pList) {
+					this.processLineElement(p, result.lines, sidecar, songPart);
+				}
+			} else if (tagName === Elements.P) {
+				this.processLineElement(el, result.lines, sidecar);
 			}
-		} else if (node.nodeType === Node.ELEMENT_NODE) {
-			const childEl = node as Element;
-			if (localName(childEl) === "span") {
-				const child = parseSpan(childEl);
-				span.children.push(child);
-				lastChild = child;
-			}
 		}
 	}
-	return span;
-}
 
-function flattenSpanText(span: SpanNode, skipRoles?: Set<string>): string {
-	const skipCurrent = span.role ? skipRoles?.has(span.role) : false;
-	let text = "";
-	if (!skipCurrent) {
-		text += span.text || "";
-		for (const child of span.children) {
-			text += flattenSpanText(child, skipRoles);
+	private mergeSidecar<T extends LyricBase>(
+		target: T,
+		source: SubLyricContent[],
+		field: "translations" | "romanizations",
+	): T {
+		(target[field] ??= []).push(...source);
+
+		if (!target.backgroundVocal) {
+			return target;
 		}
-	}
-	text += span.tail || "";
-	return text;
-}
 
-function flattenSpanInnerText(span: SpanNode, skipRoles?: Set<string>): string {
-	const skipCurrent = span.role ? skipRoles?.has(span.role) : false;
-	let text = "";
-	if (!skipCurrent) {
-		text += span.text || "";
-		for (const child of span.children) {
-			text += flattenSpanText(child, skipRoles);
-		}
-	}
-	return text;
-}
+		const bgContentsToMerge: SubLyricContent[] = [];
 
-function collectRubyTextSpans(span: SpanNode): SpanNode[] {
-	const results: SpanNode[] = [];
-	if (span.ruby === "text") {
-		results.push(span);
-	}
-	for (const child of span.children) {
-		results.push(...collectRubyTextSpans(child));
-	}
-	return results;
-}
+		for (const srcItem of source) {
+			const srcBg = srcItem.backgroundVocal;
+			if (!srcBg) continue;
 
-function computeWordTiming(words: LyricWordBase[]): [number, number] {
-	const filtered = words.filter((v) => v.word.trim().length > 0);
-	const start =
-		filtered.reduce(
-			(pv, cv) => Math.min(pv, cv.startTime),
-			Number.POSITIVE_INFINITY,
-		) ?? 0;
-	const end = filtered.reduce((pv, cv) => Math.max(pv, cv.endTime), 0);
-	return [start === Number.POSITIVE_INFINITY ? 0 : start, end];
-}
-
-function createWordFromSpanElement(wordEl: Element): LyricWord | null {
-	const begin = getAttr(wordEl, "begin");
-	const end = getAttr(wordEl, "end");
-	const spanNode = parseSpan(wordEl);
-	const skipRoles = new Set(["x-translation", "x-roman"]);
-	if (spanNode.ruby === "container") {
-		const baseSpan = spanNode.children.find((child) => child.ruby === "base");
-		const baseText = baseSpan
-			? flattenSpanInnerText(baseSpan, skipRoles)
-			: flattenSpanInnerText(spanNode, skipRoles);
-		const rubyTextSpans = collectRubyTextSpans(spanNode);
-		const containerStart = begin ? parseTimespan(begin) : null;
-		const containerEnd = end ? parseTimespan(end) : null;
-		const rubyWords: LyricWordBase[] = rubyTextSpans.map((rubySpan) => {
-			const rubyBegin = rubySpan.begin
-				? parseTimespan(rubySpan.begin)
-				: (containerStart ?? 0);
-			const rubyEnd = rubySpan.end
-				? parseTimespan(rubySpan.end)
-				: (containerEnd ?? 0);
-			return {
-				word: flattenSpanInnerText(rubySpan, skipRoles),
-				startTime: rubyBegin,
-				endTime: rubyEnd,
+			const bgContent: SubLyricContent = {
+				language: srcItem.language,
+				text: srcBg.text,
 			};
-		});
-		const [rubyStart, rubyEnd] = computeWordTiming(rubyWords);
-		const word: LyricWord = {
-			word: baseText,
-			startTime: containerStart ?? rubyStart,
-			endTime: containerEnd ?? rubyEnd,
-			obscene: false,
-			emptyBeat: 0,
-			romanWord: "",
-			ruby: rubyWords.length > 0 ? rubyWords : undefined,
+
+			if (srcBg.words && srcBg.words.length > 0) {
+				bgContent.words = srcBg.words;
+			}
+			if (srcBg.backgroundVocal) {
+				bgContent.backgroundVocal = srcBg.backgroundVocal;
+			}
+
+			bgContentsToMerge.push(bgContent);
+		}
+
+		if (bgContentsToMerge.length > 0) {
+			(target.backgroundVocal[field] ??= []).push(...bgContentsToMerge);
+		}
+
+		return target;
+	}
+
+	private processLineElement(
+		p: Element,
+		lines: LyricLine[],
+		sidecar: IExtensionSidecar,
+		songPart?: string | null,
+	) {
+		const id = this.getAttr(p, NS.ITUNES, Attributes.Key);
+		if (!id) return;
+
+		const baseContent = this.parseCommonContent(p);
+
+		let line: LyricLine = {
+			id: id,
+			...baseContent,
 		};
-		const emptyBeat = getAttr(wordEl, "empty-beat");
-		if (emptyBeat) {
-			word.emptyBeat = Number(emptyBeat);
-		}
-		const obscene = getAttr(wordEl, "obscene");
-		if (obscene === "true") {
-			word.obscene = true;
-		}
-		return word;
-	}
-	if (!begin || !end) {
-		return null;
-	}
-	const wordText = flattenSpanInnerText(spanNode, skipRoles);
-	const word: LyricWord = {
-		word: wordText,
-		startTime: parseTimespan(begin),
-		endTime: parseTimespan(end),
-		obscene: false,
-		emptyBeat: 0,
-		romanWord: "",
-	};
-	const emptyBeat = getAttr(wordEl, "empty-beat");
-	if (emptyBeat) {
-		word.emptyBeat = Number(emptyBeat);
-	}
-	const obscene = getAttr(wordEl, "obscene");
-	if (obscene === "true") {
-		word.obscene = true;
-	}
-	return word;
-}
 
-export function parseTTML(ttmlText: string): TTMLLyric {
-	const domParser = new DOMParser();
-	const ttmlDoc: XMLDocument = domParser.parseFromString(
-		ttmlText,
-		"application/xml",
-	);
+		if (songPart) line.songPart = songPart;
 
-	const itunesTranslations = new Map<string, LineMetadata>();
-	const translationTextElements = ttmlDoc.querySelectorAll(
-		"iTunesMetadata > translations > translation > text[for]",
-	);
+		const agentId = this.getAttr(p, NS.TTM, Elements.Agent);
+		if (agentId) line.agentId = agentId;
 
-	translationTextElements.forEach((textEl) => {
-		const key = textEl.getAttribute("for");
-		if (!key) return;
-
-		let main = "";
-		let bg = "";
-
-		for (const node of Array.from(textEl.childNodes)) {
-			if (node.nodeType === Node.TEXT_NODE) {
-				main += node.textContent ?? "";
-			} else if (node.nodeType === Node.ELEMENT_NODE) {
-				if ((node as Element).getAttribute("ttm:role") === "x-bg") {
-					bg += node.textContent ?? "";
-				}
+		const externalData = sidecar[id];
+		if (externalData) {
+			if (externalData.translations) {
+				line = this.mergeSidecar(
+					line,
+					externalData.translations,
+					"translations",
+				);
+			}
+			if (externalData.romanizations) {
+				line = this.mergeSidecar(
+					line,
+					externalData.romanizations,
+					"romanizations",
+				);
 			}
 		}
 
-		main = main.trim();
-		bg = bg
-			.trim()
-			.replace(/^[（(]/, "")
-			.replace(/[)）]$/, "")
-			.trim();
-
-		if (main.length > 0 || bg.length > 0) {
-			itunesTranslations.set(key, { main, bg });
-		}
-	});
-
-	const itunesLineRomanizations = new Map<string, LineMetadata>();
-	const itunesWordRomanizations = new Map<string, WordRomanMetadata>();
-
-	const romanizationTextElements = ttmlDoc.querySelectorAll(
-		"iTunesMetadata > transliterations > transliteration > text[for]",
-	);
-
-	romanizationTextElements.forEach((textEl) => {
-		const key = textEl.getAttribute("for");
-		if (!key) return;
-
-		const mainWords: RomanWord[] = [];
-		const bgWords: RomanWord[] = [];
-		let lineRomanMain = "";
-		let lineRomanBg = "";
-		let isWordByWord = false;
-
-		for (const node of Array.from(textEl.childNodes)) {
-			if (node.nodeType === Node.TEXT_NODE) {
-				lineRomanMain += node.textContent ?? "";
-			} else if (node.nodeType === Node.ELEMENT_NODE) {
-				const el = node as Element;
-				if (el.getAttribute("ttm:role") === "x-bg") {
-					const nestedSpans = el.querySelectorAll("span[begin][end]");
-					if (nestedSpans.length > 0) {
-						isWordByWord = true;
-						nestedSpans.forEach((span) => {
-							let bgWordText = span.textContent ?? "";
-							bgWordText = bgWordText
-								.trim()
-								.replace(/^[（(]/, "")
-								.replace(/[)）]$/, "")
-								.trim();
-
-							bgWords.push({
-								startTime: parseTimespan(span.getAttribute("begin") ?? ""),
-								endTime: parseTimespan(span.getAttribute("end") ?? ""),
-								text: bgWordText,
-							});
-						});
-					} else {
-						lineRomanBg += el.textContent ?? "";
-					}
-				} else if (el.hasAttribute("begin") && el.hasAttribute("end")) {
-					isWordByWord = true;
-					mainWords.push({
-						startTime: parseTimespan(el.getAttribute("begin") ?? ""),
-						endTime: parseTimespan(el.getAttribute("end") ?? ""),
-						text: el.textContent ?? "",
-					});
-				}
-			}
-		}
-
-		if (isWordByWord) {
-			itunesWordRomanizations.set(key, { main: mainWords, bg: bgWords });
-		}
-
-		lineRomanMain = lineRomanMain.trim();
-		lineRomanBg = lineRomanBg
-			.trim()
-			.replace(/^[（(]/, "")
-			.replace(/[)）]$/, "")
-			.trim();
-
-		if (lineRomanMain.length > 0 || lineRomanBg.length > 0) {
-			itunesLineRomanizations.set(key, {
-				main: lineRomanMain,
-				bg: lineRomanBg,
-			});
-		}
-	});
-
-	const itunesTimedTranslations = new Map<string, LineMetadata>();
-	const timedTranslationTextElements = ttmlDoc.querySelectorAll(
-		"iTunesMetadata > translations > translation > text[for]",
-	);
-
-	timedTranslationTextElements.forEach((textEl) => {
-		const key = textEl.getAttribute("for");
-		if (!key) return;
-
-		let main = "";
-		let bg = "";
-
-		for (const node of Array.from(textEl.childNodes)) {
-			if (node.nodeType === Node.TEXT_NODE) {
-				main += node.textContent ?? "";
-			} else if (node.nodeType === Node.ELEMENT_NODE) {
-				if ((node as Element).getAttribute("ttm:role") === "x-bg") {
-					bg += node.textContent ?? "";
-				}
-			}
-		}
-
-		main = main.trim();
-		bg = bg
-			.trim()
-			.replace(/^[（(]/, "")
-			.replace(/[)）]$/, "")
-			.trim();
-
-		if ((main.length > 0 || bg.length > 0) && textEl.querySelector("span")) {
-			itunesTimedTranslations.set(key, { main, bg });
-			itunesTranslations.delete(key);
-		}
-	});
-
-	let mainAgentId = "v1";
-
-	const metadata: TTMLMetadata[] = [];
-	for (const meta of ttmlDoc.querySelectorAll("meta")) {
-		if (meta.tagName === "amll:meta") {
-			const key = meta.getAttribute("key");
-			if (key) {
-				const value = meta.getAttribute("value");
-				if (value) {
-					const existing = metadata.find((m) => m.key === key);
-					if (existing) {
-						existing.value.push(value);
-					} else {
-						metadata.push({
-							key,
-							value: [value],
-						});
-					}
-				}
-			}
-		}
+		lines.push(line);
 	}
 
-	const songwriterElements = ttmlDoc.querySelectorAll(
-		"iTunesMetadata > songwriters > songwriter",
-	);
-	if (songwriterElements.length > 0) {
-		const songwriterValues: string[] = [];
-		songwriterElements.forEach((el) => {
-			const name = el.textContent?.trim();
-			if (name) {
-				songwriterValues.push(name);
+	private parseCommonContent(element: Element): LyricBase {
+		const beginAttr = this.getAttr(
+			element,
+			NS.XML,
+			Attributes.Begin,
+			Attributes.Begin,
+		);
+		const endAttr = this.getAttr(
+			element,
+			NS.XML,
+			Attributes.End,
+			Attributes.End,
+		);
+		const originalStartTime = this.parseTime(beginAttr);
+		const originalEndTime = this.parseTime(endAttr);
+
+		const state = this.extractNodeState(element);
+
+		this.finalizeWords(state.words);
+
+		const { startTime, endTime } = this.calculateTimeRange(
+			originalStartTime,
+			originalEndTime,
+			state.words,
+			state.backgroundVocal,
+		);
+
+		const cleanFullText = this.normalizeText(state.fullText);
+		const hasTimeAttrs = beginAttr !== null || endAttr !== null;
+		this.applyFallbackWord(
+			state.words,
+			cleanFullText,
+			hasTimeAttrs,
+			originalStartTime,
+			originalEndTime,
+			startTime,
+			endTime,
+		);
+
+		return this.buildLyricBase(state, cleanFullText, startTime, endTime);
+	}
+
+	private extractNodeState(element: Element): IParsedState {
+		const state: IParsedState = {
+			fullText: "",
+			words: [],
+			translations: [],
+			romanizations: [],
+			backgroundVocal: undefined,
+		};
+
+		const childNodes = Array.from(element.childNodes);
+		for (const node of childNodes) {
+			if (node.nodeType === NodeType.TEXT_NODE) {
+				this.processTextNode(state, node);
+			} else if (node.nodeType === NodeType.ELEMENT_NODE) {
+				this.processElementNode(state, node as Element);
 			}
-		});
-		if (songwriterValues.length > 0) {
-			metadata.push({
-				key: "songwriter",
-				value: songwriterValues,
+		}
+
+		return state;
+	}
+
+	private calculateTimeRange(
+		originalStart: number,
+		originalEnd: number,
+		words: Syllable[],
+		bgVocal?: LyricBase,
+	): { startTime: number; endTime: number } {
+		let startTime = originalStart;
+		let endTime = originalEnd;
+
+		const timedElements = [...words];
+		if (bgVocal) {
+			timedElements.push(bgVocal);
+		}
+
+		if (timedElements.length > 0) {
+			let minChildStart = Infinity;
+			let maxChildEnd = 0;
+
+			for (const el of timedElements) {
+				if (el.startTime < minChildStart) minChildStart = el.startTime;
+				if (el.endTime > maxChildEnd) maxChildEnd = el.endTime;
+			}
+
+			if (startTime === 0 || (minChildStart > 0 && minChildStart < startTime)) {
+				startTime = minChildStart === Infinity ? 0 : minChildStart;
+			}
+
+			if (endTime === 0 || maxChildEnd > endTime) {
+				endTime = maxChildEnd;
+			}
+		}
+
+		return { startTime, endTime };
+	}
+
+	private applyFallbackWord(
+		words: Syllable[],
+		cleanText: string,
+		hasTimeAttrs: boolean,
+		origStart: number,
+		origEnd: number,
+		calcStart: number,
+		calcEnd: number,
+	): void {
+		if (words.length === 0 && cleanText.length > 0 && hasTimeAttrs) {
+			words.push({
+				text: cleanText,
+				startTime: origStart > 0 ? origStart : calcStart,
+				endTime: origEnd > 0 ? origEnd : calcEnd,
+				endsWithSpace: false,
 			});
 		}
 	}
 
-	for (const agent of ttmlDoc.querySelectorAll("ttm\\:agent")) {
-		if (agent.getAttribute("type") === "person") {
-			const id = agent.getAttribute("xml:id");
-			if (id) {
-				mainAgentId = id;
+	private buildLyricBase(
+		state: IParsedState,
+		cleanText: string,
+		startTime: number,
+		endTime: number,
+	): LyricBase {
+		return {
+			text: cleanText,
+			startTime,
+			endTime,
+			words: state.words.length > 0 ? state.words : undefined,
+			translations:
+				state.translations.length > 0 ? state.translations : undefined,
+			romanizations:
+				state.romanizations.length > 0 ? state.romanizations : undefined,
+			backgroundVocal: state.backgroundVocal,
+		};
+	}
+
+	private processTextNode(state: IParsedState, node: Node): void {
+		const rawText = node.textContent || "";
+		const isFormatting = rawText.includes("\n");
+
+		if (isFormatting && rawText.trim().length === 0) return;
+
+		const normalizedText = this.normalizeText(rawText, false);
+
+		state.fullText += normalizedText;
+
+		if (
+			!isFormatting &&
+			normalizedText.length > 0 &&
+			normalizedText.trim().length === 0
+		) {
+			if (state.words.length > 0) {
+				state.words[state.words.length - 1].endsWithSpace = true;
+			}
+		}
+	}
+
+	private processElementNode(state: IParsedState, el: Element): void {
+		const role = this.getAttr(el, NS.TTM, Attributes.Role);
+
+		const rubyAttr = this.getAttr(
+			el,
+			NS.TTS,
+			Attributes.Ruby,
+			QualifiedAttributes.TtsRuby,
+		);
+
+		if (rubyAttr === Values.RubyContainer) {
+			this.processRubyElement(state, el);
+			return;
+		}
+
+		switch (role) {
+			case Values.RoleBg:
+				state.backgroundVocal = this.parseBackgroundVocal(el);
+				break;
+			case Values.RoleTranslation: {
+				const translation = this.parseInlineSubContent(el);
+				if (translation) state.translations.push(translation);
 				break;
 			}
+			case Values.RoleRoman: {
+				const romanization = this.parseInlineSubContent(el);
+				if (romanization) state.romanizations.push(romanization);
+				break;
+			}
+			default:
+				this.processWordElement(state, el);
+				break;
 		}
 	}
 
-	const lyricLines: LyricLine[] = [];
+	private processRubyElement(state: IParsedState, containerEl: Element): void {
+		const obsceneAttr = this.getAttr(
+			containerEl,
+			NS.AMLL,
+			Attributes.Obscene,
+			QualifiedAttributes.AmllObscene,
+		);
+		const isObscene = obsceneAttr === "true";
 
-	function parseLineElement(
-		lineEl: Element,
-		isBG = false,
-		isDuet = false,
-		parentItunesKey: string | null = null,
-	) {
-		const startTimeAttr = lineEl.getAttribute("begin");
-		const endTimeAttr = lineEl.getAttribute("end");
-
-		let parsedStartTime = 0;
-		let parsedEndTime = 0;
-
-		if (startTimeAttr && endTimeAttr) {
-			parsedStartTime = parseTimespan(startTimeAttr);
-			parsedEndTime = parseTimespan(endTimeAttr);
-		}
-
-		const line: LyricLine = {
-			words: [],
-			translatedLyric: "",
-			romanLyric: "",
-			isBG,
-			isDuet: isBG
-				? isDuet
-				: !!lineEl.getAttribute("ttm:agent") &&
-					lineEl.getAttribute("ttm:agent") !== mainAgentId,
-			startTime: parsedStartTime,
-			endTime: parsedEndTime,
-		};
-		let haveBg = false;
-
-		const itunesKey = isBG
-			? parentItunesKey
-			: lineEl.getAttribute("itunes:key");
-
-		const romanWordData = itunesKey
-			? itunesWordRomanizations.get(itunesKey)
-			: undefined;
-		const sourceRomanList = isBG ? romanWordData?.bg : romanWordData?.main;
-		const availableRomanWords = sourceRomanList ? [...sourceRomanList] : [];
-
-		if (itunesKey) {
-			const timedTrans = itunesTimedTranslations.get(itunesKey);
-			const lineTrans = itunesTranslations.get(itunesKey);
-
-			if (isBG) {
-				line.translatedLyric = timedTrans?.bg ?? lineTrans?.bg ?? "";
-			} else {
-				line.translatedLyric = timedTrans?.main ?? lineTrans?.main ?? "";
-			}
-
-			const lineRoman = itunesLineRomanizations.get(itunesKey);
-			if (isBG) {
-				line.romanLyric = lineRoman?.bg ?? "";
-			} else {
-				line.romanLyric = lineRoman?.main ?? "";
+		const emptyBeatAttr = this.getAttr(
+			containerEl,
+			NS.AMLL,
+			Attributes.EmptyBeat,
+			QualifiedAttributes.AmllEmptyBeat,
+		);
+		let emptyBeat: number | undefined;
+		if (emptyBeatAttr) {
+			const parsedBeat = parseInt(emptyBeatAttr, 10);
+			if (!Number.isNaN(parsedBeat)) {
+				emptyBeat = parsedBeat;
 			}
 		}
 
-		for (const wordNode of lineEl.childNodes) {
-			if (wordNode.nodeType === Node.TEXT_NODE) {
-				const word = wordNode.textContent ?? "";
-				line.words.push({
-					word: word,
-					startTime: word.trim().length > 0 ? line.startTime : 0,
-					endTime: word.trim().length > 0 ? line.endTime : 0,
-					obscene: false,
-					emptyBeat: 0,
-					romanWord: "",
-				});
-			} else if (wordNode.nodeType === Node.ELEMENT_NODE) {
-				const wordEl = wordNode as Element;
-				const role = wordEl.getAttribute("ttm:role");
+		let baseText = "";
+		const rubyTags: { text: string; startTime: number; endTime: number }[] = [];
 
-				if (wordEl.nodeName === "span" && role) {
-					if (role === "x-bg") {
-						parseLineElement(wordEl, true, line.isDuet, itunesKey);
-						haveBg = true;
-					} else if (role === "x-translation") {
-						// 没有 Apple Music 样式翻译时才使用内嵌翻译
-						if (!line.translatedLyric) {
-							line.translatedLyric = wordEl.innerHTML;
-						}
-					} else if (role === "x-roman") {
-						if (!line.romanLyric) {
-							line.romanLyric = wordEl.innerHTML;
-						}
-					}
-				} else {
-					const word = createWordFromSpanElement(wordEl);
-					if (!word) continue;
-					if (availableRomanWords.length > 0) {
-						const matchIndex = availableRomanWords.findIndex(
-							(r) =>
-								r.startTime === word.startTime && r.endTime === word.endTime,
+		const childNodes = Array.from(containerEl.childNodes);
+
+		for (const node of childNodes) {
+			if (node.nodeType !== NodeType.ELEMENT_NODE) continue;
+			const childEl = node as Element;
+
+			const childRubyAttr = this.getAttr(
+				childEl,
+				NS.TTS,
+				Attributes.Ruby,
+				QualifiedAttributes.TtsRuby,
+			);
+
+			if (childRubyAttr === Values.RubyBase) {
+				baseText = this.normalizeText(childEl.textContent, false);
+			} else if (childRubyAttr === Values.RubyTextContainer) {
+				const textNodes = Array.from(childEl.childNodes);
+				for (const textNode of textNodes) {
+					if (textNode.nodeType !== NodeType.ELEMENT_NODE) continue;
+					const tNode = textNode as Element;
+
+					const tAttr = this.getAttr(
+						tNode,
+						NS.TTS,
+						Attributes.Ruby,
+						QualifiedAttributes.TtsRuby,
+					);
+
+					if (tAttr === Values.RubyText) {
+						const begin = this.getAttr(
+							tNode,
+							NS.XML,
+							Attributes.Begin,
+							Attributes.Begin,
 						);
+						const end = this.getAttr(
+							tNode,
+							NS.XML,
+							Attributes.End,
+							Attributes.End,
+						);
+						const text = this.normalizeText(tNode.textContent, false).trim();
 
-						if (matchIndex !== -1) {
-							word.romanWord = availableRomanWords[matchIndex].text;
-							availableRomanWords.splice(matchIndex, 1);
+						if (text && begin && end) {
+							rubyTags.push({
+								text,
+								startTime: this.parseTime(begin),
+								endTime: this.parseTime(end),
+							});
 						}
 					}
-
-					line.words.push(word);
 				}
 			}
 		}
 
-		if (!startTimeAttr || !endTimeAttr) {
-			line.startTime = line.words
-				.filter((w) => w.word.trim().length > 0)
-				.reduce(
-					(pv, cv) => Math.min(pv, cv.startTime),
-					Number.POSITIVE_INFINITY,
-				);
-			line.endTime = line.words
-				.filter((w) => w.word.trim().length > 0)
-				.reduce((pv, cv) => Math.max(pv, cv.endTime), 0);
+		if (!baseText) return;
+
+		state.fullText += baseText;
+
+		let startTime = 0;
+		let endTime = 0;
+		if (rubyTags.length > 0) {
+			startTime = Math.min(...rubyTags.map((t) => t.startTime));
+			endTime = Math.max(...rubyTags.map((t) => t.endTime));
 		}
 
-		if (line.isBG) {
-			const firstWord = line.words[0];
-			if (firstWord && /^[（(]/.test(firstWord.word)) {
-				firstWord.word = firstWord.word.substring(1);
-				if (firstWord.word.length === 0) {
-					line.words.shift();
-				}
+		const cleanBaseText = baseText.trim();
+		if (cleanBaseText.length > 0) {
+			const endsWithSpace = TTMLParser.TRAILING_SPACE_REGEX.test(baseText);
+			const startsWithSpace = TTMLParser.LEADING_SPACE_REGEX.test(baseText);
+
+			if (startsWithSpace && state.words.length > 0) {
+				state.words[state.words.length - 1].endsWithSpace = true;
 			}
 
-			const lastWord = line.words[line.words.length - 1];
-			if (lastWord && /[)）]$/.test(lastWord.word)) {
-				lastWord.word = lastWord.word.substring(0, lastWord.word.length - 1);
-				if (lastWord.word.length === 0) {
-					line.words.pop();
-				}
-			}
-		}
-
-		if (haveBg) {
-			const bgLine = lyricLines.pop();
-			lyricLines.push(line);
-			if (bgLine) lyricLines.push(bgLine);
-		} else {
-			lyricLines.push(line);
+			state.words.push({
+				text: cleanBaseText,
+				startTime,
+				endTime,
+				ruby: rubyTags.length > 0 ? rubyTags : undefined,
+				endsWithSpace: endsWithSpace,
+				obscene: isObscene ? true : undefined,
+				emptyBeat,
+			});
 		}
 	}
 
-	for (const lineEl of ttmlDoc.querySelectorAll("body p[begin][end]")) {
-		parseLineElement(lineEl, false, false, null);
+	private processWordElement(state: IParsedState, el: Element): void {
+		const wBegin = this.getAttr(el, NS.XML, Attributes.Begin, Attributes.Begin);
+		const wEnd = this.getAttr(el, NS.XML, Attributes.End, Attributes.End);
+
+		const obsceneAttr = this.getAttr(
+			el,
+			NS.AMLL,
+			Attributes.Obscene,
+			QualifiedAttributes.AmllObscene,
+		);
+		const isObscene = obsceneAttr === "true";
+
+		const emptyBeatAttr = this.getAttr(
+			el,
+			NS.AMLL,
+			Attributes.EmptyBeat,
+			QualifiedAttributes.AmllEmptyBeat,
+		);
+		let emptyBeat: number | undefined;
+		if (emptyBeatAttr) {
+			const parsedBeat = parseInt(emptyBeatAttr, 10);
+			if (!Number.isNaN(parsedBeat)) {
+				emptyBeat = parsedBeat;
+			}
+		}
+
+		const rawWText = el.textContent || "";
+		const normalizedWText = this.normalizeText(rawWText, false);
+
+		state.fullText += normalizedWText;
+
+		if (wBegin && wEnd) {
+			const isFormatting = rawWText.includes("\n");
+
+			let startsWithSpace = false;
+			let endsWithSpace = false;
+
+			if (!isFormatting) {
+				startsWithSpace = TTMLParser.LEADING_SPACE_REGEX.test(normalizedWText);
+				endsWithSpace = TTMLParser.TRAILING_SPACE_REGEX.test(normalizedWText);
+			}
+
+			const cleanText = normalizedWText.trim();
+
+			if (startsWithSpace && state.words.length > 0) {
+				state.words[state.words.length - 1].endsWithSpace = true;
+			}
+
+			if (cleanText.length > 0) {
+				state.words.push({
+					text: cleanText,
+					startTime: this.parseTime(wBegin),
+					endTime: this.parseTime(wEnd),
+					endsWithSpace: endsWithSpace,
+					obscene: isObscene ? true : undefined,
+					emptyBeat,
+				});
+			}
+		}
 	}
 
-	return {
-		metadata,
-		lyricLines: lyricLines,
-	};
+	private parseBackgroundVocal(el: Element): LyricBase {
+		const bgVocal = this.parseCommonContent(el);
+
+		bgVocal.text = bgVocal.text.replace(/^[(（]+/, "").replace(/[)）]+$/, "");
+
+		if (bgVocal.words && bgVocal.words.length > 0) {
+			bgVocal.words[0].text = bgVocal.words[0].text
+				.replace(/^[(（]+/, "")
+				.trimStart();
+
+			const lastIdx = bgVocal.words.length - 1;
+			bgVocal.words[lastIdx].text = bgVocal.words[lastIdx].text
+				.replace(/[)）]+$/, "")
+				.trimEnd();
+		}
+
+		return bgVocal;
+	}
+
+	private parseInlineSubContent(el: Element): SubLyricContent | null {
+		const lang = this.getAttr(el, NS.XML, Attributes.Lang);
+		const parsed = this.parseCommonContent(el);
+
+		if (parsed.text || parsed.backgroundVocal) {
+			// 内联的音译和翻译不会出现逐字内容，只有 sidecar 里才会有逐字翻译和音译
+			const content = this.toTranslatedContent(parsed, true);
+
+			if (lang) {
+				content.language = lang;
+			}
+			return content;
+		}
+
+		return null;
+	}
+
+	private finalizeWords(words: Syllable[]): Syllable[] {
+		if (words.length === 0) return [];
+
+		words[0].text = words[0].text.trimStart();
+
+		const lastIdx = words.length - 1;
+		words[lastIdx].text = words[lastIdx].text.trimEnd();
+		words[lastIdx].endsWithSpace = false;
+
+		return words;
+	}
+
+	private getAttr(
+		element: Element,
+		ns: string,
+		localName: string,
+		fallbackAttrName?: string,
+	): string | null {
+		const val = element.getAttributeNS(ns, localName);
+		if (val) return val;
+
+		if (fallbackAttrName) {
+			const fallbackVal = element.getAttribute(fallbackAttrName);
+			if (fallbackVal) return fallbackVal;
+		}
+
+		if (element.hasAttributes()) {
+			const attributes = Array.from(element.attributes);
+			for (const attr of attributes) {
+				const attrLocalName = attr.localName || attr.nodeName.split(":").pop();
+
+				if (attrLocalName === localName) {
+					return attr.value;
+				}
+			}
+		}
+
+		return null;
+	}
 }

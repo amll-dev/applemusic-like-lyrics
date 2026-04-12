@@ -12,7 +12,7 @@ import { createLine, createWord, normalizeTimestamp } from "../utils";
 
 /**
  * 解析 LYL 格式的歌词字符串
- * @param src 歌词字符串
+ * @param lyl 歌词字符串
  * @returns 成功解析出来的歌词
  */
 export function parseLYL(lyl: string): LyricLine[] {

@@ -1,0 +1,127 @@
+/**
+ * 一些常量定义
+ * @module constants
+ * @internal
+ */
+
+export const NS = {
+	TT: "http://www.w3.org/ns/ttml",
+	TTM: "http://www.w3.org/ns/ttml#metadata",
+	ITUNES: "http://music.apple.com/lyric-ttml-internal",
+	AMLL: "http://www.example.com/ns/amll",
+	XML: "http://www.w3.org/XML/1998/namespace",
+	XMLNS: "http://www.w3.org/2000/xmlns/",
+	ITUNES_INTERNAL: "http://music.apple.com/lyric-ttml-internal",
+	TTS: "http://www.w3.org/ns/ttml#styling",
+} as const;
+
+export const Elements = {
+	TT: "tt",
+	Head: "head",
+	Body: "body",
+	Div: "div",
+	P: "p",
+	Span: "span",
+	Title: "title",
+	Name: "name",
+	Meta: "meta",
+	ITunesMetadata: "iTunesMetadata",
+	TTMLMetadata: "metadata",
+	Songwriters: "songwriters",
+	Songwriter: "songwriter",
+	Translation: "translation",
+	Translations: "translations",
+	Transliteration: "transliteration",
+	Transliterations: "transliterations",
+	Text: "text",
+	ParserError: "parsererror",
+	Agent: "agent",
+} as const;
+
+export const Attributes = {
+	Timing: "timing",
+	Id: "id",
+	Key: "key",
+	Value: "value",
+	Lang: "lang",
+	For: "for",
+	SongPart: "songPart",
+	SongPartKebab: "song-part",
+	Begin: "begin",
+	End: "end",
+	Role: "role",
+	Type: "type",
+	Dur: "dur",
+	Xmlns: "xmlns",
+	Ruby: "ruby",
+	Obscene: "obscene",
+	EmptyBeat: "empty-beat",
+} as const;
+
+export const QualifiedAttributes = {
+	ITunesTiming: "itunes:timing",
+	ITunesPart: "itunes:songPart",
+	ITunesKey: "itunes:key",
+	TTMAgent: "ttm:agent",
+	TTMRole: "ttm:role",
+	TTMName: "ttm:name",
+	AmllMeta: "amll:meta",
+	AmllObscene: "amll:obscene",
+	AmllEmptyBeat: "amll:empty-beat",
+	XmlLang: "xml:lang",
+	XmlId: "xml:id",
+	XmlnsTtm: "xmlns:ttm",
+	XmlnsTts: "xmlns:tts",
+	XmlnsItunes: "xmlns:itunes",
+	XmlnsAmll: "xmlns:amll",
+	TtsRuby: "tts:ruby",
+} as const;
+
+export const Values = {
+	Word: "Word",
+	Line: "Line",
+	MimeXML: "application/xml",
+	MusicName: "musicName",
+	Artists: "artists",
+	Album: "album",
+	ISRC: "isrc",
+	TTMLAuthorGithub: "ttmlAuthorGithub",
+	TTMLAuthorGithubLogin: "ttmlAuthorGithubLogin",
+	NCMMusicId: "ncmMusicId",
+	QQMusicId: "qqMusicId",
+	SpotifyId: "spotifyId",
+	AppleMusicId: "appleMusicId",
+	RoleBg: "x-bg",
+	RoleTranslation: "x-translation",
+	RoleRoman: "x-roman",
+	Group: "group",
+	Person: "person",
+	Other: "other",
+	Full: "full",
+	AgentGroup: "v1000",
+	AgentDefault: "v1",
+	AgentDefaultDuet: "v2",
+	RubyContainer: "container",
+	RubyBase: "base",
+	RubyTextContainer: "textContainer",
+	RubyText: "text",
+	True: "true",
+	TimingMode: "timingMode",
+	Language: "language",
+} as const;
+
+// 为了兼容 nodejs 环境而重新定义
+export enum NodeType {
+	ELEMENT_NODE = 1,
+	ATTRIBUTE_NODE = 2,
+	TEXT_NODE = 3,
+	CDATA_SECTION_NODE = 4,
+	ENTITY_REFERENCE_NODE = 5,
+	ENTITY_NODE = 6,
+	PROCESSING_INSTRUCTION_NODE = 7,
+	COMMENT_NODE = 8,
+	DOCUMENT_NODE = 9,
+	DOCUMENT_TYPE_NODE = 10,
+	DOCUMENT_FRAGMENT_NODE = 11,
+	NOTATION_NODE = 12,
+}

@@ -1,48 +1,53 @@
 {
-  "name": "@applemusic-like-lyrics/ttml",
-  "version": "0.2.0",
-  "description": "AMLL 的 TTML 歌词文件序列化和反序列化模块",
-  "repository": {
-    "url": "https://github.com/amll-dev/applemusic-like-lyrics.git",
-    "directory": "packages/ttml",
-    "type": "git"
-  },
-  "license": "GPL-3.0",
-  "nx": {
-    "tags": [
-      "library"
-    ],
-    "targets": {
-      "nx-release-publish": {
-        "executor": "@nx/js:release-publish",
-        "dependsOn": []
-      }
-    }
-  },
-  "type": "module",
-  "files": [
-    "dist"
-  ],
-  "main": "./dist/amll-ttml.umd.cjs",
-  "module": "./dist/amll-ttml.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    "types": "./dist/index.d.ts",
-    "import": "./dist/amll-ttml.js",
-    "require": "./dist/amll-ttml.umd.cjs"
-  },
-  "scripts": {
-    "build:docs": "typedoc --plugin typedoc-plugin-markdown --out docs src/index.ts",
-    "build": "vite build",
-    "build:dev": "vite build",
-    "fmt": "biome format --write ./src",
-    "dev": "vite dev",
-    "preinstall": "npx only-allow pnpm"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "catalog:",
-    "typescript": "^5.9.3",
-    "vite": "catalog:",
-    "vite-plugin-dts": "^4.3.0"
-  }
+	"name": "@applemusic-like-lyrics/ttml",
+	"version": "0.2.0",
+	"description": "AMLL 的 TTML 歌词文件序列化和反序列化模块",
+	"repository": {
+		"url": "https://github.com/amll-dev/applemusic-like-lyrics.git",
+		"directory": "packages/ttml",
+		"type": "git"
+	},
+	"license": "GPL-3.0",
+	"nx": {
+		"tags": [
+			"library"
+		],
+		"targets": {
+			"nx-release-publish": {
+				"executor": "@nx/js:release-publish",
+				"dependsOn": []
+			}
+		}
+	},
+	"type": "module",
+	"files": [
+		"dist"
+	],
+	"main": "./dist/amll-ttml.umd.cjs",
+	"module": "./dist/amll-ttml.js",
+	"types": "./dist/index.d.ts",
+	"exports": {
+		"types": "./dist/index.d.ts",
+		"import": "./dist/amll-ttml.js",
+		"require": "./dist/amll-ttml.umd.cjs"
+	},
+	"scripts": {
+		"build:docs": "typedoc --plugin typedoc-plugin-markdown --out docs src/index.ts",
+		"build": "vite build",
+		"build:dev": "vite build",
+		"fmt": "biome format --write ./src",
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"test:coverage": "vitest run --coverage"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "catalog:",
+		"@types/node": "^25.5.2",
+		"@xmldom/xmldom": "^0.8.12",
+		"typedoc": "catalog:",
+		"typescript": "^5.9.3",
+		"vite": "catalog:",
+		"vite-plugin-dts": "^4.3.0",
+		"vitest": "^3.2.4"
+	}
 }

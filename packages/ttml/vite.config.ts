@@ -3,13 +3,11 @@ import dts from "vite-plugin-dts";
 
 export default defineConfig({
 	build: {
+		minify: false,
 		lib: {
 			entry: "./src/index.ts",
 			name: "AppleMusicLikeLyricsTTML",
 			fileName: "amll-ttml",
-		},
-		rollupOptions: {
-			external: ["@applemusic-like-lyrics/core"],
 		},
 	},
 	plugins: [dts()],

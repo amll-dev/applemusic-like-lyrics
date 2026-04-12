@@ -550,6 +550,15 @@ importers:
       '@biomejs/biome':
         specifier: 'catalog:'
         version: 2.4.8
+      '@types/node':
+        specifier: ^25.5.2
+        version: 25.5.2
+      '@xmldom/xmldom':
+        specifier: ^0.8.12
+        version: 0.8.12
+      typedoc:
+        specifier: 'catalog:'
+        version: 0.28.18(typescript@5.9.3)
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -559,6 +568,9 @@ importers:
       vite-plugin-dts:
         specifier: ^4.3.0
         version: 4.5.4(@types/node@25.5.2)(rollup@4.60.1)(typescript@5.9.3)(vite@8.0.1(@emnapi/core@1.9.0)(@emnapi/runtime@1.9.2)(@types/node@25.5.2)(esbuild@0.27.7)(jiti@2.6.1)(sass@1.98.0)(yaml@2.8.3))
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.4(@types/debug@4.1.13)(@types/node@25.5.2)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.98.0)(yaml@2.8.3)
 
   packages/vue:
     dependencies:
@@ -4026,6 +4038,10 @@ packages:
         optional: true
       vue:
         optional: true
+
+  '@xmldom/xmldom@0.8.12':
+    resolution: {integrity: sha512-9k/gHF6n/pAi/9tqr3m3aqkuiNosYTurLLUtc7xQ9sxB/wm7WPygCv8GYa6mS0fLJEHhqMC1ATYhz++U/lRHqg==}
+    engines: {node: '>=10.0.0'}
 
   '@yarnpkg/lockfile@1.1.0':
     resolution: {integrity: sha512-GpSwvyXOcOOlV70vbnzjj4fW5xW/FdUF6nQEt1ENy7m4ZCczi1+/buVUPAqmGfqznsORNFzUMjctTIp8a9tuCQ==}
@@ -11325,6 +11341,8 @@ snapshots:
     optionalDependencies:
       typescript: 5.9.3
       vue: 3.5.30(typescript@5.9.3)
+
+  '@xmldom/xmldom@0.8.12': {}
 
   '@yarnpkg/lockfile@1.1.0': {}
 
