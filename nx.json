@@ -55,7 +55,7 @@
 		},
 		"changelog": {
 			"workspaceChangelog": false,
-			"projectChangelogs": false
+			"projectChangelogs": {}
 		},
 		"git": {
 			"commit": true,

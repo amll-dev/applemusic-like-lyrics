@@ -84,13 +84,13 @@ jobs:
           fi
 
       - name: Dry-run release
-        run: pnpm nx release --dry-run
+        run: pnpm nx release --dry-run --preid alpha
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create release commit and tags
         if: github.event.inputs.mode == 'publish'
-        run: pnpm nx release --skip-publish
+        run: pnpm nx release --skip-publish --preid alpha
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
