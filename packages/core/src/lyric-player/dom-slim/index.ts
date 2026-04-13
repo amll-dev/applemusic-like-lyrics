@@ -56,8 +56,11 @@ export class DomSlimLyricPlayer extends LyricPlayerBase {
 		this.debounceCalcLayout();
 	}
 
-	readonly supportPlusLighter = CSS.supports("mix-blend-mode", "plus-lighter");
-	readonly supportMaskImage = CSS.supports("mask-image", "none");
+	readonly supportPlusLighter: boolean = CSS.supports(
+		"mix-blend-mode",
+		"plus-lighter",
+	);
+	readonly supportMaskImage: boolean = CSS.supports("mask-image", "none");
 	readonly innerSize: [number, number] = [0, 0];
 	private readonly onLineClickedHandler = (e: RawLyricLineMouseEvent) => {
 		const evt = new LyricLineMouseEvent(
@@ -75,13 +78,13 @@ export class DomSlimLyricPlayer extends LyricPlayerBase {
 	 * 是否为非逐词歌词
 	 * @internal
 	 */
-	_getIsNonDynamic() {
+	_getIsNonDynamic(): boolean {
 		return this.isNonDynamic;
 	}
 	private _baseFontSize = Number.parseFloat(
 		getComputedStyle(this.element).fontSize,
 	);
-	public get baseFontSize() {
+	public get baseFontSize(): number {
 		return this._baseFontSize;
 	}
 	constructor() {
@@ -103,7 +106,7 @@ export class DomSlimLyricPlayer extends LyricPlayerBase {
 		);
 	}
 
-	override setWordFadeWidth(value = 0.5) {
+	override setWordFadeWidth(value = 0.5): void {
 		super.setWordFadeWidth(value);
 		for (const el of this.currentLyricLineObjects) {
 			el.markMaskImageDirty("DomLyricPlayer setWordFadeWidth");
@@ -115,7 +118,7 @@ export class DomSlimLyricPlayer extends LyricPlayerBase {
 	 * @param lines 歌词数组
 	 * @param initialTime 初始时间，默认为 0
 	 */
-	override setLyricLines(lines: LyricLine[], initialTime = 0) {
+	override setLyricLines(lines: LyricLine[], initialTime = 0): void {
 		super.setLyricLines(lines, initialTime);
 		if (this.hasDuetLine) {
 			this.element.classList.add(styles.hasDuetLine);
@@ -148,7 +151,7 @@ export class DomSlimLyricPlayer extends LyricPlayerBase {
 		});
 	}
 
-	override pause() {
+	override pause(): void {
 		super.pause();
 		this.interludeDots.pause();
 		for (const line of this.currentLyricLineObjects) {
@@ -156,7 +159,7 @@ export class DomSlimLyricPlayer extends LyricPlayerBase {
 		}
 	}
 
-	override resume() {
+	override resume(): void {
 		super.resume();
 		this.interludeDots.resume();
 		for (const line of this.currentLyricLineObjects) {
@@ -164,7 +167,7 @@ export class DomSlimLyricPlayer extends LyricPlayerBase {
 		}
 	}
 
-	override update(delta = 0) {
+	override update(delta = 0): void {
 		if (!this.initialLayoutFinished) return;
 		super.update(delta);
 		if (!this.isPageVisible) return;

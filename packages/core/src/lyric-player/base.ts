@@ -45,10 +45,11 @@ export abstract class LyricPlayerBase
 	protected bottomLine: BottomLineEl = new BottomLineEl(this);
 	protected enableBlur = true;
 	protected enableScale = true;
-	protected maskObsceneWords = MaskObsceneWordsMode.Disabled;
+	protected maskObsceneWords: MaskObsceneWordsMode =
+		MaskObsceneWordsMode.Disabled;
 	protected maskObsceneWordChar = "*";
 	protected hidePassedLines = false;
-	protected scrollBoundary = [0, 0];
+	protected scrollBoundary: [number, number] = [0, 0];
 	protected currentLyricLineObjects: LyricLineBase[] = [];
 	protected isSeeking = false;
 	protected lastCurrentTime = 0;
@@ -349,7 +350,7 @@ export abstract class LyricPlayerBase
 	 *
 	 * @param value 需要设置的渐变宽度，单位以歌词行的主文字字体大小的倍数为单位，默认为 0.5
 	 */
-	setWordFadeWidth(value = 0.5) {
+	setWordFadeWidth(value = 0.5): void {
 		this.wordFadeWidth = Math.max(0.0001, value);
 	}
 
@@ -361,7 +362,7 @@ export abstract class LyricPlayerBase
 	 * 此效果对性能影响微乎其微，推荐启用
 	 * @param enable 是否启用歌词行缩放效果
 	 */
-	setEnableScale(enable = true) {
+	setEnableScale(enable = true): void {
 		this.enableScale = enable;
 		this.calcLayout();
 	}
@@ -369,7 +370,7 @@ export abstract class LyricPlayerBase
 	 * 获取当前是否启用了歌词行缩放效果
 	 * @returns 是否启用歌词行缩放效果
 	 */
-	getEnableScale() {
+	getEnableScale(): boolean {
 		return this.enableScale;
 	}
 
@@ -377,18 +378,18 @@ export abstract class LyricPlayerBase
 	 * 获取当前文字动画的渐变宽度，单位以歌词行的主文字字体大小的倍数为单位
 	 * @returns 当前文字动画的渐变宽度，单位以歌词行的主文字字体大小的倍数为单位
 	 */
-	getWordFadeWidth() {
+	getWordFadeWidth(): number {
 		return this.wordFadeWidth;
 	}
 
-	setIsSeeking(isSeeking: boolean) {
+	setIsSeeking(isSeeking: boolean): void {
 		this.isSeeking = isSeeking;
 	}
 	/**
 	 * 设置是否隐藏已经播放过的歌词行，默认不隐藏
 	 * @param hide 是否隐藏已经播放过的歌词行，默认不隐藏
 	 */
-	setHidePassedLines(hide: boolean) {
+	setHidePassedLines(hide: boolean): void {
 		this.hidePassedLines = hide;
 		this.calcLayout();
 	}
@@ -396,7 +397,7 @@ export abstract class LyricPlayerBase
 	 * 设置是否启用歌词行的模糊效果
 	 * @param enable 是否启用
 	 */
-	setEnableBlur(enable: boolean) {
+	setEnableBlur(enable: boolean): void {
 		if (this.enableBlur === enable) return;
 		this.enableBlur = enable;
 		this.calcLayout();
@@ -407,7 +408,7 @@ export abstract class LyricPlayerBase
 	 * @param mode 掩码模式
 	 * @see {@link MaskObsceneWordsMode}
 	 */
-	setMaskObsceneWords(mode: MaskObsceneWordsMode) {
+	setMaskObsceneWords(mode: MaskObsceneWordsMode): void {
 		if (this.maskObsceneWords === mode) return;
 		this.maskObsceneWords = mode;
 		this.rebuildLyricLines();
@@ -418,7 +419,7 @@ export abstract class LyricPlayerBase
 	 * 设置不雅用语掩码使用的字符，默认为 `*`
 	 * @param char 单个字符，用于替换不雅用语中的字符
 	 */
-	setMaskObsceneWordChar(char: string) {
+	setMaskObsceneWordChar(char: string): void {
 		const c = char.charAt(0) || "*";
 		if (this.maskObsceneWordChar === c) return;
 		this.maskObsceneWordChar = c;
@@ -428,7 +429,7 @@ export abstract class LyricPlayerBase
 		}
 	}
 
-	rebuildLyricLines() {
+	rebuildLyricLines(): void {
 		for (const lineObj of this.currentLyricLineObjects) {
 			lineObj.rebuildElement();
 		}
@@ -481,14 +482,14 @@ export abstract class LyricPlayerBase
 	 * - 设置成 `center` 的话将会向目标歌词行的垂直中心对齐
 	 * @param alignAnchor 歌词行对齐方式，详情见函数说明
 	 */
-	setAlignAnchor(alignAnchor: "top" | "bottom" | "center") {
+	setAlignAnchor(alignAnchor: "top" | "bottom" | "center"): void {
 		this.alignAnchor = alignAnchor;
 	}
 	/**
 	 * 设置默认的歌词行对齐位置，相对于整个歌词播放组件的大小位置，默认为 `0.5`
 	 * @param alignPosition 一个 `[0.0-1.0]` 之间的任意数字，代表组件高度由上到下的比例位置
 	 */
-	setAlignPosition(alignPosition: number) {
+	setAlignPosition(alignPosition: number): void {
 		this.alignPosition = alignPosition;
 	}
 
@@ -496,11 +497,11 @@ export abstract class LyricPlayerBase
 	 * 设置 overscan（视图上下额外缓冲渲染区）距离，单位：像素。
 	 * @param px 像素值，默认 300
 	 */
-	setOverscanPx(px: number) {
+	setOverscanPx(px: number): void {
 		this.overscanPx = Math.max(0, px | 0);
 	}
 	/** 获取当前 overscan 像素距离 */
-	getOverscanPx() {
+	getOverscanPx(): number {
 		return this.overscanPx;
 	}
 	/**
@@ -510,7 +511,7 @@ export abstract class LyricPlayerBase
 	 *
 	 * 如果不启用，则会回退到基于 `transition` 的过渡效果，对低性能的机器比较友好，但是效果会比较单一
 	 */
-	setEnableSpring(enable = true) {
+	setEnableSpring(enable = true): void {
 		this.disableSpring = !enable;
 		if (enable) {
 			this.element.classList.remove(styles.disableSpring);
@@ -523,7 +524,7 @@ export abstract class LyricPlayerBase
 	 * 获取当前是否启用了物理弹簧
 	 * @returns 是否启用物理弹簧
 	 */
-	getEnableSpring() {
+	getEnableSpring(): boolean {
 		return !this.disableSpring;
 	}
 
@@ -577,7 +578,7 @@ export abstract class LyricPlayerBase
 	 * @param options 优化配置选项
 	 * @see {@link OptimizeLyricOptions}
 	 */
-	setOptimizeOptions(options: OptimizeLyricOptions) {
+	setOptimizeOptions(options: OptimizeLyricOptions): void {
 		this.optimizeOptions = { ...this.optimizeOptions, ...options };
 	}
 
@@ -586,7 +587,7 @@ export abstract class LyricPlayerBase
 	 * @param lines 歌词数组
 	 * @param initialTime 初始时间，默认为 0
 	 */
-	setLyricLines(lines: LyricLine[], initialTime = 0) {
+	setLyricLines(lines: LyricLine[], initialTime = 0): void {
 		if (import.meta.env.DEV) {
 			console.log("设置歌词行", lines, initialTime);
 		}
@@ -626,7 +627,7 @@ export abstract class LyricPlayerBase
 	 * 获取当前是否在播放
 	 * @returns 当前是否在播放
 	 */
-	public getIsPlaying() {
+	public getIsPlaying(): boolean {
 		return this.isPlaying;
 	}
 
@@ -637,7 +638,7 @@ export abstract class LyricPlayerBase
 	 * 调用完成后，可以每帧调用 `update` 函数来执行歌词动画效果
 	 * @param time 当前播放进度，单位为毫秒
 	 */
-	setCurrentTime(time: number, isSeek = false) {
+	setCurrentTime(time: number, isSeek = false): void {
 		// 我在这里定义了歌词的选择状态：
 		// 普通行：当前不处于时间范围内的歌词行
 		// 热行：当前绝对处于播放时间内的歌词行，且一般会被立刻加入到缓冲行中
@@ -797,7 +798,7 @@ export abstract class LyricPlayerBase
 		this.lastCurrentTime = time;
 	}
 
-	protected updateDynamicSpringParams() {
+	protected updateDynamicSpringParams(): void {
 		if (!this.getEnableSpring() || this.processedLines.length === 0) return;
 
 		const currentIndex = this.scrollToIndex;
@@ -854,7 +855,7 @@ export abstract class LyricPlayerBase
 	 * @param sync 是否同步执行，通常用于初始化或 Resize 时立即布局
 	 * @param force 是否绕过弹簧效果强制更新位置
 	 */
-	async calcLayout(sync = false, force = false) {
+	async calcLayout(sync = false, force = false): Promise<void> {
 		const interlude = this.getCurrentInterlude();
 		const isInterludeActive = !!interlude;
 
@@ -1065,13 +1066,13 @@ export abstract class LyricPlayerBase
 	 * @param params 需要设置的弹簧属性，提供的属性将会覆盖原来的属性，未提供的属性将会保持原样
 	 * @deprecated 考虑到横向弹簧效果并不常见，所以这个函数将会在未来的版本中移除
 	 */
-	setLinePosXSpringParams(_params: Partial<SpringParams> = {}) {}
+	setLinePosXSpringParams(_params: Partial<SpringParams> = {}): void {}
 	/**
 	 * 设置所有歌词行在​纵坐标上的弹簧属性，包括重量、弹力和阻力。
 	 *
 	 * @param params 需要设置的弹簧属性，提供的属性将会覆盖原来的属性，未提供的属性将会保持原样
 	 */
-	setLinePosYSpringParams(params: Partial<SpringParams> = {}) {
+	setLinePosYSpringParams(params: Partial<SpringParams> = {}): void {
 		this.posYSpringParams = {
 			...this.posYSpringParams,
 			...params,
@@ -1086,7 +1087,7 @@ export abstract class LyricPlayerBase
 	 *
 	 * @param params 需要设置的弹簧属性，提供的属性将会覆盖原来的属性，未提供的属性将会保持原样
 	 */
-	setLineScaleSpringParams(params: Partial<SpringParams> = {}) {
+	setLineScaleSpringParams(params: Partial<SpringParams> = {}): void {
 		this.scaleSpringParams = {
 			...this.scaleSpringParams,
 			...params,
@@ -1107,7 +1108,7 @@ export abstract class LyricPlayerBase
 	/**
 	 * 暂停部分效果演出，目前会暂停播放间奏点的动画，且将背景歌词显示出来
 	 */
-	pause() {
+	pause(): void {
 		this.interludeDots.pause();
 		if (this.isPlaying) {
 			this.isPlaying = false;
@@ -1117,7 +1118,7 @@ export abstract class LyricPlayerBase
 	/**
 	 * 恢复部分效果演出，目前会恢复播放间奏点的动画
 	 */
-	resume() {
+	resume(): void {
 		this.interludeDots.resume();
 		if (!this.isPlaying) {
 			this.isPlaying = true;
@@ -1131,12 +1132,12 @@ export abstract class LyricPlayerBase
 	 * @param delta 距离上一次被调用到现在的时长，单位为毫秒（可为浮点数）
 	 */
 
-	update(delta = 0) {
+	update(delta = 0): void {
 		this.bottomLine.update(delta / 1000);
 		this.interludeDots.update(delta);
 	}
 
-	protected onResize() {}
+	protected onResize(): void {}
 
 	/**
 	 * 获取一个特殊的底栏元素，默认是空白的，可以往内部添加任意元素
@@ -1155,7 +1156,7 @@ export abstract class LyricPlayerBase
 	 *
 	 * 请在用户完成滚动点击跳转歌词时调用本事件再调用 `calcLayout` 以正确滚动到目标位置
 	 */
-	resetScroll() {
+	resetScroll(): void {
 		this.isScrolled = false;
 		this.scrollOffset = 0;
 		clearTimeout(this.scrolledHandler);
@@ -1167,7 +1168,7 @@ export abstract class LyricPlayerBase
 	 * 一般和最后调用 `setLyricLines` 给予的参数一样
 	 * @returns 当前歌词数组
 	 */
-	getLyricLines() {
+	getLyricLines(): LyricLine[] {
 		return this.currentLyricLines;
 	}
 	/**
@@ -1176,7 +1177,7 @@ export abstract class LyricPlayerBase
 	 * 一般和最后调用 `setCurrentTime` 给予的参数一样
 	 * @returns 当前播放位置
 	 */
-	getCurrentTime() {
+	getCurrentTime(): number {
 		return this.currentTime;
 	}
 
@@ -1190,6 +1191,11 @@ export abstract class LyricPlayerBase
 	}
 }
 
+interface LineTransforms {
+	posY: Spring;
+	scale: Spring;
+}
+
 /**
  * 所有标准歌词行的基类
  * @internal
@@ -1200,7 +1206,7 @@ export abstract class LyricLineBase extends EventTarget implements Disposable {
 	protected blur = 0;
 	protected opacity = 1;
 	protected delay = 0;
-	readonly lineTransforms = {
+	readonly lineTransforms: LineTransforms = {
 		posY: new Spring(0),
 		scale: new Spring(100),
 	};
@@ -1217,8 +1223,8 @@ export abstract class LyricLineBase extends EventTarget implements Disposable {
 		blur: number = this.blur,
 		_force = false,
 		delay = 0,
-		_mode = LyricLineRenderMode.SOLID,
-	) {
+		_mode: LyricLineRenderMode = LyricLineRenderMode.SOLID,
+	): void {
 		this.top = top;
 		this.scale = scale;
 		this.opacity = opacity;
@@ -1226,7 +1232,7 @@ export abstract class LyricLineBase extends EventTarget implements Disposable {
 		this.delay = delay;
 	}
 
-	rebuildElement() {}
+	rebuildElement(): void {}
 
 	/**
 	 * 判定歌词是否可以应用强调辉光效果
@@ -1248,5 +1254,5 @@ export abstract class LyricLineBase extends EventTarget implements Disposable {
 		);
 	}
 	abstract update(delta?: number): void;
-	dispose() {}
+	dispose(): void {}
 }

@@ -61,10 +61,10 @@ export class BackgroundRender<Renderer extends BaseRenderer>
 	): Promise<void> {
 		return this.renderer.setAlbum(albumSource, isVideo);
 	}
-	getElement() {
+	getElement(): HTMLCanvasElement {
 		return this.element;
 	}
-	dispose() {
+	dispose(): void {
 		this.renderer.dispose();
 		this.element.remove();
 	}

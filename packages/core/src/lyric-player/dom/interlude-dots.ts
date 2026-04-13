@@ -35,15 +35,15 @@ export class InterludeDots implements HasElement, Disposable {
 		this.element.appendChild(this.dot1);
 		this.element.appendChild(this.dot2);
 	}
-	getElement() {
+	getElement(): HTMLElement {
 		return this.element;
 	}
-	setTransform(left: number = this.left, top: number = this.top) {
+	setTransform(left: number = this.left, top: number = this.top): void {
 		this.left = left;
 		this.top = top;
 		this.update();
 	}
-	setInterlude(interlude?: [number, number]) {
+	setInterlude(interlude?: [number, number]): void {
 		this.currentInterlude = interlude;
 		this.currentTime = interlude?.[0] ?? 0;
 		if (interlude) {
@@ -52,15 +52,15 @@ export class InterludeDots implements HasElement, Disposable {
 			this.element.classList.remove(styles.enabled);
 		}
 	}
-	pause() {
+	pause(): void {
 		this.playing = false;
 		this.element.classList.remove(styles.playing);
 	}
-	resume() {
+	resume(): void {
 		this.playing = true;
 		this.element.classList.add(styles.playing);
 	}
-	update(delta = 0) {
+	update(delta = 0): void {
 		if (!this.playing) return;
 		this.currentTime += delta;
 		let curStyle = "";
@@ -165,7 +165,7 @@ export class InterludeDots implements HasElement, Disposable {
 			}
 		}
 	}
-	dispose() {
+	dispose(): void {
 		this.element.remove();
 	}
 }

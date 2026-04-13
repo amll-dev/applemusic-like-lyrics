@@ -4,6 +4,11 @@ import { measure } from "../utils/schedule.ts";
 import { Spring } from "../utils/spring.ts";
 import type { LyricPlayerBase } from "./base.ts";
 
+interface LineTransforms {
+	posX: Spring;
+	posY: Spring;
+}
+
 export class BottomLineEl implements HasElement, Disposable {
 	private element: HTMLElement = document.createElement("div");
 	private left = 0;
@@ -11,7 +16,7 @@ export class BottomLineEl implements HasElement, Disposable {
 	private delay = 0;
 	// 由 LyricPlayer 来设置
 	lineSize: [number, number] = [0, 0];
-	readonly lineTransforms = {
+	readonly lineTransforms: LineTransforms = {
 		posX: new Spring(0),
 		posY: new Spring(0),
 	};
@@ -33,13 +38,13 @@ export class BottomLineEl implements HasElement, Disposable {
 		return size;
 	}
 	private lastStyle = "";
-	show() {
+	show(): void {
 		this.rebuildStyle();
 	}
-	hide() {
+	hide(): void {
 		this.rebuildStyle();
 	}
-	setFocused(focused: boolean) {
+	setFocused(focused: boolean): void {
 		if (this.isFocused !== focused) {
 			this.isFocused = focused;
 			if (focused) {
@@ -67,7 +72,7 @@ export class BottomLineEl implements HasElement, Disposable {
 			this.element.setAttribute("style", style);
 		}
 	}
-	getElement() {
+	getElement(): HTMLElement {
 		return this.element;
 	}
 	setTransform(
@@ -76,7 +81,7 @@ export class BottomLineEl implements HasElement, Disposable {
 		blur = 0,
 		force = false,
 		delay = 0,
-	) {
+	): void {
 		this.left = left;
 		this.top = top;
 		this.delay = (delay * 1000) | 0;
@@ -98,7 +103,7 @@ export class BottomLineEl implements HasElement, Disposable {
 			this.lineTransforms.posY.setTargetPosition(top, delay);
 		}
 	}
-	update(delta = 0) {
+	update(delta = 0): void {
 		if (!this.lyricPlayer.getEnableSpring()) return;
 		this.lineTransforms.posX.update(delta);
 		this.lineTransforms.posY.update(delta);
@@ -108,7 +113,7 @@ export class BottomLineEl implements HasElement, Disposable {
 			this.hide();
 		}
 	}
-	get isInSight() {
+	get isInSight(): boolean {
 		const l = this.lineTransforms.posX.getCurrentPosition();
 		const t = this.lineTransforms.posY.getCurrentPosition();
 		const r = l + this.lineSize[0];

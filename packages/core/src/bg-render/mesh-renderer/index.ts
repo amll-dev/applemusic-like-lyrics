@@ -353,10 +353,10 @@ class Mesh implements Disposable {
 }
 
 class ControlPoint {
-	color = Vec3.fromValues(1, 1, 1);
-	location = Vec2.fromValues(0, 0);
-	uTangent = Vec2.fromValues(0, 0);
-	vTangent = Vec2.fromValues(0, 0);
+	color: Vec3 = Vec3.fromValues(1, 1, 1);
+	location: Vec2 = Vec2.fromValues(0, 0);
+	uTangent: Vec2 = Vec2.fromValues(0, 0);
+	vTangent: Vec2 = Vec2.fromValues(0, 0);
 	private _uRot = 0;
 	private _vRot = 0;
 	private _uScale = 1;
@@ -809,11 +809,11 @@ export class MeshGradientRenderer extends BaseRenderer {
 	private currentFPS = 0;
 	private enablePerformanceMonitoring = false;
 
-	setManualControl(enable: boolean) {
+	setManualControl(enable: boolean): void {
 		this.manualControl = enable;
 	}
 
-	setWireFrame(enable: boolean) {
+	setWireFrame(enable: boolean): void {
 		for (const state of this.meshStates) {
 			state.mesh.setWireFrame(enable);
 		}
@@ -826,14 +826,15 @@ export class MeshGradientRenderer extends BaseRenderer {
 		);
 	}
 
-	resizeControlPoints(width: number, height: number) {
-		return this.meshStates[
-			this.meshStates.length - 1
-		]?.mesh?.resizeControlPoints(width, height);
+	resizeControlPoints(width: number, height: number): void {
+		this.meshStates[this.meshStates.length - 1]?.mesh?.resizeControlPoints(
+			width,
+			height,
+		);
 	}
 
-	resetSubdivition(subDivisions: number) {
-		return this.meshStates[this.meshStates.length - 1]?.mesh?.resetSubdivition(
+	resetSubdivition(subDivisions: number): void {
+		this.meshStates[this.meshStates.length - 1]?.mesh?.resetSubdivition(
 			subDivisions,
 		);
 	}
@@ -1325,7 +1326,7 @@ export class MeshGradientRenderer extends BaseRenderer {
 		}
 	}
 
-	enablePerformanceMonitor(enable: boolean) {
+	enablePerformanceMonitor(enable: boolean): void {
 		this.enablePerformanceMonitoring = enable;
 		if (enable) {
 			this.frameCount = 0;

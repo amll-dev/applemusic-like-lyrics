@@ -49,7 +49,7 @@ export class Spring {
 		this.getV = getVelocity(this.currentSolver);
 		this.getV2 = getVelocity(this.getV);
 	}
-	arrived() {
+	arrived(): boolean {
 		return (
 			Math.abs(this.targetPosition - this.currentPosition) < 0.01 &&
 			this.getV(this.currentTime) < 0.01 &&
@@ -58,14 +58,14 @@ export class Spring {
 			this.queuePosition === undefined
 		);
 	}
-	setPosition(targetPosition: number) {
+	setPosition(targetPosition: number): void {
 		this.targetPosition = targetPosition;
 		this.currentPosition = targetPosition;
 		this.currentSolver = () => this.targetPosition;
 		this.getV = () => 0;
 		this.getV2 = () => 0;
 	}
-	update(delta = 0) {
+	update(delta = 0): void {
 		this.currentTime += delta;
 		this.currentPosition = this.currentSolver(this.currentTime);
 		if (this.queueParams) {
@@ -86,7 +86,7 @@ export class Spring {
 			this.setPosition(this.targetPosition);
 		}
 	}
-	updateParams(params: Partial<SpringParams>, delay = 0) {
+	updateParams(params: Partial<SpringParams>, delay = 0): void {
 		if (delay > 0) {
 			this.queueParams = {
 				...(this.queuePosition ?? {}),
@@ -102,7 +102,7 @@ export class Spring {
 			this.resetSolver();
 		}
 	}
-	setTargetPosition(targetPosition: number, delay = 0) {
+	setTargetPosition(targetPosition: number, delay = 0): void {
 		if (delay > 0) {
 			this.queuePosition = {
 				...(this.queuePosition ?? {}),
@@ -115,7 +115,7 @@ export class Spring {
 			this.resetSolver();
 		}
 	}
-	getCurrentPosition() {
+	getCurrentPosition(): number {
 		return this.currentPosition;
 	}
 }

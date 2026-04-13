@@ -85,7 +85,7 @@ export abstract class BaseRenderer extends AbstractBaseRenderer {
 		});
 		this.observer.observe(canvas);
 	}
-	setRenderScale(scale: number) {
+	setRenderScale(scale: number): void {
 		this.currerntRenderScale = scale;
 		this.onResize(
 			this.canvas.clientWidth *
@@ -111,7 +111,7 @@ export abstract class BaseRenderer extends AbstractBaseRenderer {
 	 * 修改背景的流动速度，数字越大越快，默认为 1
 	 * @param speed 背景的流动速度，默认为 1
 	 */
-	setFlowSpeed(speed: number) {
+	setFlowSpeed(speed: number): void {
 		this.flowSpeed = speed;
 	}
 	/**

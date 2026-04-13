@@ -143,7 +143,6 @@ export class LyricLineEl extends LyricLineBase {
 			e.preventDefault();
 			e.stopPropagation();
 			e.stopImmediatePropagation();
-			return false;
 		}
 	};
 
@@ -176,7 +175,7 @@ export class LyricLineEl extends LyricLineBase {
 		}
 	}
 
-	areWordsOnSameLine(word1: RealWord, word2: RealWord) {
+	areWordsOnSameLine(word1: RealWord, word2: RealWord): boolean {
 		if (word1?.mainElement && word2?.mainElement) {
 			const word1el = word1.mainElement;
 			const word2el = word2.mainElement;
@@ -196,9 +195,9 @@ export class LyricLineEl extends LyricLineBase {
 
 	private isEnabled = false;
 	async enable(
-		maskAnimationTime = this.lyricLine.startTime,
+		maskAnimationTime: number = this.lyricLine.startTime,
 		shouldPlay = true,
-	) {
+	): Promise<void> {
 		this.isEnabled = true;
 		this.element.classList.add(styles.active);
 		const main = this.element.children[0] as HTMLDivElement;
@@ -254,7 +253,7 @@ export class LyricLineEl extends LyricLineBase {
 		main.classList.add(styles.active);
 	}
 
-	disable() {
+	disable(): void {
 		this.isEnabled = false;
 		this.element.classList.remove(styles.active);
 		this.renderMode = LyricLineRenderMode.SOLID;
@@ -281,7 +280,7 @@ export class LyricLineEl extends LyricLineBase {
 
 	private lastWord?: RealWord;
 
-	async resume() {
+	async resume(): Promise<void> {
 		if (!this.isEnabled) return;
 		for (const word of this.splittedWords) {
 			for (const a of word.elementAnimations) {
@@ -323,7 +322,7 @@ export class LyricLineEl extends LyricLineBase {
 		}
 	}
 
-	async pause() {
+	async pause(): Promise<void> {
 		if (!this.isEnabled) return;
 		for (const word of this.splittedWords) {
 			for (const a of word.elementAnimations) {
@@ -334,7 +333,7 @@ export class LyricLineEl extends LyricLineBase {
 			}
 		}
 	}
-	setMaskAnimationState(maskAnimationTime = 0) {
+	setMaskAnimationState(maskAnimationTime = 0): void {
 		const t = maskAnimationTime - this.lyricLine.startTime;
 		for (const word of this.splittedWords) {
 			for (const a of word.maskAnimations) {
@@ -346,13 +345,13 @@ export class LyricLineEl extends LyricLineBase {
 		}
 	}
 
-	getLine() {
+	getLine(): LyricLine {
 		return this.lyricLine;
 	}
 	// private _hide = true;
 	private _prevParentEl: HTMLElement;
 	private lastStyle = "";
-	show() {
+	show(): void {
 		// this._hide = false;
 		if (!this.element.parentElement) {
 			this._prevParentEl.appendChild(this.element);
@@ -365,7 +364,7 @@ export class LyricLineEl extends LyricLineBase {
 		}
 		this.rebuildStyle();
 	}
-	hide() {
+	hide(): void {
 		// this._hide = true;
 		if (this.element.parentElement) {
 			this._prevParentEl.removeChild(this.element);
@@ -394,7 +393,7 @@ export class LyricLineEl extends LyricLineBase {
 		}
 	}
 
-	override rebuildElement() {
+	override rebuildElement(): void {
 		this.disposeElements();
 		const main = this.element.children[0] as HTMLDivElement;
 		const trans = this.element.children[1] as HTMLDivElement;
@@ -742,10 +741,10 @@ export class LyricLineEl extends LyricLineBase {
 		return this.lyricLine.endTime - this.lyricLine.startTime;
 	}
 
-	override onLineSizeChange(_size: [number, number]) {
+	override onLineSizeChange(_size: [number, number]): void {
 		this.updateMaskImageSync();
 	}
-	updateMaskImageSync() {
+	updateMaskImageSync(): void {
 		for (const word of this.splittedWords) {
 			const el = word.mainElement;
 			if (el) {
@@ -995,7 +994,7 @@ export class LyricLineEl extends LyricLineBase {
 			}
 		});
 	}
-	getElement() {
+	getElement(): HTMLElement {
 		return this.element;
 	}
 
@@ -1061,7 +1060,7 @@ export class LyricLineEl extends LyricLineBase {
 		force = false,
 		delay = 0,
 		mode: LyricLineRenderMode = LyricLineRenderMode.SOLID,
-	) {
+	): void {
 		super.setTransform(top, scale, opacity, blur, force, delay);
 		this.renderMode = mode;
 		const beforeInSight = this.isInSight;
@@ -1120,7 +1119,7 @@ export class LyricLineEl extends LyricLineBase {
 		}
 	}
 
-	update(delta = 0) {
+	update(delta = 0): void {
 		if (!this.lyricPlayer.getEnableSpring()) return;
 
 		this.lineTransforms.posY.update(delta);
@@ -1141,7 +1140,7 @@ export class LyricLineEl extends LyricLineBase {
 		return `[位移: ${this.top}; 缩放: ${this.scale}; 延时: ${this.delay}]`;
 	}
 
-	get isInSight() {
+	get isInSight(): boolean {
 		const t = this.lineTransforms.posY.getCurrentPosition();
 		const h = this.lyricPlayer.lyricLinesSize.get(this)?.[1] ?? 0;
 		const b = t + h;

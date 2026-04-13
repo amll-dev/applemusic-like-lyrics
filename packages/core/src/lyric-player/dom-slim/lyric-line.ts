@@ -135,7 +135,6 @@ export class LyricLineEl extends LyricLineBase {
 			e.preventDefault();
 			e.stopPropagation();
 			e.stopImmediatePropagation();
-			return false;
 		}
 	};
 
@@ -168,7 +167,7 @@ export class LyricLineEl extends LyricLineBase {
 		}
 	}
 
-	areWordsOnSameLine(word1: RealWord, word2: RealWord) {
+	areWordsOnSameLine(word1: RealWord, word2: RealWord): boolean {
 		if (word1?.mainElement && word2?.mainElement) {
 			const word1el = word1.mainElement;
 			const word2el = word2.mainElement;
@@ -187,7 +186,9 @@ export class LyricLineEl extends LyricLineBase {
 	}
 
 	private isEnabled = false;
-	async enable(maskAnimationTime = this.lyricLine.startTime) {
+	async enable(
+		maskAnimationTime: number = this.lyricLine.startTime,
+	): Promise<void> {
 		this.isEnabled = true;
 		this.element.classList.add(styles.active);
 		await this.waitMaskImageUpdated();
@@ -209,7 +210,7 @@ export class LyricLineEl extends LyricLineBase {
 		}
 		main.classList.add(styles.active);
 	}
-	disable() {
+	disable(): void {
 		this.isEnabled = false;
 		this.element.classList.remove(styles.active);
 		const main = this.element.children[0] as HTMLDivElement;
@@ -227,7 +228,7 @@ export class LyricLineEl extends LyricLineBase {
 		main.classList.remove(styles.active);
 	}
 	private lastWord?: RealWord;
-	async resume() {
+	async resume(): Promise<void> {
 		await this.waitMaskImageUpdated();
 		if (!this.isEnabled) return;
 		for (const word of this.splittedWords) {
@@ -251,7 +252,7 @@ export class LyricLineEl extends LyricLineBase {
 			}
 		}
 	}
-	async pause() {
+	async pause(): Promise<void> {
 		await this.waitMaskImageUpdated();
 		if (!this.isEnabled) return;
 		for (const word of this.splittedWords) {
@@ -263,7 +264,7 @@ export class LyricLineEl extends LyricLineBase {
 			}
 		}
 	}
-	setMaskAnimationState(maskAnimationTime = 0) {
+	setMaskAnimationState(maskAnimationTime = 0): void {
 		const t = maskAnimationTime - this.lyricLine.startTime;
 		for (const word of this.splittedWords) {
 			for (const a of word.maskAnimations) {
@@ -298,17 +299,17 @@ export class LyricLineEl extends LyricLineBase {
 		},
 	);
 
-	getLine() {
+	getLine(): LyricLine {
 		return this.lyricLine;
 	}
-	show() {
+	show(): void {
 		// this._hide = false;
 		// if (!this.measureLockMark && !this.element.parentElement) {
 		// 	this._prevParentEl.appendChild(this.element);
 		// }
 		this.rebuildStyle();
 	}
-	hide() {
+	hide(): void {
 		// this._hide = true;
 		// if (!this.measureLockMark && this.element.parentElement) {
 		// 	this._prevParentEl.removeChild(this.element);
@@ -388,7 +389,7 @@ export class LyricLineEl extends LyricLineBase {
 
 		return { mainWordEl, subElements };
 	}
-	override rebuildElement() {
+	override rebuildElement(): void {
 		this.disposeElements();
 		const main = this.element.children[0] as HTMLDivElement;
 		const trans = this.element.children[1] as HTMLDivElement;
@@ -672,7 +673,7 @@ export class LyricLineEl extends LyricLineBase {
 	waitMaskImageUpdated(): Promise<void> {
 		return this.markImageDirtyPromise;
 	}
-	async updateMaskImage() {
+	async updateMaskImage(): Promise<void> {
 		if (
 			!this.element.checkVisibility({
 				contentVisibilityAuto: true,
@@ -930,7 +931,7 @@ export class LyricLineEl extends LyricLineBase {
 			}
 		});
 	}
-	getElement() {
+	getElement(): HTMLElement {
 		return this.element;
 	}
 	override setTransform(
@@ -940,7 +941,7 @@ export class LyricLineEl extends LyricLineBase {
 		blur = 0,
 		force = false,
 		delay = 0,
-	) {
+	): void {
 		super.setTransform(top, scale, opacity, blur, force, delay);
 		const beforeInSight = this.isInSight;
 		const enableSpring = this.lyricPlayer.getEnableSpring();
@@ -981,7 +982,7 @@ export class LyricLineEl extends LyricLineBase {
 			this.lineTransforms.scale.setTargetPosition(scale);
 		}
 	}
-	update(delta = 0) {
+	update(delta = 0): void {
 		if (!this.lyricPlayer.getEnableSpring()) return;
 		this.lineTransforms.posY.update(delta);
 		this.lineTransforms.scale.update(delta);
@@ -1044,7 +1045,7 @@ export class LyricLineEl extends LyricLineBase {
 		return `[位移: ${this.top}; 缩放: ${this.scale}; 延时: ${this.delay}]`;
 	}
 
-	get isInSight() {
+	get isInSight(): boolean {
 		const t = this.lineTransforms.posY.getCurrentPosition();
 		const h = this.lineSize[1];
 		const b = t + h;
