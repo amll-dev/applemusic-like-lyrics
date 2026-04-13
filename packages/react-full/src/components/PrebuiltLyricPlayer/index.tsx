@@ -37,15 +37,15 @@ import { PrebuiltToggleIconButtonType } from "../ToggleIconButton/prebuilt-enum"
 
 import { VolumeControl } from "../VolumeControlSlider";
 
-import IconForward from "./icon_forward.svg";
-import IconPause from "./icon_pause.svg";
-import IconPlay from "./icon_play.svg";
-import IconRewind from "./icon_rewind.svg";
-import RepeatIcon from "./repeat.svg";
-import RepeatActiveIcon from "./repeat-active.svg";
-import RepeatOneActiveIcon from "./repeat-one-active.svg";
-import ShuffleIcon from "./shuffle.svg";
-import ShuffleActiveIcon from "./shuffle-active.svg";
+import IconForward from "./icon_forward.svg?react";
+import IconPause from "./icon_pause.svg?react";
+import IconPlay from "./icon_play.svg?react";
+import IconRewind from "./icon_rewind.svg?react";
+import RepeatIcon from "./repeat.svg?react";
+import RepeatActiveIcon from "./repeat-active.svg?react";
+import RepeatOneActiveIcon from "./repeat-one-active.svg?react";
+import ShuffleIcon from "./shuffle.svg?react";
+import ShuffleActiveIcon from "./shuffle-active.svg?react";
 
 import "./icon-animations.css";
 import React from "react";

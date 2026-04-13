@@ -1,18 +1,18 @@
 import classNames from "classnames";
 import { type FC, type HTMLProps, memo, type ReactNode } from "react";
-import airplayIcon from "../IconButton/airplay.svg";
+import airplayIcon from "../IconButton/airplay.svg?react";
 import styles from "./index.module.css";
-import lyricsOffIcon from "./lyrics_off.svg";
-import lyricsOnIcon from "./lyrics_on.svg";
-import playlistOffIcon from "./playlist_off.svg";
-import playlistOnIcon from "./playlist_on.svg";
+import lyricsOffIcon from "./lyrics_off.svg?react";
+import lyricsOnIcon from "./lyrics_on.svg?react";
+import playlistOffIcon from "./playlist_off.svg?react";
+import playlistOnIcon from "./playlist_on.svg?react";
 import { PrebuiltToggleIconButtonType } from "./prebuilt-enum";
-import repeatOffIcon from "./repeat_off.svg";
-import repeatOnNormalIcon from "./repeat_on_normal.svg";
-import shuffleOffIcon from "./shuffle_off.svg";
-import shuffleOnIcon from "./shuffle_on.svg";
-import starIcon from "./star.svg";
-import starFilledIcon from "./star_filled.svg";
+import repeatOffIcon from "./repeat_off.svg?react";
+import repeatOnNormalIcon from "./repeat_on_normal.svg?react";
+import shuffleOffIcon from "./shuffle_off.svg?react";
+import shuffleOnIcon from "./shuffle_on.svg?react";
+import starIcon from "./star.svg?react";
+import starFilledIcon from "./star_filled.svg?react";
 
 export const ToggleIconButton: FC<
 	{

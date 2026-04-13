@@ -74,7 +74,7 @@
 		"@biomejs/biome": "catalog:",
 		"@radix-ui/themes": "^3.3.0",
 		"@rolldown/plugin-babel": "catalog:",
-		"@svgr/rollup": "^8.1.0",
+		"@svgr/core": "^8.1.0",
 		"@tsdown/css": "catalog:",
 		"@types/react": "catalog:",
 		"@types/react-dom": "catalog:",
@@ -84,6 +84,7 @@
 		"react-compiler-runtime": "^1.0.0",
 		"tsdown": "catalog:",
 		"typedoc": "catalog:",
-		"typedoc-plugin-markdown": "catalog:"
+		"typedoc-plugin-markdown": "catalog:",
+		"vite-plugin-svgr": "^5.2.0"
 	}
 }

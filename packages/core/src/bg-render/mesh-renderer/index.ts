@@ -15,8 +15,8 @@ import { BaseRenderer } from "../base.ts";
 import { blurImage } from "../img.ts";
 import { generateControlPoints } from "./cp-generate.ts";
 import { CONTROL_POINT_PRESETS } from "./cp-presets.ts";
-import meshFragShader from "./mesh.frag.glsl";
-import meshVertShader from "./mesh.vert.glsl";
+import meshFragShader from "./mesh.frag.glsl?raw";
+import meshVertShader from "./mesh.vert.glsl?raw";
 
 const quadVertShader = `
 attribute vec2 a_pos;

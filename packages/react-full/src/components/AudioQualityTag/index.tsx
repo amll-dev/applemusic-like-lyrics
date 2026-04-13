@@ -1,8 +1,8 @@
 import classNames from "classnames";
 import { motion, type Variants } from "framer-motion";
 import { forwardRef, type HTMLProps, memo } from "react";
-import IconDolbyAtmos from "./icon_dolby_atmos.svg";
-import LoselessIcon from "./icon_loseless.svg";
+import IconDolbyAtmos from "./icon_dolby_atmos.svg?react";
+import LoselessIcon from "./icon_loseless.svg?react";
 import styles from "./index.module.css";
 
 const COMMON_VARIENTS: Variants = {

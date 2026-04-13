@@ -19,3 +19,4 @@ target/
 .vscode/
 *.tsbuildinfo
 .million/
+**/dist
