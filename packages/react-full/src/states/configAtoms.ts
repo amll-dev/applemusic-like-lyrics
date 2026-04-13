@@ -1,5 +1,4 @@
 import {
-	CanvasLyricPlayer,
 	DomLyricPlayer,
 	DomSlimLyricPlayer,
 	type LyricPlayerBase,
@@ -44,7 +43,6 @@ export enum VerticalCoverLayout {
 export enum LyricPlayerImplementation {
 	Dom = "dom",
 	DomSlim = "dom-slim",
-	Canvas = "canvas",
 }
 
 export enum LyricSizePreset {
@@ -76,8 +74,6 @@ const getInitialPlayerImplementation = (): LyricPlayerImplementationObject => {
 	switch (savedImpl) {
 		case LyricPlayerImplementation.DomSlim:
 			return { lyricPlayer: DomSlimLyricPlayer };
-		case LyricPlayerImplementation.Canvas:
-			return { lyricPlayer: CanvasLyricPlayer };
 		default:
 			return { lyricPlayer: DomLyricPlayer };
 	}
