@@ -98,7 +98,7 @@ export interface OptimizeLyricOptions {
 	 * * 重叠时长不足下一行时长的 10%
 	 *
 	 * 则截断上一行歌词的结束时间为下一行歌词的开始时间
-	 * @default true
+	 * @default false
 	 */
 	cleanUnintentionalOverlaps?: boolean;
 	/**
