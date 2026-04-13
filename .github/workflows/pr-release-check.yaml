@@ -32,21 +32,16 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: lts/*
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
 
       - name: Decide whether a release plan is required
         id: release-requirements
-        run: node .github/scripts/check-release-requirements.mjs
+        run: bun .github/scripts/check-release-requirements.mjs
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
 
       - name: Install dependencies
         if: steps.release-requirements.outputs.requires_release_plan == 'true'
@@ -73,11 +68,6 @@ jobs:
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: lts/*
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
