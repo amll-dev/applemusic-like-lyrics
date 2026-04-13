@@ -195,6 +195,7 @@
         "@radix-ui/themes": "^3.3.0",
         "@rolldown/plugin-babel": "catalog:",
         "@svgr/core": "^8.1.0",
+        "@svgr/plugin-jsx": "^8.1.0",
         "@tsdown/css": "catalog:",
         "@types/react": "catalog:",
         "@types/react-dom": "catalog:",

@@ -22,14 +22,12 @@ const svgrQueryPlugin = {
 			const file = id.slice(6);
 			const svg = readFileSync(file, "utf-8");
 
-			return await transform(
+			const code = await transform(
 				svg,
-				{
-					icon: true,
-					exportType: "default",
-				},
-				{ componentName: "ReactComponent", filePath: file },
+				{ ref: true, plugins: ["@svgr/plugin-jsx"] },
+				{ filePath: file },
 			);
+			return { code, moduleType: "jsx" };
 		}
 	},
 };
