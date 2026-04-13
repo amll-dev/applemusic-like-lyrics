@@ -201,7 +201,7 @@ function tryAdvanceStartTime(lines: LyricLine[]) {
 export function optimizeLyricLines(
 	lines: LyricLine[],
 	options?: OptimizeLyricOptions,
-) {
+): void {
 	const config = { ...DEFAULT_OPTIMIZE_OPTIONS, ...options };
 
 	if (config.normalizeSpaces) {

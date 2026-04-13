@@ -6,10 +6,12 @@
 interface Task<T> {
 	task: () => T;
 	resolve: (value: T) => void;
-	reject: (reason?: any) => void;
+	reject: (reason?: unknown) => void;
 }
 
+// biome-ignore lint/suspicious/noExplicitAny: util functions
 const measureTasks: Task<any>[] = [];
+// biome-ignore lint/suspicious/noExplicitAny: util functions
 const mutateTasks: Task<any>[] = [];
 let scheduled = false;
 
@@ -57,7 +59,7 @@ export function measure<T>(callback: () => T): Promise<T> {
 	return promise;
 }
 
-export function mutate(callback: () => void) {
+export function mutate(callback: () => void): Promise<unknown> {
 	const task: Task<void> = {
 		task: callback,
 		resolve: () => {},

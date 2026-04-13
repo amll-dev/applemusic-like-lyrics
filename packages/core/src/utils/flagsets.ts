@@ -4,7 +4,7 @@ export class FlagSets {
 	private flags: number[] = [];
 	private _size = 0;
 
-	get size() {
+	get size(): number {
 		return this._size;
 	}
 
@@ -13,7 +13,7 @@ export class FlagSets {
 		let chunkIndex = 0;
 		let chunkOffset = 0;
 		return {
-			next: () => {
+			next: (): IteratorResult<number> => {
 				while (chunkIndex < this.flags.length) {
 					while (chunkOffset < SAFE_FLAG_CHUNK_SIZE) {
 						const flagBit = 1 << chunkOffset;
@@ -31,7 +31,7 @@ export class FlagSets {
 		};
 	}
 
-	add(flag: number) {
+	add(flag: number): void {
 		const chunkIndex = (flag / SAFE_FLAG_CHUNK_SIZE) | 0;
 		const chunkOffset = flag % SAFE_FLAG_CHUNK_SIZE;
 		const flagBit = 1 << chunkOffset;
@@ -41,7 +41,7 @@ export class FlagSets {
 		}
 	}
 
-	delete(flag: number) {
+	delete(flag: number): void {
 		const chunkIndex = (flag / SAFE_FLAG_CHUNK_SIZE) | 0;
 		const chunkOffset = flag % SAFE_FLAG_CHUNK_SIZE;
 		const flagBit = 1 << chunkOffset;
@@ -51,7 +51,7 @@ export class FlagSets {
 		}
 	}
 
-	has(flag: number) {
+	has(flag: number): boolean {
 		const chunkIndex = (flag / SAFE_FLAG_CHUNK_SIZE) | 0;
 		const chunkOffset = flag % SAFE_FLAG_CHUNK_SIZE;
 		return (this.flags[chunkIndex] & (1 << chunkOffset)) !== 0;

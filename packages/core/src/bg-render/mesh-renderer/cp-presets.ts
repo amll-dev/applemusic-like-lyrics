@@ -35,7 +35,7 @@ export const preset = (
 	conf: ControlPointConf[],
 ) => Object.freeze({ width, height, conf }) as ControlPointPreset;
 
-export const CONTROL_POINT_PRESETS = [
+export const CONTROL_POINT_PRESETS: ControlPointPreset[] = [
 	// TODO: 竖屏推荐
 	preset(5, 5, [
 		p(0, 0, -1, -1, 0, 0, 1, 1),

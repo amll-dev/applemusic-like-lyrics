@@ -36,19 +36,19 @@ export class Linear {
 			this.params,
 		);
 	}
-	arrived() {
+	arrived(): boolean {
 		return (
 			Math.abs(this.targetPosition - this.currentPosition) < 0.01 &&
 			this.queueParams === undefined &&
 			this.queuePosition === undefined
 		);
 	}
-	setPosition(targetPosition: number) {
+	setPosition(targetPosition: number): void {
 		this.targetPosition = targetPosition;
 		this.currentPosition = targetPosition;
 		this.currentSolver = () => this.targetPosition;
 	}
-	update(delta = 0) {
+	update(delta = 0): void {
 		this.currentTime += delta;
 		this.currentPosition = this.currentSolver(
 			this.currentTime - this.startTime,
@@ -71,7 +71,7 @@ export class Linear {
 			this.setPosition(this.targetPosition);
 		}
 	}
-	updateParams(params: Partial<LinearParams>, delay = 0) {
+	updateParams(params: Partial<LinearParams>, delay = 0): void {
 		if (delay > 0) {
 			this.queueParams = {
 				...(this.queuePosition ?? {}),
@@ -87,7 +87,7 @@ export class Linear {
 			this.resetSolver();
 		}
 	}
-	setTargetPosition(targetPosition: number, delay = 0) {
+	setTargetPosition(targetPosition: number, delay = 0): void {
 		if (delay > 0) {
 			this.queuePosition = {
 				...(this.queuePosition ?? {}),
@@ -100,7 +100,7 @@ export class Linear {
 			this.resetSolver();
 		}
 	}
-	getCurrentPosition() {
+	getCurrentPosition(): number {
 		return this.currentPosition;
 	}
 }

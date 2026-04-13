@@ -2,7 +2,7 @@ export function blurImage(
 	imageData: ImageData,
 	radius: number,
 	quality: number,
-) {
+): void {
 	const pixels = imageData.data;
 	const width = imageData.width;
 	const height = imageData.height;
@@ -118,7 +118,7 @@ export function blurImage(
 	}
 }
 
-export function saturateImage(imageData: ImageData, saturation: number) {
+export function saturateImage(imageData: ImageData, saturation: number): void {
 	const pixels = imageData.data;
 
 	for (let i = 0; i < pixels.length; i += 4) {
@@ -134,7 +134,10 @@ export function saturateImage(imageData: ImageData, saturation: number) {
 	}
 }
 
-export function brightnessImage(imageData: ImageData, brightness: number) {
+export function brightnessImage(
+	imageData: ImageData,
+	brightness: number,
+): void {
 	const pixels = imageData.data;
 
 	for (let i = 0; i < pixels.length; i += 4) {
@@ -149,7 +152,7 @@ export function brightnessImage(imageData: ImageData, brightness: number) {
 	}
 }
 
-export function contrastImage(imageData: ImageData, contrast: number) {
+export function contrastImage(imageData: ImageData, contrast: number): void {
 	const pixels = imageData.data;
 
 	for (let i = 0; i < pixels.length; i += 4) {

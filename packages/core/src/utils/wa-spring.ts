@@ -51,7 +51,7 @@ export class WebAnimationSpring extends EventTarget implements Disposable {
 		);
 	}
 
-	makeStatic() {
+	makeStatic(): void {
 		this.getV = () => 0;
 		this.currentSolver = () => this.targetPosition;
 		this.currentAnimation.cancel();
@@ -75,12 +75,12 @@ export class WebAnimationSpring extends EventTarget implements Disposable {
 		this.currentAnimation.pause();
 	}
 
-	setTargetPosition(targetPosition: number) {
+	setTargetPosition(targetPosition: number): void {
 		this.targetPosition = targetPosition;
 		this.onStepFinished();
 	}
 
-	getCurrentPosition() {
+	getCurrentPosition(): number {
 		if (this.isStatic || !this.currentAnimation.effect)
 			return this.currentPosition;
 
@@ -88,7 +88,7 @@ export class WebAnimationSpring extends EventTarget implements Disposable {
 		return this.currentSolver(timing.progress ?? 1);
 	}
 
-	getCurrentVelocity() {
+	getCurrentVelocity(): number {
 		if (this.isStatic || !this.currentAnimation.effect) return 0;
 
 		const timing = this.currentAnimation.effect?.getComputedTiming();
@@ -127,13 +127,13 @@ export class WebAnimationSpring extends EventTarget implements Disposable {
 		this.currentAnimation.onfinish = () => this.onStepFinished();
 	}
 
-	stop() {
+	stop(): void {
 		if (this.currentAnimation) {
 			this.currentAnimation.cancel();
 		}
 	}
 
-	dispose() {
+	dispose(): void {
 		this.stop();
 	}
 }

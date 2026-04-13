@@ -153,12 +153,12 @@ function computeNoiseGradient(
 export function generateControlPoints(
 	width: number,
 	height: number,
-	variationFraction = randomRange(0.4, 0.6), // = 0.2,
-	normalOffset = randomRange(0.3, 0.6), // = 0.3,
+	variationFraction: number = randomRange(0.4, 0.6), // = 0.2,
+	normalOffset: number = randomRange(0.3, 0.6), // = 0.3,
 	blendFactor = 0.8,
-	smoothIters = Math.floor(randomRange(3, 5)), // = 3,
-	smoothFactor = randomRange(0.2, 0.3), // = 0.3,
-	smoothModifier = randomRange(-0.1, -0.05), // = -0.05,
+	smoothIters: number = Math.floor(randomRange(3, 5)), // = 3,
+	smoothFactor: number = randomRange(0.2, 0.3), // = 0.3,
+	smoothModifier: number = randomRange(-0.1, -0.05), // = -0.05,
 ): ControlPointPreset {
 	const w = width ?? Math.floor(randomRange(3, 6));
 	const h = height ?? Math.floor(randomRange(3, 6));
