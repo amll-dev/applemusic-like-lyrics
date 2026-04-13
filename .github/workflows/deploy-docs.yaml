@@ -1,64 +1,64 @@
 name: "构建并部署开发文档"
 
 on:
-    push:
-        branches:
-            - main
-            - dev
-    workflow_dispatch:
+  push:
+    branches:
+      - main
+      - dev
+  workflow_dispatch:
 
 permissions:
-    contents: read
-    pages: write
-    id-token: write
+  contents: read
+  pages: write
+  id-token: write
 
 concurrency:
-    group: deploy-docs
-    cancel-in-progress: true
+  group: deploy-docs
+  cancel-in-progress: true
 
 jobs:
-    build-docs:
-        name: 构建开发文档
-        runs-on: ubuntu-latest
-        environment:
-            name: github-pages
-        steps:
-            - uses: actions/checkout@v4
-              name: 克隆仓库
-            - name: 配置 Github Pages
-              uses: actions/configure-pages@v5
-            - name: 安装 Bun
-              uses: oven-sh/setup-bun@v2
-            - name: 安装 Node.js
-              uses: actions/setup-node@v4
-              with:
-                  node-version: lts/*
-            - name: 安装 wasm-pack
-              uses: jetli/wasm-pack-action@v0.4.0
-              with:
-                  version: latest
-            - name: 安装 wasm32 目标
-              run: rustup target add wasm32-unknown-unknown
-            - name: 安装依赖并构建网站
-              run: |
-                  bun install
-                  bunx nx run-many --target=build --projects=@applemusic-like-lyrics/react-full,@applemusic-like-lyrics/vue
-                  bun run --cwd packages/docs build
-              env:
-                  AMLL_GITHUB_IS_ACTION: true
-            - name: 上传 Github Pages 构建产物
-              uses: actions/upload-pages-artifact@v3
-              with:
-                  path: packages/docs/dist
+  build-docs:
+    name: 构建开发文档
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+    steps:
+      - uses: actions/checkout@v4
+        name: 克隆仓库
+      - name: 配置 Github Pages
+        uses: actions/configure-pages@v5
+      - name: 安装 Bun
+        uses: oven-sh/setup-bun@v2
+      - name: 安装 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+      - name: 安装 wasm-pack
+        uses: jetli/wasm-pack-action@v0.4.0
+        with:
+          version: latest
+      - name: 安装 wasm32 目标
+        run: rustup target add wasm32-unknown-unknown
+      - name: 安装依赖并构建网站
+        run: |
+          bun install
+          bunx nx run-many --target=build --projects=@applemusic-like-lyrics/react-full,@applemusic-like-lyrics/vue
+          bun run --cwd packages/docs build
+        env:
+          AMLL_GITHUB_IS_ACTION: true
+      - name: 上传 Github Pages 构建产物
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: packages/docs/dist
 
-    deploy-docs:
-        name: 部署开发文档
-        runs-on: ubuntu-latest
-        needs: build-docs
-        environment:
-            name: github-pages
-            url: ${{ steps.deployment.outputs.page_url }}
-        steps:
-            - name: 部署到 Github Pages
-              id: deployment
-              uses: actions/deploy-pages@v4
+  deploy-docs:
+    name: 部署开发文档
+    runs-on: ubuntu-latest
+    needs: build-docs
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: 部署到 Github Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
