@@ -23,5 +23,8 @@ echo "Amending commit with formatted package.json files."
 git add -- "${package_json_files[@]}"
 git commit --amend --no-edit
 
+echo "Amended commit details:"
+git show --no-color --pretty=fuller --stat --name-status --summary HEAD
+
 echo "Amended."
 git status --verbose
