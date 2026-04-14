@@ -29,7 +29,7 @@ jobs:
       - name: Ensure publish runs from main
         if: github.event.inputs.mode == 'publish' && github.ref_name != 'main'
         run: |
-          echo "This workflow must be dispatched from the main branch."
+          echo "Publishing must be dispatched from the main branch. Use dry-run mode to test from other branches."
           exit 1
 
       - name: Checkout repository
@@ -48,11 +48,7 @@ jobs:
           registry-url: https://registry.npmjs.org
 
       - name: Verify trusted publishing runtime requirements
-        run: |
-          node --version
-          npm --version
-          node -e "const [major, minor] = process.versions.node.split('.').map(Number); if (major < 22 || (major === 22 && minor < 14)) process.exit(1)"
-          node -e "const version = require('child_process').execSync('npm --version', { encoding: 'utf8' }).trim().split('.').map(Number); if (version[0] < 11 || (version[0] === 11 && version[1] < 5) || (version[0] === 11 && version[1] === 5 && version[2] < 1)) process.exit(1)"
+        run: node .github/scripts/verify-trusted-publishing-runtime.mjs
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
@@ -74,24 +70,23 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
       - name: Ensure release plans exist
-        run: |
-          shopt -s nullglob
-          plans=(.nx/version-plans/*.md)
-          if [ ${#plans[@]} -eq 0 ]; then
-          echo "No release plans were found in .nx/version-plans."
-          exit 1
-          fi
+        run: bash .github/scripts/ensure-release-plans-exist.sh
 
       - name: Dry-run release
-        run: bunx nx release --dry-run --preid alpha
+        if: github.event.inputs.mode == 'dry-run'
+        run: npx nx release --dry-run --preid alpha
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create release commit and tags
         if: github.event.inputs.mode == 'publish'
-        run: bunx nx release --skip-publish --preid alpha
+        run: npx nx release --skip-publish --preid alpha
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Force Nx publish executor to npm for OIDC
+        if: github.event.inputs.mode == 'publish'
+        run: node .github/scripts/force-nx-publish-package-manager-npm.cjs
 
       - name: Push release commit and tags
         if: github.event.inputs.mode == 'publish'
@@ -99,4 +94,4 @@ jobs:
 
       - name: Publish packages to npm
         if: github.event.inputs.mode == 'publish'
-        run: bunx nx release publish
+        run: npx nx release publish
