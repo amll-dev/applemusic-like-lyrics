@@ -1,6 +1,6 @@
 {
 	"name": "@applemusic-like-lyrics/react-full",
-	"version": "0.3.0",
+	"version": "0.3.1",
 	"description": "AMLL 组件库的 React 绑定，但是更加完备且高度灵活",
 	"repository": {
 		"url": "https://github.com/amll-dev/applemusic-like-lyrics.git",

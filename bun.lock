@@ -208,7 +208,7 @@
     },
     "packages/react-full": {
       "name": "@applemusic-like-lyrics/react-full",
-      "version": "0.3.0",
+      "version": "0.3.1",
       "dependencies": {
         "@applemusic-like-lyrics/core": "workspace:^",
         "@applemusic-like-lyrics/react": "workspace:^",
