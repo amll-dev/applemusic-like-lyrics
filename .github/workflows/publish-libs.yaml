@@ -77,15 +77,18 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # - name: Format package.json files and amend release commit
-      #   run: bash .github/scripts/format-package-json-and-amend.sh
+      - name: Format package.json files and amend release commit
+        run: bash .github/scripts/format-package-json-and-amend.sh
 
       - name: Push release commit and tags
         if: github.event.inputs.mode == 'publish'
         run: git push origin HEAD:main --follow-tags
 
       - name: Force Nx publish executor to npm for OIDC
-        run: node .github/scripts/force-nx-publish-package-manager-npm.cjs
+        run: node .github/scripts/force-nx-publish-package-manager-npm.mjs
+
+      - name: Prepare package manifests for npm publish
+        run: node .github/scripts/prepare-npm-manifests-for-publish.mjs
 
       - name: Dry-run Publish packages to npm
         if: github.event.inputs.mode == 'dry-run'

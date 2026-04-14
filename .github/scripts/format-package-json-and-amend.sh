@@ -9,16 +9,19 @@ if [ "${#package_json_files[@]}" -eq 0 ]; then
     exit 0
 fi
 
-npx biome format --write "${package_json_files[@]}"
+bun biome format --write "${package_json_files[@]}"
 
 if git diff --quiet -- "${package_json_files[@]}"; then
     echo "No package.json formatting changes detected."
     exit 0
 fi
 
-git status --short
+echo "Staged changes to be amended:"
+git status --verbose
 
 echo "Amending commit with formatted package.json files."
 git add -- "${package_json_files[@]}"
 git commit --amend --no-edit
-git status --short
+
+echo "Amended."
+git status --verbose
