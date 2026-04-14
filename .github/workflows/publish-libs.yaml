@@ -71,6 +71,9 @@ jobs:
       - name: Ensure release plans exist
         run: bash .github/scripts/ensure-release-plans-exist.sh
 
+      - name: Force Nx publish executor to npm for OIDC
+        run: node .github/scripts/force-nx-publish-package-manager-npm.cjs
+
       - name: Create release commit and tags
         run: npx nx release --skip-publish --preid alpha
         env:
@@ -82,9 +85,6 @@ jobs:
       - name: Push release commit and tags
         if: github.event.inputs.mode == 'publish'
         run: git push origin HEAD:main --follow-tags
-
-      - name: Force Nx publish executor to npm for OIDC
-        run: node .github/scripts/force-nx-publish-package-manager-npm.cjs
 
       - name: Dry-run Publish packages to npm
         if: github.event.inputs.mode == 'dry-run'

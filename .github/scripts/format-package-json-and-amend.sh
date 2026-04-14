@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+echo "Formatting changes detected in package.json files."
+
 mapfile -d '' package_json_files < <(git ls-files -z -- '**/package.json')
 if [ "${#package_json_files[@]}" -eq 0 ]; then
     echo "No package.json files tracked by git."
@@ -14,5 +16,9 @@ if git diff --quiet -- "${package_json_files[@]}"; then
     exit 0
 fi
 
+git status --short
+
+echo "Amending commit with formatted package.json files."
 git add -- "${package_json_files[@]}"
 git commit --amend --no-edit
+git status --short
