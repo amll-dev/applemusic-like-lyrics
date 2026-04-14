@@ -5,6 +5,7 @@
 	min-width: 0;
 	overflow: hidden;
 	display: grid;
+	position: relative;
 	/* 保证可以拖动窗口的区域 */
 	grid-template-rows:
 		[drag-area] 30px
