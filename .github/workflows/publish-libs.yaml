@@ -90,10 +90,6 @@ jobs:
       - name: Prepare package manifests for npm publish
         run: node .github/scripts/prepare-npm-manifests-for-publish.mjs
 
-      - name: Dry-run Publish packages to npm
-        if: github.event.inputs.mode == 'dry-run'
-        run: npx nx release publish --dry-run
-
       - name: Publish packages to npm
         if: github.event.inputs.mode == 'publish'
         run: npx nx release publish
