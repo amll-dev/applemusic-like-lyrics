@@ -7,10 +7,10 @@
 	pointer-events: none;
 	--amll-lp-font-size: min(max(max(4.5vh, 2.3vw), 2.5rem), 3.5rem);
 }
-.amll-lyric-player [class^="_lyricMainLine"] {
+.amll-lyric-player [class*="_lyricMainLine"] {
 	font-weight: bold;
 }
-.amll-lyric-player [class^="_emphasizeWrapper"] span {
+.amll-lyric-player [class*="_emphasizeWrapper"] span {
 	padding: 1em;
 	margin: -1em;
 }
