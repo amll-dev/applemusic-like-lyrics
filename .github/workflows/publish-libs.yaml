@@ -77,8 +77,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Format package.json files and amend release commit
-        run: bash .github/scripts/format-package-json-and-amend.sh
+      # - name: Format package.json files and amend release commit
+      #   run: bash .github/scripts/format-package-json-and-amend.sh
 
       - name: Push release commit and tags
         if: github.event.inputs.mode == 'publish'
