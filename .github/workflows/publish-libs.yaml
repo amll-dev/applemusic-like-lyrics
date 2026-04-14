@@ -92,4 +92,4 @@ jobs:
 
       - name: Publish packages to npm
         if: github.event.inputs.mode == 'publish'
-        run: npx nx release publish
+        run: npx nx release publish --excludeTaskDependencies
