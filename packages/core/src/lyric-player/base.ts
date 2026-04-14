@@ -102,7 +102,7 @@ export abstract class LyricPlayerBase
 	private onPageHide = () => {
 		this.isPageVisible = false;
 	};
-	private scrolledHandler = 0;
+	private scrolledHandler: ReturnType<typeof setTimeout> | undefined;
 	protected isScrolled = false;
 	/** @internal */
 	resizeObserver: ResizeObserver = new ResizeObserver(((entries) => {
@@ -1160,7 +1160,6 @@ export abstract class LyricPlayerBase
 		this.isScrolled = false;
 		this.scrollOffset = 0;
 		clearTimeout(this.scrolledHandler);
-		this.scrolledHandler = 0;
 	}
 	/**
 	 * 获取当前歌词数组

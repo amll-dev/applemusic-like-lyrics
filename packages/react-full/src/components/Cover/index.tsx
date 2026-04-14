@@ -6,8 +6,10 @@
 import classNames from "classnames";
 import { Squircle } from "corner-smoothing";
 import {
+	type ForwardRefExoticComponent,
 	forwardRef,
 	type HTMLProps,
+	type RefAttributes,
 	useEffect,
 	useImperativeHandle,
 	useLayoutEffect,
@@ -17,19 +19,20 @@ import {
 } from "react";
 import styles from "./index.module.css";
 
+export type CoverProps = {
+	coverUrl?: string;
+	coverIsVideo?: boolean;
+	coverVideoPaused?: boolean;
+	musicPaused?: boolean;
+	pauseShrinkAspect?: number;
+} & HTMLProps<HTMLElement>;
+
 /**
  * 一个专辑图组件
  */
-export const Cover = forwardRef<
-	HTMLDivElement,
-	{
-		coverUrl?: string;
-		coverIsVideo?: boolean;
-		coverVideoPaused?: boolean;
-		musicPaused?: boolean;
-		pauseShrinkAspect?: number;
-	} & HTMLProps<HTMLElement>
->(
+export const Cover: ForwardRefExoticComponent<
+	CoverProps & RefAttributes<HTMLDivElement>
+> = forwardRef<HTMLDivElement, CoverProps>(
 	(
 		{
 			coverUrl,
@@ -75,6 +78,7 @@ export const Cover = forwardRef<
 					obz.disconnect();
 				};
 			}
+			return;
 		}, []);
 
 		useImperativeHandle(ref, () => frameRef.current!, []);

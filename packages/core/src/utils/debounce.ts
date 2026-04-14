@@ -3,7 +3,7 @@ export function debounce<T extends (...args: any) => any>(
 	cb: T,
 	wait = 20,
 ): (...args: Parameters<T>) => void {
-	let h = 0;
+	let h: ReturnType<typeof setTimeout> | undefined;
 	const callable = (...args: Parameters<T>) => {
 		clearTimeout(h);
 		h = setTimeout(() => cb(...args), wait);

@@ -553,6 +553,7 @@ export const PrebuiltLyricPlayer: FC<
 			setAlignPosition(0.1);
 			setAlignAnchor("top");
 		}
+		return;
 	}, [isVertical, layoutEl]);
 
 	const verticalImmerseCover =

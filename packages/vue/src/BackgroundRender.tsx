@@ -5,14 +5,14 @@ import {
 	MeshGradientRenderer,
 } from "@applemusic-like-lyrics/core";
 import {
-	type ExtractPublicPropTypes,
-	type PropType,
-	type Ref,
-	type ShallowRef,
 	defineComponent,
+	type ExtractPublicPropTypes,
 	onMounted,
 	onUnmounted,
+	type PropType,
+	type Ref,
 	ref,
+	type ShallowRef,
 	useTemplateRef,
 	watchEffect,
 } from "vue";

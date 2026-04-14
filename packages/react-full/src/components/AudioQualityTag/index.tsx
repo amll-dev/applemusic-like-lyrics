@@ -1,6 +1,12 @@
 import classNames from "classnames";
 import { motion, type Variants } from "framer-motion";
-import { forwardRef, type HTMLProps, memo } from "react";
+import {
+	forwardRef,
+	type HTMLProps,
+	memo,
+	type NamedExoticComponent,
+	type RefAttributes,
+} from "react";
 import IconDolbyAtmos from "./icon_dolby_atmos.svg?react";
 import LoselessIcon from "./icon_loseless.svg?react";
 import styles from "./index.module.css";
@@ -55,57 +61,62 @@ const DOLBY_VARIENTS: Variants = {
 	},
 };
 
-export const AudioQualityTag = memo(
-	forwardRef<
-		HTMLDivElement,
-		{
-			isDolbyAtmos?: boolean;
-			tagText?: string;
-			tagIcon?: boolean;
-		} & HTMLProps<HTMLDivElement>
-	>(({ tagText, tagIcon, isDolbyAtmos, className, onClick, ...rest }, ref) => {
-		return (
-			<div
-				className={classNames(
-					className,
-					styles.audioQualityTag,
-					onClick && styles.clickable,
-				)}
-				onClick={onClick}
-				ref={ref}
-				{...rest}
-			>
-				{isDolbyAtmos ? (
-					<motion.div
-						key="dolby-atmos"
-						initial="hide"
-						animate="show"
-						whileHover={onClick ? "hover" : undefined}
-						whileTap={onClick ? "active" : undefined}
-						exit="hide"
-						className={styles.dolbyLogo}
-						variants={DOLBY_VARIENTS}
-					>
-						<IconDolbyAtmos className={styles.dolbyLogoGlow} />
-						<IconDolbyAtmos />
-					</motion.div>
-				) : (
-					<motion.div
-						key={`common-tag-${tagIcon}-${tagText}`}
-						initial="hide"
-						animate="show"
-						whileHover={onClick ? "hover" : undefined}
-						whileTap={onClick ? "active" : undefined}
-						exit="hide"
-						variants={COMMON_VARIENTS}
-					>
-						<div className={styles.commonTag}>
-							{tagIcon && <LoselessIcon height="11px" />}
-							{tagText && <div className={styles.commonTagText}>{tagText}</div>}
-						</div>
-					</motion.div>
-				)}
-			</div>
-		);
-	}),
+export type AudioQualityTagProps = {
+	isDolbyAtmos?: boolean;
+	tagText?: string;
+	tagIcon?: boolean;
+} & HTMLProps<HTMLDivElement>;
+
+export const AudioQualityTag: NamedExoticComponent<
+	Omit<AudioQualityTagProps, "ref"> & RefAttributes<HTMLDivElement>
+> = memo(
+	forwardRef<HTMLDivElement, AudioQualityTagProps>(
+		({ tagText, tagIcon, isDolbyAtmos, className, onClick, ...rest }, ref) => {
+			return (
+				<div
+					className={classNames(
+						className,
+						styles.audioQualityTag,
+						onClick && styles.clickable,
+					)}
+					onClick={onClick}
+					ref={ref}
+					{...rest}
+				>
+					{isDolbyAtmos ? (
+						<motion.div
+							key="dolby-atmos"
+							initial="hide"
+							animate="show"
+							whileHover={onClick ? "hover" : undefined}
+							whileTap={onClick ? "active" : undefined}
+							exit="hide"
+							className={styles.dolbyLogo}
+							variants={DOLBY_VARIENTS}
+						>
+							<IconDolbyAtmos className={styles.dolbyLogoGlow} />
+							<IconDolbyAtmos />
+						</motion.div>
+					) : (
+						<motion.div
+							key={`common-tag-${tagIcon}-${tagText}`}
+							initial="hide"
+							animate="show"
+							whileHover={onClick ? "hover" : undefined}
+							whileTap={onClick ? "active" : undefined}
+							exit="hide"
+							variants={COMMON_VARIENTS}
+						>
+							<div className={styles.commonTag}>
+								{tagIcon && <LoselessIcon height="11px" />}
+								{tagText && (
+									<div className={styles.commonTagText}>{tagText}</div>
+								)}
+							</div>
+						</motion.div>
+					)}
+				</div>
+			);
+		},
+	),
 );

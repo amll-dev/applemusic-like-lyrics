@@ -9,8 +9,10 @@ import {
 	MaskObsceneWordsMode,
 } from "@applemusic-like-lyrics/core";
 import {
+	type ForwardRefExoticComponent,
 	forwardRef,
 	type HTMLProps,
+	type RefAttributes,
 	useEffect,
 	useImperativeHandle,
 	useLayoutEffect,
@@ -163,10 +165,10 @@ export interface LyricPlayerRef {
  *
  * 尽可能贴切 Apple Music for iPad 的歌词效果设计，且做了力所能及的优化措施
  */
-export const LyricPlayer = forwardRef<
-	LyricPlayerRef,
-	HTMLProps<HTMLDivElement> & LyricPlayerProps
->(
+export const LyricPlayer: ForwardRefExoticComponent<
+	Omit<HTMLProps<HTMLDivElement> & LyricPlayerProps, "ref"> &
+		RefAttributes<LyricPlayerRef>
+> = forwardRef<LyricPlayerRef, HTMLProps<HTMLDivElement> & LyricPlayerProps>(
 	(
 		{
 			disabled,
@@ -238,6 +240,7 @@ export const LyricPlayer = forwardRef<
 					canceled = true;
 				};
 			}
+			return;
 		}, [corePlayer, disabled]);
 
 		useEffect(() => {
@@ -329,6 +332,7 @@ export const LyricPlayer = forwardRef<
 				corePlayer?.addEventListener("line-click", handler);
 				return () => corePlayer?.removeEventListener("line-click", handler);
 			}
+			return;
 		}, [corePlayer, onLyricLineClick]);
 
 		useEffect(() => {
@@ -339,6 +343,7 @@ export const LyricPlayer = forwardRef<
 				return () =>
 					corePlayer?.removeEventListener("line-contextmenu", handler);
 			}
+			return;
 		}, [corePlayer, onLyricLineContextMenu]);
 
 		useImperativeHandle(

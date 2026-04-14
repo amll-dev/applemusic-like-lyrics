@@ -131,6 +131,8 @@ export const AudioFFTVisualizer: FC<
 				};
 			}
 		}
+
+		return;
 	}, []);
 
 	return <canvas ref={canvasRef} {...props} />;

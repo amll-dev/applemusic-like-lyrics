@@ -16,7 +16,7 @@
 		"isolatedModules": true,
 		"incremental": true,
 		"declaration": true,
-		"isolatedDeclarations": false,
+		"isolatedDeclarations": true,
 
 		// Best practices
 		"strict": true,
@@ -31,6 +31,6 @@
 		"noPropertyAccessFromIndexSignature": false,
 		"noUncheckedIndexedAccess": false,
 		"exactOptionalPropertyTypes": false,
-		"noImplicitReturns": false
+		"noImplicitReturns": true
 	}
 }

@@ -1,9 +1,4 @@
 {
 	"extends": "../../tsconfig.base.json",
-	"include": ["src"],
-	"compilerOptions": {
-		"types": [],
-		"noImplicitReturns": true,
-		"isolatedDeclarations": true
-	}
+	"include": ["src"]
 }
