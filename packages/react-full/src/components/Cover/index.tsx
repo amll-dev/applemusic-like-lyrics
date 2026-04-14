@@ -11,7 +11,6 @@ import {
 	type HTMLProps,
 	type RefAttributes,
 	useEffect,
-	useImperativeHandle,
 	useLayoutEffect,
 	useMemo,
 	useRef,
@@ -25,7 +24,7 @@ export type CoverProps = {
 	coverVideoPaused?: boolean;
 	musicPaused?: boolean;
 	pauseShrinkAspect?: number;
-} & HTMLProps<HTMLElement>;
+} & HTMLProps<HTMLDivElement>;
 
 /**
  * 一个专辑图组件
@@ -81,8 +80,6 @@ export const Cover: ForwardRefExoticComponent<
 			return;
 		}, []);
 
-		useImperativeHandle(ref, () => frameRef.current!, []);
-
 		return (
 			<div
 				className={clsNames}
@@ -91,7 +88,14 @@ export const Cover: ForwardRefExoticComponent<
 						"--scale-level": pauseShrinkAspect ?? 0.75,
 					} as React.CSSProperties
 				}
-				ref={frameRef}
+				ref={(node) => {
+					frameRef.current = node;
+					if (typeof ref === "function") {
+						ref(node);
+					} else if (ref) {
+						ref.current = node;
+					}
+				}}
 				{...rest}
 			>
 				<Squircle
@@ -109,19 +113,16 @@ export const Cover: ForwardRefExoticComponent<
 							playsInline
 							crossOrigin="anonymous"
 							ref={videoRef}
-							{...rest}
 						/>
 					) : (
 						<div
 							className={styles.coverInner}
-							alt="cover"
 							style={
 								{
 									backgroundImage: `url(${coverUrl})`,
 									"--scale-level": pauseShrinkAspect ?? 0.75,
 								} as React.CSSProperties
 							}
-							{...rest}
 						/>
 					)}
 				</Squircle>
