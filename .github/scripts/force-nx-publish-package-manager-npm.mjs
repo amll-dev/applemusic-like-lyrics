@@ -2,7 +2,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { detectPackageManager } from "nx/src/utils/package-manager";
+import { detectPackageManager } from "nx/src/utils/package-manager.js";
 
 const nxJsonPath = path.resolve(process.cwd(), "nx.json");
 
