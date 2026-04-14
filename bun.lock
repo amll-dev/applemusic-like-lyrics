@@ -130,6 +130,35 @@
         "vite": "catalog:",
       },
     },
+    "packages/playground/react-full": {
+      "name": "@applemusic-like-lyrics/playground-react-full",
+      "version": "0.0.0",
+      "dependencies": {
+        "@radix-ui/themes": "^3.3.0",
+        "@types/jsmediatags": "^3.9.6",
+        "jotai": "^2.19.1",
+        "jsmediatags": "^3.9.7",
+      },
+      "devDependencies": {
+        "@applemusic-like-lyrics/core": "workspace:^",
+        "@applemusic-like-lyrics/lyric": "workspace:^",
+        "@applemusic-like-lyrics/react": "workspace:^",
+        "@applemusic-like-lyrics/react-full": "workspace:^",
+        "@pixi/app": "^7.4.3",
+        "@pixi/core": "^7.4.3",
+        "@pixi/display": "^7.4.3",
+        "@pixi/filter-blur": "^7.4.3",
+        "@pixi/filter-color-matrix": "^7.4.3",
+        "@pixi/sprite": "^7.4.3",
+        "@types/react": "catalog:",
+        "@types/react-dom": "catalog:",
+        "@vitejs/plugin-react": "catalog:",
+        "react": "catalog:",
+        "react-dom": "catalog:",
+        "vite": "catalog:",
+        "vite-plugin-svgr": "^5.2.0",
+      },
+    },
     "packages/playground/vue": {
       "name": "@applemusic-like-lyrics/playground-vue",
       "version": "0.0.0",
@@ -190,9 +219,7 @@
         "react-toastify": "^11.0.5",
       },
       "devDependencies": {
-        "@applemusic-like-lyrics/lyric": "workspace:^",
         "@biomejs/biome": "catalog:",
-        "@radix-ui/themes": "^3.3.0",
         "@rolldown/plugin-babel": "catalog:",
         "@svgr/core": "^8.1.0",
         "@svgr/plugin-jsx": "^8.1.0",
@@ -206,7 +233,6 @@
         "tsdown": "catalog:",
         "typedoc": "catalog:",
         "typedoc-plugin-markdown": "catalog:",
-        "vite-plugin-svgr": "^5.2.0",
       },
       "peerDependencies": {
         "jotai": "^2",
@@ -294,6 +320,8 @@
     "@applemusic-like-lyrics/playground-core": ["@applemusic-like-lyrics/playground-core@workspace:packages/playground/core"],
 
     "@applemusic-like-lyrics/playground-react": ["@applemusic-like-lyrics/playground-react@workspace:packages/playground/react"],
+
+    "@applemusic-like-lyrics/playground-react-full": ["@applemusic-like-lyrics/playground-react-full@workspace:packages/playground/react-full"],
 
     "@applemusic-like-lyrics/playground-vue": ["@applemusic-like-lyrics/playground-vue@workspace:packages/playground/vue"],
 
@@ -1089,6 +1117,8 @@
 
     "@types/jsesc": ["@types/jsesc@2.5.1", "", {}, "sha512-9VN+6yxLOPLOav+7PwjZbxiID2bVaeq0ED4qSQmdQTdjnXJSaCVKTR58t15oqH1H5t8Ng2ZX1SabJVoN9Q34bw=="],
 
+    "@types/jsmediatags": ["@types/jsmediatags@3.9.6", "", {}, "sha512-a2IVxVGXBCCVzONBFKGBb2mnTNMAt0shl+Mb5+wM5YVxymhgqNilr/7/x+XePYM2DnmWwCYlBRjq+8q7nsp2PA=="],
+
     "@types/mdast": ["@types/mdast@4.0.4", "", { "dependencies": { "@types/unist": "*" } }, "sha512-kGaNbPh1k7AFzgpud/gMdvIm5xuECykRR+JnWKQno9TAXVa6WIVCGTPvYGekIDL4uwCZQSYbUxNBSb1aUo79oA=="],
 
     "@types/mdx": ["@types/mdx@2.0.13", "", {}, "sha512-+OWZQfAYyio6YkJb3HLxDrvnx6SWWDbC0zVPfBRzUk0/nqoDyf6dNxQi3eArPe8rJ473nobTMQ/8Zk+LxJ+Yuw=="],
@@ -1628,6 +1658,8 @@
     "js-yaml": ["js-yaml@4.1.1", "", { "dependencies": { "argparse": "^2.0.1" }, "bin": { "js-yaml": "bin/js-yaml.js" } }, "sha512-qQKT4zQxXl8lLwBtHMWwaTcGfFOZviOJet3Oy/xmGk2gZH677CJM9EvtfdSkgWcATZhj/55JZ0rmy3myCT5lsA=="],
 
     "jsesc": ["jsesc@3.1.0", "", { "bin": { "jsesc": "bin/jsesc" } }, "sha512-/sM3dO2FOzXjKQhJuo0Q173wf2KOo8t4I8vHy6lF9poUp7bKT0/NHE8fPX23PwfhnykfqnC2xRxOnVw5XuGIaA=="],
+
+    "jsmediatags": ["jsmediatags@3.9.7", "", { "dependencies": { "xhr2": "^0.1.4" } }, "sha512-xCAO8C3li3t5hYkXqn8iv8zQQUB4T1QqRN2aSONHMls21ICdEvXi4xtb6W70/fAFYSDwMHd32hIqvo4YuXoNcQ=="],
 
     "json-parse-even-better-errors": ["json-parse-even-better-errors@4.0.0", "", {}, "sha512-lR4MXjGNgkJc7tkQ97kb2nuEMnNCyU//XYVH0MKTGcXEiSudQ5MKGKen3C5QubYy0vmq+JGitUg92uuywGEwIA=="],
 
@@ -2234,6 +2266,8 @@
     "wrap-ansi": ["wrap-ansi@7.0.0", "", { "dependencies": { "ansi-styles": "^4.0.0", "string-width": "^4.1.0", "strip-ansi": "^6.0.0" } }, "sha512-YVGIj2kamLSTxw6NsZjoBxfSwsn0ycdesmc4p+Q21c5zPuZ1pl+NfxVdxPtdHvmNVOQ6XSYG4AUtyt/Fi7D16Q=="],
 
     "wrappy": ["wrappy@1.0.2", "", {}, "sha512-l4Sp/DRseor9wL6EvV2+TuQn63dMkPjZ/sp9XkghTEbV9KlPS1xUsZ3u7/IQO4wxtcFB4bgpQPRcR3QCvezPcQ=="],
+
+    "xhr2": ["xhr2@0.1.4", "", {}, "sha512-3QGhDryRzTbIDj+waTRvMBe8SyPhW79kz3YnNb+HQt/6LPYQT3zT3Jt0Y8pBofZqQX26x8Ecfv0FXR72uH5VpA=="],
 
     "xxhash-wasm": ["xxhash-wasm@1.1.0", "", {}, "sha512-147y/6YNh+tlp6nd/2pWq38i9h6mz/EuQ6njIrmW8D1BS5nCqs0P6DG+m6zTGnNz5I+uhZ0SHxBs9BsPrwcKDA=="],
 

@@ -9,7 +9,7 @@ import {
 	useState,
 } from "react";
 import { createRoot } from "react-dom/client";
-import { PrebuiltLyricPlayer } from "./components/PrebuiltLyricPlayer";
+import { PrebuiltLyricPlayer } from "@react-full/components/PrebuiltLyricPlayer";
 import "@radix-ui/themes/styles.css";
 import type { LyricLine } from "@applemusic-like-lyrics/core";
 import {
@@ -20,20 +20,21 @@ import {
 	parseYrc,
 	type LyricLine as RawLyricLine,
 } from "@applemusic-like-lyrics/lyric";
-import { onRequestOpenMenuAtom } from "./states/callbacks";
-import { hideLyricViewAtom } from "./states/configAtoms";
+import { onRequestOpenMenuAtom } from "@react-full/states/callbacks";
+import { hideLyricViewAtom } from "@react-full/states/configAtoms";
 import {
 	musicAlbumNameAtom,
 	musicArtistsAtom,
 	musicCoverAtom,
 	musicLyricLinesAtom,
 	musicNameAtom,
-} from "./states/dataAtoms";
+} from "@react-full/states/dataAtoms";
+import jsmediatags from "jsmediatags";
 
 const mapLyric = (
 	line: RawLyricLine,
-	i: number,
-	lines: RawLyricLine[],
+	_i: number,
+	_lines: RawLyricLine[],
 ): LyricLine => ({
 	words: line.words.map((w) => ({ ...w, obscene: false })),
 	startTime: line.words[0]?.startTime ?? 0,
@@ -89,13 +90,12 @@ const App: FC = () => {
 					const title: string = tag.tags?.title ?? file.name ?? "未知歌曲";
 					const album: string = tag.tags?.album ?? "未知专辑";
 					const artist: string = tag.tags?.artist ?? "未知作者";
-					const lyrics: string = tag.tags?.lyrics ?? "";
+					// const lyrics: string = tag.tags?.lyrics ?? "";
 					store.set(musicNameAtom, title);
 					store.set(musicAlbumNameAtom, album);
 					store.set(musicArtistsAtom, [{ name: artist, id: "unknown" }]);
-					if ("picture" in tag.tags) {
-						const { data, format }: { data: Uint8Array; format: string } =
-							tag.tags.picture;
+					if ("picture" in tag.tags && tag.tags.picture) {
+						const { data, format } = tag.tags.picture;
 						let base64String = "";
 						for (let i = 0; i < data.length; i++) {
 							base64String += String.fromCharCode(data[i]);
@@ -179,7 +179,6 @@ const App: FC = () => {
 
 	return (
 		<>
-			{/* biome-ignore lint/a11y/useMediaCaption: <explanation> */}
 			<audio ref={audioRef} />
 
 			<ContextMenu.Root>

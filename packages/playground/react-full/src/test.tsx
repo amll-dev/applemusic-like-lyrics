@@ -1,11 +1,11 @@
 import { Provider, useStore } from "jotai";
 import { type FC, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { PrebuiltLyricPlayer } from "./components/PrebuiltLyricPlayer";
-import { HorizontalLayout } from "./layout/horizontal";
-import { VerticalLayout } from "./layout/vertical";
-import { hideLyricViewAtom } from "./states/configAtoms";
-import { musicLyricLinesAtom } from "./states/dataAtoms";
+import { PrebuiltLyricPlayer } from "@react-full/components/PrebuiltLyricPlayer";
+import { HorizontalLayout } from "@react-full/layout/horizontal";
+import { VerticalLayout } from "@react-full/layout/vertical";
+import { hideLyricViewAtom } from "@react-full/states/configAtoms";
+import { musicLyricLinesAtom } from "@react-full/states/dataAtoms";
 
 const App: FC = () => {
 	const [hideLyric, setHideLyric] = useState(false);
@@ -39,6 +39,7 @@ const App: FC = () => {
 	return (
 		<>
 			<h1>AMLL React Framework gallery</h1>
+			<a href="/prebuilt">Go to Prebuilt Player</a>
 			<h2>Prebuilt Player</h2>
 			<PrebuiltLyricPlayer
 				style={{

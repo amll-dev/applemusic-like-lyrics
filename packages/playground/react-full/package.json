@@ -1,0 +1,39 @@
+{
+	"name": "@applemusic-like-lyrics/playground-react-full",
+	"private": true,
+	"version": "0.0.0",
+	"type": "module",
+	"nx": {
+		"tags": [
+			"playground"
+		]
+	},
+	"scripts": {
+		"dev": "vite dev"
+	},
+	"devDependencies": {
+		"@applemusic-like-lyrics/core": "workspace:^",
+		"@applemusic-like-lyrics/lyric": "workspace:^",
+		"@applemusic-like-lyrics/react": "workspace:^",
+		"@applemusic-like-lyrics/react-full": "workspace:^",
+		"@pixi/app": "^7.4.3",
+		"@pixi/core": "^7.4.3",
+		"@pixi/display": "^7.4.3",
+		"@pixi/filter-blur": "^7.4.3",
+		"@pixi/filter-color-matrix": "^7.4.3",
+		"@pixi/sprite": "^7.4.3",
+		"@types/react": "catalog:",
+		"@types/react-dom": "catalog:",
+		"@vitejs/plugin-react": "catalog:",
+		"react": "catalog:",
+		"react-dom": "catalog:",
+		"vite": "catalog:",
+		"vite-plugin-svgr": "^5.2.0"
+	},
+	"dependencies": {
+		"@radix-ui/themes": "^3.3.0",
+		"@types/jsmediatags": "^3.9.6",
+		"jotai": "^2.19.1",
+		"jsmediatags": "^3.9.7"
+	}
+}
