@@ -71,20 +71,12 @@ jobs:
       - name: Ensure release plans exist
         run: bash .github/scripts/ensure-release-plans-exist.sh
 
-      - name: Dry-run release
-        if: github.event.inputs.mode == 'dry-run'
-        run: npx nx release --dry-run --preid alpha
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Create release commit and tags
-        if: github.event.inputs.mode == 'publish'
         run: npx nx release --skip-publish --preid alpha
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Format package.json files and amend release commit
-        if: github.event.inputs.mode == 'publish'
         run: bash .github/scripts/format-package-json-and-amend.sh
 
       - name: Push release commit and tags
@@ -92,8 +84,11 @@ jobs:
         run: git push origin HEAD:main --follow-tags
 
       - name: Force Nx publish executor to npm for OIDC
-        if: github.event.inputs.mode == 'publish'
         run: node .github/scripts/force-nx-publish-package-manager-npm.cjs
+
+      - name: Dry-run Publish packages to npm
+        if: github.event.inputs.mode == 'dry-run'
+        run: npx nx release publish --dry-run
 
       - name: Publish packages to npm
         if: github.event.inputs.mode == 'publish'
