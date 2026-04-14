@@ -1,6 +1,6 @@
 {
 	"name": "@applemusic-like-lyrics/lyric",
-	"version": "0.4.1",
+	"version": "1.0.0-alpha.0",
 	"description": "一个歌词解析/生成模块，着重于歌词内容解析，支持多种格式",
 	"repository": {
 		"url": "https://github.com/amll-dev/applemusic-like-lyrics.git",

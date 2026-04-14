@@ -16,7 +16,7 @@
     },
     "packages/core": {
       "name": "@applemusic-like-lyrics/core",
-      "version": "0.3.2",
+      "version": "0.4.0",
       "dependencies": {
         "@ungap/structured-clone": "catalog:",
         "bezier-easing": "^3.0.0",
@@ -75,7 +75,7 @@
     },
     "packages/lyric": {
       "name": "@applemusic-like-lyrics/lyric",
-      "version": "0.4.1",
+      "version": "1.0.0-alpha.0",
       "dependencies": {
         "@applemusic-like-lyrics/ttml": "workspace:^",
         "pako": "^2.1.0",
@@ -181,7 +181,7 @@
     },
     "packages/react": {
       "name": "@applemusic-like-lyrics/react",
-      "version": "0.3.2",
+      "version": "0.4.0",
       "dependencies": {
         "@applemusic-like-lyrics/core": "workspace:^",
       },
@@ -208,7 +208,7 @@
     },
     "packages/react-full": {
       "name": "@applemusic-like-lyrics/react-full",
-      "version": "0.2.1",
+      "version": "0.3.0",
       "dependencies": {
         "@applemusic-like-lyrics/core": "workspace:^",
         "@applemusic-like-lyrics/react": "workspace:^",
@@ -242,7 +242,7 @@
     },
     "packages/ttml": {
       "name": "@applemusic-like-lyrics/ttml",
-      "version": "0.2.0",
+      "version": "1.0.0-alpha.0",
       "devDependencies": {
         "@biomejs/biome": "catalog:",
         "@xmldom/xmldom": "^0.8.12",
@@ -252,7 +252,7 @@
     },
     "packages/vue": {
       "name": "@applemusic-like-lyrics/vue",
-      "version": "0.3.2",
+      "version": "0.4.0",
       "dependencies": {
         "@applemusic-like-lyrics/core": "workspace:^",
       },
