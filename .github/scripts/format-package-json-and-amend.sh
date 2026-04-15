@@ -39,8 +39,10 @@ echo "HEAD after amend:  $new_head"
 if [ "$new_head" != "$old_head" ] && [ "${#tags_to_move[@]}" -gt 0 ]; then
     echo "Repointing tags from old HEAD to amended HEAD."
     for tag in "${tags_to_move[@]}"; do
-        git tag -f "$tag" "$new_head"
-        echo "  moved $tag -> $new_head"
+        # `nx release` creates annotated tags. Keep them annotated after amend so
+        # `git push --follow-tags` can still publish them.
+        git tag -f -a "$tag" "$new_head" -m "$tag"
+        echo "  moved $tag -> $new_head (annotated)"
     done
 else
     echo "No tag updates needed after amend."
