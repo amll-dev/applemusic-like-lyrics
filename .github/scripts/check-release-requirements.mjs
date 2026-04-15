@@ -111,21 +111,37 @@ async function getAllChangedFiles() {
 		const pageItems = await requestJson(
 			`/pulls/${prNumber}/files?per_page=100&page=${page}`,
 		);
-		files.push(...pageItems.map((item) => item.filename));
+		files.push(...pageItems);
 		if (pageItems.length < 100) break;
 	}
 
 	return files;
 }
 
+function isReleasePlanPath(path) {
+	return (
+		typeof path === "string" && /^\.nx\/version-plans\/.+\.md$/u.test(path)
+	);
+}
+
 const pullRequest = await requestJson(`/pulls/${prNumber}`);
 const labels = new Set((pullRequest.labels ?? []).map((label) => label.name));
-const changedFiles = await getAllChangedFiles();
+const changedFileEntries = await getAllChangedFiles();
+const changedFiles = changedFileEntries.map((item) => item.filename);
 const ignorePatternsForPlanCheck = loadIgnorePatternsForPlanCheck();
 const ignoredFiles = getIgnoredFilesByGitignorePatterns(
 	changedFiles,
 	ignorePatternsForPlanCheck,
 );
+const hasReleasePlanFileChange = changedFileEntries.some((item) => {
+	if (item.status === "removed") {
+		return false;
+	}
+	return (
+		isReleasePlanPath(item.filename) ||
+		isReleasePlanPath(item.previous_filename)
+	);
+});
 
 if (changedFiles.length === 0) {
 	throw new Error("Pull request does not contain any changed files.");
@@ -152,11 +168,27 @@ if (!allIgnored && hasNoReleaseLabel) {
 	);
 }
 
+if (!allIgnored && !hasNoReleaseLabel && !hasReleasePlanFileChange) {
+	throw new Error(
+		"This pull request changes release-relevant files but does not include a release plan file change in .nx/version-plans/.\n" +
+			"Please add a release plan by running `nx release plan`. Learn more at https://nx.dev/docs/guides/nx-release/file-based-versioning-version-plans",
+	);
+}
+
 appendFileSync(
 	outputPath,
 	`requires_release_plan=${allIgnored ? "false" : "true"}\n`,
 );
 
 console.log(
-	JSON.stringify({ changedFiles, nonIgnoredFiles, hasNoReleaseLabel }, null, 2),
+	JSON.stringify(
+		{
+			changedFiles,
+			nonIgnoredFiles,
+			hasNoReleaseLabel,
+			hasReleasePlanFileChange,
+		},
+		null,
+		2,
+	),
 );

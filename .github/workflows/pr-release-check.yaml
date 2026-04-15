@@ -63,6 +63,10 @@ jobs:
         if: steps.release-requirements.outputs.requires_release_plan == 'true'
         uses: nrwl/nx-set-shas@v4
 
+      - name: Keep only release plans from this PR
+        if: steps.release-requirements.outputs.requires_release_plan == 'true'
+        run: bash .github/scripts/keep-pr-release-plans.sh "${{ env.NX_BASE }}" "${{ env.NX_HEAD }}"
+
       - name: Check release plans
         if: steps.release-requirements.outputs.requires_release_plan == 'true'
         run: pnpm release:plan:check --base="${{ env.NX_BASE }}" --head="${{ env.NX_HEAD }}"
