@@ -17,7 +17,7 @@ title: PR 流程
   - 在需要时执行 `bun run release:plan:check --base=... --head=...`。
 
 2. `Build libs`
-  - 安装 Node/Bun 依赖。
+  - 安装 Bun 依赖（`bun install --frozen-lockfile`）。
   - 安装 Rust `stable`、`wasm32-unknown-unknown`、`wasm-pack@v0.13.1`。
   - 执行 `bun run ci:build:libs`。
 
@@ -35,9 +35,13 @@ title: PR 流程
 
 ```bash
 # 只为本次 touched 项目生成计划（默认行为）
-nx release plan
+bun nx release plan
 ```
 
 然后根据提示选择各包变动幅度并输入 changelog。
 
 命令会在 `.nx/version-plans/` 下生成计划文件，请将该文件一并提交。
+
+## 关于合并
+
+目前设置了分支保护规则，仅允许 squash merge，以保持主分支洁净。
