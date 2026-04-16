@@ -32,7 +32,7 @@
 				"**/*.md",
 				"**/*.mdx",
 				".github/**",
-				".nx/version-plans/**",
+				".nx/**",
 				".editorconfig",
 				".gitignore",
 				"biome.json",
@@ -48,7 +48,8 @@
 				"tsconfig.json",
 				"tsconfig.base.json",
 				"packages/docs/**",
-				"packages/*/docs/**"
+				"packages/*/docs/**",
+				"packages/playground/**"
 			]
 		},
 		"version": {
