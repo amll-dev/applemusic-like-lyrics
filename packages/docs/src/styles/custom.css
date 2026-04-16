@@ -4,6 +4,15 @@
 	--sl-color-accent: #ff4040;
 	--sl-color-bg-nav: #eee8;
 	--sl-color-bg-sidebar: #bbb1;
+	--sl-color-white: hsl(350, 5%, 10%);
+	--sl-color-gray-1: hsl(350, 5%, 16%);
+	--sl-color-gray-2: hsl(350, 5%, 23%);
+	--sl-color-gray-3: hsl(350, 2%, 36%);
+	--sl-color-gray-4: hsl(350, 2%, 56%);
+	--sl-color-gray-5: hsl(350, 2%, 77%);
+	--sl-color-gray-6: hsl(350, 5%, 94%);
+	--sl-color-gray-7: hsl(350, 5%, 97%);
+	--sl-color-black: hsl(0, 0%, 100%);
 }
 
 :root[data-theme="dark"] {
@@ -13,8 +22,29 @@
 	--sl-color-bg: #151515;
 	--sl-color-bg-nav: #2228;
 	--sl-color-bg-sidebar: #2228;
+	--sl-color-white: hsl(0, 0%, 100%);
+	--sl-color-gray-1: hsl(350, 20%, 94%);
+	--sl-color-gray-2: hsl(350, 2%, 77%);
+	--sl-color-gray-3: hsl(350, 2%, 59%);
+	--sl-color-gray-4: hsl(350, 2%, 36%);
+	--sl-color-gray-5: hsl(350, 2%, 23%);
+	--sl-color-gray-6: hsl(350, 2%, 16%);
+	--sl-color-black: hsl(350, 2%, 10%);
 }
 
-header {
+.sl-markdown-content code:not(:where(.not-content *)) {
+	border-radius: 0.2rem;
+}
+.sl-markdown-content a:not(:where(.not-content *)) {
+	text-underline-offset: 0.18em;
+	text-decoration-color: color-mix(in srgb, currentColor 60%, transparent);
+}
+
+header,
+#starlight__mobile-toc {
 	backdrop-filter: blur(15px);
+}
+
+article.card {
+	border-radius: 0.5rem;
 }

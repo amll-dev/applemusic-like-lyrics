@@ -1,0 +1,314 @@
+---
+title: 快速开始
+---
+
+import { Tabs, TabItem } from "@astrojs/starlight/components";
+
+下面快速介绍如何将 AMLL 歌词组件集成到你的项目中。请注意，AMLL 不提供 CDN 引入方式，必须使用 bundler。
+
+有关除组件库之外的其他周围工具包，请直接查阅 [API 参考](/reference)。
+
+## 依赖
+
+安装 AMLL 核心库：
+
+<Tabs syncKey="pkg">
+<TabItem label="npm">
+
+```sh
+npm install @applemusic-like-lyrics/core
+```
+
+</TabItem>
+
+<TabItem label="pnpm">
+
+```sh
+pnpm add @applemusic-like-lyrics/core
+```
+
+</TabItem>
+
+<TabItem label="Yarn">
+
+```sh
+yarn add @applemusic-like-lyrics/core
+```
+
+</TabItem>
+</Tabs>
+
+此外，AMLL 将一些图形与动画库声明为 peer，这是为了复用项目中可能存在的相关依赖。一些包管理器或配置下可能会自动安装 peer，若没有，需要手动安装。
+
+<Tabs syncKey="pkg">
+<TabItem label="npm">
+
+```sh
+npm install @pixi/app @pixi/core @pixi/display @pixi/filter-blur @pixi/filter-bulge-pinch @pixi/filter-color-matrix @pixi/sprite jss jss-preset-default
+```
+
+</TabItem>
+
+<TabItem label="pnpm">
+
+```sh
+pnpm add @pixi/app @pixi/core @pixi/display @pixi/filter-blur @pixi/filter-bulge-pinch @pixi/filter-color-matrix @pixi/sprite jss jss-preset-default
+```
+
+</TabItem>
+
+<TabItem label="Yarn">
+
+```sh
+yarn add @pixi/app @pixi/core @pixi/display @pixi/filter-blur @pixi/filter-bulge-pinch @pixi/filter-color-matrix @pixi/sprite jss jss-preset-default
+```
+
+</TabItem>
+</Tabs>
+
+## 使用 Vanilla 方式引入
+
+AMLL 核心库是框架无关的。无论是否使用框架，均可使用此方法引入。
+
+```js
+import { LyricPlayer } from "@applemusic-like-lyrics/core";
+
+// 创建歌词播放组件
+const player = new LyricPlayer();
+
+// 将组件的元素添加到页面
+document.body.appendChild(player.getElement());
+
+// 设置歌词
+player.setLyricLines([]);
+
+// 设定当前播放时间
+player.setCurrentTime(0);
+
+// 更新歌词组件动画
+player.update(0);
+```
+
+其中的 [`setLyricLines`](/reference/core/classlyricplayerbase/#setlyriclines) 方法接受 [`LyricLine`](/reference/core/interfacelyricline) 类型的对象。在传入之后不应再修改这一对象的属性，否则可能导致问题。
+
+[`setCurrentTime`](/reference/core/classlyricplayerbase#setcurrenttime) 方法与 [`update`](/reference/core/classlyricplayerbase#update) 方法接受当前播放进度（整数，单位毫秒）作为参数，**在播放时需要逐帧调用**。此外在每次 `setLyricLines` 之后也应调用一次 `update` 以更新内容。
+
+你可以前往 [API 参考：Core 核心](/reference/core) 获取详细的接口文档。
+
+## 使用 React 绑定
+
+确保你已安装 `react` 和 `react-dom` 包。然后安装 AMLL React 绑定包：
+
+<Tabs syncKey="pkg">
+<TabItem label="npm">
+
+```sh
+npm install @applemusic-like-lyrics/react
+```
+
+</TabItem>
+
+<TabItem label="pnpm">
+
+```sh
+pnpm add @applemusic-like-lyrics/react
+```
+
+</TabItem>
+
+<TabItem label="Yarn">
+
+```sh
+yarn add @applemusic-like-lyrics/react
+```
+
+</TabItem>
+</Tabs>
+
+React 绑定包拥有具名导出 [`LyricPlayer`](/reference/react/variablelyricplayer) 作为核心组件。下面是一段示例。
+
+```jsx
+import React, { useState } from "react";
+import { LyricPlayer } from "@applemusic-like-lyrics/react";
+import { parseTTML } from "@applemusic-like-lyrics/core";
+
+const [currentTime, setCurrentTime] = useState(0);
+const [lyricLines, setLyricLines] = useState(0);
+const audio = document.getElementById("amll-audio"); // 获取 <audio> 元素
+
+const parsedResult = parseTTML(`SomeTtmlText...`); // 对歌词进行处理
+setLyricLines(parsedResult); // 设置歌词
+
+let lastTime = -1;
+const frame = (time) => {
+    if (lastTime === -1) {
+        lastTime = time;
+    }
+    if (!audio.paused) {
+        const time = (audio.currentTime * 1000) | 0;
+        setCurrentTime(time);
+    }
+    lastTime = time;
+    requestAnimationFrame(frame); // 逐帧调用
+};
+requestAnimationFrame(frame);
+
+function App() {
+    return (
+        <>
+            <audio id="amll-audio" src="Audio-Music-Src" controls />
+            <LyricPlayer
+                lyricLines={lyricLines} // 设置歌词
+                currentTime={currentTime} // 通过逐帧调用函数，设置播放时间
+            />
+        </>
+    );
+}
+export default App;
+```
+
+你可以前往 [API 参考：React 绑定](/reference/react) 获取详细的接口文档。
+
+## 使用 Vue 绑定
+
+确保你已安装 Vue。然后安装 AMLL Vue 绑定包：
+
+<Tabs syncKey="pkg">
+<TabItem label="npm">
+
+```sh
+npm install @applemusic-like-lyrics/vue
+```
+
+</TabItem>
+
+<TabItem label="pnpm">
+
+```sh
+pnpm add @applemusic-like-lyrics/vue
+```
+
+</TabItem>
+
+<TabItem label="Yarn">
+
+```sh
+yarn add @applemusic-like-lyrics/vue
+```
+
+</TabItem>
+</Tabs>
+
+Vue 绑定包拥有具名导出 [`LyricPlayer`](/reference/vue/classlyricplayer) 作为核心组件。歌词对象、播放进度等均以组件的响应式属性传入。下面是一段示例代码。
+
+<Tabs syncKey="vapi">
+<TabItem label="组合式">
+
+```vue
+<template>
+    <LyricPlayer
+        :lyric-lines="amllLyricLines"
+        :current-time="progressRef"
+        :playing="playingRef"
+    />
+    <audio src="..." ref="audioElRef"></audio>
+</template>
+
+<script setup lang="ts">
+import { onMounted, ref, useTemplateRef } from "vue";
+import type { LyricLine } from "@applemusic-like-lyrics/core";
+import { LyricPlayer } from "@applemusic-like-lyrics/vue";
+
+import "@applemusic-like-lyrics/core/style.css";
+
+const amllLyricLines: LyricLine[] = [];
+
+const progressRef = ref(0);
+const playingRef = ref(false);
+
+const audioElRef = useTemplateRef("audioElRef");
+
+function onFrame() {
+    if (audioElRef.value)
+        progressRef.value = Math.round(audioElRef.value.currentTime * 1000);
+    if (playingRef.value) requestAnimationFrame(onFrame);
+}
+
+onMounted(() => {
+    if (!audioElRef.value) return;
+    audioElRef.value.addEventListener("play", () => {
+        playingRef.value = true;
+        requestAnimationFrame(onFrame);
+    });
+    audioElRef.value.addEventListener("pause", () => {
+        playingRef.value = false;
+    });
+});
+</script>
+```
+
+</TabItem>
+
+<TabItem label="选项式">
+
+```vue
+<template>
+    <LyricPlayer
+        :lyric-lines="amllLyricLines"
+        :current-time="progressRef"
+        :playing="playingRef"
+    />
+    <audio src="..." ref="audioElRef"></audio>
+</template>
+
+<script lang="ts">
+import { defineComponent } from "vue";
+import type { LyricLine } from "@applemusic-like-lyrics/core";
+import { LyricPlayer } from "@applemusic-like-lyrics/vue";
+
+import "@applemusic-like-lyrics/core/style.css";
+
+export default defineComponent({
+    components: {
+        LyricPlayer,
+    },
+    data() {
+        return {
+            amllLyricLines: [] as LyricLine[],
+            progressRef: 0,
+            playingRef: false,
+        };
+    },
+    mounted() {
+        const audioEl = this.$refs.audioElRef as HTMLAudioElement | null;
+        if (!audioEl) return;
+
+        audioEl.addEventListener("play", () => {
+            this.playingRef = true;
+            this.onFrame();
+        });
+
+        audioEl.addEventListener("pause", () => {
+            this.playingRef = false;
+        });
+    },
+    methods: {
+        onFrame() {
+            const audioEl = this.$refs.audioElRef as HTMLAudioElement | null;
+            if (audioEl) {
+                this.progressRef = Math.round(audioEl.currentTime * 1000);
+            }
+
+            if (this.playingRef) {
+                requestAnimationFrame(this.onFrame);
+            }
+        },
+    },
+});
+</script>
+```
+
+</TabItem>
+</Tabs>
+
+你可以前往 [API 参考：Vue 绑定](/reference/vue) 获取详细的接口文档。

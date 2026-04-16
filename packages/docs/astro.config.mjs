@@ -65,9 +65,7 @@ async function generateDoc() {
 			: routeBase;
 
 		if (stem.toLowerCase() === "index") {
-			return hashPart
-				? `${normalizedBase}/#${hashPart}`
-				: `${normalizedBase}/`;
+			return hashPart ? `${normalizedBase}/#${hashPart}` : `${normalizedBase}/`;
 		}
 
 		const slug = stem.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
@@ -113,11 +111,11 @@ async function generateDoc() {
 			let docContent = evt.contents || "";
 			if (routeBase) {
 				docContent = docContent
-					.replace(/\]\(([^)\n]+)\)/g, (raw, href) => {
+					.replace(/\]\(([^)\n]+)\)/g, (_raw, href) => {
 						const converted = convertTypeDocHrefToRoute(href, routeBase);
 						return `](${converted})`;
 					})
-					.replace(/href="([^"\n]+)"/g, (raw, href) => {
+					.replace(/href="([^"\n]+)"/g, (_raw, href) => {
 						const converted = convertTypeDocHrefToRoute(href, routeBase);
 						return `href="${converted}"`;
 					});
@@ -184,9 +182,19 @@ async function generateDoc() {
 // https://astro.build/config
 const docsSidebar = [
 	{
-		label: "核心组件",
-		items: [{ slug: "guides/core/introduction" }],
+		label: "概览",
+		items: [
+			{ slug: "guides/overview/intro" },
+			{ slug: "guides/overview/quickstart" },
+			{ slug: "guides/overview/eco" },
+		],
 	},
+	// {
+	// 	label: "核心组件",
+	// 	items: [
+	// 		{ slug: "guides/core/introduction" },
+	// 	],
+	// },
 	{
 		label: "React 绑定",
 		items: [
@@ -194,13 +202,6 @@ const docsSidebar = [
 			{ slug: "guides/react/quick-start" },
 			{ slug: "guides/react/lyric-player" },
 			{ slug: "guides/react/bg-render" },
-		],
-	},
-	{
-		label: "AMLL TTML Tools",
-		items: [
-			{ slug: "guides/ttml-tools/introduction" },
-			{ slug: "guides/ttml-tools/tips" },
 		],
 	},
 ];
