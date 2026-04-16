@@ -1,11 +1,29 @@
 ---
 title: 使用文档
+editUrl: false
 ---
 
-这里收录 AMLL 的接入文档、框架绑定指南和工具说明。
+import { CardGrid, LinkCard } from "@astrojs/starlight/components";
 
-- 想先了解核心能力，可以从 [核心模块概述](/guides/core/introduction/) 开始。
-- 如果你在 React 项目中使用 AMLL，可以看 [React 绑定](/guides/react/introduction/)。
-- 如果你需要处理歌词文件，可以看 [AMLL TTML Tools](/guides/ttml-tools/introduction/)。
-
-需要查具体类型、类和函数时，切到左侧顶部的 `API 参考`。
+<CardGrid>
+  <LinkCard
+    title="介绍"
+    description="AMLL 的基本信息"
+    href="./overview/intro/"
+  />
+  <LinkCard
+    title="快速开始"
+    description="将 AMLL 歌词组件集成到你的项目中"
+    href="./overview/quickstart/"
+  />
+  <LinkCard
+    title="生态"
+    description="AMLL 相关项目介绍与发展"
+    href="./overview/eco/"
+  />
+  <LinkCard
+    title="React 绑定"
+    description="React 绑定使用文档"
+    href="./react/introduction/"
+  />
+</CardGrid>

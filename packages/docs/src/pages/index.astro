@@ -1,5 +1,5 @@
 ---
-import { Card, CardGrid, LinkButton } from "@astrojs/starlight/components";
+import { Card, CardGrid, LinkCard } from "@astrojs/starlight/components";
 import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro";
 import { AMLLPreview } from "../components/AMLLPreview";
 import "../styles/index.css";
@@ -36,60 +36,34 @@ import "../styles/index.css";
 		</style>
 		<AMLLPreview client:only="react" />
 	</div>
-	<CardGrid>
-		<Card title="AMLL Core 核心库" icon="seti:javascript">
-			<p>AMLL Core 是类苹果歌词的核心库，提供了歌词播放器的核心功能。</p>
-			<LinkButton href="/guides/core/introduction"> 使用文档 </LinkButton>
-			<LinkButton href="/reference/core" variant="secondary">
-				API 参考
-			</LinkButton>
-		</Card>
-		<Card title="AMLL React 绑定" icon="seti:react">
-			<p>
-				AMLL React 提供了对 Core 核心库的 React 绑定，可以更方便地使用歌词组件。
-			</p>
-			<LinkButton href="/guides/react/introduction"> 使用文档 </LinkButton>
-			<LinkButton href="/reference/react" variant="secondary">
-				API 参考
-			</LinkButton>
-		</Card>
-		<Card title="AMLL React Full 组件库" icon="seti:react">
-			<p>
-				AMLL React Full 组件库进一步提供了更多用于拼装出类 Apple Music
-				风格的页面组件。
-			</p>
-			<LinkButton href="/reference/react-full" variant="secondary">
-				API 参考
-			</LinkButton>
-		</Card>
-		<Card title="AMLL Vue 绑定" icon="seti:vue">
-			<p>
-				AMLL Vue 提供了对 Core 核心库的 Vue 绑定，可以更方便地使用歌词组件。
-			</p>
-			<LinkButton href="/reference/vue" variant="secondary">
-				API 参考
-			</LinkButton>
-		</Card>
-		<Card title="AMLL Lyric 歌词解析库" icon="seti:vue">
-			<p>支持各常见格式歌词的解析和导出，对象格式与 AMLL 组件保持统一。</p>
-			<LinkButton href="/reference/lyric" variant="secondary">
-				API 参考
-			</LinkButton>
-		</Card>
-		<Card title="AMLL TTML 歌词解析库" icon="seti:vue">
-			<p>
-				专用于 TTML 格式的歌词解析库，支持 AMLL 生态的各高级功能，如 ruby
-				注音等。
-			</p>
-			<LinkButton href="/reference/ttml" variant="secondary">
-				API 参考
-			</LinkButton>
-		</Card>
-		<Card title="贡献指南" icon="rocket">
-			<p>如果你有兴趣参与到项目中来，我们提供了环境搭建指南与项目介绍。</p>
-			<LinkButton href="/contribute/development/environments">
-				快速开始
-			</LinkButton>
-		</Card>
-	</CardGrid>
+	<Card title="开始了解 AppleMusic-like Lyrics" icon="open-book">
+		<p>点击下方链接开始阅读文档</p>
+		<CardGrid>
+			<LinkCard
+				title="介绍"
+				description="AMLL 的基本信息"
+				href="./guides/overview/intro/"
+			/>
+			<LinkCard
+				title="快速开始"
+				description="将 AMLL 歌词组件集成到你的项目中"
+				href="./guides/overview/quickstart/"
+			/>
+			<LinkCard
+				title="生态"
+				description="AMLL 相关项目介绍与发展"
+				href="./guides/overview/eco/"
+			/>
+			<LinkCard
+				title="API 文档"
+				description="各包的 API 参考文档"
+				href="./reference/"
+			/>
+			<LinkCard
+				title="贡献指南"
+				description="如何参与 AMLL 的开发与维护"
+				href="./contribute/"
+			/>
+		</CardGrid>
+	</Card>
 </StarlightPage>
