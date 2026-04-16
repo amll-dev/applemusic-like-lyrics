@@ -10,7 +10,6 @@
 	"dependencies": {
 		"@applemusic-like-lyrics/core": "workspace:^",
 		"@applemusic-like-lyrics/react": "workspace:^",
-		"@applemusic-like-lyrics/react-full": "workspace:^",
 		"@astrojs/react": "^5.0.2",
 		"@astrojs/starlight": "^0.38.2",
 		"@types/react": "catalog:",
