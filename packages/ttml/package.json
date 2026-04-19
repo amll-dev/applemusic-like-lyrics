@@ -49,8 +49,8 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "catalog:",
-		"@xmldom/xmldom": "^0.8.12",
-		"typedoc": "catalog:",
-		"tsdown": "catalog:"
+		"@xmldom/xmldom": "^0.9.10",
+		"tsdown": "catalog:",
+		"typedoc": "catalog:"
 	}
 }

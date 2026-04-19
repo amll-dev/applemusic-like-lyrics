@@ -137,6 +137,113 @@ describe("TTML Generator Integration", () => {
 			}
 		}
 	});
+
+	it("generates separated sidecar nodes for mismatched languages between main and background", () => {
+		const mockResult: TTMLResult = {
+			metadata: { timingMode: "Line" },
+			lines: [
+				{
+					id: "L1",
+					startTime: 0,
+					endTime: 1000,
+					text: "Main",
+					translations: [{ language: "en", text: "Main English" }],
+					backgroundVocal: {
+						startTime: 0,
+						endTime: 1000,
+						text: "(Bg)",
+						translations: [{ language: "es", text: "Bg Spanish" }],
+					},
+				},
+			],
+		};
+
+		const generator = new TTMLGenerator({
+			domImplementation: new DOMImplementation(),
+			xmlSerializer: new XMLSerializer(),
+			useSidecar: true,
+		});
+
+		const xml = generator.generate(mockResult);
+
+		const doc = new DOMParser().parseFromString(xml, "application/xml");
+		const translations = Array.from(doc.getElementsByTagName("translation"));
+
+		const enTrans = translations.find(
+			(el) => el.getAttribute("xml:lang") === "en",
+		);
+		const esTrans = translations.find(
+			(el) => el.getAttribute("xml:lang") === "es",
+		);
+
+		expect(enTrans).toBeDefined();
+		expect(esTrans).toBeDefined();
+
+		expect(enTrans?.textContent).toContain("Main English");
+		expect(enTrans?.getElementsByTagName("span").length).toBe(0);
+
+		expect(esTrans?.textContent).toContain("Bg Spanish");
+		expect(esTrans?.textContent).not.toContain("Main English");
+
+		const esSpans = esTrans?.getElementsByTagName("span");
+		expect(esSpans?.length).toBe(1);
+		expect(esSpans?.[0].getAttribute("ttm:role")).toBe("x-bg");
+	});
+
+	it("ensures inline translations and background vocals do not deeply nest each other", () => {
+		const mockResult: TTMLResult = {
+			metadata: { timingMode: "Line" },
+			lines: [
+				{
+					id: "L1",
+					startTime: 0,
+					endTime: 1000,
+					text: "Main Lyric",
+					translations: [{ language: "en", text: "Main Trans" }],
+					backgroundVocal: {
+						startTime: 0,
+						endTime: 1000,
+						text: "(Bg Lyric)",
+						translations: [{ language: "en", text: "Bg Trans" }],
+					},
+				},
+			],
+		};
+
+		const generator = new TTMLGenerator({
+			domImplementation: new DOMImplementation(),
+			xmlSerializer: new XMLSerializer(),
+			useSidecar: false,
+		});
+		const xmlStr = generator.generate(mockResult);
+
+		const doc = new DOMParser().parseFromString(xmlStr, "application/xml");
+		const pNode = doc.getElementsByTagName("p")[0];
+
+		const childSpans = Array.from(pNode.childNodes).filter(
+			(n) => n.nodeType === 1 && n.nodeName.toLowerCase() === "span",
+		) as unknown as Element[];
+
+		const mainTransSpan = childSpans.find(
+			(span) => span.getAttribute("ttm:role") === "x-translation",
+		);
+		const bgSpan = childSpans.find(
+			(span) => span.getAttribute("ttm:role") === "x-bg",
+		);
+
+		expect(mainTransSpan).toBeDefined();
+		expect(mainTransSpan?.textContent).toBe("Main Trans");
+
+		expect(bgSpan).toBeDefined();
+		expect(bgSpan?.textContent).toContain("Bg Lyric");
+
+		if (!bgSpan) throw new Error();
+
+		const nestedTransSpans = Array.from(bgSpan.getElementsByTagName("span"));
+		expect(nestedTransSpans).toHaveLength(1);
+		expect(nestedTransSpans[0].getAttribute("ttm:role")).toBe("x-translation");
+		expect(nestedTransSpans[0].textContent).toBe("Bg Trans");
+	});
 });
 
 describe("TTML Generator - toTTMLResult", () => {

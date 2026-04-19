@@ -43,7 +43,7 @@ export class TTMLGenerator {
 		this.options = options;
 
 		if (this.options.domImplementation) {
-			this.domImpl = this.options.domImplementation;
+			this.domImpl = this.options.domImplementation as DOMImplementation;
 		} else if (typeof document !== "undefined" && document.implementation) {
 			this.domImpl = document.implementation;
 		} else {
@@ -281,33 +281,51 @@ export class TTMLGenerator {
 
 		const translationsMap = new Map<
 			string | undefined,
-			Array<{ id: string; content: SubLyricContent }>
+			Array<{ id: string; main?: SubLyricContent; bg?: SubLyricContent }>
 		>();
 		const romansMap = new Map<
 			string | undefined,
-			Array<{ id: string; content: SubLyricContent }>
+			Array<{ id: string; main?: SubLyricContent; bg?: SubLyricContent }>
 		>();
 
 		for (const line of result.lines) {
-			if (line.translations) {
-				line.translations.forEach((content) => {
-					if (this.shouldMoveToSidecar(content)) {
-						const lang = content.language;
-						if (!translationsMap.has(lang)) translationsMap.set(lang, []);
+			const pairedTrans = this.pairSubContents(
+				line.translations,
+				line.backgroundVocal?.translations,
+			);
+			for (const pair of pairedTrans) {
+				if (
+					(pair.main && this.shouldMoveToSidecar(pair.main)) ||
+					(pair.bg && this.shouldMoveToSidecar(pair.bg))
+				) {
+					if (!translationsMap.has(pair.lang))
+						translationsMap.set(pair.lang, []);
+					translationsMap.get(pair.lang)?.push({
 						// biome-ignore lint/style/noNonNullAssertion: generate 方法已验证行 id 一定有
-						translationsMap.get(lang)?.push({ id: line.id!, content });
-					}
-				});
+						id: line.id!,
+						main: pair.main,
+						bg: pair.bg,
+					});
+				}
 			}
-			if (line.romanizations) {
-				line.romanizations.forEach((content) => {
-					if (this.shouldMoveToSidecar(content)) {
-						const lang = content.language;
-						if (!romansMap.has(lang)) romansMap.set(lang, []);
+
+			const pairedRomans = this.pairSubContents(
+				line.romanizations,
+				line.backgroundVocal?.romanizations,
+			);
+			for (const pair of pairedRomans) {
+				if (
+					(pair.main && this.shouldMoveToSidecar(pair.main)) ||
+					(pair.bg && this.shouldMoveToSidecar(pair.bg))
+				) {
+					if (!romansMap.has(pair.lang)) romansMap.set(pair.lang, []);
+					romansMap.get(pair.lang)?.push({
 						// biome-ignore lint/style/noNonNullAssertion: generate 方法已验证行 id 一定有
-						romansMap.get(lang)?.push({ id: line.id!, content });
-					}
-				});
+						id: line.id!,
+						main: pair.main,
+						bg: pair.bg,
+					});
+				}
 			}
 		}
 
@@ -321,7 +339,14 @@ export class TTMLGenerator {
 				items.forEach((item) => {
 					const textEl = this.doc.createElement(Elements.Text);
 					textEl.setAttribute(Attributes.For, item.id);
-					this.appendContentToElement(textEl, item.content);
+
+					if (item.main) {
+						this.appendContentToElement(textEl, item.main);
+					}
+					if (item.bg) {
+						this.appendBackgroundVocal(textEl, item.bg);
+					}
+
 					transEl.appendChild(textEl);
 				});
 				container.appendChild(transEl);
@@ -340,7 +365,14 @@ export class TTMLGenerator {
 				items.forEach((item) => {
 					const textEl = this.doc.createElement(Elements.Text);
 					textEl.setAttribute(Attributes.For, item.id);
-					this.appendContentToElement(textEl, item.content);
+
+					if (item.main) {
+						this.appendContentToElement(textEl, item.main);
+					}
+					if (item.bg) {
+						this.appendBackgroundVocal(textEl, item.bg);
+					}
+
 					transEl.appendChild(textEl);
 				});
 				container.appendChild(transEl);
@@ -421,6 +453,35 @@ export class TTMLGenerator {
 		return body;
 	}
 
+	private pairSubContents(
+		mainList?: SubLyricContent[],
+		bgList?: SubLyricContent[],
+	): Array<{ lang?: string; main?: SubLyricContent; bg?: SubLyricContent }> {
+		const map = new Map<
+			string | undefined,
+			{ lang?: string; main?: SubLyricContent; bg?: SubLyricContent }
+		>();
+
+		const getEntry = (lang?: string) => {
+			let entry = map.get(lang);
+			if (!entry) {
+				entry = { lang };
+				map.set(lang, entry);
+			}
+			return entry;
+		};
+
+		mainList?.forEach((item) => {
+			getEntry(item.language).main = item;
+		});
+
+		bgList?.forEach((item) => {
+			getEntry(item.language).bg = item;
+		});
+
+		return Array.from(map.values());
+	}
+
 	private appendContentToElement(
 		element: Element,
 		content: LyricBase | SubLyricContent,
@@ -440,7 +501,7 @@ export class TTMLGenerator {
 			this.appendSubLyrics(element, content);
 		}
 
-		if (content.backgroundVocal) {
+		if ("backgroundVocal" in content && content.backgroundVocal) {
 			this.appendBackgroundVocal(element, content.backgroundVocal);
 		}
 	}

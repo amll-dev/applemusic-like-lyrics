@@ -122,21 +122,19 @@ export function toAmllLyrics(
 
 		// Apple Music 风格的对唱识别逻辑
 		if (isGroup) {
-			// 合唱始终居左，且不影响其他 agent type 的交替计算
+			// 合唱始终非对唱，且不影响其他 agent type 的交替计算
 			currentIsDuet = false;
-		} else if (isOther) {
-			// other 类型始终居右
-			currentIsDuet = true;
 		} else {
 			if (lastPersonAgentId === null) {
-				// 默认起始位置为左侧
-				currentIsDuet = false;
+				// 如果第一次遇到的演唱者类型是 Other，强制为对唱，否则非对唱
+				currentIsDuet = !!isOther;
 				lastPersonAgentId = agentId;
 				lastPersonIsDuet = currentIsDuet;
 			} else if (lastPersonAgentId === agentId) {
+				// 与上一个非 Group 演唱者相同，保持对唱状态
 				currentIsDuet = lastPersonIsDuet;
 			} else {
-				// 与上一次演唱者不同，翻转对唱侧
+				// 与上一个非 Group 演唱者不同，翻转对唱侧
 				currentIsDuet = !lastPersonIsDuet;
 				lastPersonAgentId = agentId;
 				lastPersonIsDuet = currentIsDuet;

@@ -2,6 +2,13 @@
  * 解析器所使用的较复杂的数据结构
  * @module ttml-types
  */
+
+import type {
+	MinimalDOMImplementation,
+	MinimalDOMParser,
+	MinimalXMLSerializer,
+} from "./dom";
+
 export type * from "./amll";
 
 /**
@@ -13,9 +20,7 @@ export interface TTMLParserOptions {
 	 * - 浏览器环境: 可忽略，默认使用 window.DOMParser
 	 * - Node.js 环境: 必须传入 (例如: `new (require('@xmldom/xmldom').DOMParser)()`)
 	 */
-	domParser?: {
-		parseFromString(string: string, type: DOMParserSupportedType): Document;
-	};
+	domParser?: MinimalDOMParser;
 }
 
 /**
@@ -27,14 +32,14 @@ export interface GeneratorOptions {
 	 * - 浏览器: 可忽略，默认使用 document.implementation
 	 * - Node.js 环境: 必须传入 (例如: `new (require('@xmldom/xmldom').DOMImplementation)()`)
 	 */
-	domImplementation?: DOMImplementation;
+	domImplementation?: MinimalDOMImplementation;
 
 	/**
 	 * 注入的 XMLSerializer 实例
 	 * - 浏览器: 可忽略，默认使用 new XMLSerializer()
 	 * - Node.js 环境: 必须传入 (例如: `new (require('@xmldom/xmldom').XMLSerializer)()`)
 	 */
-	xmlSerializer?: XMLSerializer;
+	xmlSerializer?: MinimalXMLSerializer;
 
 	/**
 	 * 对于逐行翻译/音译，是否将其放入 Head (Apple Music 风格)
@@ -63,12 +68,12 @@ export interface SubLyricContent {
 	 * 逐字音节信息
 	 */
 	words?: Syllable[];
-
-	/**
-	 * 嵌套的背景人声翻译/音译内容
-	 */
-	backgroundVocal?: SubLyricContent;
 }
+
+/**
+ * 背景人声内容
+ */
+export type BackgroundVocal = Omit<LyricBase, "backgroundVocal">;
 
 /**
  * 基础歌词内容
@@ -110,7 +115,7 @@ export interface LyricBase {
 	/**
 	 * 背景人声内容
 	 */
-	backgroundVocal?: LyricBase;
+	backgroundVocal?: BackgroundVocal;
 }
 
 /**

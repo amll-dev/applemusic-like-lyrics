@@ -143,7 +143,6 @@ describe("TTML Integration Test", () => {
 		expect(l3.text).toContain("コーラス です");
 
 		expect(l3.backgroundVocal).toBeDefined();
-		expect(l3.backgroundVocal).toBeDefined();
 
 		const bg = l3.backgroundVocal;
 		if (!bg) throw new Error("背景人声数组中未找到数据");
@@ -340,13 +339,19 @@ describe("TTML Integration Test", () => {
 		expect(transZh.text).toContain("这是合唱部分");
 	});
 
-	it("includes structured background vocal data in L3", () => {
+	it("flattens background vocal data in L3 translations", () => {
 		const l3 = getLine("L3");
-		const translation = getTranslation(l3, "en-US");
+		const mainTranslation = getTranslation(l3, "en-US");
 
-		expect(translation.backgroundVocal).toBeTypeOf("object");
-		expect(translation.backgroundVocal).toBeDefined;
-		expect(translation.backgroundVocal?.text).toBe("With background");
+		expect("backgroundVocal" in mainTranslation).toBe(false);
+
+		const bg = l3.backgroundVocal;
+		expect(bg).toBeDefined();
+		if (!bg) throw new Error();
+
+		const bgTranslation = getTranslation(bg, "en-US");
+		expect(bgTranslation).toBeDefined();
+		expect(bgTranslation.text).toBe("With background");
 	});
 
 	it("composes full text correctly", () => {
@@ -456,6 +461,41 @@ describe("TTML Integration Test", () => {
 
 		expect(roundTripResult).toEqual(originalResult);
 	});
+
+	it("handles translation containing ONLY background vocals", () => {
+		const xml = `
+			<tt xmlns="http://www.w3.org/ns/ttml"
+				xmlns:ttm="http://www.w3.org/ns/ttml#metadata"
+				xmlns:itunes="http://music.apple.com/lyric-ttml-internal">
+				<body>
+					<div>
+						<p begin="0s" end="1s" itunes:key="L1">
+							Main Lyric
+							<span ttm:role="x-bg">(Bg Lyric)</span>
+							<span ttm:role="x-translation" xml:lang="en">
+								<span ttm:role="x-bg">Only Bg Translation</span>
+							</span>
+						</p>
+					</div>
+				</body>
+			</tt>
+		`;
+		const customParser = new TTMLParser({ domParser: new DOMParser() });
+		const res = customParser.parse(xml);
+		const l1 = res.lines[0];
+
+		expect(l1).toMatchObject({
+			translations: undefined,
+			backgroundVocal: {
+				translations: [
+					{
+						text: "Only Bg Translation",
+						language: "en",
+					},
+				],
+			},
+		});
+	});
 });
 
 describe("toAmllLyrics Conversion", () => {
@@ -474,7 +514,7 @@ describe("toAmllLyrics Conversion", () => {
 		expect(amllLines).toHaveLength(4);
 	});
 
-	it("bes sorted correctly", () => {
+	it("is sorted correctly", () => {
 		for (let i = 0; i < amllLines.length - 1; i++) {
 			expect(amllLines[i].startTime).toBeLessThanOrEqual(
 				amllLines[i + 1].startTime,
@@ -504,7 +544,7 @@ describe("toAmllLyrics Conversion", () => {
 		expect(bgLine.romanLyric).toBe("haikei");
 	});
 
-	it("passs through obscene to AmllLyricWord", () => {
+	it("passes through obscene to AmllLyricWord", () => {
 		const l1 = amllLines[0];
 
 		expect(l1.words[0].word).toBe("これ");
@@ -514,7 +554,7 @@ describe("toAmllLyrics Conversion", () => {
 		expect(l1.words[1].obscene).toBeUndefined();
 	});
 
-	it("passs through emptyBeat to AmllLyricWord", () => {
+	it("passes through emptyBeat to AmllLyricWord", () => {
 		const l1 = amllLines[0];
 
 		expect(l1.words[2].word).toBe("テスト");
