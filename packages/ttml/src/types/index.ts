@@ -142,6 +142,13 @@ export interface LyricLine extends LyricBase {
 	 * 例如: "Verse", "Chorus", "Intro", "Outro"
 	 */
 	songPart?: string;
+
+	/**
+	 * 所属的递增区块索引
+	 *
+	 * 用于区分连续出现但属于不同 div 的同名 songPart
+	 */
+	blockIndex?: number;
 }
 
 /**

@@ -268,17 +268,6 @@ export class TTMLGenerator {
 
 		let hasContent = false;
 
-		if (result.metadata.songwriters && result.metadata.songwriters.length > 0) {
-			const container = this.doc.createElement(Elements.Songwriters);
-			result.metadata.songwriters.forEach((name) => {
-				const sw = this.doc.createElement(Elements.Songwriter);
-				sw.textContent = name;
-				container.appendChild(sw);
-			});
-			iTunesMeta.appendChild(container);
-			hasContent = true;
-		}
-
 		const translationsMap = new Map<
 			string | undefined,
 			Array<{ id: string; main?: SubLyricContent; bg?: SubLyricContent }>
@@ -381,6 +370,17 @@ export class TTMLGenerator {
 			hasContent = true;
 		}
 
+		if (result.metadata.songwriters && result.metadata.songwriters.length > 0) {
+			const container = this.doc.createElement(Elements.Songwriters);
+			result.metadata.songwriters.forEach((name) => {
+				const sw = this.doc.createElement(Elements.Songwriter);
+				sw.textContent = name;
+				container.appendChild(sw);
+			});
+			iTunesMeta.appendChild(container);
+			hasContent = true;
+		}
+
 		if (hasContent) {
 			metadataEl.appendChild(iTunesMeta);
 		}
@@ -396,6 +396,7 @@ export class TTMLGenerator {
 
 		let currentDiv: Element | null = null;
 		let currentSongPart: string | undefined;
+		let currentBlockIndex: number | undefined;
 		let currentSectionEndTime = 0;
 
 		const finalizeCurrentDiv = () => {
@@ -415,10 +416,15 @@ export class TTMLGenerator {
 		};
 
 		for (const line of lines) {
-			if (line.songPart !== currentSongPart || !currentDiv) {
+			if (
+				line.songPart !== currentSongPart ||
+				line.blockIndex !== currentBlockIndex ||
+				!currentDiv
+			) {
 				finalizeCurrentDiv();
 
 				currentSongPart = line.songPart;
+				currentBlockIndex = line.blockIndex;
 				currentSectionEndTime = 0;
 
 				currentDiv = this.doc.createElement(Elements.Div);

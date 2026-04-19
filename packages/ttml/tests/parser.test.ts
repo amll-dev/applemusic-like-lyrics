@@ -752,3 +752,91 @@ describe("toTTMLResult Conversion", () => {
 		]);
 	});
 });
+
+describe("TTML BlockIndex Boundary Tests", () => {
+	let parser: TTMLParser;
+	let result: TTMLResult;
+
+	beforeAll(() => {
+		parser = new TTMLParser({ domParser: new DOMParser() });
+		const xml = readFileSync(
+			join(import.meta.dirname, "fixtures", "apple-music-duet.ttml"),
+			"utf-8",
+		);
+		result = parser.parse(xml);
+	});
+
+	it("assigns an incremental blockIndex to parsed lines", () => {
+		let previousBlockIndex = 0;
+		for (const line of result.lines) {
+			expect(line.blockIndex).toBeDefined();
+			expect(line.blockIndex).toBeNumber();
+			expect(line.blockIndex).toBeGreaterThanOrEqual(previousBlockIndex);
+
+			if (line.blockIndex !== undefined) {
+				previousBlockIndex = line.blockIndex;
+			}
+		}
+	});
+
+	it("preserves continuous block boundaries in Generator round-trip", () => {
+		const generator = new TTMLGenerator({
+			domImplementation: new DOMImplementation(),
+			xmlSerializer: new XMLSerializer(),
+			useSidecar: true,
+		});
+		const generatedXML = generator.generate(result);
+
+		const roundTripParser = new TTMLParser({ domParser: new DOMParser() });
+		const roundTripResult = roundTripParser.parse(generatedXML);
+
+		const originalBlocks = new Set(result.lines.map((l) => l.blockIndex));
+		const roundTripBlocks = new Set(
+			roundTripResult.lines.map((l) => l.blockIndex),
+		);
+
+		expect(roundTripBlocks.size).toBe(originalBlocks.size);
+
+		expect(roundTripResult.lines.map((l) => l.blockIndex)).toEqual(
+			result.lines.map((l) => l.blockIndex),
+		);
+	});
+
+	it("distinguishes adjacent containers with the same songPart using exact blockIndex assertions", () => {
+		const getLine = (id: string) => {
+			const line = result.lines.find((l) => l.id === id);
+			if (!line) throw new Error(`找不到 ID 为 ${id} 的歌词行`);
+			return line;
+		};
+
+		expect(getLine("L18").songPart).toBe("Verse");
+		expect(getLine("L18").blockIndex).toBe(4);
+		expect(getLine("L19").songPart).toBe("Verse");
+		expect(getLine("L19").blockIndex).toBe(5);
+
+		expect(getLine("L27").songPart).toBe("Verse");
+		expect(getLine("L27").blockIndex).toBe(7);
+		expect(getLine("L28").songPart).toBe("Verse");
+		expect(getLine("L28").blockIndex).toBe(8);
+
+		expect(getLine("L31").songPart).toBe("Verse");
+		expect(getLine("L31").blockIndex).toBe(8);
+		expect(getLine("L32").songPart).toBe("Verse");
+		expect(getLine("L32").blockIndex).toBe(9);
+
+		expect(getLine("L38").songPart).toBe("Verse");
+		expect(getLine("L38").blockIndex).toBe(9);
+		expect(getLine("L39").songPart).toBe("Verse");
+		expect(getLine("L39").blockIndex).toBe(10);
+
+		expect(getLine("L43").songPart).toBe("Verse");
+		expect(getLine("L43").blockIndex).toBe(10);
+		expect(getLine("L44").songPart).toBe("Verse");
+		expect(getLine("L44").blockIndex).toBe(11);
+
+		expect(getLine("L48").songPart).toBe("Verse");
+		expect(getLine("L48").blockIndex).toBe(11);
+		expect(getLine("L49").songPart).toBe("Verse");
+		expect(getLine("L49").blockIndex).toBe(12);
+	});
+});
