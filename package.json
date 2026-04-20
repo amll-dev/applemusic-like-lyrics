@@ -33,6 +33,7 @@
 		"@typescript/native-preview": "^7.0.0-dev.20260412.1",
 		"npm-run-all2": "^8.0.4",
 		"nx": "^22.6.0",
+		"swc-node": "^1.0.0",
 		"tsdown": "catalog:"
 	},
 	"scripts": {

@@ -35,6 +35,11 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+
       - name: Decide whether a release plan is required
         id: release-requirements
         run: bun .github/scripts/check-release-requirements.mjs
