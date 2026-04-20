@@ -99,11 +99,17 @@ export default class CustomChangelogRenderer extends DefaultChangelogRenderer {
 
 	private sortChangesByPrefix(changes: ChangelogChange[]): ChangelogChange[] {
 		const prefixOrder = new Map<string, number>([
-			["fix", 0],
-			["feat", 1],
-			["chore", 2],
-			["docs", 100],
-			["ci", 101],
+			["feat", 0],
+			["fix", 1],
+			["perf", 2],
+			["refactor", 3],
+			["docs", 4],
+			["chore", 5],
+			["ci", 6],
+			["test", 7],
+			["build", 8],
+			["style", 9],
+			["revert", 10],
 		]);
 
 		return [...changes].sort((a, b) => {
