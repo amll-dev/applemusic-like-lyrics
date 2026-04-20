@@ -5,7 +5,7 @@ const DEFAULT_OPTIMIZE_OPTIONS: OptimizeLyricOptions = {
 	resetLineTimestamps: true,
 	convertExcessiveBackgroundLines: true,
 	syncMainAndBackgroundLines: true,
-	cleanUnintentionalOverlaps: true,
+	cleanUnintentionalOverlaps: false,
 	tryAdvanceStartTime: true,
 };
 
