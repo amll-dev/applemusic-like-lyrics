@@ -1,4 +1,5 @@
 name: Validate PR
+run-name: Validate PR #${{ github.event.pull_request.number }} - ${{ github.event.pull_request.title }}
 
 on:
   pull_request:
