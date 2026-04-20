@@ -1,26 +1,26 @@
 ## 0.3.1 (2026-04-14)
 
-### 🩹 Fixes
+### Patch Changes
 
-- ci: 修复工作流错误导致的不成功发布 ([#483](https://github.com/amll-dev/applemusic-like-lyrics/pull/483))
+- **ci:** 修复工作流错误导致的不成功发布 ([#483](https://github.com/amll-dev/applemusic-like-lyrics/pull/483))
 
-### ❤️ Thank You
+### Contributors
 
-- Linho
+- Linho [@Linho1219](https://github.com/Linho1219)
 
 ## 0.3.0 (2026-04-14)
 
-### 🚀 Features
+### Minor Changes
 
-- chore: 移除 canvas 歌词渲染器 ([#476](https://github.com/amll-dev/applemusic-like-lyrics/pull/476))
+- **chore:** 移除 canvas 歌词渲染器 ([#476](https://github.com/amll-dev/applemusic-like-lyrics/pull/476))
 
-### 🩹 Fixes
+### Patch Changes
 
-- chore: 更换工具链 ([#476](https://github.com/amll-dev/applemusic-like-lyrics/pull/476))
-- fix: 修复纵向布局下封面定位错误 ([0f5805f7](https://github.com/amll-dev/applemusic-like-lyrics/commit/0f5805f7))
-- chore: 在项目范围内启用 isolatedDeclarations ([#480](https://github.com/amll-dev/applemusic-like-lyrics/pull/480))
+- **fix:** 修复纵向布局下封面定位错误 ([0f5805f7](https://github.com/amll-dev/applemusic-like-lyrics/commit/0f5805f7))
+- **chore:** 更换工具链 ([#476](https://github.com/amll-dev/applemusic-like-lyrics/pull/476))
+- **chore:** 在项目范围内启用 isolatedDeclarations ([#480](https://github.com/amll-dev/applemusic-like-lyrics/pull/480))
 
-### ❤️ Thank You
+### Contributors
 
-- apoint123 @apoint123
-- Linho
+- apoint123 [@apoint123](https://github.com/apoint123)
+- Linho [@Linho1219](https://github.com/Linho1219)
