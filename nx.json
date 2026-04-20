@@ -58,7 +58,9 @@
 		},
 		"changelog": {
 			"workspaceChangelog": false,
-			"projectChangelogs": {}
+			"projectChangelogs": {
+				"renderer": "{workspaceRoot}/.nx/scripts/changelog-render.ts"
+			}
 		},
 		"git": {
 			"commit": true,
