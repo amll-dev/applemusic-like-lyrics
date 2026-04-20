@@ -1,4 +1,5 @@
 name: "Deploy site"
+run-name: "Deploy site - ${{ github.event.head_commit.message || 'manual dispatch' }}"
 
 on:
   push:
