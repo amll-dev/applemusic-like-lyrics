@@ -224,6 +224,11 @@ export const LyricPlayer: ForwardRefExoticComponent<
 
 			if (lyricLines !== undefined) {
 				corePlayer?.setLyricLines(lyricLines, currentTimeRef.current);
+
+				if (currentTimeRef.current !== undefined) {
+					corePlayer?.setCurrentTime(currentTimeRef.current, true);
+				}
+
 				corePlayer?.update();
 			} else {
 				corePlayer?.setLyricLines([]);
