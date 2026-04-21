@@ -332,6 +332,10 @@ export const LyricPlayer = defineComponent({
 				} else {
 					player.setLyricLines([]);
 				}
+
+				if (props.currentTime !== undefined) {
+					player.setCurrentTime(props.currentTime, true);
+				}
 			},
 			{ immediate: true },
 		);
