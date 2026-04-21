@@ -5,6 +5,7 @@ import {
 	type LyricLineMouseEvent,
 	type LyricPlayerBase,
 	MaskObsceneWordsMode,
+	type OptimizeLyricOptions,
 	type spring,
 } from "@applemusic-like-lyrics/core";
 import {
@@ -20,6 +21,7 @@ import {
 	type SlotsType,
 	Teleport,
 	useTemplateRef,
+	watch,
 	watchEffect,
 } from "vue";
 
@@ -103,6 +105,13 @@ const lyricPlayerProps = {
 	maskObsceneWordsMode: {
 		type: Object as PropType<MaskObsceneWordsMode>,
 		default: MaskObsceneWordsMode.Disabled,
+	},
+	/**
+	 * 设置歌词优化选项
+	 */
+	optimizeOptions: {
+		type: Object as PropType<OptimizeLyricOptions>,
+		default: {},
 	},
 	/**
 	 * 设置当前播放歌词，要注意传入后这个数组内的信息不得修改，否则会发生错误
@@ -309,10 +318,23 @@ export const LyricPlayer = defineComponent({
 			else playerRef.value?.setEnableScale(true);
 		});
 
-		watchEffect(() => {
-			if (props.lyricLines !== undefined)
-				playerRef.value?.setLyricLines(props.lyricLines);
-		});
+		watch(
+			[playerRef, () => props.lyricLines, () => props.optimizeOptions],
+			([player, lyricLines, optimizeOptions]) => {
+				if (!player) return;
+
+				if (optimizeOptions !== undefined) {
+					player.setOptimizeOptions(optimizeOptions);
+				}
+
+				if (lyricLines !== undefined) {
+					player.setLyricLines(lyricLines);
+				} else {
+					player.setLyricLines([]);
+				}
+			},
+			{ immediate: true },
+		);
 
 		watchEffect(() => {
 			if (props.currentTime !== undefined)
