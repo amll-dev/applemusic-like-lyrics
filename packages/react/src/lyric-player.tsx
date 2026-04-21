@@ -296,11 +296,14 @@ export const LyricPlayer: ForwardRefExoticComponent<
 			corePlayer?.setEnableBlur(enableBlur ?? true);
 		}, [corePlayer, enableBlur]);
 
-		useEffect(() => {
+		useLayoutEffect(() => {
 			if (currentTime !== undefined) {
 				corePlayer?.setCurrentTime(currentTime, isSeeking);
 				currentTimeRef.current = currentTime;
-			} else corePlayer?.setCurrentTime(0);
+			} else {
+				corePlayer?.setCurrentTime(0);
+				currentTimeRef.current = 0;
+			}
 		}, [corePlayer, currentTime, isSeeking]);
 
 		useEffect(() => {
