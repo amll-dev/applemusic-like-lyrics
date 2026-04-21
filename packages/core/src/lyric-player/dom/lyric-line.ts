@@ -2,6 +2,7 @@ import bezier from "bezier-easing";
 import type { LyricLine, LyricWord } from "../../interfaces.ts";
 import styles from "../../styles/lyric-player.module.css";
 import { isCJK } from "../../utils/is-cjk.ts";
+import { LineBalancer } from "../../utils/line-balancer.ts";
 import { chunkAndSplitLyricWords } from "../../utils/lyric-split-words.ts";
 import {
 	createMatrix4,
@@ -92,11 +93,10 @@ export class LyricLineEl extends LyricLineBase {
 	private targetBrightAlpha = 1.0;
 	private targetDarkAlpha = 0.2;
 
-	// Unicode 标准的 Grapheme Cluster 分割器
-	// 用于正确处理 emoji、复合字符等
-	private segmenter = new Intl.Segmenter(undefined, {
-		granularity: "grapheme",
-	});
+	/**
+	 * 用于平衡换行、尽量减少各行长度差异的类
+	 */
+	private balancer: LineBalancer;
 
 	constructor(
 		private lyricPlayer: DomLyricPlayer,
@@ -130,6 +130,7 @@ export class LyricLineEl extends LyricLineBase {
 		main.setAttribute("class", styles.lyricMainLine);
 		trans.setAttribute("class", styles.lyricSubLine);
 		roman.setAttribute("class", styles.lyricSubLine);
+		this.balancer = new LineBalancer(main);
 		// 延迟构建具体行内容，进入可视区（含 overscan）时再构建
 		this.rebuildStyle();
 	}
@@ -476,7 +477,9 @@ export class LyricLineEl extends LyricLineBase {
 
 		if (shouldEmphasize) {
 			mainWordEl.classList.add(styles.emphasize);
-			for (const { segment } of this.segmenter.segment(displayWord.trim())) {
+			for (const { segment } of LyricLineBase.graphemeSegmenter.segment(
+				displayWord.trim(),
+			)) {
 				const charEl = document.createElement("span");
 				charEl.innerText = segment;
 				subElements.push(charEl);
@@ -757,6 +760,11 @@ export class LyricLineEl extends LyricLineBase {
 				word.padding = 0;
 			}
 		}
+		this.balancer.balanceLineBreaks(
+			this.lyricPlayer._getIsNonDynamic(),
+			this.splittedWords.length > 0,
+			LyricLineBase.wordSegmenter,
+		);
 		if (this.lyricPlayer.supportMaskImage) {
 			this.generateWebAnimationBasedMaskImage();
 		} else {
@@ -1149,6 +1157,7 @@ export class LyricLineEl extends LyricLineBase {
 		return !(t > pb + h + ov || b < -h - ov);
 	}
 	private disposeElements() {
+		this.balancer.reset();
 		for (const realWord of this.splittedWords) {
 			for (const a of realWord.elementAnimations) {
 				a.cancel();

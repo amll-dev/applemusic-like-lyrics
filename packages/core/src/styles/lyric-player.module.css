@@ -101,12 +101,6 @@
 	margin: -1em;
 	padding: 1em;
 
-	text-wrap: balance;
-
-	word-break: keep-all;
-
-	overflow-wrap: break-word;
-
 	& span {
 		display: inline-block;
 		text-align: start;
