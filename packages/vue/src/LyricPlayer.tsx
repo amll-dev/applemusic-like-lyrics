@@ -111,7 +111,7 @@ const lyricPlayerProps = {
 	 */
 	optimizeOptions: {
 		type: Object as PropType<OptimizeLyricOptions>,
-		default: {},
+		required: false,
 	},
 	/**
 	 * 设置当前播放歌词，要注意传入后这个数组内的信息不得修改，否则会发生错误
