@@ -1,10 +1,10 @@
 import { type ChildNodeInfo, calcBalancedBreaks } from "./lyric-line-break.ts";
 
 let sharedCanvasCtx: CanvasRenderingContext2D | null = null;
-export function getMeasurementContext(): CanvasRenderingContext2D {
+export function getMeasurementContext(): CanvasRenderingContext2D | null {
 	if (!sharedCanvasCtx) {
 		const canvas = document.createElement("canvas");
-		sharedCanvasCtx = canvas.getContext("2d") as CanvasRenderingContext2D;
+		sharedCanvasCtx = canvas.getContext("2d");
 	}
 	return sharedCanvasCtx;
 }
@@ -79,47 +79,51 @@ export class LineBalancer {
 		// 临时设置 white-space: nowrap 以便测量单个歌词行的宽度
 		const prevWhiteSpace = this.mainElement.style.whiteSpace;
 		this.mainElement.style.whiteSpace = "nowrap";
-		const range = document.createRange();
-		range.selectNodeContents(this.mainElement);
-		const lineWidth = range.getBoundingClientRect().width;
-		this.mainElement.style.whiteSpace = prevWhiteSpace;
 
-		const safeContainerWidth = Math.max(
-			1,
-			containerWidth - LineBalancer.SAFE_WIDTH_PADDING,
-		);
+		try {
+			const range = document.createRange();
+			range.selectNodeContents(this.mainElement);
+			const lineWidth = range.getBoundingClientRect().width;
 
-		if (lineWidth <= safeContainerWidth) {
-			this.lastBalancedContainerWidth = containerWidth;
-			return;
-		}
+			const safeContainerWidth = Math.max(
+				1,
+				containerWidth - LineBalancer.SAFE_WIDTH_PADDING,
+			);
 
-		const { childInfos, fullText } = adapter.buildChildInfos();
-
-		const measuredTotal = childInfos.reduce((sum, c) => sum + c.width, 0);
-		if (measuredTotal > 0 && lineWidth > 0) {
-			const scale = lineWidth / measuredTotal;
-			for (const info of childInfos) {
-				info.width *= scale;
+			if (lineWidth <= safeContainerWidth) {
+				this.lastBalancedContainerWidth = containerWidth;
+				return;
 			}
-		}
 
-		const breaks = calcBalancedBreaks(
-			childInfos,
-			safeContainerWidth,
-			fullText,
-			wordSegmenter,
-		);
+			const { childInfos, fullText } = adapter.buildChildInfos();
 
-		if (breaks.length === 0) {
+			const measuredTotal = childInfos.reduce((sum, c) => sum + c.width, 0);
+			if (measuredTotal > 0 && lineWidth > 0) {
+				const scale = lineWidth / measuredTotal;
+				for (const info of childInfos) {
+					info.width *= scale;
+				}
+			}
+
+			const breaks = calcBalancedBreaks(
+				childInfos,
+				safeContainerWidth,
+				fullText,
+				wordSegmenter,
+			);
+
+			if (breaks.length === 0) {
+				this.lastBalancedContainerWidth = containerWidth;
+				return;
+			}
+
+			this.isBalancing = true;
+			adapter.applyBreaks(breaks, childInfos);
 			this.lastBalancedContainerWidth = containerWidth;
-			return;
+			this.isBalancing = false;
+		} finally {
+			this.mainElement.style.whiteSpace = prevWhiteSpace;
 		}
-
-		this.isBalancing = true;
-		adapter.applyBreaks(breaks, childInfos);
-		this.lastBalancedContainerWidth = containerWidth;
-		this.isBalancing = false;
 	}
 
 	private balanceDynamicLineBreaks(
@@ -198,6 +202,14 @@ export class LineBalancer {
 			},
 			buildChildInfos: () => {
 				const ctx = getMeasurementContext();
+
+				if (!ctx) {
+					console.debug(
+						"Canvas 2D context is not supported, skipping line balancing",
+					);
+					return { childInfos: [], fullText };
+				}
+
 				ctx.font = `${computedStyle.fontWeight} ${computedStyle.fontSize} ${computedStyle.fontFamily}`;
 
 				if ("letterSpacing" in ctx) {

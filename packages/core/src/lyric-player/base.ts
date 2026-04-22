@@ -1213,23 +1213,23 @@ export abstract class LyricLineBase extends EventTarget implements Disposable {
 	/**
 	 * 用于 CJK 词语边界检测的分词器
 	 */
-	static readonly wordSegmenter: Intl.Segmenter = new Intl.Segmenter(
-		undefined,
-		{
-			granularity: "word",
-		},
-	);
+	static readonly wordSegmenter: Intl.Segmenter | null =
+		typeof Intl !== "undefined" && Intl.Segmenter
+			? new Intl.Segmenter(undefined, {
+					granularity: "word",
+				})
+			: null;
 
 	/**
 	 * Unicode 标准的全局 Grapheme Cluster 分词器
 	 * 用于正确处理 emoji、复合字符等
 	 */
-	static readonly graphemeSegmenter: Intl.Segmenter = new Intl.Segmenter(
-		undefined,
-		{
-			granularity: "grapheme",
-		},
-	);
+	static readonly graphemeSegmenter: Intl.Segmenter | null =
+		typeof Intl !== "undefined" && Intl.Segmenter
+			? new Intl.Segmenter(undefined, {
+					granularity: "grapheme",
+				})
+			: null;
 
 	abstract getLine(): LyricLine;
 	abstract enable(time?: number, shouldPlay?: boolean): void;
