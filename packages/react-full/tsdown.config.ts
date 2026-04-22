@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import path from "node:path";
 import pluginBabel from "@rolldown/plugin-babel";
 import { transform } from "@svgr/core";
 import { defineConfig } from "tsdown";
@@ -32,10 +33,28 @@ const svgrQueryPlugin = {
 	},
 };
 
+const cssUrlSvgInlinePlugin = {
+	name: "css-url-svg-inline",
+	transform(code: string, id: string) {
+		if (!id.endsWith(".css")) return;
+		const replaced = code.replace(
+			/url\(\s*(['"]?)([^)'"]+\.svg)\1\s*\)/g,
+			(_, _quote, svgPath) => {
+				const resolved = path.resolve(path.dirname(id), svgPath);
+				const svg = readFileSync(resolved, "utf-8");
+				const encoded = encodeURIComponent(svg);
+				return `url("data:image/svg+xml,${encoded}")`;
+			},
+		);
+		return replaced !== code ? { code: replaced } : undefined;
+	},
+};
+
 export default defineConfig({
 	...baseConfig,
 	entry: { "amll-react-framework": "./src/index.ts" },
 	plugins: [
+		cssUrlSvgInlinePlugin,
 		svgrQueryPlugin,
 		pluginBabel({
 			plugins: [
