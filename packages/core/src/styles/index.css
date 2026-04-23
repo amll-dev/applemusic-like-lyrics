@@ -24,7 +24,7 @@
 		user-select: none;
 		box-sizing: content-box;
 		z-index: 1;
-		line-height: 1.2em;
+		line-height: 1.2;
 	}
 
 	&.dom-slim {
@@ -35,7 +35,7 @@
 		user-select: none;
 		box-sizing: content-box;
 		z-index: 1;
-		line-height: 1.2em;
+		line-height: 1.2;
 		min-height: 0;
 		min-width: 0;
 
