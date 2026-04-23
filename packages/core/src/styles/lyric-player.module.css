@@ -60,6 +60,10 @@
 	padding: 1vh
 		calc(var(--amll-lp-line-padding-x, 1em) / var(--amll-lp-bg-line-scale, 0.7));
 
+	.lyricMainLine {
+		padding: 1.2em 1em;
+	}
+
 	&.active {
 		transition:
 			opacity 0.5s 0.25s,
