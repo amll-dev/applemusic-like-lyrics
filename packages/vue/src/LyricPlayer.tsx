@@ -103,7 +103,7 @@ const lyricPlayerProps = {
 	 * 设置歌词中不雅用语的掩码模式，默认为 `MaskObsceneWordsMode.Disabled`，即不掩码
 	 */
 	maskObsceneWordsMode: {
-		type: Object as PropType<MaskObsceneWordsMode>,
+		type: String as PropType<MaskObsceneWordsMode>,
 		default: MaskObsceneWordsMode.Disabled,
 	},
 	/**
