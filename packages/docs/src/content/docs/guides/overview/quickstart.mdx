@@ -2,7 +2,12 @@
 title: 快速开始
 ---
 
-import { Tabs, TabItem } from "@astrojs/starlight/components";
+import {
+    CardGrid,
+    LinkCard,
+    Tabs,
+    TabItem,
+} from "@astrojs/starlight/components";
 
 下面快速介绍如何将 AMLL 歌词组件集成到你的项目中。请注意，AMLL 不提供 CDN 引入方式，必须使用 bundler。
 
@@ -65,6 +70,26 @@ yarn add @pixi/app @pixi/core @pixi/display @pixi/filter-blur @pixi/filter-bulge
 
 </TabItem>
 </Tabs>
+
+接下来你可以使用原生包，也可以使用 React 或 Vue 绑定。
+
+<CardGrid>
+    <LinkCard
+        title="使用 Vanilla 方式引入"
+        description="不使用前端框架"
+        href="#使用-vanilla-方式引入"
+    />
+    <LinkCard
+        title="使用 React 绑定"
+        description="项目使用 React 框架"
+        href="#使用-react-绑定"
+    />
+    <LinkCard
+        title="使用 Vue 绑定"
+        description="项目使用 Vue 框架"
+        href="#使用-vue-绑定"
+    />
+</CardGrid>
 
 ## 使用 Vanilla 方式引入
 

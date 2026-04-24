@@ -204,6 +204,14 @@ const docsSidebar = [
 			{ slug: "guides/react/bg-render" },
 		],
 	},
+	{
+		label: "歌词格式",
+		items: [
+			{ slug: "guides/lyric/overview" },
+			{ slug: "guides/lyric/formats" },
+			{ slug: "guides/lyric/ttml" },
+		],
+	},
 ];
 
 const referenceSidebar = [
