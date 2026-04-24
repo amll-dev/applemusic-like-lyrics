@@ -84,6 +84,8 @@ export const AMLLPreview = () => {
 				}
 				if (canceled) return;
 
+				setCurrentTime(0);
+
 				w.animate(
 					{
 						opacity: 0,
