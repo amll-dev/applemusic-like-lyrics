@@ -25,7 +25,7 @@ const docsSidebar = [
 	{
 		label: "歌词格式",
 		items: [
-			{ slug: "guides/lyric/overview" },
+			{ slug: "guides/lyric/quickstart" },
 			{ slug: "guides/lyric/formats" },
 			{ slug: "guides/lyric/ttml" },
 		],

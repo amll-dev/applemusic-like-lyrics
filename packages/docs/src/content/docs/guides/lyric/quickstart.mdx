@@ -1,0 +1,151 @@
+---
+title: 快速开始
+---
+
+import { Tabs, TabItem } from "@astrojs/starlight/components";
+
+AMLL 提供两个 npm 包，用于歌词格式正反序列化：
+
+- [@applemusic-like-lyrics/lyric](https://www.npmjs.com/package/@applemusic-like-lyrics/lyric)  
+  主流各歌词格式的解析与生成库，例如 LRC、YRC、LQE 等，其中 TTML 正反解实际上依赖 @applemusic-like-lyrics/ttml。
+- [@applemusic-like-lyrics/ttml](https://www.npmjs.com/package/@applemusic-like-lyrics/ttml)  
+  TTML 逐字歌词格式正反序列化库。提供最详细的信息，包括逐字音译等特色功能。
+
+## Lyric 包
+
+<Tabs syncKey="pkg">
+<TabItem label="npm">
+
+```sh
+npm install @applemusic-like-lyrics/lyric
+```
+
+</TabItem>
+
+<TabItem label="pnpm">
+
+```sh
+pnpm add @applemusic-like-lyrics/lyric
+```
+
+</TabItem>
+
+<TabItem label="Yarn">
+
+```sh
+yarn add @applemusic-like-lyrics/lyric
+```
+
+</TabItem>
+</Tabs>
+
+Lyric 包支持如下格式：
+
+| 格式              | 扩展名           | 解析                                                | 生成                                                        |
+| ----------------- | ---------------- | --------------------------------------------------- | ----------------------------------------------------------- |
+| TTML              | `.ttml`          | [`parseTTML`](/reference/lyric/functionparsettml)   | [`stringifyTTML`](/reference/lyric/functionstringifyttml)   |
+| LRC               | `.lrc`           | [`parseLrc`](/reference/lyric/functionparselrc)     | [`stringifyLrc`](/reference/lyric/functionstringifylrc)     |
+| LRC A2 扩展       | `.lrc`, `.alrc`  | [`parseLrcA2`](/reference/lyric/functionparselrca2) | [`stringifyLrcA2`](/reference/lyric/functionstringifylrca2) |
+| 网易云逐字        | `.yrc`           | [`parseYrc`](/reference/lyric/functionparseyrc)     | [`stringifyYrc`](/reference/lyric/functionstringifyyrc)     |
+| QQ 音乐逐字       | `.qrc`           | [`parseQrc`](/reference/lyric/functionparseqrc)     | [`stringifyQrc`](/reference/lyric/functionstringifyqrc)     |
+| EsLyric           | `.lrc`, `.eslrc` | [`parseEslrc`](/reference/lyric/functionparseeslrc) | [`stringifyEslrc`](/reference/lyric/functionstringifyeslrc) |
+| ASS 字幕          | `.ass`           | 不支持                                              | [`stringifyAss`](/reference/lyric/functionstringifyass)     |
+| Lyricify Lines    | `.lyl`           | [`parseLyl`](/reference/lyric/functionparselyl)     | [`stringifyLyl`](/reference/lyric/functionstringifylyl)     |
+| Lyricify Syllable | `.lys`           | [`parseLys`](/reference/lyric/functionparselys)     | [`stringifyLys`](/reference/lyrilys)                        |
+| Lyricify 快速导出 | `.lqe`           | [`parseLqe`](/reference/lyric/functionparselqe)     | [`stringifyLqe`](/reference/lyric/functionstringifylqe)     |
+
+以上解析与生成方法均为同步函数。
+
+除 TTML 外，解析函数均接受一个字符串作为参数并返回歌词对象数组 [`LyricLine[]`](/reference/lyric/interfacelyricline)，生成函数均接受一个歌词对象数组并返回字符串。
+
+对于 TTML，解析结果和生成输入并非歌词对象数组，而是包含了元数据信息的 [`TTMLLyric`](/reference/lyric/interfacettmllyric) 对象。**并且 lyric 包的 TTML 正反解仅能在浏览器中使用，不支持 Node 环境**。**如果在 Node 中使用，或需要 TTML 中更多的信息或能力，请使用下一节介绍的 TTML 专用包**。
+
+Lyric 包还支持 QQ 音乐加密逐词格式的加解密。提供 [`decryptQrcHex`](/reference/lyric/functiondecryptqrchex) 方法用于解密，提供 [`encryptQrcHex`](/reference/lyric/functionencryptqrchex) 方法用于加密。
+
+你可以在 [各歌词格式介绍](./formats) 一文中了解各歌词格式的详细信息。
+
+## TTML 包
+
+<Tabs syncKey="pkg">
+<TabItem label="npm">
+
+```sh
+npm install @applemusic-like-lyrics/ttml
+```
+
+</TabItem>
+
+<TabItem label="pnpm">
+
+```sh
+pnpm add @applemusic-like-lyrics/ttml
+```
+
+</TabItem>
+
+<TabItem label="Yarn">
+
+```sh
+yarn add @applemusic-like-lyrics/ttml
+```
+
+</TabItem>
+</Tabs>
+
+TTML 包提供 TTML 格式的正反序列化能力。有关 TTML 格式的详细信息，请转到 [TTML 格式介绍](./ttml)。
+
+TTML 包有两种使用模式：类模式与函数模式。
+
+### 类模式
+
+TTML 包提供两个类：用于解析的 [`TTMLParser`](/reference/ttml/classttmlparser) 和用于生成的 [`TTMLGenerator`](http://localhost:4321/reference/ttml/classttmlgenerator)。特别地，二者还提供了静态的便捷方法，本质是立即新建实例然后操作。
+
+```js
+import { TTMLParser, TTMLGenerator } from "@applemusic-like-lyrics/ttml";
+
+// 建立实例并调用
+const parser = new TTMLParser();
+const ttmlObject = parser.parse("Some TTML string...");
+
+// 静态方法，等价于 (new TTMLParser()).parse("Some TTML string...")
+const _ttmlObject = TTMLParser.parse("Some TTML string...");
+
+// 建立实例并调用
+const generator = new TTMLGenerator();
+const ttmlString = generator.generate(ttmlObject);
+
+// 静态方法，等价于 (new TTMLGenerator()).generate(ttmlObject)
+const _ttmlString = TTMLGenerator.generate(ttmlObject);
+```
+
+这两个类**默认在浏览器环境下**工作。`TTMLParser` 默认使用 `DOMParser` 类，`TTMLGenerator` 默认使用 `XMLSerializer` 类和 `document.implementation` 。因此，若要在 Node 环境使用，需要在构造时传入这几个工具的实现。例如使用 `@xmldom/xmldom`：
+
+```js
+import { DOMParser, DOMImplementation, XMLSerializer } from "@xmldom/xmldom";
+
+const parser = new TTMLParser({
+    domParser: new DOMParser(),
+});
+
+const generator = new TTMLGenerator({
+    domImplementation: new DOMImplementation(),
+    xmlSerializer: new XMLSerializer(),
+});
+```
+
+静态方法在 Node 下不适用。
+
+### 函数模式
+
+直接引入 [`parseTTML`](http://localhost:4321/reference/ttml/functionparsettml), [`exportTTML`](/reference/ttml/functionexportttml) 函数。
+
+```js
+import { parseTTML, exportTTML } from "@applemusic-like-lyrics/ttml";
+
+const amllObject = parseTTML("Some TTML string...");
+const ttmlString = exportTTML(amllObject);
+```
+
+解析结果以 [`AmllLyricResult`](/reference/ttml/interfaceamlllyricresult) 类型给出，可以直接用于 AMLL 核心库。
+
+此模式的本质是调用 `TTMLParser` 或 `TTMLGenerator` 的静态方法。对于 `TTMLParser` 还会额外调用 [`toAmllLyrics`](/reference/ttml/functiontoamlllyrics) 将对象降级为 `AmllLyricResult`。因此，此方法在 Node 下不适用。
