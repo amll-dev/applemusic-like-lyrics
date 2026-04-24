@@ -4,7 +4,7 @@
 	--sl-color-accent: #ff4040;
 	--sl-color-bg-nav: #eee8;
 	--sl-color-bg-sidebar: #bbb1;
-	--sl-color-white: hsl(350, 5%, 10%);
+	--sl-color-white: hsl(350, 5%, 8%);
 	--sl-color-gray-1: hsl(350, 5%, 16%);
 	--sl-color-gray-2: hsl(350, 5%, 23%);
 	--sl-color-gray-3: hsl(350, 2%, 36%);
@@ -23,7 +23,7 @@
 	--sl-color-bg-nav: #2228;
 	--sl-color-bg-sidebar: #2228;
 	--sl-color-white: hsl(0, 0%, 100%);
-	--sl-color-gray-1: hsl(350, 20%, 94%);
+	--sl-color-gray-1: hsl(350, 10%, 90%);
 	--sl-color-gray-2: hsl(350, 2%, 77%);
 	--sl-color-gray-3: hsl(350, 2%, 59%);
 	--sl-color-gray-4: hsl(350, 2%, 36%);
@@ -32,12 +32,9 @@
 	--sl-color-black: hsl(350, 2%, 10%);
 }
 
-.sl-markdown-content code:not(:where(.not-content *)) {
-	border-radius: 0.2rem;
-}
-.sl-markdown-content a:not(:where(.not-content *)) {
-	text-underline-offset: 0.18em;
-	text-decoration-color: color-mix(in srgb, currentColor 60%, transparent);
+:root {
+	--sl-color-text: var(--sl-color-gray-1);
+	scroll-behavior: smooth;
 }
 
 header,
@@ -45,6 +42,89 @@ header,
 	backdrop-filter: blur(15px);
 }
 
+@keyframes fade-in {
+	from {
+		transform: translateY(10px);
+		opacity: 0;
+	}
+}
+.main-pane {
+	animation: fade-in 0.3s;
+}
+
+.sl-markdown-content code:not(:where(.not-content *)) {
+	border-radius: 0.2rem;
+}
+
+.sl-markdown-content a:not(:where(.not-content *)) {
+	text-underline-offset: 0.18em;
+	text-decoration-color: color-mix(in srgb, currentColor 60%, transparent);
+	border-radius: 1px;
+	transition: color 0.1s;
+	&:hover {
+		color: color-mix(
+			in srgb,
+			var(--sl-color-text-accent) 30%,
+			var(--sl-color-white)
+		);
+	}
+	&:active {
+		transition: none;
+		color: color-mix(
+			in srgb,
+			var(--sl-color-text-accent) 70%,
+			var(--sl-color-black)
+		);
+	}
+}
+
 article.card {
 	border-radius: 0.5rem;
+}
+
+.sl-link-card {
+	transition:
+		background-color 0.15s,
+		border-color 0.15s,
+		transform 0.05s;
+}
+.sl-link-card:active {
+	transform: translateY(3px);
+}
+
+.pagination-links {
+	a {
+		position: relative;
+		overflow: hidden;
+		transition:
+			border-color 0.15s,
+			transform 0.05s;
+		&:active {
+			transform: translateY(3px);
+		}
+		&::before {
+			content: "";
+			background: var(--sl-color-white);
+			opacity: 0.02;
+			position: absolute;
+			top: 0;
+			right: 0;
+			bottom: 0;
+			left: 0;
+			z-index: -1;
+			transition:
+				transform 0.3s cubic-bezier(0.2, 0.8, 0, 1),
+				opacity 0.2s;
+		}
+		&[rel="prev"]::before {
+			transform: translateX(101%);
+		}
+		&[rel="next"]::before {
+			transform: translateX(-101%);
+		}
+		&:hover::before {
+			transform: translateX(0);
+			opacity: 0.1;
+		}
+	}
 }
