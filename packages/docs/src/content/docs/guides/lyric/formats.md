@@ -8,6 +8,8 @@ title: 各歌词格式介绍
 
 ## TTML
 
+TTML 格式是 AMLL 生态的主要歌词存储与交换格式，支持 AMLL 生态的所有能力，包括翻译音译、背景对唱、逐字音译、注音等等。
+
 有关 TTML 的介绍详见 [TTML](./ttml) 一文。
 
 **本库提供 [`parseTTML`](/reference/lyric/functionparsettml) 和 [`stringifyTTML`](/reference/lyric/functionstringifyttml) 方法用于正反序列化 TTML 歌词。**
@@ -181,7 +183,6 @@ Lyricify 快速导出格式扩展名为 `.lqe`（**L**yricify **Q**uick **E**xpo
 
 | 格式              | 扩展名          | 逐行时间 | 逐字时间 | 原生翻译音译 | 原生背景对唱 |
 | ----------------- | --------------- | :------: | :------: | :----------: | :----------: |
-| ALP 工程          | `.alp`          |    ✓     |    ✓     |      ✓       |      ✓       |
 | TTML              | `.ttml`         |    ✓     |    ✓     |      ✓       |      ✓       |
 | LRC               | `.lrc`          |    ✓     |    ✕     |      ✕       |      ✕       |
 | LRC A2 扩展       | `.lrc`, `.alrc` |    ✓     |    ✓     |      ✕       |      ✕       |
