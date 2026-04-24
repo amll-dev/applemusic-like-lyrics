@@ -114,7 +114,7 @@ player.setCurrentTime(0);
 player.update(0);
 ```
 
-其中的 [`setLyricLines`](/reference/core/classlyricplayerbase/#setlyriclines) 方法接受 [`LyricLine`](/reference/core/interfacelyricline) 类型的对象。在传入之后不应再修改这一对象的属性，否则可能导致问题。
+其中的 [`setLyricLines`](/reference/core/classlyricplayerbase#setlyriclines) 方法接受 [`LyricLine`](/reference/core/interfacelyricline) 类型的对象。在传入之后不应再修改这一对象的属性，否则可能导致问题。
 
 [`setCurrentTime`](/reference/core/classlyricplayerbase#setcurrenttime) 方法与 [`update`](/reference/core/classlyricplayerbase#update) 方法接受当前播放进度（整数，单位毫秒）作为参数，**在播放时需要逐帧调用**。此外在每次 `setLyricLines` 之后也应调用一次 `update` 以更新内容。
 

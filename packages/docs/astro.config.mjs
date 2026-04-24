@@ -37,7 +37,7 @@ const typeDocConfigBaseOptions = {
 async function generateDoc() {
 	/**
 	 * Convert a TypeDoc markdown file link (e.g. Interface.Foo.md#bar)
-	 * to the Starlight route (e.g. /reference/core/interfacefoo/#bar).
+	 * to the Starlight route (e.g. /reference/core/interfacefoo#bar).
 	 * @param {string} href
 	 * @param {string} routeBase
 	 */
@@ -65,11 +65,11 @@ async function generateDoc() {
 			: routeBase;
 
 		if (stem.toLowerCase() === "index") {
-			return hashPart ? `${normalizedBase}/#${hashPart}` : `${normalizedBase}/`;
+			return hashPart ? `${normalizedBase}#${hashPart}` : normalizedBase;
 		}
 
 		const slug = stem.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
-		const route = `${normalizedBase}/${slug}/`;
+		const route = `${normalizedBase}/${slug}`;
 		return hashPart ? `${route}#${hashPart}` : route;
 	}
 
@@ -284,6 +284,7 @@ const contributeSidebar = [
 
 export default defineConfig({
 	site: "https://amll.dev",
+	trailingSlash: "never",
 	integrations: [
 		react(),
 		starlight({
@@ -315,7 +316,7 @@ export default defineConfig({
 							"zh-CN": "使用文档",
 							en: "Guides",
 						},
-						link: "/guides/",
+						link: "/guides",
 						icon: "open-book",
 						items: docsSidebar,
 					},
@@ -325,7 +326,7 @@ export default defineConfig({
 							"zh-CN": "API 参考",
 							en: "API Reference",
 						},
-						link: "/reference/",
+						link: "/reference",
 						icon: "information",
 						items: referenceSidebar,
 					},
@@ -335,7 +336,7 @@ export default defineConfig({
 							"zh-CN": "贡献指南",
 							en: "Contributing",
 						},
-						link: "/contribute/",
+						link: "/contribute",
 						icon: "rocket",
 						items: contributeSidebar,
 					},
