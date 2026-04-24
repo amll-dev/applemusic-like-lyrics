@@ -18,7 +18,7 @@ title: 生态
 
 [AMLL TTML Tool](https://github.com/amll-dev/amll-ttml-tool) 是基于 React 编写的逐字歌词编辑器，涵盖歌词内容编辑、打轴等功能。歌词库中大部分逐字歌词均使用此工具制作。
 
-![AMLL TTML Tool 截图](https://github.com/user-attachments/assets/929eefee-ebda-43db-ad04-c0f099077053)
+![AMLL TTML Tool 截图](./images/tool.png)
 
 其部署在 <https://tool.amll.dev/> 上，可以直接访问并开始使用。
 
@@ -40,13 +40,13 @@ title: 生态
 
 [SPlayer](https://github.com/imsyy/SPlayer) 是一款基于 Vue 构建的第三方网易云音乐客户端。
 
-![SPlayer 宣传图](https://raw.githubusercontent.com/imsyy/SPlayer/dev/screenshots/SPlayer.jpg)
+![SPlayer 宣传图](./images/splayer.png)
 
 ## 沿革
 
 AMLL 诞生于 [2022 年 12 月](https://github.com/amll-dev/applemusic-like-lyrics/commit/88a3c1d)，起初是基于 [BetterNCM](https://std.microblock.cc/betterncm) 框架的网易云音乐 PC 客户端插件，用于美化网易云 UI 中的歌词。
 
-![早期截图](https://raw.githubusercontent.com/amll-dev/applemusic-like-lyrics/88a3c1d60d09a0e34debe3509fdcc4fac4f54e00/assets/demo0.png)
+![早期截图](./images/legacy.png)
 
 2023 年 7 月，AMLL 发布了第一个 npm 包 [@applemusic-like-lyrics/core@0.0.1](https://www.npmjs.com/package/@applemusic-like-lyrics/core/v/0.0.1)。
 
