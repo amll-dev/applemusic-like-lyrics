@@ -51,7 +51,7 @@ Lyric 包支持如下格式：
 | EsLyric           | `.lrc`, `.eslrc` | [`parseEslrc`](/reference/lyric/functionparseeslrc) | [`stringifyEslrc`](/reference/lyric/functionstringifyeslrc) |
 | ASS 字幕          | `.ass`           | 不支持                                              | [`stringifyAss`](/reference/lyric/functionstringifyass)     |
 | Lyricify Lines    | `.lyl`           | [`parseLyl`](/reference/lyric/functionparselyl)     | [`stringifyLyl`](/reference/lyric/functionstringifylyl)     |
-| Lyricify Syllable | `.lys`           | [`parseLys`](/reference/lyric/functionparselys)     | [`stringifyLys`](/reference/lyrilys)                        |
+| Lyricify Syllable | `.lys`           | [`parseLys`](/reference/lyric/functionparselys)     | [`stringifyLys`](/reference/lyric/functionstringifylys)     |
 | Lyricify 快速导出 | `.lqe`           | [`parseLqe`](/reference/lyric/functionparselqe)     | [`stringifyLqe`](/reference/lyric/functionstringifylqe)     |
 
 以上解析与生成方法均为同步函数。
@@ -98,7 +98,7 @@ TTML 包有两种使用模式：类模式与函数模式。
 
 ### 类模式
 
-TTML 包提供两个类：用于解析的 [`TTMLParser`](/reference/ttml/classttmlparser) 和用于生成的 [`TTMLGenerator`](http://localhost:4321/reference/ttml/classttmlgenerator)。特别地，二者还提供了静态的便捷方法，本质是立即新建实例然后操作。
+TTML 包提供两个类：用于解析的 [`TTMLParser`](/reference/ttml/classttmlparser) 和用于生成的 [`TTMLGenerator`](/reference/ttml/classttmlgenerator)。特别地，二者还提供了静态的便捷方法，本质是立即新建实例然后操作。
 
 ```js
 import { TTMLParser, TTMLGenerator } from "@applemusic-like-lyrics/ttml";
@@ -121,6 +121,7 @@ const _ttmlString = TTMLGenerator.generate(ttmlObject);
 这两个类**默认在浏览器环境下**工作。`TTMLParser` 默认使用 `DOMParser` 类，`TTMLGenerator` 默认使用 `XMLSerializer` 类和 `document.implementation` 。因此，若要在 Node 环境使用，需要在构造时传入这几个工具的实现。例如使用 `@xmldom/xmldom`：
 
 ```js
+import { TTMLParser, TTMLGenerator } from "@applemusic-like-lyrics/ttml";
 import { DOMParser, DOMImplementation, XMLSerializer } from "@xmldom/xmldom";
 
 const parser = new TTMLParser({
@@ -137,7 +138,7 @@ const generator = new TTMLGenerator({
 
 ### 函数模式
 
-直接引入 [`parseTTML`](http://localhost:4321/reference/ttml/functionparsettml), [`exportTTML`](/reference/ttml/functionexportttml) 函数。
+直接引入 [`parseTTML`](/reference/ttml/functionparsettml), [`exportTTML`](/reference/ttml/functionexportttml) 函数。
 
 ```js
 import { parseTTML, exportTTML } from "@applemusic-like-lyrics/ttml";
