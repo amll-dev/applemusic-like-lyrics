@@ -1,0 +1,51 @@
+---
+title: AMLL for React Overview
+---
+
+This package provides React bindings for AMLL components, so you can use AMLL lyrics components more conveniently in React projects.
+
+For core details, see [Core package README](https://github.com/amll-dev/applemusic-like-lyrics/tree/main/packages/core).
+
+## Installation
+
+Install peer dependencies if they are not already present:
+
+```bash
+npm install @pixi/app @pixi/core @pixi/display @pixi/filter-blur @pixi/filter-bulge-pinch @pixi/filter-color-matrix @pixi/sprite jss jss-preset-default
+# or
+yarn add @pixi/app @pixi/core @pixi/display @pixi/filter-blur @pixi/filter-bulge-pinch @pixi/filter-color-matrix @pixi/sprite jss jss-preset-default
+```
+
+Install React dependencies (if needed):
+
+```bash
+npm install react react-dom
+# or
+yarn add react react-dom
+```
+
+Install AMLL React package:
+
+```bash
+npm install @applemusic-like-lyrics/react
+# or
+yarn add @applemusic-like-lyrics/react
+```
+
+## Usage Summary
+
+For detailed API docs, see [API Reference: React](/en/reference/react).
+
+A test example is available in repository playground:
+
+`packages/playground/react`
+
+```tsx
+import { LyricPlayer } from "@applemusic-like-lyrics/react";
+
+const App = () => {
+    const [currentTime, setCurrentTime] = useState(0);
+    const [lyricLines, setLyricLines] = useState<LyricLine[]>([]);
+    return <LyricPlayer lyricLines={lyricLines} currentTime={currentTime} />;
+};
+```

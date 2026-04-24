@@ -1,0 +1,31 @@
+---
+title: BackgroundRender Component
+---
+
+## Overview
+
+`BackgroundRender` is one of AMLL core components. AMLL's static and animated background rendering is handled by this component.
+
+AMLL provides React bindings for `BackgroundRender`, so you can use it directly in React projects.
+
+For a quick setup, see [AMLL React Quick Start](./quick-start).
+
+## Usage
+
+Please refer to [AMLL React Quick Start](./quick-start).
+
+## Props
+
+`BackgroundRender` is configurable through React props.
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `albumImageUrl` | `string` | `true` | Album artwork URL used for background rendering |
+| `fps` | `number` | `30` | Background animation frame rate |
+| `playing` | `boolean` | `true` | Current playback state |
+| `flowSpeed` | `number` | `2` | Animation flow speed |
+| `hasLyric` | `boolean` | `true` | Whether lyric availability should affect rendering behavior. If unknown, use `true` or keep default. |
+| `lowFreqVolume` | `number` | `1.0` | Low-frequency volume hint (recommended 80hz-120hz range, value `0.0-1.0`). Some renderers react to this (for example beat-like motion). If unavailable, pass `undefined`, `1.0`, or keep default. |
+| `renderScale` | `number` | `0.5` | Rendering scale ratio |
+| `staticMode` | `boolean` | `false` | Enable static mode (freeze image after switching, disable updates to save performance) |
+| `renderer` | `Canvas` | `EplorRenderer` | Background renderer implementation. Default renderer may change across versions. Newer default: `EplorRenderer`; legacy: `PixiRenderer`. |

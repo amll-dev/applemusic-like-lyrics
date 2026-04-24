@@ -7,6 +7,7 @@ import { generateTypedocDocs } from "./src/scripts/typedoc";
 const docsSidebar = [
 	{
 		label: "概览",
+		translations: { en: "Overview" },
 		items: [
 			{ slug: "guides/overview/intro" },
 			{ slug: "guides/overview/quickstart" },
@@ -15,6 +16,7 @@ const docsSidebar = [
 	},
 	{
 		label: "React 绑定",
+		translations: { en: "React Bindings" },
 		items: [
 			{ slug: "guides/react/introduction" },
 			{ slug: "guides/react/quick-start" },
@@ -24,6 +26,7 @@ const docsSidebar = [
 	},
 	{
 		label: "歌词格式",
+		translations: { en: "Lyric Formats" },
 		items: [
 			{ slug: "guides/lyric/quickstart" },
 			{ slug: "guides/lyric/formats" },
@@ -35,31 +38,37 @@ const docsSidebar = [
 const referenceSidebar = [
 	{
 		label: "Core 核心",
+		translations: { en: "Core" },
 		collapsed: true,
 		autogenerate: { directory: "reference/core", collapsed: true },
 	},
 	{
 		label: "React 绑定",
+		translations: { en: "React Bindings" },
 		collapsed: true,
 		autogenerate: { directory: "reference/react", collapsed: true },
 	},
 	{
 		label: "React Full 组件库",
+		translations: { en: "React Full Components" },
 		collapsed: true,
 		autogenerate: { directory: "reference/react-full", collapsed: true },
 	},
 	{
 		label: "Vue 绑定",
+		translations: { en: "Vue Bindings" },
 		collapsed: true,
 		autogenerate: { directory: "reference/vue", collapsed: true },
 	},
 	{
 		label: "Lyric 歌词处理",
+		translations: { en: "Lyric Processing" },
 		collapsed: true,
 		autogenerate: { directory: "reference/lyric", collapsed: true },
 	},
 	{
 		label: "TTML 歌词处理",
+		translations: { en: "TTML Processing" },
 		collapsed: true,
 		autogenerate: { directory: "reference/ttml", collapsed: true },
 	},
@@ -68,6 +77,7 @@ const referenceSidebar = [
 const contributeSidebar = [
 	{
 		label: "开发指南",
+		translations: { en: "Development" },
 		items: [
 			{ slug: "contribute/development/environments" },
 			{ slug: "contribute/development/structure" },
@@ -75,6 +85,7 @@ const contributeSidebar = [
 	},
 	{
 		label: "仓库规范",
+		translations: { en: "Repository Guidelines" },
 		items: [
 			{ slug: "contribute/guidelines/pr" },
 			{ slug: "contribute/guidelines/publishing" },

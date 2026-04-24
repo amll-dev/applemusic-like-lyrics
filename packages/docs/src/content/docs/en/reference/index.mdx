@@ -1,0 +1,40 @@
+---
+title: API Reference
+description: Browse API documentation by module
+editUrl: false
+---
+
+import { CardGrid, LinkCard } from "@astrojs/starlight/components";
+
+<CardGrid>
+  <LinkCard
+    title="Core"
+    description="Framework-agnostic lyric player"
+    href="/en/reference/core"
+  />
+  <LinkCard
+    title="React"
+    description="React bindings and components for the core library"
+    href="/en/reference/react"
+  />
+  <LinkCard
+    title="React Full"
+    description="Ready-to-use full React player package"
+    href="/en/reference/react-full"
+  />
+  <LinkCard
+    title="Vue"
+    description="Vue bindings and components for the core library"
+    href="/en/reference/vue"
+  />
+  <LinkCard
+    title="Lyric"
+    description="Lyrics format processing library"
+    href="/en/reference/lyric"
+  />
+  <LinkCard
+    title="TTML"
+    description="TTML lyrics processing library"
+    href="/en/reference/ttml"
+  />
+</CardGrid>

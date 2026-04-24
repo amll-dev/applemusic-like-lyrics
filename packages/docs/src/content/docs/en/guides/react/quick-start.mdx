@@ -1,0 +1,181 @@
+---
+title: Quick Start
+---
+
+## Overview
+
+In this guide, you will learn how to use AMLL core components in a React project.
+
+This quick start focuses on AMLL core usage. Some extra features may depend on additional packages.
+
+> Currently AMLL mainly provides React bindings for core components. Additional player-page components are provided separately (for example in `react-full`).
+
+## Preparation
+
+### 1. Create a React project
+
+You can create a React project in multiple ways. Any modern setup works (for example Vite, Create React App, Next.js app router/client components, etc.).
+
+### 2. Install AMLL and dependencies
+
+Install peer dependencies (if not already installed):
+
+```bash
+npm install @pixi/app @pixi/core @pixi/display @pixi/filter-blur @pixi/filter-bulge-pinch @pixi/filter-color-matrix @pixi/sprite jss jss-preset-default
+# or
+yarn add @pixi/app @pixi/core @pixi/display @pixi/filter-blur @pixi/filter-bulge-pinch @pixi/filter-color-matrix @pixi/sprite jss jss-preset-default
+```
+
+Install React runtime dependencies (if needed):
+
+```bash
+npm install react react-dom
+# or
+yarn add react react-dom
+```
+
+Install AMLL React package:
+
+```bash
+npm install @applemusic-like-lyrics/react
+# or
+yarn add @applemusic-like-lyrics/react
+```
+
+Now your project is ready to use AMLL in React.
+
+## Start Using AMLL
+
+### 1. Use AMLL LyricPlayer in React
+
+`LyricPlayer` is one of AMLL core components and provides lyric rendering.
+
+Import with:
+
+```jsx
+import { LyricPlayer } from "@applemusic-like-lyrics/react";
+```
+
+Then you can render `<LyricPlayer />`.
+
+Basic example:
+
+```jsx
+import React from "react";
+import { LyricPlayer } from "@applemusic-like-lyrics/react";
+
+function App() {
+  return <LyricPlayer />;
+}
+
+export default App;
+```
+
+At this point no lyrics are shown yet. You need to provide props and update current playback time frame-by-frame.
+
+A more complete example:
+
+```jsx
+import React, { useState } from "react";
+import { LyricPlayer } from "@applemusic-like-lyrics/react";
+import { parseTTML } from "@applemusic-like-lyrics/core";
+
+const [currentTime, setCurrentTime] = useState(0);
+const [lyricLines, setLyricLines] = useState(0);
+const audio = document.getElementById("amll-audio");
+
+const parsedResult = parseTTML("TTML-Lyrics-Text");
+setLyricLines(parsedResult);
+
+let lastTime = -1;
+const frame = (time) => {
+    if (lastTime === -1) {
+        lastTime = time;
+    }
+    if (!audio.paused) {
+        const time = (audio.currentTime * 1000) | 0;
+        setCurrentTime(time);
+    }
+    lastTime = time;
+    requestAnimationFrame(frame);
+};
+requestAnimationFrame(frame);
+
+function App() {
+    return (
+        <>
+            <audio id="amll-audio" src="Audio-Music-Src" controls />
+            <LyricPlayer lyricLines={lyricLines} currentTime={currentTime} />
+        </>
+    );
+}
+export default App;
+```
+
+This setup includes:
+
+- an `<audio>` element for playback
+- `useState` state for lyric data and playback time
+- `requestAnimationFrame` loop to update `currentTime`
+- TTML parsing via `parseTTML`
+
+> Note: recommended long-term usage is importing TTML handling from `@applemusic-like-lyrics/ttml` for dedicated TTML workflows.
+
+### 2. Use BackgroundRender in React
+
+`BackgroundRender` is another AMLL core component for animated/static playback backgrounds.
+
+In this example, `EplorRenderer` is used.
+
+```jsx
+import React, { useState } from "react";
+import { LyricPlayer, BackgroundRender } from "@applemusic-like-lyrics/react";
+import { EplorRenderer, parseTTML } from "@applemusic-like-lyrics/core";
+
+const [currentTime, setCurrentTime] = useState(0);
+const [lyricLines, setLyricLines] = useState(0);
+const [albumUrl, setAlbumUrl] = useState("");
+const audio = document.getElementById("amll-audio");
+
+const parsedResult = parseTTML("TTML-Lyrics-Text");
+setLyricLines(parsedResult);
+setAlbumUrl("Album-Pic-Url");
+
+let lastTime = -1;
+const frame = (time) => {
+    if (lastTime === -1) {
+        lastTime = time;
+    }
+    if (!audio.paused) {
+        const time = (audio.currentTime * 1000) | 0;
+        setCurrentTime(time);
+    }
+    lastTime = time;
+    requestAnimationFrame(frame);
+};
+requestAnimationFrame(frame);
+
+function App() {
+    return (
+        <>
+            <audio id="amll-audio" src="Audio-Music-Src" controls />
+            <BackgroundRender
+                albumImageUrl={albumUrl}
+                renderer={EplorRenderer}
+            />
+            <LyricPlayer lyricLines={lyricLines} currentTime={currentTime} />
+        </>
+    );
+}
+export default App;
+```
+
+With `<BackgroundRender />`, pass `albumImageUrl` and choose a renderer (for example `EplorRenderer`) to get animated backgrounds.
+
+## Wrap-up
+
+You have completed a quick AMLL React integration flow. For more options and props, continue with:
+
+- [LyricPlayer Component](./lyric-player)
+- [BackgroundRender Component](./bg-render)
+- [API Reference: React](/en/reference/react)

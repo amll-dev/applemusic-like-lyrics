@@ -1,0 +1,38 @@
+---
+title: LyricPlayer Component
+---
+
+## Overview
+
+`LyricPlayer` is one of AMLL core components. Lyric rendering effects (scrolling, word highlighting, glow, etc.) are handled by this component.
+
+AMLL provides React bindings for `LyricPlayer`, so it can be used directly in React projects.
+
+For a quick setup, see [AMLL React Quick Start](./quick-start).
+
+## Usage
+
+Please refer to [AMLL React Quick Start](./quick-start).
+
+## Props
+
+`LyricPlayer` is configurable through React props.
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `disabled` | `boolean` | `true` | Whether to disable part of the visual effects (currently mainly interlude marker animation) |
+| `playing` | `boolean` | `true` | Playback state; affects effect playback (for example interlude marker animation) |
+| `alignAnchor` | `top` / `bottom` / `center` | `center` | Alignment anchor for target lyric line |
+| `alignPosition` | `number` | `0.5` | Default line alignment position in component height (`0.0-1.0`) |
+| `enableSpring` | `boolean` | `true` | Use physics spring animation for lyric motion. Disabled mode falls back to transition-based behavior with lower effect richness but better low-end performance. |
+| `enableBlur` | `boolean` | `true` | Enable lyric line blur effect |
+| `enableScale` | `boolean` | `true` | Enable scale animation effect |
+| `hidePassedLines` | `boolean` | `false` | Hide already-played lyric lines |
+| `lyricLines` | `LyricLine[]` | `null` | Lyric data. Do not mutate objects in this array after passing them in. |
+| `currentTime` | `number` | `null` | Current playback position in integer milliseconds. Higher update frequency gives better accuracy. |
+| `linePosXSpringParams` | `Partial[spring.SpringParams]` | `null` | Spring params for lyric line X-axis motion |
+| `linePosYSpringParams` | `Partial[spring.SpringParams]` | `null` | Spring params for lyric line Y-axis motion |
+| `lineScaleSpringParams` | `Partial[spring.SpringParams]` | `null` | Spring params for lyric line scale animation |
+| `bottomLine` | `ReactNode` | `null` | Custom content in bottom bar area (for example songwriter info) |
+| `onLyricLineClick` | `(line: LyricLineMouseEvent) => void` | `null` | Triggered when a lyric line is left-clicked |
+| `onLyricLineContextMenu` | `(line: LyricLineMouseEvent) => void` | `null` | Triggered when a lyric line is right-clicked |

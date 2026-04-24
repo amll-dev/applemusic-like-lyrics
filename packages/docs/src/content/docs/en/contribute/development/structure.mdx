@@ -1,0 +1,106 @@
+---
+title: Repository Structure
+---
+
+import { FileTree } from "@astrojs/starlight/components";
+
+## Monorepo Structure
+
+The repository uses `Nx` for task orchestration and `bun workspace` for dependency management. Main directories are:
+
+<FileTree>
+
+- packages/
+  - core/ Core components in Vanilla JS
+  - react/ React bindings for core
+  - vue/ Vue bindings for core
+  - react-full/ Ready-to-use full player components (React only)
+  - ttml/ TTML parser and processing library
+  - lyric/ Lyrics parser and processing library (TTML depends on the ttml package)
+  - fft/ Rust + wasm-pack
+  - ws-protocol/ Rust + wasm-pack
+  - docs/ Astro + Starlight docs site
+  - playground/ Example projects for development and testing
+    - core/ Example using core
+    - react/ Example using React bindings
+    - vue/ Example using Vue bindings
+    - react-full/ Example using full player components
+- .github/
+  - workflows/
+  - scripts/
+
+</FileTree>
+
+## Nx Release Groups
+
+Release config in `nx.json` includes two major groups:
+
+- `core-bundle`: three packages share the same version:
+  - `@applemusic-like-lyrics/core`
+  - `@applemusic-like-lyrics/react`
+  - `@applemusic-like-lyrics/vue`
+- Other packages are versioned independently:
+  - `@applemusic-like-lyrics/fft`
+  - `@applemusic-like-lyrics/lyric`
+  - `@applemusic-like-lyrics/react-full`
+  - `@applemusic-like-lyrics/ttml`
+  - `@applemusic-like-lyrics/ws-protocol`
+
+## Dependency Graph
+
+Run:
+
+```sh
+bun nx graph
+```
+
+to view the full dependency graph.
+
+When bumping versions, if a dependency package changes, dependent packages may also be bumped automatically even when their own code is unchanged.
+
+## CLI
+
+### Library Development
+
+Nx provides convenient aliases; you do not need to type the `@applemusic-like-lyrics/` prefix.
+
+For example, to build `@applemusic-like-lyrics/react`:
+
+```sh
+bun nx build react
+```
+
+Nx resolves dependencies automatically, so it builds `core` first, then `react`.
+
+We provide web apps in `package/playground` for testing, based on Vite with HMR support. We added forwarding entries for `core`, `react`, `vue`, and `react-full`, so to start a matching environment:
+
+```sh
+# Start dev server for package/playground/core
+bun nx dev core
+
+# Same for others
+bun nx dev react
+bun nx dev vue
+bun nx dev react-full
+```
+
+To build all libraries:
+
+```sh
+bun build:libs
+```
+
+It builds all packages in parallel with dependency-aware ordering.
+
+### Docs Development
+
+Similarly, the docs site alias is `docs`, with these commands:
+
+```sh
+# Start docs dev server
+bun nx dev docs
+# Build docs site
+bun nx build docs
+```
+
+Dependencies are handled automatically.

@@ -1,0 +1,336 @@
+---
+title: Quick Start
+---
+
+import {
+    CardGrid,
+    LinkCard,
+    Tabs,
+    TabItem,
+} from "@astrojs/starlight/components";
+
+This page quickly shows how to integrate AMLL lyric components into your project. AMLL does not provide CDN script usage; a bundler is required.
+
+For tooling packages outside the rendering component libraries, see [API Reference](/en/reference).
+
+## Dependencies
+
+Install AMLL core library:
+
+<Tabs syncKey="pkg">
+<TabItem label="npm">
+
+```sh
+npm install @applemusic-like-lyrics/core
+```
+
+</TabItem>
+
+<TabItem label="pnpm">
+
+```sh
+pnpm add @applemusic-like-lyrics/core
+```
+
+</TabItem>
+
+<TabItem label="Yarn">
+
+```sh
+yarn add @applemusic-like-lyrics/core
+```
+
+</TabItem>
+</Tabs>
+
+AMLL also declares several graphics and animation libraries as peer dependencies to reuse dependencies that may already exist in your project. Some package managers/configurations install peers automatically; if not, install them manually.
+
+<Tabs syncKey="pkg">
+<TabItem label="npm">
+
+```sh
+npm install @pixi/app @pixi/core @pixi/display @pixi/filter-blur @pixi/filter-bulge-pinch @pixi/filter-color-matrix @pixi/sprite jss jss-preset-default
+```
+
+</TabItem>
+
+<TabItem label="pnpm">
+
+```sh
+pnpm add @pixi/app @pixi/core @pixi/display @pixi/filter-blur @pixi/filter-bulge-pinch @pixi/filter-color-matrix @pixi/sprite jss jss-preset-default
+```
+
+</TabItem>
+
+<TabItem label="Yarn">
+
+```sh
+yarn add @pixi/app @pixi/core @pixi/display @pixi/filter-blur @pixi/filter-bulge-pinch @pixi/filter-color-matrix @pixi/sprite jss jss-preset-default
+```
+
+</TabItem>
+</Tabs>
+
+Then you can use the vanilla package directly, or use React/Vue bindings.
+
+<CardGrid>
+    <LinkCard
+        title="Use Vanilla"
+        description="Without a frontend framework"
+        href="#use-vanilla"
+    />
+    <LinkCard
+        title="Use React Bindings"
+        description="For React projects"
+        href="#use-react-bindings"
+    />
+    <LinkCard
+        title="Use Vue Bindings"
+        description="For Vue projects"
+        href="#use-vue-bindings"
+    />
+</CardGrid>
+
+## Use Vanilla
+
+The AMLL core library is framework-agnostic. You can use this approach in any project.
+
+```js
+import { LyricPlayer } from "@applemusic-like-lyrics/core";
+
+// Create lyric player instance
+const player = new LyricPlayer();
+
+// Append the player's element to the page
+document.body.appendChild(player.getElement());
+
+// Set lyrics
+player.setLyricLines([]);
+
+// Set current playback time
+player.setCurrentTime(0);
+
+// Update animation frame
+player.update(0);
+```
+
+[`setLyricLines`](/en/reference/core/classlyricplayerbase#setlyriclines) accepts objects of type [`LyricLine`](/en/reference/core/interfacelyricline). Do not mutate the object after passing it in, or unexpected issues may occur.
+
+[`setCurrentTime`](/en/reference/core/classlyricplayerbase#setcurrenttime) and [`update`](/en/reference/core/classlyricplayerbase#update) accept current playback time (integer milliseconds), and **must be called frame by frame while playing**. Also call `update` once after each `setLyricLines` call to refresh state.
+
+See [API Reference: Core](/en/reference/core) for full details.
+
+## Use React Bindings
+
+Make sure `react` and `react-dom` are installed. Then install AMLL React bindings:
+
+<Tabs syncKey="pkg">
+<TabItem label="npm">
+
+```sh
+npm install @applemusic-like-lyrics/react
+```
+
+</TabItem>
+
+<TabItem label="pnpm">
+
+```sh
+pnpm add @applemusic-like-lyrics/react
+```
+
+</TabItem>
+
+<TabItem label="Yarn">
+
+```sh
+yarn add @applemusic-like-lyrics/react
+```
+
+</TabItem>
+</Tabs>
+
+The React binding package exports [`LyricPlayer`](/en/reference/react/variablelyricplayer) as the main component.
+
+```jsx
+import React, { useState } from "react";
+import { LyricPlayer } from "@applemusic-like-lyrics/react";
+import { parseTTML } from "@applemusic-like-lyrics/core";
+
+const [currentTime, setCurrentTime] = useState(0);
+const [lyricLines, setLyricLines] = useState(0);
+const audio = document.getElementById("amll-audio"); // get <audio> element
+
+const parsedResult = parseTTML(`SomeTtmlText...`); // parse lyrics
+setLyricLines(parsedResult);
+
+let lastTime = -1;
+const frame = (time) => {
+    if (lastTime === -1) {
+        lastTime = time;
+    }
+    if (!audio.paused) {
+        const time = (audio.currentTime * 1000) | 0;
+        setCurrentTime(time);
+    }
+    lastTime = time;
+    requestAnimationFrame(frame);
+};
+requestAnimationFrame(frame);
+
+function App() {
+    return (
+        <>
+            <audio id="amll-audio" src="Audio-Music-Src" controls />
+            <LyricPlayer lyricLines={lyricLines} currentTime={currentTime} />
+        </>
+    );
+}
+export default App;
+```
+
+See [API Reference: React](/en/reference/react) for full interface documentation.
+
+## Use Vue Bindings
+
+Make sure Vue is installed. Then install AMLL Vue bindings:
+
+<Tabs syncKey="pkg">
+<TabItem label="npm">
+
+```sh
+npm install @applemusic-like-lyrics/vue
+```
+
+</TabItem>
+
+<TabItem label="pnpm">
+
+```sh
+pnpm add @applemusic-like-lyrics/vue
+```
+
+</TabItem>
+
+<TabItem label="Yarn">
+
+```sh
+yarn add @applemusic-like-lyrics/vue
+```
+
+</TabItem>
+</Tabs>
+
+The Vue package exports [`LyricPlayer`](/en/reference/vue/classlyricplayer) as the main component.
+
+<Tabs syncKey="vapi">
+<TabItem label="Composition API">
+
+```vue
+<template>
+    <LyricPlayer
+        :lyric-lines="amllLyricLines"
+        :current-time="progressRef"
+        :playing="playingRef"
+    />
+    <audio src="..." ref="audioElRef"></audio>
+</template>
+
+<script setup lang="ts">
+import { onMounted, ref, useTemplateRef } from "vue";
+import type { LyricLine } from "@applemusic-like-lyrics/core";
+import { LyricPlayer } from "@applemusic-like-lyrics/vue";
+
+import "@applemusic-like-lyrics/core/style.css";
+
+const amllLyricLines: LyricLine[] = [];
+
+const progressRef = ref(0);
+const playingRef = ref(false);
+
+const audioElRef = useTemplateRef("audioElRef");
+
+function onFrame() {
+    if (audioElRef.value)
+        progressRef.value = Math.round(audioElRef.value.currentTime * 1000);
+    if (playingRef.value) requestAnimationFrame(onFrame);
+}
+
+onMounted(() => {
+    if (!audioElRef.value) return;
+    audioElRef.value.addEventListener("play", () => {
+        playingRef.value = true;
+        requestAnimationFrame(onFrame);
+    });
+    audioElRef.value.addEventListener("pause", () => {
+        playingRef.value = false;
+    });
+});
+</script>
+```
+
+</TabItem>
+
+<TabItem label="Options API">
+
+```vue
+<template>
+    <LyricPlayer
+        :lyric-lines="amllLyricLines"
+        :current-time="progressRef"
+        :playing="playingRef"
+    />
+    <audio src="..." ref="audioElRef"></audio>
+</template>
+
+<script lang="ts">
+import { defineComponent } from "vue";
+import type { LyricLine } from "@applemusic-like-lyrics/core";
+import { LyricPlayer } from "@applemusic-like-lyrics/vue";
+
+import "@applemusic-like-lyrics/core/style.css";
+
+export default defineComponent({
+    components: {
+        LyricPlayer,
+    },
+    data() {
+        return {
+            amllLyricLines: [] as LyricLine[],
+            progressRef: 0,
+            playingRef: false,
+        };
+    },
+    mounted() {
+        const audioEl = this.$refs.audioElRef as HTMLAudioElement | null;
+        if (!audioEl) return;
+
+        audioEl.addEventListener("play", () => {
+            this.playingRef = true;
+            this.onFrame();
+        });
+
+        audioEl.addEventListener("pause", () => {
+            this.playingRef = false;
+        });
+    },
+    methods: {
+        onFrame() {
+            const audioEl = this.$refs.audioElRef as HTMLAudioElement | null;
+            if (audioEl) {
+                this.progressRef = Math.round(audioEl.currentTime * 1000);
+            }
+
+            if (this.playingRef) {
+                requestAnimationFrame(this.onFrame);
+            }
+        },
+    },
+});
+</script>
+```
+
+</TabItem>
+</Tabs>
+
+See [API Reference: Vue](/en/reference/vue) for full interface documentation.

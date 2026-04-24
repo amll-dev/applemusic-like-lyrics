@@ -1,0 +1,148 @@
+---
+title: Quick Start
+---
+
+import { Tabs, TabItem } from "@astrojs/starlight/components";
+
+AMLL provides two npm packages for lyric format parsing and serialization:
+
+- [@applemusic-like-lyrics/lyric](https://www.npmjs.com/package/@applemusic-like-lyrics/lyric)
+  Parsing and generation for mainstream lyric formats such as LRC, YRC, and LQE. TTML parsing/serialization in this package internally relies on `@applemusic-like-lyrics/ttml`.
+- [@applemusic-like-lyrics/ttml](https://www.npmjs.com/package/@applemusic-like-lyrics/ttml)
+  Dedicated TTML parsing and serialization library with the most detailed TTML feature support.
+
+## Lyric Package
+
+<Tabs syncKey="pkg">
+<TabItem label="npm">
+
+```sh
+npm install @applemusic-like-lyrics/lyric
+```
+
+</TabItem>
+
+<TabItem label="pnpm">
+
+```sh
+pnpm add @applemusic-like-lyrics/lyric
+```
+
+</TabItem>
+
+<TabItem label="Yarn">
+
+```sh
+yarn add @applemusic-like-lyrics/lyric
+```
+
+</TabItem>
+</Tabs>
+
+Supported formats in the Lyric package:
+
+| Format | Extension | Parse | Stringify |
+| --- | --- | --- | --- |
+| TTML | `.ttml` | [`parseTTML`](/en/reference/lyric/functionparsettml) | [`stringifyTTML`](/en/reference/lyric/functionstringifyttml) |
+| LRC | `.lrc` | [`parseLrc`](/en/reference/lyric/functionparselrc) | [`stringifyLrc`](/en/reference/lyric/functionstringifylrc) |
+| LRC A2 | `.lrc`, `.alrc` | [`parseLrcA2`](/en/reference/lyric/functionparselrca2) | [`stringifyLrcA2`](/en/reference/lyric/functionstringifylrca2) |
+| NetEase YRC | `.yrc` | [`parseYrc`](/en/reference/lyric/functionparseyrc) | [`stringifyYrc`](/en/reference/lyric/functionstringifyyrc) |
+| QQ QRC | `.qrc` | [`parseQrc`](/en/reference/lyric/functionparseqrc) | [`stringifyQrc`](/en/reference/lyric/functionstringifyqrc) |
+| EsLyric | `.lrc`, `.eslrc` | [`parseEslrc`](/en/reference/lyric/functionparseeslrc) | [`stringifyEslrc`](/en/reference/lyric/functionstringifyeslrc) |
+| ASS subtitle | `.ass` | Not supported | [`stringifyAss`](/en/reference/lyric/functionstringifyass) |
+| Lyricify Lines | `.lyl` | [`parseLyl`](/en/reference/lyric/functionparselyl) | [`stringifyLyl`](/en/reference/lyric/functionstringifylyl) |
+| Lyricify Syllable | `.lys` | [`parseLys`](/en/reference/lyric/functionparselys) | [`stringifyLys`](/en/reference/lyric/functionstringifylys) |
+| Lyricify Quick Export | `.lqe` | [`parseLqe`](/en/reference/lyric/functionparselqe) | [`stringifyLqe`](/en/reference/lyric/functionstringifylqe) |
+
+All parse and stringify methods above are synchronous.
+
+Except TTML, parse functions take a string and return [`LyricLine[]`](/en/reference/lyric/interfacelyricline). Stringify functions take a lyric object array and return a string.
+
+For TTML, parse output and stringify input are not `LyricLine[]`, but a [`TTMLLyric`](/en/reference/lyric/interfacettmllyric) object with metadata. Also, TTML parse/stringify in the Lyric package is browser-only. For Node.js usage or advanced TTML data, use the dedicated TTML package below.
+
+The Lyric package also supports decryption/encryption for QQ Music encrypted QRC payloads: [`decryptQrcHex`](/en/reference/lyric/functiondecryptqrchex) and [`encryptQrcHex`](/en/reference/lyric/functionencryptqrchex).
+
+For format details, see [Lyric Formats](./formats).
+
+## TTML Package
+
+<Tabs syncKey="pkg">
+<TabItem label="npm">
+
+```sh
+npm install @applemusic-like-lyrics/ttml
+```
+
+</TabItem>
+
+<TabItem label="pnpm">
+
+```sh
+pnpm add @applemusic-like-lyrics/ttml
+```
+
+</TabItem>
+
+<TabItem label="Yarn">
+
+```sh
+yarn add @applemusic-like-lyrics/ttml
+```
+
+</TabItem>
+</Tabs>
+
+The TTML package provides TTML parsing and serialization. For format details, see [TTML Format](./ttml).
+
+It supports two usage modes: class mode and function mode.
+
+### Class Mode
+
+The TTML package provides two classes: [`TTMLParser`](/en/reference/ttml/classttmlparser) for parsing and [`TTMLGenerator`](/en/reference/ttml/classttmlgenerator) for generation. Both also provide static shortcuts.
+
+```js
+import { TTMLParser, TTMLGenerator } from "@applemusic-like-lyrics/ttml";
+
+const parser = new TTMLParser();
+const ttmlObject = parser.parse("Some TTML string...");
+
+const _ttmlObject = TTMLParser.parse("Some TTML string...");
+
+const generator = new TTMLGenerator();
+const ttmlString = generator.generate(ttmlObject);
+
+const _ttmlString = TTMLGenerator.generate(ttmlObject);
+```
+
+By default, these classes are browser-oriented. `TTMLParser` uses `DOMParser`, and `TTMLGenerator` uses `XMLSerializer` and `document.implementation`. For Node.js, provide implementations explicitly, for example with `@xmldom/xmldom`:
+
+```js
+import { TTMLParser, TTMLGenerator } from "@applemusic-like-lyrics/ttml";
+import { DOMParser, DOMImplementation, XMLSerializer } from "@xmldom/xmldom";
+
+const parser = new TTMLParser({
+    domParser: new DOMParser(),
+});
+
+const generator = new TTMLGenerator({
+    domImplementation: new DOMImplementation(),
+    xmlSerializer: new XMLSerializer(),
+});
+```
+
+Static methods are not suitable for Node.js.
+
+### Function Mode
+
+Import [`parseTTML`](/en/reference/ttml/functionparsettml) and [`exportTTML`](/en/reference/ttml/functionexportttml) directly.
+
+```js
+import { parseTTML, exportTTML } from "@applemusic-like-lyrics/ttml";
+
+const amllObject = parseTTML("Some TTML string...");
+const ttmlString = exportTTML(amllObject);
+```
+
+The parse result type is [`AmllLyricResult`](/en/reference/ttml/interfaceamlllyricresult), which can be directly used in AMLL core.
+
+Internally, this mode calls static methods of `TTMLParser`/`TTMLGenerator`. For parsing, it additionally calls [`toAmllLyrics`](/en/reference/ttml/functiontoamlllyrics). So this mode is also not suitable for Node.js.
