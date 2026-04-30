@@ -13,6 +13,7 @@ interface LineBalanceAdapter {
 	resetDOM(): void;
 	buildChildInfos(): { childInfos: ChildNodeInfo[]; fullText: string };
 	applyBreaks(breaks: number[], childInfos: ChildNodeInfo[]): void;
+	needsCalibration: boolean;
 }
 
 /**
@@ -21,11 +22,6 @@ interface LineBalanceAdapter {
 export class LineBalancer {
 	private isBalancing = false;
 	private lastBalancedContainerWidth = -1;
-
-	/**
-	 * 防止误差导致的意外换行
-	 */
-	private static readonly SAFE_WIDTH_PADDING = 25;
 
 	constructor(private mainElement: HTMLDivElement) {}
 
@@ -80,29 +76,48 @@ export class LineBalancer {
 		const prevWhiteSpace = this.mainElement.style.whiteSpace;
 		this.mainElement.style.whiteSpace = "nowrap";
 
-		try {
-			const range = document.createRange();
-			range.selectNodeContents(this.mainElement);
-			const lineWidth = range.getBoundingClientRect().width;
+		// 临时移除父级的 transform 以便让 getBoundingClientRect 返回纯粹的布局尺寸
+		// 基类在 enableScale 时设置的 0.97 缩放倍率会影响到计算的宽度
+		const parentElement = this.mainElement.parentElement;
+		let prevTransform = "";
+		let transformChanged = false;
 
-			const safeContainerWidth = Math.max(
-				1,
-				containerWidth - LineBalancer.SAFE_WIDTH_PADDING,
-			);
-
-			if (lineWidth <= safeContainerWidth) {
-				this.lastBalancedContainerWidth = containerWidth;
-				return;
+		if (parentElement) {
+			prevTransform = parentElement.style.transform;
+			if (prevTransform && prevTransform !== "none") {
+				parentElement.style.transform = "none";
+				transformChanged = true;
 			}
+		}
 
+		let lockAcquired = false;
+
+		try {
 			const { childInfos, fullText } = adapter.buildChildInfos();
 
-			const measuredTotal = childInfos.reduce((sum, c) => sum + c.width, 0);
-			if (measuredTotal > 0 && lineWidth > 0) {
-				const scale = lineWidth / measuredTotal;
-				for (const info of childInfos) {
-					info.width *= scale;
+			let layoutWidth = childInfos.reduce((sum, c) => sum + c.width, 0);
+
+			// 非动态歌词（用 Canvas 测量）才用 range 来缩放校准；动态歌词的强调 wrapper 有 1em 的 padding 和
+			// margin，用 range 测会把首尾溢出的 1em 也加进来，极大地增大了行长度，视觉上就是非常激进地换行
+			if (adapter.needsCalibration) {
+				const range = document.createRange();
+				range.selectNodeContents(this.mainElement);
+				const visualWidth = range.getBoundingClientRect().width;
+
+				if (layoutWidth > 0 && visualWidth > 0) {
+					const scale = visualWidth / layoutWidth;
+					for (const info of childInfos) {
+						info.width *= scale;
+					}
 				}
+				layoutWidth = visualWidth;
+			}
+
+			const safeContainerWidth = Math.max(1, containerWidth);
+
+			if (layoutWidth <= safeContainerWidth) {
+				this.lastBalancedContainerWidth = containerWidth;
+				return;
 			}
 
 			const breaks = calcBalancedBreaks(
@@ -118,11 +133,20 @@ export class LineBalancer {
 			}
 
 			this.isBalancing = true;
+			lockAcquired = true;
+
 			adapter.applyBreaks(breaks, childInfos);
 			this.lastBalancedContainerWidth = containerWidth;
 			this.isBalancing = false;
 		} finally {
 			this.mainElement.style.whiteSpace = prevWhiteSpace;
+			if (transformChanged && parentElement) {
+				parentElement.style.transform = prevTransform;
+			}
+
+			if (lockAcquired) {
+				this.isBalancing = false;
+			}
 		}
 	}
 
@@ -182,6 +206,7 @@ export class LineBalancer {
 					}
 				}
 			},
+			needsCalibration: false,
 		};
 
 		this.executeLineBalance(containerWidth, dynamicAdapter, wordSegmenter);
@@ -249,6 +274,7 @@ export class LineBalancer {
 				}
 				this.mainElement.appendChild(fragment);
 			},
+			needsCalibration: true,
 		};
 
 		this.executeLineBalance(containerWidth, nonDynamicAdapter, wordSegmenter);
