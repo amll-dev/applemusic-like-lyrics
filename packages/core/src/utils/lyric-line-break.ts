@@ -24,6 +24,13 @@ const NORMAL_BREAK_PENALTY_RATIO = 0.5;
  * 在空格处断开的奖励比例
  */
 const SPACE_BREAK_REWARD_RATIO = 0.4;
+/**
+ * 在标点符号处断开的奖励比例
+ *
+ * 比空格更高以便优先一点在标点处换行
+ */
+const PUNCTUATION_BREAK_REWARD_RATIO = 0.6;
+const PUNCTUATION_REGEX = /[,.;:!?，。；：！？、）】》」』’”)[\]}>~…]$/;
 
 /**
  * 计算平均行长度的断点位置
@@ -100,8 +107,14 @@ export function calcBalancedBreaks(
 			let breakPenalty = 0;
 			if (j < n) {
 				const prevChild = children[j - 1];
-				if (prevChild.isSpace) {
-					// 多给点空格处断开奖励
+
+				// 优先级：标点 > 空格 > CJK 词界 > 普通文本
+				if (PUNCTUATION_REGEX.test(prevChild.text)) {
+					breakPenalty = -(
+						(containerWidth * PUNCTUATION_BREAK_REWARD_RATIO) **
+						2
+					);
+				} else if (prevChild.isSpace) {
 					breakPenalty = -((containerWidth * SPACE_BREAK_REWARD_RATIO) ** 2);
 				} else if (cjkBoundaries.has(charOffsets[j])) {
 					breakPenalty = PENALTY_CJK;
