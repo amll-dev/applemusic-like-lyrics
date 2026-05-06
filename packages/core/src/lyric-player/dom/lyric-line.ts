@@ -81,7 +81,7 @@ export class LyricLineEl extends LyricLineBase {
 	// 由 LyricPlayer 来设置
 	lineSize: number[] = [0, 0];
 
-	private renderMode = LyricLineRenderMode.SOLID;
+	private renderMode: LyricLineRenderMode = LyricLineRenderMode.SOLID;
 
 	private currentBrightAlpha = 1.0;
 	private currentDarkAlpha = 0.2;

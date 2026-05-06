@@ -1,20 +1,29 @@
-/**
- * 歌词中不雅用语的掩码模式
- */
-export enum MaskObsceneWordsMode {
+type ValueOf<T extends Record<PropertyKey, unknown>> = T[keyof T];
+
+/** 歌词中不雅用语的掩码模式 */
+export const MaskObsceneWordsMode = {
 	/** 禁用任何不雅用语掩码 */
-	Disabled = "",
+	Disabled: "",
 	/** 完全掩码所有不雅用语 */
-	FullMask = "full-mask",
+	FullMask: "full-mask",
 	/** 保留首尾字符，屏蔽中间字符 */
-	PartialMask = "partial-mask",
-}
+	PartialMask: "partial-mask",
+} as const;
+
+/** 歌词中不雅用语的掩码模式类型，见 {@link MaskObsceneWordsMode} */
+export type MaskObsceneWordsMode = ValueOf<typeof MaskObsceneWordsMode>;
 
 /**
  * 歌词行的渲染模式
  * @internal
  */
-export enum LyricLineRenderMode {
-	SOLID = 0,
-	GRADIENT = 1,
-}
+export const LyricLineRenderMode = {
+	SOLID: 0,
+	GRADIENT: 1,
+} as const;
+
+/**
+ * 歌词行的渲染模式类型，见 {@link LyricLineRenderMode}
+ * @internal
+ */
+export type LyricLineRenderMode = ValueOf<typeof LyricLineRenderMode>;
