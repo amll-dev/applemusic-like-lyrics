@@ -1,14 +1,10 @@
 import bezier from "bezier-easing";
-import type { LyricLine, LyricWord } from "../../interfaces.ts";
-import { chunkAndSplitLyricWords } from "../../utils/lyric-split-words.ts";
-import {
-	createMatrix4,
-	matrix4ToCSS,
-	scaleMatrix4,
-} from "../../utils/matrix.ts";
-import { mutexifyFunction } from "../../utils/mutex.ts";
-import { measure, mutate } from "../../utils/schedule.ts";
-import { LyricLineBase } from "../base.ts";
+import type { LyricLine, LyricWord } from "#src/interfaces.ts";
+import { chunkAndSplitLyricWords } from "#utils/lyric-split-words.ts";
+import { createMatrix4, matrix4ToCSS, scaleMatrix4 } from "#utils/matrix.ts";
+import { mutexifyFunction } from "#utils/mutex.ts";
+import { measure, mutate } from "#utils/schedule.ts";
+import { LyricLineBase } from "#lyric/base/line.ts";
 import styles from "./index.module.css";
 import type { DomSlimLyricPlayer } from "./index.ts";
 

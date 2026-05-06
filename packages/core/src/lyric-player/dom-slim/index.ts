@@ -4,11 +4,11 @@
  * @author SteveXMH
  */
 
-import type { LyricLine } from "../../interfaces.ts";
-import "../../styles/index.css";
-import { debounce } from "../../utils/debounce.ts";
-import { LyricPlayerBase } from "../base.ts";
-import { LyricLineMouseEvent } from "../dom/index.ts";
+import type { LyricLine } from "#src/interfaces.ts";
+import "#styles/index.css";
+import { debounce } from "#utils/debounce.ts";
+import { LyricPlayerBase } from "#lyric/base/player.ts";
+import { LyricLineMouseEvent } from "#lyric/dom/index.ts";
 import styles from "./index.module.css";
 import { LyricLineEl, type RawLyricLineMouseEvent } from "./lyric-line.ts";
 

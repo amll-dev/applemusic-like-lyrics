@@ -1,5 +1,5 @@
-import type { Disposable, HasElement } from "../../interfaces.ts";
-import styles from "../../styles/lyric-player.module.css";
+import type { Disposable, HasElement } from "#src/interfaces.ts";
+import styles from "#styles/lyric-player.module.css";
 
 function easeInOutBack(x: number): number {
 	const c1 = 1.70158;

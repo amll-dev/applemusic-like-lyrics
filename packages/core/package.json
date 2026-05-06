@@ -35,6 +35,13 @@
 	"main": "./dist/amll-core.cjs",
 	"module": "./dist/amll-core.mjs",
 	"typings": "./dist/amll-core.d.mts",
+	"imports": {
+		"#src/*": "./src/*",
+		"#utils/*": "./src/utils/*",
+		"#styles/*": "./src/styles/*",
+		"#lyric/*": "./src/lyric-player/*",
+		"#bg/*": "./src/bg-player/*"
+	},
 	"exports": {
 		".": {
 			"import": {

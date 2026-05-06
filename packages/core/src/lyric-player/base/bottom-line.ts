@@ -1,8 +1,8 @@
-import type { Disposable, HasElement } from "../interfaces.ts";
-import styles from "../styles/lyric-player.module.css";
-import { measure } from "../utils/schedule.ts";
-import { Spring } from "../utils/spring.ts";
-import type { LyricPlayerBase } from "./base.ts";
+import type { Disposable, HasElement } from "#src/interfaces.ts";
+import styles from "#styles/lyric-player.module.css";
+import { measure } from "#utils/schedule.ts";
+import { Spring } from "#utils/spring.ts";
+import type { LyricPlayerBase } from "./player.ts";
 
 interface LineTransforms {
 	posX: Spring;
