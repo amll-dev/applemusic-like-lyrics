@@ -26,32 +26,6 @@
 		z-index: 1;
 		line-height: 1.2;
 	}
-
-	&.dom-slim {
-		--amll-lp-line-width-aspect: 0.8;
-		--amll-lp-line-padding-x: 1em;
-		--amll-lp-bg-line-scale: 0.7;
-		overflow: hidden scroll;
-		user-select: none;
-		box-sizing: content-box;
-		z-index: 1;
-		line-height: 1.2;
-		min-height: 0;
-		min-width: 0;
-
-		&::-webkit-scrollbar {
-			opacity: 0;
-		}
-
-		&:hover::-webkit-scrollbar {
-			opacity: 1;
-		}
-
-		> * {
-			content-visibility: auto;
-			contain-intrinsic-size: 100% 2em;
-		}
-	}
 }
 
 @media screen and (max-width: 768px) {

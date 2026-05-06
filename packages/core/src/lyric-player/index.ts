@@ -2,7 +2,6 @@ import { DomLyricPlayer } from "./dom/index.ts";
 
 export { LyricPlayerBase } from "./base/player.ts";
 export * from "./dom/index.ts";
-export * from "./dom-slim/index.ts";
 
 export {
 	/**

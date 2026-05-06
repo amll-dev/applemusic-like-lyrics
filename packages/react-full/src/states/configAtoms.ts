@@ -1,6 +1,5 @@
 import {
 	DomLyricPlayer,
-	DomSlimLyricPlayer,
 	type LyricPlayerBase,
 	MeshGradientRenderer,
 	PixiRenderer,
@@ -39,7 +38,6 @@ export enum VerticalCoverLayout {
  */
 export enum LyricPlayerImplementation {
 	Dom = "dom",
-	DomSlim = "dom-slim",
 }
 
 /**
@@ -70,8 +68,6 @@ const getInitialPlayerImplementation = (): LyricPlayerImplementationObject => {
 		"amll-react-full.lyricPlayerImplementation",
 	);
 	switch (savedImpl) {
-		case LyricPlayerImplementation.DomSlim:
-			return { lyricPlayer: DomSlimLyricPlayer };
 		default:
 			return { lyricPlayer: DomLyricPlayer };
 	}
