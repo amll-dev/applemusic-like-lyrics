@@ -1,7 +1,7 @@
 import { DomLyricPlayer } from "./dom/index.ts";
 
-export { LyricPlayerBase } from "./base/player.ts";
 export * from "./base/fixures.ts";
+export { LyricPlayerBase } from "./base/player.ts";
 
 export * from "./dom/index.ts";
 
