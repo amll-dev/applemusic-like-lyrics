@@ -42,5 +42,10 @@
 		"enabled": true,
 		"clientKind": "git",
 		"useIgnoreFile": true
+	},
+	"css": {
+		"parser": {
+			"cssModules": true
+		}
 	}
 }
