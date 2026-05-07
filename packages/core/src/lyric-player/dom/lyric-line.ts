@@ -1,7 +1,7 @@
 import bezier from "bezier-easing";
-import { LyricLineRenderMode } from "#lyric/base/fixures.ts";
+import { LyricLineRenderMode } from "#lyric/base/fixtures.ts";
+import { LyricLineBase } from "#lyric/base/line.ts";
 import type { LyricLine, LyricWord } from "#src/interfaces.ts";
-import { LyricLineBase } from "#src/lyric-player/base/line.ts";
 import styles from "#styles/lyric-player.module.css";
 import { isCJK } from "#utils/is-cjk.ts";
 import { LineBalancer } from "#utils/line-balancer.ts";

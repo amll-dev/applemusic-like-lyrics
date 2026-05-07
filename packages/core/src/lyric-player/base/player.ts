@@ -11,7 +11,7 @@ import { optimizeLyricLines } from "#utils/optimize-lyric.ts";
 import type { SpringParams } from "#utils/spring.ts";
 import { InterludeDots } from "../dom/interlude-dots.ts";
 import { BottomLineEl } from "./bottom-line.ts";
-import { LyricLineRenderMode, MaskObsceneWordsMode } from "./fixures.ts";
+import { LyricLineRenderMode, MaskObsceneWordsMode } from "./fixtures.ts";
 import type { LyricLineBase } from "./line.ts";
 import {
 	commitPlayerTimeState,
