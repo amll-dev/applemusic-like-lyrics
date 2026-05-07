@@ -1,4 +1,4 @@
-import type { LyricLine } from "#src/interfaces.ts";
+import type { LyricLine } from "#interfaces";
 import { eqSet } from "#utils/eq-set.ts";
 
 /* 播放时间线状态类型 */

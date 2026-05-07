@@ -5,7 +5,7 @@ import type {
 	LyricLine,
 	LyricWord,
 	OptimizeLyricOptions,
-} from "#src/interfaces.ts";
+} from "#interfaces";
 import styles from "#styles/lyric-player.module.css";
 import { optimizeLyricLines } from "#utils/optimize-lyric.ts";
 import type { SpringParams } from "#utils/spring.ts";

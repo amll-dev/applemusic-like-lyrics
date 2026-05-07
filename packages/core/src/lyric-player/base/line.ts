@@ -1,4 +1,4 @@
-import type { Disposable, LyricLine, LyricWord } from "#src/interfaces.ts";
+import type { Disposable, LyricLine, LyricWord } from "#interfaces";
 import { isCJK } from "#utils/is-cjk.ts";
 import { Spring } from "#utils/spring.ts";
 import { LyricLineRenderMode } from "./fixtures.ts";

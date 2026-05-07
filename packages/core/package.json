@@ -36,7 +36,7 @@
 	"module": "./dist/amll-core.mjs",
 	"typings": "./dist/amll-core.d.mts",
 	"imports": {
-		"#src/*": "./src/*",
+		"#interfaces": "./src/interfaces.ts",
 		"#utils/*": "./src/utils/*",
 		"#styles/*": "./src/styles/*",
 		"#lyric/*": "./src/lyric-player/*",

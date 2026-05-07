@@ -1,4 +1,4 @@
-import type { Disposable, HasElement } from "#src/interfaces.ts";
+import type { Disposable, HasElement } from "#interfaces";
 import styles from "#styles/lyric-player.module.css";
 
 function easeInOutBack(x: number): number {
