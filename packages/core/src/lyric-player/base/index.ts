@@ -11,10 +11,7 @@ import { optimizeLyricLines } from "#utils/optimize-lyric.ts";
 import type { SpringParams } from "#utils/spring.ts";
 import { InterludeDots } from "../dom/interlude-dots.ts";
 import { BottomLineEl } from "./bottom-line.ts";
-import {
-	LayoutAlignAnchor,
-	MaskObsceneWordsMode,
-} from "./fixtures.ts";
+import { LayoutAlignAnchor, MaskObsceneWordsMode } from "./fixtures.ts";
 import {
 	computeLineBlur,
 	computeLinePresentation,
@@ -34,8 +31,14 @@ import {
 	type PlayerTimelineState,
 } from "./timeline.ts";
 
+export type { LyricLineBase } from "./line.ts";
+export type { PlayerLayoutState } from "./layout.ts";
+export type { PlayerScrollState } from "./scroll.ts";
+export type { PlayerTimelineState } from "./timeline.ts";
+
 /**
- * 歌词播放器的基类，已经包含了有关歌词操作和排版的功能，子类需要为其实现对应的显示展示操作
+ * 歌词播放器的基类，已经包含了有关歌词操作和排版的功能，
+ * 子类需要为其实现对应的显示展示操作
  */
 export abstract class LyricPlayerBase
 	extends EventTarget
@@ -44,13 +47,7 @@ export abstract class LyricPlayerBase
 	protected element: HTMLElement = document.createElement("div");
 	abstract get baseFontSize(): number;
 
-	/**
-	 * 播放时间线状态。
-	 *
-	 * 包含了当前时间、热行/缓冲行状态、滚动位置等信息，
-	 * 播放器实质上是一个状态机，通过调用 {@link setCurrentTime} 来更新状态，
-	 * 并通过 {@link calcLayout} 来根据状态调整布局和动画。
-	 */
+	/** 播放时间线状态 */
 	protected timelineState: PlayerTimelineState = {
 		currentTime: 0,
 		lastCurrentTime: 0,
@@ -682,7 +679,10 @@ export abstract class LyricPlayerBase
 				presentation.renderMode,
 			);
 
-			if (line.isBG && (presentation.isActive || !this.timelineState.isPlaying)) {
+			if (
+				line.isBG &&
+				(presentation.isActive || !this.timelineState.isPlaying)
+			) {
 				curPos += this.lyricLinesSize.get(lineObj)?.[1] ?? LINE_HEIGHT_FALLBACK;
 			} else if (!line.isBG) {
 				curPos += this.lyricLinesSize.get(lineObj)?.[1] ?? LINE_HEIGHT_FALLBACK;

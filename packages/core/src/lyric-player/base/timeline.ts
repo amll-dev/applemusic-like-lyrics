@@ -1,22 +1,27 @@
 import type { LyricLine } from "#interfaces";
 import { eqSet } from "#utils/eq-set.ts";
 
-/* 播放时间线状态类型 */
+/**
+ * 播放时间线状态。
+ *
+ * 描述播放器在时间轴上的当前位置，当前处于激活状态的歌词行信息
+ */
 export interface PlayerTimelineState {
+	/** 当前播放时间，单位为毫秒 */
 	currentTime: number;
+	/** 上一次提交到时间线状态的播放时间，单位为毫秒 */
 	lastCurrentTime: number;
-	/** 热行：当前时间 {@link currentTime} 正在命中的行（含主行 + 可能跟着的 BG 行） */
+	/** 热行：当前时间 {@link currentTime} 正在命中的行（含主行+可能的背景行） */
 	hotLines: Set<number>;
-	/** 缓冲行：UI 上还保持激活表现的行，通常包含热行并可能比热行多一点（刚结束的行还在过渡稳定） */
+	/** 缓冲行：UI 上还保持激活表现的行，通常包含热行，并包含刚结束仍在过渡中的行 */
 	bufferedLines: Set<number>;
+	/** 当前应滚动对齐到的歌词行索引 */
 	scrollToIndex: number;
-	/**
-	 * 是否正在拖拽进度条
-	 *
-	 * 若是，播放器在更新时丢弃缓冲行，并根据当前时间直接计算热行，以保证在快速移动时迅速响应
-	 */
+	/** 是否正在拖拽进度条。若是，更新时丢弃缓冲行，并根据当前时间直接计算热行 */
 	isSeeking: boolean;
+	/** 是否处于播放状态 */
 	isPlaying: boolean;
+	/** 是否已经完成至少一次初始布局 */
 	initialLayoutFinished: boolean;
 }
 
@@ -29,29 +34,14 @@ export interface ComputePlayerTimeStateInput {
 
 /** {@link computePlayerTimeState} 的返回类型 */
 export interface ComputePlayerTimeStateResult {
+	/** 计算后的新热行集合 */
 	nextHotLines: Set<number>;
+	/** 需要新加入热行集合的行索引 */
 	addedIds: Set<number>;
+	/** 需要从热行集合中移除的行索引 */
 	removedHotIds: Set<number>;
+	/** 需要从缓冲行集合中移除的行索引 */
 	removedBufferedIds: Set<number>;
-}
-
-/** {@link commitPlayerTimeState} 的参数类型 */
-export interface CommitPlayerTimeStateInput {
-	timelineState: PlayerTimelineState;
-	time: number;
-	processedLines: LyricLine[];
-	hasBottomContent: boolean;
-	stateResult: ComputePlayerTimeStateResult;
-}
-
-/** {@link commitPlayerTimeState} 的返回类型 */
-export interface CommitPlayerTimeStateResult {
-	shouldLayout: boolean;
-	shouldResetScroll: boolean;
-	linesToEnable: number[];
-	linesToDisable: number[];
-	enableAtTime?: number;
-	enableWithPlayingState?: boolean;
 }
 
 /**
@@ -132,6 +122,12 @@ export function computePlayerTimeState(
 	};
 }
 
+/**
+ * 在 seeking 场景下，根据当前时间选出应对齐滚动到的目标行索引。
+ *
+ * 若当前仍存在缓冲行，则优先对齐到最靠前的缓冲行；
+ * 否则对齐到第一条开始时间不小于当前时间的歌词行。
+ */
 export function pickScrollToIndexForSeek(
 	time: number,
 	processedLines: LyricLine[],
@@ -145,11 +141,46 @@ export function pickScrollToIndexForSeek(
 }
 
 /**
+ * {@link commitPlayerTimeState} 的参数类型。
+ *
+ * 用于将一次时间线状态转移提交回 {@link PlayerTimelineState}，
+ * 并生成供宿主执行的副作用应用计划。
+ */
+export interface CommitPlayerTimeStateInput {
+	/** 要被更新的时间线状态对象 */
+	timelineState: PlayerTimelineState;
+	/** 当前播放时间，单位为毫秒 */
+	time: number;
+	/** 当前用于计算的歌词数据 */
+	processedLines: LyricLine[];
+	/** 底部附加区域当前是否有可见内容 */
+	hasBottomContent: boolean;
+	/** 由 {@link computePlayerTimeState} 得到的状态转移结果 */
+	stateResult: ComputePlayerTimeStateResult;
+}
+
+/** {@link commitPlayerTimeState} 的返回类型 */
+export interface CommitPlayerTimeStateResult {
+	/** 提交后是否需要重新布局 */
+	shouldLayout: boolean;
+	/** 提交后是否需要重置用户滚动状态 */
+	shouldResetScroll: boolean;
+	/** 需要启用的歌词行索引列表 */
+	linesToEnable: number[];
+	/** 需要禁用的歌词行索引列表 */
+	linesToDisable: number[];
+	/** 启用歌词行时应使用的时间参数 */
+	enableAtTime?: number;
+	/** 启用歌词行时应使用的播放状态参数 */
+	enableWithPlayingState?: boolean;
+}
+
+/**
  * 提交时间线状态转移的纯函数。
  *
- * 将状态更改写入 {@link PlayerTimelineState}，并返回是否需要调整布局和重置滚动位置等信息。
- *
- * 同时返回副作用应用计划，由调用方启用或禁用指定的行。
+ * 把一次时间线状态转移写回 {@link PlayerTimelineState}，
+ * 并返回一份供宿主执行的副作用应用计划，例如启用/禁用哪些歌词行、
+ * 是否需要重置用户滚动状态、是否需要触发布局。
  */
 export function commitPlayerTimeState(
 	input: CommitPlayerTimeStateInput,
