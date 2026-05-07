@@ -30,6 +30,7 @@ export interface AttachPlayerScrollHandlersCallbacks {
 	clickTarget: (target: HTMLElement) => void;
 }
 
+/** 向元素挂载滚动钩子 */
 export function attachPlayerScrollHandlers(
 	element: HTMLElement,
 	scrollState: PlayerScrollState,

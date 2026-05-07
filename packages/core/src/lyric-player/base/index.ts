@@ -13,10 +13,11 @@ import { InterludeDots } from "../dom/interlude-dots.ts";
 import { BottomLineEl } from "./bottom-line.ts";
 import {
 	LayoutAlignAnchor,
-	LyricLineRenderMode,
 	MaskObsceneWordsMode,
 } from "./fixtures.ts";
 import {
+	computeLineBlur,
+	computeLinePresentation,
 	computeCurrentInterlude,
 	computeLinePosYSpringParams,
 	type PlayerLayoutState,
@@ -629,9 +630,6 @@ export abstract class LyricPlayerBase
 		let setDots = false;
 		this.currentLyricLineObjects.forEach((lineObj, i) => {
 			const hasBuffered = this.timelineState.bufferedLines.has(i);
-			const isActive =
-				hasBuffered ||
-				(i >= this.timelineState.scrollToIndex && i < latestIndex);
 			const line = lineObj.getLine();
 
 			const shouldShowDots = interlude && i === interlude.anchorLineIndex + 1;
@@ -658,59 +656,33 @@ export abstract class LyricPlayerBase
 				curPos += dotMargin;
 			}
 
-			let targetOpacity: number;
-
-			if (this.hidePassedLines) {
-				if (
-					i <
-						(interlude
-							? interlude.anchorLineIndex + 1
-							: this.timelineState.scrollToIndex) &&
-					this.timelineState.isPlaying
-				) {
-					// 为了避免浏览器优化，这里使用了一个极小但不为零的值（几乎不可见）
-					targetOpacity = 0.00001;
-				} else if (hasBuffered) {
-					targetOpacity = 0.85;
-				} else {
-					targetOpacity = this.isNonDynamic ? 0.2 : 1;
-				}
-			} else {
-				if (hasBuffered) {
-					targetOpacity = 0.85;
-				} else {
-					targetOpacity = this.isNonDynamic ? 0.2 : 1;
-				}
-			}
-
-			const blurLevel = this.calculateBlur(i, isActive, latestIndex);
-
-			const SCALE_ASPECT = this.enableScale ? 97 : 100;
-			let targetScale = 100;
-
-			if (!isActive && this.timelineState.isPlaying) {
-				if (line.isBG) {
-					targetScale = 75;
-				} else {
-					targetScale = SCALE_ASPECT;
-				}
-			}
-
-			const renderMode = isActive
-				? LyricLineRenderMode.GRADIENT
-				: LyricLineRenderMode.SOLID;
+			const presentation = computeLinePresentation({
+				line,
+				lineIndex: i,
+				scrollToIndex: this.timelineState.scrollToIndex,
+				latestIndex,
+				hasBuffered,
+				hidePassedLines: this.hidePassedLines,
+				isPlaying: this.timelineState.isPlaying,
+				isNonDynamic: this.isNonDynamic,
+				enableScale: this.enableScale,
+				enableBlur: this.enableBlur,
+				isUserScrolling: this.scrollState.isUserScrolling,
+				isCompact: window.innerWidth <= 1024,
+				interlude,
+			});
 
 			lineObj.setTransform(
 				curPos,
-				targetScale,
-				targetOpacity,
-				blurLevel,
+				presentation.targetScale,
+				presentation.targetOpacity,
+				presentation.blurLevel,
 				force,
 				delay,
-				renderMode,
+				presentation.renderMode,
 			);
 
-			if (line.isBG && (isActive || !this.timelineState.isPlaying)) {
+			if (line.isBG && (presentation.isActive || !this.timelineState.isPlaying)) {
 				curPos += this.lyricLinesSize.get(lineObj)?.[1] ?? LINE_HEIGHT_FALLBACK;
 			} else if (!line.isBG) {
 				curPos += this.lyricLinesSize.get(lineObj)?.[1] ?? LINE_HEIGHT_FALLBACK;
@@ -725,35 +697,17 @@ export abstract class LyricPlayerBase
 			curPos + this.scrollState.scrollOffset - this.size[1] / 2;
 
 		const bottomIndex = this.currentLyricLineObjects.length;
-		const finalBottomBlur = this.calculateBlur(
-			bottomIndex,
-			isBottomFocused,
+		const finalBottomBlur = computeLineBlur({
+			enableBlur: this.enableBlur,
+			isUserScrolling: this.scrollState.isUserScrolling,
+			isActive: isBottomFocused,
+			itemIndex: bottomIndex,
+			scrollToIndex: this.timelineState.scrollToIndex,
 			latestIndex,
-		);
+			isCompact: window.innerWidth <= 1024,
+		});
 
 		this.bottomLine.setTransform(0, curPos, finalBottomBlur, force, delay);
-	}
-
-	protected calculateBlur(
-		itemIndex: number,
-		isActive: boolean,
-		latestIndex: number,
-	): number {
-		if (!this.enableBlur || this.scrollState.isUserScrolling || isActive) {
-			return 0;
-		}
-
-		let blurLevel = 1;
-
-		if (itemIndex < this.timelineState.scrollToIndex) {
-			blurLevel += Math.abs(this.timelineState.scrollToIndex - itemIndex) + 1;
-		} else {
-			blurLevel += Math.abs(
-				itemIndex - Math.max(this.timelineState.scrollToIndex, latestIndex),
-			);
-		}
-
-		return window.innerWidth <= 1024 ? blurLevel * 0.8 : blurLevel;
 	}
 
 	/**

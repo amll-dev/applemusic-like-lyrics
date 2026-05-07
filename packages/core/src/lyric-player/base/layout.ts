@@ -1,7 +1,8 @@
 import type { LyricLine } from "#interfaces";
 import type { SpringParams } from "#utils/spring.ts";
-import type { LayoutAlignAnchor } from "./fixtures";
+import { type LayoutAlignAnchor, LyricLineRenderMode } from "./fixtures";
 
+/** 播放器布局状态 */
 export interface PlayerLayoutState {
 	interludeDotsSize: [number, number];
 	targetAlignIndex: number;
@@ -11,6 +12,7 @@ export interface PlayerLayoutState {
 	overscanPx: number;
 }
 
+/** 间奏点动画参数 */
 export interface PlayerInterlude {
 	startTime: number;
 	endTime: number;
@@ -25,6 +27,7 @@ export interface ComputeCurrentInterludeInput {
 	processedLines: LyricLine[];
 }
 
+/** 根据当前时间计算当前的间奏点动画参数 */
 export function computeCurrentInterlude(
 	input: ComputeCurrentInterludeInput,
 ): PlayerInterlude | undefined {
@@ -78,6 +81,7 @@ export interface ComputeLinePosYSpringParamsResult {
 	params?: Partial<SpringParams>;
 }
 
+/** 根据当前歌词行的时间间隔动态计算滚动动画的弹簧参数 */
 export function computeLinePosYSpringParams(
 	input: ComputeLinePosYSpringParamsInput,
 ): ComputeLinePosYSpringParamsResult {
@@ -139,4 +143,140 @@ export function computeLinePosYSpringParams(
 			damping: targetDamping,
 		},
 	};
+}
+
+/** {@link computeLinePresentation} 的参数类型 */
+export interface ComputeLinePresentationInput {
+	line: LyricLine;
+	lineIndex: number;
+	scrollToIndex: number;
+	latestIndex: number;
+	hasBuffered: boolean;
+	hidePassedLines: boolean;
+	isPlaying: boolean;
+	isNonDynamic: boolean;
+	enableScale: boolean;
+	enableBlur: boolean;
+	isUserScrolling: boolean;
+	isCompact: boolean;
+	interlude?: PlayerInterlude;
+}
+
+/** {@link computeLinePresentation} 的结果类型 */
+export interface ComputeLinePresentationResult {
+	isActive: boolean;
+	targetOpacity: number;
+	targetScale: number;
+	blurLevel: number;
+	renderMode: LyricLineRenderMode;
+}
+
+/**
+ * 计算歌词行的视觉呈现参数
+ *
+ * 包括是否活跃、目标不透明度、目标缩放、模糊等级和渲染模式
+ */
+export function computeLinePresentation(
+	input: ComputeLinePresentationInput,
+): ComputeLinePresentationResult {
+	const {
+		line,
+		lineIndex,
+		scrollToIndex,
+		latestIndex,
+		hasBuffered,
+		hidePassedLines,
+		isPlaying,
+		isNonDynamic,
+		enableScale,
+		enableBlur,
+		isUserScrolling,
+		isCompact,
+		interlude,
+	} = input;
+
+	const isActive =
+		hasBuffered || (lineIndex >= scrollToIndex && lineIndex < latestIndex);
+	const blurLevel = computeLineBlur({
+		enableBlur,
+		isUserScrolling,
+		isActive,
+		itemIndex: lineIndex,
+		scrollToIndex,
+		latestIndex,
+		isCompact,
+	});
+
+	let targetOpacity: number;
+	if (hidePassedLines) {
+		if (
+			lineIndex < (interlude ? interlude.anchorLineIndex + 1 : scrollToIndex) &&
+			isPlaying
+		) {
+			// 为了避免浏览器优化，这里使用了一个极小但不为零的值（几乎不可见）
+			targetOpacity = 1e-4;
+		} else if (hasBuffered) {
+			targetOpacity = 0.85;
+		} else {
+			targetOpacity = isNonDynamic ? 0.2 : 1;
+		}
+	} else if (hasBuffered) {
+		targetOpacity = 0.85;
+	} else {
+		targetOpacity = isNonDynamic ? 0.2 : 1;
+	}
+
+	const SCALE_ASPECT = enableScale ? 97 : 100;
+	let targetScale = 100;
+	if (!isActive && isPlaying) {
+		targetScale = line.isBG ? 75 : SCALE_ASPECT;
+	}
+
+	return {
+		isActive,
+		targetOpacity,
+		targetScale,
+		blurLevel,
+		renderMode: isActive
+			? LyricLineRenderMode.GRADIENT
+			: LyricLineRenderMode.SOLID,
+	};
+}
+
+/** {@link computeLineBlur} 的参数类型 */
+export interface ComputeLineBlurInput {
+	enableBlur: boolean;
+	isUserScrolling: boolean;
+	isActive: boolean;
+	itemIndex: number;
+	scrollToIndex: number;
+	latestIndex: number;
+	isCompact: boolean;
+}
+
+/** 计算歌词行的模糊等级 */
+export function computeLineBlur(input: ComputeLineBlurInput): number {
+	const {
+		enableBlur,
+		isUserScrolling,
+		isActive,
+		itemIndex,
+		scrollToIndex,
+		latestIndex,
+		isCompact,
+	} = input;
+
+	if (!enableBlur || isUserScrolling || isActive) {
+		return 0;
+	}
+
+	let blurLevel = 1;
+
+	if (itemIndex < scrollToIndex) {
+		blurLevel += Math.abs(scrollToIndex - itemIndex) + 1;
+	} else {
+		blurLevel += Math.abs(itemIndex - Math.max(scrollToIndex, latestIndex));
+	}
+
+	return isCompact ? blurLevel * 0.8 : blurLevel;
 }
