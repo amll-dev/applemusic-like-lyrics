@@ -683,37 +683,29 @@ export abstract class LyricPlayerBase
 			);
 			this.resetScroll();
 			this.calcLayout();
-		} else if (removedBufferedIds.size > 0 || addedIds.size > 0) {
-			if (removedBufferedIds.size === 0 && addedIds.size > 0) {
-				for (const id of addedIds) {
-					this.bufferedLines.add(id);
-					this.currentLyricLineObjects[id]?.enable();
-				}
+		} else if (addedIds.size > 0) {
+			for (const id of addedIds) {
+				this.bufferedLines.add(id);
+				this.currentLyricLineObjects[id]?.enable();
+			}
+			for (const id of removedBufferedIds) {
+				this.bufferedLines.delete(id);
+				this.currentLyricLineObjects[id]?.disable();
+			}
+			if (this.bufferedLines.size > 0)
 				this.scrollToIndex = Math.min(...this.bufferedLines);
-				this.calcLayout();
-			} else if (removedBufferedIds.size > 0 && addedIds.size === 0) {
-				if (eqSet(removedBufferedIds, this.bufferedLines)) {
-					for (const id of this.bufferedLines) {
-						if (!this.hotLines.has(id)) {
-							this.bufferedLines.delete(id);
-							this.currentLyricLineObjects[id]?.disable();
-						}
-					}
-					this.calcLayout();
-				}
-			} else {
-				for (const id of addedIds) {
-					this.bufferedLines.add(id);
-					this.currentLyricLineObjects[id]?.enable();
-				}
-				for (const id of removedBufferedIds) {
+			this.calcLayout();
+		} else if (
+			removedBufferedIds.size > 0 &&
+			eqSet(removedBufferedIds, this.bufferedLines)
+		) {
+			for (const id of this.bufferedLines) {
+				if (!this.hotLines.has(id)) {
 					this.bufferedLines.delete(id);
 					this.currentLyricLineObjects[id]?.disable();
 				}
-				if (this.bufferedLines.size > 0)
-					this.scrollToIndex = Math.min(...this.bufferedLines);
-				this.calcLayout();
 			}
+			this.calcLayout();
 		}
 
 		if (this.bufferedLines.size === 0 && this.processedLines.length > 0) {
