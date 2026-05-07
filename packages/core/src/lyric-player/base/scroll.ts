@@ -1,5 +1,8 @@
 export interface PlayerScrollState {
-	scrollBoundary: [number, number];
+	scrollBoundary: {
+		minOffset: number;
+		maxOffset: number;
+	};
 	scrollOffset: number;
 	allowScroll: boolean;
 	isScrolled: boolean;
@@ -8,8 +11,8 @@ export interface PlayerScrollState {
 
 export function clampPlayerScrollOffset(scrollState: PlayerScrollState): void {
 	scrollState.scrollOffset = Math.max(
-		Math.min(scrollState.scrollBoundary[1], scrollState.scrollOffset),
-		scrollState.scrollBoundary[0],
+		Math.min(scrollState.scrollBoundary.maxOffset, scrollState.scrollOffset),
+		scrollState.scrollBoundary.minOffset,
 	);
 }
 

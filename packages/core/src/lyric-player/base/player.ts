@@ -72,7 +72,7 @@ export abstract class LyricPlayerBase
 	protected maskObsceneWordChar = "*";
 	protected hidePassedLines = false;
 	protected scrollState: PlayerScrollState = {
-		scrollBoundary: [0, 0],
+		scrollBoundary: { minOffset: 0, maxOffset: 0 },
 		scrollOffset: 0,
 		allowScroll: true,
 		isScrolled: false,
@@ -661,7 +661,7 @@ export abstract class LyricPlayerBase
 						: (this.lyricLinesSize.get(el)?.[1] ?? LINE_HEIGHT_FALLBACK)),
 				0,
 			);
-		this.scrollState.scrollBoundary[0] = -scrollOffset;
+		this.scrollState.scrollBoundary.minOffset = -scrollOffset;
 		curPos -= scrollOffset;
 		curPos += this.size[1] * this.alignPosition;
 		const curLine = this.currentLyricLineObjects[targetAlignIndex];
@@ -785,7 +785,7 @@ export abstract class LyricPlayerBase
 				if (i >= this.timelineState.scrollToIndex) baseDelay /= 1.05;
 			}
 		});
-		this.scrollState.scrollBoundary[1] =
+		this.scrollState.scrollBoundary.maxOffset =
 			curPos + this.scrollState.scrollOffset - this.size[1] / 2;
 
 		const bottomIndex = this.currentLyricLineObjects.length;
