@@ -12,6 +12,7 @@ import type { SpringParams } from "#utils/spring.ts";
 import { InterludeDots } from "../dom/interlude-dots.ts";
 import { BottomLineEl } from "./bottom-line.ts";
 import { LyricLineRenderMode, MaskObsceneWordsMode } from "./fixtures.ts";
+import type { PlayerLayoutState } from "./layout.ts";
 import type { LyricLineBase } from "./line.ts";
 import {
 	attachPlayerScrollHandlers,
@@ -62,7 +63,14 @@ export abstract class LyricPlayerBase
 	protected isNonDynamic = false;
 	protected hasDuetLine = false;
 	protected disableSpring = false;
-	protected interludeDotsSize: [number, number] = [0, 0];
+	protected layoutState: PlayerLayoutState = {
+		interludeDotsSize: [0, 0],
+		targetAlignIndex: 0,
+		lastInterludeState: false,
+		alignAnchor: "center",
+		alignPosition: 0.35,
+		overscanPx: 300,
+	};
 	protected interludeDots: InterludeDots = new InterludeDots();
 	protected bottomLine: BottomLineEl = new BottomLineEl(this);
 	protected enableBlur = true;
@@ -79,17 +87,9 @@ export abstract class LyricPlayerBase
 		isUserScrolling: false,
 	};
 	protected currentLyricLineObjects: LyricLineBase[] = [];
-	protected alignAnchor: "top" | "bottom" | "center" = "center";
-	protected alignPosition = 0.35;
 	readonly size: [number, number] = [0, 0];
 	protected isPageVisible = true;
 	protected optimizeOptions: OptimizeLyricOptions = {};
-
-	/**
-	 * 视图额外预渲染（overscan）距离，单位：像素。
-	 * 用于决定在视口之外多少距离内也认为是“可见”，以便提前创建/保留行元素。
-	 */
-	protected overscanPx = 300;
 
 	protected posXSpringParams: Partial<SpringParams> = {
 		mass: 1,
@@ -130,8 +130,8 @@ export abstract class LyricPlayerBase
 				this.size[1] = rect.height;
 				shouldRebuildPlayerStyle = true;
 			} else if (entry.target === this.interludeDots.getElement()) {
-				this.interludeDotsSize[0] = entry.target.clientWidth;
-				this.interludeDotsSize[1] = entry.target.clientHeight;
+				this.layoutState.interludeDotsSize[0] = entry.target.clientWidth;
+				this.layoutState.interludeDotsSize[1] = entry.target.clientHeight;
 				shouldRelayout = true;
 			} else if (entry.target === this.bottomLine.getElement()) {
 				const newSize: [number, number] = [
@@ -171,8 +171,6 @@ export abstract class LyricPlayerBase
 		}
 	}) as ResizeObserverCallback);
 	protected wordFadeWidth = 0.5;
-	protected targetAlignIndex = 0;
-	protected lastInterludeState = false;
 
 	constructor(element?: HTMLElement) {
 		super();
@@ -355,14 +353,14 @@ export abstract class LyricPlayerBase
 	 * @param alignAnchor 歌词行对齐方式，详情见函数说明
 	 */
 	setAlignAnchor(alignAnchor: "top" | "bottom" | "center"): void {
-		this.alignAnchor = alignAnchor;
+		this.layoutState.alignAnchor = alignAnchor;
 	}
 	/**
 	 * 设置默认的歌词行对齐位置，相对于整个歌词播放组件的大小位置，默认为 `0.5`
 	 * @param alignPosition 一个 `[0.0-1.0]` 之间的任意数字，代表组件高度由上到下的比例位置
 	 */
 	setAlignPosition(alignPosition: number): void {
-		this.alignPosition = alignPosition;
+		this.layoutState.alignPosition = alignPosition;
 	}
 
 	/**
@@ -370,11 +368,11 @@ export abstract class LyricPlayerBase
 	 * @param px 像素值，默认 300
 	 */
 	setOverscanPx(px: number): void {
-		this.overscanPx = Math.max(0, px | 0);
+		this.layoutState.overscanPx = Math.max(0, px | 0);
 	}
 	/** 获取当前 overscan 像素距离 */
 	getOverscanPx(): number {
-		return this.overscanPx;
+		return this.layoutState.overscanPx;
 	}
 	/**
 	 * 设置是否使用物理弹簧算法实现歌词动画效果，默认启用
@@ -617,10 +615,10 @@ export abstract class LyricPlayerBase
 		const isInterludeActive = !!interlude;
 
 		if (
-			this.targetAlignIndex !== this.timelineState.scrollToIndex ||
-			this.lastInterludeState !== isInterludeActive
+			this.layoutState.targetAlignIndex !== this.timelineState.scrollToIndex ||
+			this.layoutState.lastInterludeState !== isInterludeActive
 		) {
-			this.lastInterludeState = isInterludeActive;
+			this.layoutState.lastInterludeState = isInterludeActive;
 
 			if (this.timelineState.isSeeking) {
 				this.setLinePosYSpringParams({ stiffness: 90, damping: 15 });
@@ -642,7 +640,8 @@ export abstract class LyricPlayerBase
 
 		const fontSize = this.baseFontSize || 24;
 		const dotMargin = fontSize * 0.4;
-		const totalInterludeHeight = this.interludeDotsSize[1] + dotMargin * 2;
+		const totalInterludeHeight =
+			this.layoutState.interludeDotsSize[1] + dotMargin * 2;
 
 		if (interlude) {
 			if (interlude[2] !== -1) {
@@ -663,9 +662,9 @@ export abstract class LyricPlayerBase
 			);
 		this.scrollState.scrollBoundary.minOffset = -scrollOffset;
 		curPos -= scrollOffset;
-		curPos += this.size[1] * this.alignPosition;
+		curPos += this.size[1] * this.layoutState.alignPosition;
 		const curLine = this.currentLyricLineObjects[targetAlignIndex];
-		this.targetAlignIndex = targetAlignIndex;
+		this.layoutState.targetAlignIndex = targetAlignIndex;
 
 		const isBottomFocused =
 			targetAlignIndex === this.currentLyricLineObjects.length;
@@ -680,7 +679,7 @@ export abstract class LyricPlayerBase
 		}
 
 		if (targetLineHeight > 0) {
-			switch (this.alignAnchor) {
+			switch (this.layoutState.alignAnchor) {
 				case "bottom":
 					curPos -= targetLineHeight;
 					break;
@@ -712,7 +711,7 @@ export abstract class LyricPlayerBase
 
 				let targetX = 0;
 				if (interlude && isNextDuet) {
-					targetX = this.size[0] - this.interludeDotsSize[0];
+					targetX = this.size[0] - this.layoutState.interludeDotsSize[0];
 				}
 
 				this.interludeDots.setTransform(targetX, curPos);
@@ -720,7 +719,7 @@ export abstract class LyricPlayerBase
 				if (interlude) {
 					this.interludeDots.setInterlude([interlude[0], interlude[1]]);
 				}
-				curPos += this.interludeDotsSize[1];
+				curPos += this.layoutState.interludeDotsSize[1];
 				curPos += dotMargin;
 			}
 
