@@ -164,12 +164,12 @@ export class DomLyricPlayer extends LyricPlayerBase {
 	}
 
 	override update(delta = 0): void {
-		if (!this.initialLayoutFinished) return;
+		if (!this.timelineState.initialLayoutFinished) return;
 		super.update(delta);
 		if (!this.supportMaskImage) {
 			this.element.style.setProperty(
 				"--amll-player-time",
-				`${this.currentTime}`,
+				`${this.timelineState.currentTime}`,
 			);
 		}
 		if (!this.isPageVisible) return;

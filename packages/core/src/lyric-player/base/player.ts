@@ -15,9 +15,10 @@ import { BottomLineEl } from "./bottom-line.ts";
 import { LyricLineRenderMode, MaskObsceneWordsMode } from "./fixures.ts";
 import type { LyricLineBase } from "./line.ts";
 import {
+	commitPlayerTimeState,
 	computePlayerTimeState,
-	pickScrollToIndexForSeek,
-} from "./player-state.ts";
+	type PlayerTimelineState,
+} from "./timeline.ts";
 
 /**
  * 歌词播放器的基类，已经包含了有关歌词操作和排版的功能，子类需要为其实现对应的显示展示操作
@@ -29,7 +30,23 @@ export abstract class LyricPlayerBase
 	protected element: HTMLElement = document.createElement("div");
 	abstract get baseFontSize(): number;
 
-	protected currentTime = 0;
+	/**
+	 * 播放时间线状态。
+	 *
+	 * 包含了当前时间、热行/缓冲行状态、滚动位置等信息，
+	 * 播放器实质上是一个状态机，通过调用 {@link setCurrentTime} 来更新状态，
+	 * 并通过 {@link calcLayout} 来根据状态调整布局和动画。
+	 */
+	protected timelineState: PlayerTimelineState = {
+		currentTime: 0,
+		lastCurrentTime: 0,
+		hotLines: new Set(),
+		bufferedLines: new Set(),
+		scrollToIndex: 0,
+		isSeeking: false,
+		isPlaying: true,
+		initialLayoutFinished: false,
+	};
 	/** @internal */
 	lyricLinesSize: WeakMap<LyricLineBase, [number, number]> = new WeakMap();
 	/** @internal */
@@ -38,11 +55,8 @@ export abstract class LyricPlayerBase
 	// protected currentLyricLineObjects: LyricLineBase[] = [];
 	protected processedLines: LyricLine[] = [];
 	protected lyricLinesIndexes: WeakMap<LyricLineBase, number> = new WeakMap();
-	protected hotLines: Set<number> = new Set();
-	protected bufferedLines: Set<number> = new Set();
 	protected isNonDynamic = false;
 	protected hasDuetLine = false;
-	protected scrollToIndex = 0;
 	protected disableSpring = false;
 	protected interludeDotsSize: [number, number] = [0, 0];
 	protected interludeDots: InterludeDots = new InterludeDots();
@@ -55,8 +69,6 @@ export abstract class LyricPlayerBase
 	protected hidePassedLines = false;
 	protected scrollBoundary: [number, number] = [0, 0];
 	protected currentLyricLineObjects: LyricLineBase[] = [];
-	protected isSeeking = false;
-	protected lastCurrentTime = 0;
 	protected alignAnchor: "top" | "bottom" | "center" = "center";
 	protected alignPosition = 0.35;
 	protected scrollOffset = 0;
@@ -64,8 +76,6 @@ export abstract class LyricPlayerBase
 	protected allowScroll = true;
 	protected isPageVisible = true;
 	protected optimizeOptions: OptimizeLyricOptions = {};
-
-	protected initialLayoutFinished = false;
 
 	/**
 	 * 标记用户是否正在进行滚动交互
@@ -101,7 +111,7 @@ export abstract class LyricPlayerBase
 	};
 	private onPageShow = () => {
 		this.isPageVisible = true;
-		this.setCurrentTime(this.currentTime, true);
+		this.setCurrentTime(this.timelineState.currentTime, true);
 	};
 	private onPageHide = () => {
 		this.isPageVisible = false;
@@ -387,7 +397,7 @@ export abstract class LyricPlayerBase
 	}
 
 	setIsSeeking(isSeeking: boolean): void {
-		this.isSeeking = isSeeking;
+		this.timelineState.isSeeking = isSeeking;
 	}
 	/**
 	 * 设置是否隐藏已经播放过的歌词行，默认不隐藏
@@ -543,8 +553,8 @@ export abstract class LyricPlayerBase
 	protected getCurrentInterlude():
 		| [number, number, number, boolean]
 		| undefined {
-		const currentTime = this.currentTime + 20;
-		const currentIndex = this.scrollToIndex;
+		const currentTime = this.timelineState.currentTime + 20;
+		const currentIndex = this.timelineState.scrollToIndex;
 		const lines = this.processedLines;
 
 		const checkGap = (
@@ -596,9 +606,9 @@ export abstract class LyricPlayerBase
 			console.log("设置歌词行", lines, initialTime);
 		}
 
-		this.initialLayoutFinished = true;
-		this.lastCurrentTime = initialTime;
-		this.currentTime = initialTime;
+		this.timelineState.initialLayoutFinished = true;
+		this.timelineState.lastCurrentTime = initialTime;
+		this.timelineState.currentTime = initialTime;
 		this.currentLyricLines = structuredClone(lines);
 		this.processedLines = structuredClone(this.currentLyricLines);
 		optimizeLyricLines(this.processedLines, this.optimizeOptions);
@@ -618,8 +628,8 @@ export abstract class LyricPlayerBase
 		}
 
 		this.interludeDots.setInterlude(undefined);
-		this.hotLines.clear();
-		this.bufferedLines.clear();
+		this.timelineState.hotLines.clear();
+		this.timelineState.bufferedLines.clear();
 		this.setCurrentTime(0, true);
 
 		if (import.meta.env.DEV) {
@@ -632,7 +642,7 @@ export abstract class LyricPlayerBase
 	 * @returns 当前是否在播放
 	 */
 	public getIsPlaying(): boolean {
-		return this.isPlaying;
+		return this.timelineState.isPlaying;
 	}
 
 	/**
@@ -645,94 +655,82 @@ export abstract class LyricPlayerBase
 	 * @param time 当前播放进度，单位为毫秒
 	 */
 	setCurrentTime(time: number, isSeek = false): void {
-		// 普通行：当前不处于时间范围内的歌词行
-		// 热行：当前时间 time 正在命中的行（含主行 + 可能跟着的 BG 行）
-		// 缓冲行：UI 上还保持激活表现的行，通常包含热行并可能比热行多一点（刚结束的行还在过渡稳定）
-
 		// 歌词行为如下：
 		// 如果当前仍有缓冲行的情况下加入新热行，则不会解除当前缓冲行，且也不会修改当前滚动位置
 		// 如果当前所有缓冲行都将被删除且没有新热行加入，则删除所有缓冲行，且也不会修改当前滚动位置
 		// 如果当前所有缓冲行都将被删除且有新热行加入，则删除所有缓冲行并加入新热行作为缓冲行，然后修改当前滚动位置
 
-		this.currentTime = time;
+		this.timelineState.currentTime = time;
 
-		if (!this.initialLayoutFinished && !isSeek) return;
+		if (!this.timelineState.initialLayoutFinished && !isSeek) return;
 
 		const stateResult = computePlayerTimeState({
 			time,
 			processedLines: this.processedLines,
-			hotLines: this.hotLines,
-			bufferedLines: this.bufferedLines,
+			hotLines: this.timelineState.hotLines,
+			bufferedLines: this.timelineState.bufferedLines,
 		});
-		const { addedIds, removedBufferedIds } = stateResult;
-		this.hotLines = stateResult.nextHotLines;
+		const bottomEl = this.bottomLine.getElement();
+		const hasBottomContent = bottomEl.innerHTML.trim().length > 0;
+		const commitResult = commitPlayerTimeState({
+			timelineState: this.timelineState,
+			time,
+			isSeek,
+			processedLines: this.processedLines,
+			hasBottomContent,
+			stateResult,
+		});
+		const { addedIds, removedBufferedIds, removedHotIds } = commitResult;
 
 		if (isSeek) {
-			this.bufferedLines = new Set([...this.hotLines]);
-			for (const id of stateResult.removedHotIds)
+			for (const id of removedHotIds)
 				this.currentLyricLineObjects[id]?.disable();
 			for (const id of addedIds)
-				this.currentLyricLineObjects[id]?.enable(time, this.isPlaying);
+				this.currentLyricLineObjects[id]?.enable(
+					time,
+					this.timelineState.isPlaying,
+				);
 			for (const id of removedBufferedIds)
 				this.currentLyricLineObjects[id]?.disable();
 
-			this.scrollToIndex = pickScrollToIndexForSeek(
-				time,
-				this.processedLines,
-				this.bufferedLines,
-			);
-			this.resetScroll();
-			this.calcLayout();
+			if (commitResult.shouldResetScroll) {
+				this.resetScroll();
+			}
+			if (commitResult.shouldLayout) {
+				this.calcLayout();
+			}
 		} else if (addedIds.size > 0) {
 			for (const id of addedIds) {
-				this.bufferedLines.add(id);
 				this.currentLyricLineObjects[id]?.enable();
 			}
 			for (const id of removedBufferedIds) {
-				this.bufferedLines.delete(id);
 				this.currentLyricLineObjects[id]?.disable();
 			}
-			if (this.bufferedLines.size > 0)
-				this.scrollToIndex = Math.min(...this.bufferedLines);
-			this.calcLayout();
+			if (commitResult.shouldLayout) {
+				this.calcLayout();
+			}
 		} else if (
 			removedBufferedIds.size > 0 &&
-			eqSet(removedBufferedIds, this.bufferedLines)
+			eqSet(removedBufferedIds, this.timelineState.bufferedLines)
 		) {
-			for (const id of this.bufferedLines) {
-				if (!this.hotLines.has(id)) {
-					this.bufferedLines.delete(id);
+			for (const id of removedBufferedIds) {
+				if (!this.timelineState.hotLines.has(id)) {
 					this.currentLyricLineObjects[id]?.disable();
 				}
 			}
+			if (commitResult.shouldLayout) {
+				this.calcLayout();
+			}
+		} else if (commitResult.shouldLayout) {
+			this.resetScroll();
 			this.calcLayout();
 		}
-
-		if (this.bufferedLines.size === 0 && this.processedLines.length > 0) {
-			const lastLine = this.processedLines[this.processedLines.length - 1];
-
-			const bottomEl = this.bottomLine.getElement();
-			const hasBottomContent = bottomEl.innerHTML.trim().length > 0;
-
-			if (time >= lastLine.endTime) {
-				const targetIndex = hasBottomContent
-					? this.processedLines.length
-					: this.processedLines.length - 1;
-
-				if (this.scrollToIndex !== targetIndex) {
-					this.scrollToIndex = targetIndex;
-					this.calcLayout();
-				}
-			}
-		}
-
-		this.lastCurrentTime = time;
 	}
 
 	protected updateDynamicSpringParams(): void {
 		if (!this.getEnableSpring() || this.processedLines.length === 0) return;
 
-		const currentIndex = this.scrollToIndex;
+		const currentIndex = this.timelineState.scrollToIndex;
 		const currentLine = this.processedLines[currentIndex];
 		const prevLine = this.processedLines[currentIndex - 1];
 
@@ -791,12 +789,12 @@ export abstract class LyricPlayerBase
 		const isInterludeActive = !!interlude;
 
 		if (
-			this.targetAlignIndex !== this.scrollToIndex ||
+			this.targetAlignIndex !== this.timelineState.scrollToIndex ||
 			this.lastInterludeState !== isInterludeActive
 		) {
 			this.lastInterludeState = isInterludeActive;
 
-			if (this.isSeeking) {
+			if (this.timelineState.isSeeking) {
 				this.setLinePosYSpringParams({ stiffness: 90, damping: 15 });
 			} else if (isInterludeActive) {
 				this.setLinePosYSpringParams({ stiffness: 90, damping: 15 });
@@ -806,7 +804,7 @@ export abstract class LyricPlayerBase
 		}
 
 		let curPos = -this.scrollOffset;
-		const targetAlignIndex = this.scrollToIndex;
+		const targetAlignIndex = this.timelineState.scrollToIndex;
 		let isNextDuet = false;
 		if (interlude) {
 			isNextDuet = interlude[3];
@@ -830,7 +828,7 @@ export abstract class LyricPlayerBase
 			.reduce(
 				(acc, el) =>
 					acc +
-					(el.getLine().isBG && this.isPlaying
+					(el.getLine().isBG && this.timelineState.isPlaying
 						? 0
 						: (this.lyricLinesSize.get(el)?.[1] ?? LINE_HEIGHT_FALLBACK)),
 				0,
@@ -866,14 +864,15 @@ export abstract class LyricPlayerBase
 			}
 		}
 
-		const latestIndex = Math.max(...this.bufferedLines);
+		const latestIndex = Math.max(...this.timelineState.bufferedLines);
 		let delay = 0;
 		let baseDelay = sync ? 0 : 0.05;
 		let setDots = false;
 		this.currentLyricLineObjects.forEach((lineObj, i) => {
-			const hasBuffered = this.bufferedLines.has(i);
+			const hasBuffered = this.timelineState.bufferedLines.has(i);
 			const isActive =
-				hasBuffered || (i >= this.scrollToIndex && i < latestIndex);
+				hasBuffered ||
+				(i >= this.timelineState.scrollToIndex && i < latestIndex);
 			const line = lineObj.getLine();
 
 			const shouldShowDots = interlude && i === interlude[2] + 1;
@@ -901,8 +900,9 @@ export abstract class LyricPlayerBase
 
 			if (this.hidePassedLines) {
 				if (
-					i < (interlude ? interlude[2] + 1 : this.scrollToIndex) &&
-					this.isPlaying
+					i <
+						(interlude ? interlude[2] + 1 : this.timelineState.scrollToIndex) &&
+					this.timelineState.isPlaying
 				) {
 					// 为了避免浏览器优化，这里使用了一个极小但不为零的值（几乎不可见）
 					targetOpacity = 0.00001;
@@ -924,7 +924,7 @@ export abstract class LyricPlayerBase
 			const SCALE_ASPECT = this.enableScale ? 97 : 100;
 			let targetScale = 100;
 
-			if (!isActive && this.isPlaying) {
+			if (!isActive && this.timelineState.isPlaying) {
 				if (line.isBG) {
 					targetScale = 75;
 				} else {
@@ -946,15 +946,15 @@ export abstract class LyricPlayerBase
 				renderMode,
 			);
 
-			if (line.isBG && (isActive || !this.isPlaying)) {
+			if (line.isBG && (isActive || !this.timelineState.isPlaying)) {
 				curPos += this.lyricLinesSize.get(lineObj)?.[1] ?? LINE_HEIGHT_FALLBACK;
 			} else if (!line.isBG) {
 				curPos += this.lyricLinesSize.get(lineObj)?.[1] ?? LINE_HEIGHT_FALLBACK;
 			}
-			if (curPos >= 0 && !this.isSeeking) {
+			if (curPos >= 0 && !this.timelineState.isSeeking) {
 				if (!line.isBG) delay += baseDelay;
 
-				if (i >= this.scrollToIndex) baseDelay /= 1.05;
+				if (i >= this.timelineState.scrollToIndex) baseDelay /= 1.05;
 			}
 		});
 		this.scrollBoundary[1] = curPos + this.scrollOffset - this.size[1] / 2;
@@ -980,11 +980,11 @@ export abstract class LyricPlayerBase
 
 		let blurLevel = 1;
 
-		if (itemIndex < this.scrollToIndex) {
-			blurLevel += Math.abs(this.scrollToIndex - itemIndex) + 1;
+		if (itemIndex < this.timelineState.scrollToIndex) {
+			blurLevel += Math.abs(this.timelineState.scrollToIndex - itemIndex) + 1;
 		} else {
 			blurLevel += Math.abs(
-				itemIndex - Math.max(this.scrollToIndex, latestIndex),
+				itemIndex - Math.max(this.timelineState.scrollToIndex, latestIndex),
 			);
 		}
 
@@ -1035,14 +1035,13 @@ export abstract class LyricPlayerBase
 			}
 		}
 	}
-	protected isPlaying = true;
 	/**
 	 * 暂停部分效果演出，目前会暂停播放间奏点的动画，且将背景歌词显示出来
 	 */
 	pause(): void {
 		this.interludeDots.pause();
-		if (this.isPlaying) {
-			this.isPlaying = false;
+		if (this.timelineState.isPlaying) {
+			this.timelineState.isPlaying = false;
 			this.calcLayout();
 		}
 	}
@@ -1051,8 +1050,8 @@ export abstract class LyricPlayerBase
 	 */
 	resume(): void {
 		this.interludeDots.resume();
-		if (!this.isPlaying) {
-			this.isPlaying = true;
+		if (!this.timelineState.isPlaying) {
+			this.timelineState.isPlaying = true;
 			this.calcLayout();
 		}
 	}
@@ -1108,7 +1107,7 @@ export abstract class LyricPlayerBase
 	 * @returns 当前播放位置
 	 */
 	getCurrentTime(): number {
-		return this.currentTime;
+		return this.timelineState.currentTime;
 	}
 
 	getElement(): HTMLElement {
