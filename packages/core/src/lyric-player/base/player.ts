@@ -14,6 +14,11 @@ import { BottomLineEl } from "./bottom-line.ts";
 import { LyricLineRenderMode, MaskObsceneWordsMode } from "./fixtures.ts";
 import type { LyricLineBase } from "./line.ts";
 import {
+	clampPlayerScrollOffset,
+	type PlayerScrollState,
+	resetPlayerScrollState,
+} from "./scroll.ts";
+import {
 	commitPlayerTimeState,
 	computePlayerTimeState,
 	type PlayerTimelineState,
@@ -66,20 +71,19 @@ export abstract class LyricPlayerBase
 		MaskObsceneWordsMode.Disabled;
 	protected maskObsceneWordChar = "*";
 	protected hidePassedLines = false;
-	protected scrollBoundary: [number, number] = [0, 0];
+	protected scrollState: PlayerScrollState = {
+		scrollBoundary: [0, 0],
+		scrollOffset: 0,
+		allowScroll: true,
+		isScrolled: false,
+		isUserScrolling: false,
+	};
 	protected currentLyricLineObjects: LyricLineBase[] = [];
 	protected alignAnchor: "top" | "bottom" | "center" = "center";
 	protected alignPosition = 0.35;
-	protected scrollOffset = 0;
 	readonly size: [number, number] = [0, 0];
-	protected allowScroll = true;
 	protected isPageVisible = true;
 	protected optimizeOptions: OptimizeLyricOptions = {};
-
-	/**
-	 * 标记用户是否正在进行滚动交互
-	 */
-	protected isUserScrolling = false;
 	protected wheelTimeout: ReturnType<typeof setTimeout> | undefined;
 
 	/**
@@ -116,7 +120,6 @@ export abstract class LyricPlayerBase
 		this.isPageVisible = false;
 	};
 	private scrolledHandler: ReturnType<typeof setTimeout> | undefined;
-	protected isScrolled = false;
 	/** @internal */
 	resizeObserver: ResizeObserver = new ResizeObserver(((entries) => {
 		let shouldRelayout = false;
@@ -200,10 +203,10 @@ export abstract class LyricPlayerBase
 
 		this.element.addEventListener("touchstart", (evt) => {
 			if (this.beginScrollHandler()) {
-				this.isUserScrolling = true;
+				this.scrollState.isUserScrolling = true;
 
 				evt.preventDefault();
-				startScrollY = this.scrollOffset;
+				startScrollY = this.scrollState.scrollOffset;
 
 				startTouchPosY = evt.touches[0].screenY;
 				lastMoveY = startTouchPosY;
@@ -224,7 +227,7 @@ export abstract class LyricPlayerBase
 				const currentY = evt.touches[0].screenY;
 
 				const deltaY = currentY - startTouchPosY;
-				this.scrollOffset = startScrollY - deltaY;
+				this.scrollState.scrollOffset = startScrollY - deltaY;
 				this.limitScrollOffset();
 
 				const now = Date.now();
@@ -255,7 +258,7 @@ export abstract class LyricPlayerBase
 					if (target && this.element.contains(target)) {
 						(target as HTMLElement).click();
 					}
-					this.isUserScrolling = false;
+					this.scrollState.isUserScrolling = false;
 					this.endScrollHandler();
 					return;
 				}
@@ -279,7 +282,7 @@ export abstract class LyricPlayerBase
 					}
 
 					if (Math.abs(scrollSpeed) > 0.05) {
-						this.scrollOffset -= scrollSpeed * dt;
+						this.scrollState.scrollOffset -= scrollSpeed * dt;
 
 						this.limitScrollOffset();
 
@@ -290,14 +293,14 @@ export abstract class LyricPlayerBase
 
 						requestAnimationFrame(onScrollFrame);
 					} else {
-						this.isUserScrolling = false;
+						this.scrollState.isUserScrolling = false;
 						this.endScrollHandler();
 					}
 				};
 
 				requestAnimationFrame(onScrollFrame);
 			} else {
-				this.isUserScrolling = false;
+				this.scrollState.isUserScrolling = false;
 			}
 		});
 
@@ -306,14 +309,14 @@ export abstract class LyricPlayerBase
 			(evt) => {
 				if (this.beginScrollHandler()) {
 					evt.preventDefault();
-					// this.isUserScrolling = true;
+					// this.scrollState.isUserScrolling = true;
 
 					if (evt.deltaMode === evt.DOM_DELTA_PIXEL) {
-						this.scrollOffset += evt.deltaY;
+						this.scrollState.scrollOffset += evt.deltaY;
 						this.limitScrollOffset();
 						this.calcLayout(true, false);
 					} else {
-						this.scrollOffset += evt.deltaY * 50;
+						this.scrollState.scrollOffset += evt.deltaY * 50;
 						this.limitScrollOffset();
 						this.calcLayout(false, false);
 					}
@@ -323,7 +326,7 @@ export abstract class LyricPlayerBase
 					// }
 
 					// this.wheelTimeout = setTimeout(() => {
-					// 	this.isUserScrolling = false;
+					// 	this.scrollState.isUserScrolling = false;
 					// 	this.endScrollHandler();
 					// }, 150);
 				}
@@ -333,23 +336,20 @@ export abstract class LyricPlayerBase
 	}
 
 	private beginScrollHandler() {
-		const allowed = this.allowScroll;
+		const allowed = this.scrollState.allowScroll;
 		if (allowed) {
-			this.isScrolled = true;
+			this.scrollState.isScrolled = true;
 			clearTimeout(this.scrolledHandler);
 			this.scrolledHandler = setTimeout(() => {
-				this.isScrolled = false;
-				this.scrollOffset = 0;
+				this.scrollState.isScrolled = false;
+				this.scrollState.scrollOffset = 0;
 			}, 5000);
 		}
 		return allowed;
 	}
 	private endScrollHandler() {}
 	private limitScrollOffset() {
-		this.scrollOffset = Math.max(
-			Math.min(this.scrollBoundary[1], this.scrollOffset),
-			this.scrollBoundary[0],
-		);
+		clampPlayerScrollOffset(this.scrollState);
 	}
 
 	/**
@@ -772,7 +772,7 @@ export abstract class LyricPlayerBase
 			}
 		}
 
-		let curPos = -this.scrollOffset;
+		let curPos = -this.scrollState.scrollOffset;
 		const targetAlignIndex = this.timelineState.scrollToIndex;
 		let isNextDuet = false;
 		if (interlude) {
@@ -802,7 +802,7 @@ export abstract class LyricPlayerBase
 						: (this.lyricLinesSize.get(el)?.[1] ?? LINE_HEIGHT_FALLBACK)),
 				0,
 			);
-		this.scrollBoundary[0] = -scrollOffset;
+		this.scrollState.scrollBoundary[0] = -scrollOffset;
 		curPos -= scrollOffset;
 		curPos += this.size[1] * this.alignPosition;
 		const curLine = this.currentLyricLineObjects[targetAlignIndex];
@@ -926,7 +926,8 @@ export abstract class LyricPlayerBase
 				if (i >= this.timelineState.scrollToIndex) baseDelay /= 1.05;
 			}
 		});
-		this.scrollBoundary[1] = curPos + this.scrollOffset - this.size[1] / 2;
+		this.scrollState.scrollBoundary[1] =
+			curPos + this.scrollState.scrollOffset - this.size[1] / 2;
 
 		const bottomIndex = this.currentLyricLineObjects.length;
 		const finalBottomBlur = this.calculateBlur(
@@ -943,7 +944,7 @@ export abstract class LyricPlayerBase
 		isActive: boolean,
 		latestIndex: number,
 	): number {
-		if (!this.enableBlur || this.isUserScrolling || isActive) {
+		if (!this.enableBlur || this.scrollState.isUserScrolling || isActive) {
 			return 0;
 		}
 
@@ -1056,8 +1057,7 @@ export abstract class LyricPlayerBase
 	 * 请在用户完成滚动点击跳转歌词时调用本事件再调用 `calcLayout` 以正确滚动到目标位置
 	 */
 	resetScroll(): void {
-		this.isScrolled = false;
-		this.scrollOffset = 0;
+		resetPlayerScrollState(this.scrollState);
 		clearTimeout(this.scrolledHandler);
 	}
 	/**
