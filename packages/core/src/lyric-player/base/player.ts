@@ -7,7 +7,6 @@ import type {
 	OptimizeLyricOptions,
 } from "#src/interfaces.ts";
 import styles from "#styles/lyric-player.module.css";
-import { eqSet } from "#utils/eq-set.ts";
 import { optimizeLyricLines } from "#utils/optimize-lyric.ts";
 import type { SpringParams } from "#utils/spring.ts";
 import { InterludeDots } from "../dom/interlude-dots.ts";
@@ -646,11 +645,10 @@ export abstract class LyricPlayerBase
 	}
 
 	/**
-	 * 设置当前播放进度，单位为毫秒且**必须是整数**，此时将会更新内部的歌词进度信息。
+	 * 设置当前播放进度，此时将会更新内部的歌词进度信息。
 	 *
 	 * 内部会根据调用间隔和播放进度自动决定如何滚动和显示歌词，所以这个的调用频率越快越准确越好。
-	 *
-	 * 调用完成后，可以每帧调用 {@link update} 方法来执行歌词动画效果。
+	 * 调用完成后，应每帧调用 {@link update} 方法来执行歌词动画效果。**此函数本身不会触发动画效果**。
 	 *
 	 * @param time 当前播放进度，单位为毫秒
 	 */
@@ -660,71 +658,42 @@ export abstract class LyricPlayerBase
 		// 如果当前所有缓冲行都将被删除且没有新热行加入，则删除所有缓冲行，且也不会修改当前滚动位置
 		// 如果当前所有缓冲行都将被删除且有新热行加入，则删除所有缓冲行并加入新热行作为缓冲行，然后修改当前滚动位置
 
-		this.timelineState.currentTime = time;
+		time = Math.round(time);
 
-		if (!this.timelineState.initialLayoutFinished && !isSeek) return;
+		const { timelineState } = this;
+		timelineState.isSeeking = Boolean(isSeek);
+		timelineState.currentTime = time;
+
+		if (!timelineState.initialLayoutFinished && !timelineState.isSeeking)
+			return;
 
 		const stateResult = computePlayerTimeState({
 			time,
 			processedLines: this.processedLines,
-			hotLines: this.timelineState.hotLines,
-			bufferedLines: this.timelineState.bufferedLines,
+			timelineState,
 		});
+
 		const bottomEl = this.bottomLine.getElement();
 		const hasBottomContent = bottomEl.innerHTML.trim().length > 0;
 		const commitResult = commitPlayerTimeState({
-			timelineState: this.timelineState,
+			timelineState: timelineState,
 			time,
-			isSeek,
 			processedLines: this.processedLines,
 			hasBottomContent,
 			stateResult,
 		});
-		const { addedIds, removedBufferedIds, removedHotIds } = commitResult;
 
-		if (isSeek) {
-			for (const id of removedHotIds)
-				this.currentLyricLineObjects[id]?.disable();
-			for (const id of addedIds)
-				this.currentLyricLineObjects[id]?.enable(
-					time,
-					this.timelineState.isPlaying,
-				);
-			for (const id of removedBufferedIds)
-				this.currentLyricLineObjects[id]?.disable();
+		for (const id of commitResult.linesToDisable)
+			this.currentLyricLineObjects[id]?.disable();
 
-			if (commitResult.shouldResetScroll) {
-				this.resetScroll();
-			}
-			if (commitResult.shouldLayout) {
-				this.calcLayout();
-			}
-		} else if (addedIds.size > 0) {
-			for (const id of addedIds) {
-				this.currentLyricLineObjects[id]?.enable();
-			}
-			for (const id of removedBufferedIds) {
-				this.currentLyricLineObjects[id]?.disable();
-			}
-			if (commitResult.shouldLayout) {
-				this.calcLayout();
-			}
-		} else if (
-			removedBufferedIds.size > 0 &&
-			eqSet(removedBufferedIds, this.timelineState.bufferedLines)
-		) {
-			for (const id of removedBufferedIds) {
-				if (!this.timelineState.hotLines.has(id)) {
-					this.currentLyricLineObjects[id]?.disable();
-				}
-			}
-			if (commitResult.shouldLayout) {
-				this.calcLayout();
-			}
-		} else if (commitResult.shouldLayout) {
-			this.resetScroll();
-			this.calcLayout();
-		}
+		for (const id of commitResult.linesToEnable)
+			this.currentLyricLineObjects[id]?.enable(
+				commitResult.enableAtTime,
+				commitResult.enableWithPlayingState,
+			);
+
+		if (commitResult.shouldResetScroll) this.resetScroll();
+		if (commitResult.shouldLayout) this.calcLayout();
 	}
 
 	protected updateDynamicSpringParams(): void {

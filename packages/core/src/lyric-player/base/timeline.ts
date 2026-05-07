@@ -24,8 +24,7 @@ export interface PlayerTimelineState {
 export interface ComputePlayerTimeStateInput {
 	time: number;
 	processedLines: LyricLine[];
-	hotLines: ReadonlySet<number>;
-	bufferedLines: ReadonlySet<number>;
+	timelineState: Readonly<PlayerTimelineState>;
 }
 
 /** {@link computePlayerTimeState} 的返回类型 */
@@ -36,21 +35,23 @@ export interface ComputePlayerTimeStateResult {
 	removedBufferedIds: Set<number>;
 }
 
+/** {@link commitPlayerTimeState} 的参数类型 */
 export interface CommitPlayerTimeStateInput {
 	timelineState: PlayerTimelineState;
 	time: number;
-	isSeek: boolean;
 	processedLines: LyricLine[];
 	hasBottomContent: boolean;
 	stateResult: ComputePlayerTimeStateResult;
 }
 
+/** {@link commitPlayerTimeState} 的返回类型 */
 export interface CommitPlayerTimeStateResult {
 	shouldLayout: boolean;
 	shouldResetScroll: boolean;
-	addedIds: Set<number>;
-	removedHotIds: Set<number>;
-	removedBufferedIds: Set<number>;
+	linesToEnable: number[];
+	linesToDisable: number[];
+	enableAtTime?: number;
+	enableWithPlayingState?: boolean;
 }
 
 /**
@@ -62,13 +63,17 @@ export interface CommitPlayerTimeStateResult {
 export function computePlayerTimeState(
 	input: ComputePlayerTimeStateInput,
 ): ComputePlayerTimeStateResult {
-	const { time, processedLines } = input;
-	const nextHotLines = new Set(input.hotLines);
+	const {
+		time,
+		processedLines,
+		timelineState: { hotLines, bufferedLines },
+	} = input;
+	const nextHotLines = new Set(hotLines);
 	const addedIds = new Set<number>();
 	const removedHotIds = new Set<number>();
 	const removedBufferedIds = new Set<number>();
 
-	for (const lastHotId of input.hotLines) {
+	for (const lastHotId of hotLines) {
 		const line = processedLines[lastHotId];
 		if (!line) {
 			nextHotLines.delete(lastHotId);
@@ -113,7 +118,7 @@ export function computePlayerTimeState(
 		}
 	}
 
-	for (const id of input.bufferedLines) {
+	for (const id of bufferedLines) {
 		if (!nextHotLines.has(id)) {
 			removedBufferedIds.add(id);
 		}
@@ -141,43 +146,48 @@ export function pickScrollToIndexForSeek(
 
 /**
  * 提交时间线状态转移的纯函数。
- * 将状态更改写入 {@link PlayerTimelineState}，
- * 并返回是否需要调整布局和重置滚动位置等信息。
+ *
+ * 将状态更改写入 {@link PlayerTimelineState}，并返回是否需要调整布局和重置滚动位置等信息。
+ *
+ * 同时返回副作用应用计划，由调用方启用或禁用指定的行。
  */
 export function commitPlayerTimeState(
 	input: CommitPlayerTimeStateInput,
 ): CommitPlayerTimeStateResult {
-	const {
-		timelineState,
-		time,
-		isSeek,
-		processedLines,
-		hasBottomContent,
-		stateResult,
-	} = input;
+	const { timelineState, time, processedLines, hasBottomContent, stateResult } =
+		input;
 	const { addedIds, removedHotIds, removedBufferedIds } = stateResult;
+	const { isSeeking } = timelineState;
 
 	timelineState.currentTime = time;
 	timelineState.hotLines = stateResult.nextHotLines;
 
 	let shouldLayout = false;
 	let shouldResetScroll = false;
+	const linesToEnable: number[] = [];
+	const linesToDisable = new Set<number>();
 
-	if (isSeek) {
+	if (isSeeking) {
 		timelineState.bufferedLines = new Set([...timelineState.hotLines]);
 		timelineState.scrollToIndex = pickScrollToIndexForSeek(
 			time,
 			processedLines,
 			timelineState.bufferedLines,
 		);
+		for (const id of removedHotIds) linesToDisable.add(id);
+		for (const id of addedIds) linesToEnable.push(id);
+		for (const id of removedBufferedIds) linesToDisable.add(id);
+
 		shouldResetScroll = true;
 		shouldLayout = true;
 	} else if (addedIds.size > 0) {
 		for (const id of addedIds) {
 			timelineState.bufferedLines.add(id);
+			linesToEnable.push(id);
 		}
 		for (const id of removedBufferedIds) {
 			timelineState.bufferedLines.delete(id);
+			linesToDisable.add(id);
 		}
 		if (timelineState.bufferedLines.size > 0) {
 			timelineState.scrollToIndex = Math.min(...timelineState.bufferedLines);
@@ -188,9 +198,9 @@ export function commitPlayerTimeState(
 		eqSet(removedBufferedIds, timelineState.bufferedLines)
 	) {
 		for (const id of timelineState.bufferedLines) {
-			if (!timelineState.hotLines.has(id)) {
-				timelineState.bufferedLines.delete(id);
-			}
+			if (timelineState.hotLines.has(id)) continue;
+			timelineState.bufferedLines.delete(id);
+			linesToDisable.add(id);
 		}
 		shouldLayout = true;
 	}
@@ -214,8 +224,9 @@ export function commitPlayerTimeState(
 	return {
 		shouldLayout,
 		shouldResetScroll,
-		addedIds,
-		removedHotIds,
-		removedBufferedIds,
+		linesToEnable,
+		linesToDisable: [...linesToDisable],
+		enableAtTime: isSeeking ? time : undefined,
+		enableWithPlayingState: isSeeking ? timelineState.isPlaying : undefined,
 	};
 }
