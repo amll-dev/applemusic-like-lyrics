@@ -14,7 +14,7 @@ import { BottomLineEl } from "./bottom-line.ts";
 import { LyricLineRenderMode, MaskObsceneWordsMode } from "./fixtures.ts";
 import type { LyricLineBase } from "./line.ts";
 import {
-	clampPlayerScrollOffset,
+	attachPlayerScrollHandlers,
 	type PlayerScrollState,
 	resetPlayerScrollState,
 } from "./scroll.ts";
@@ -84,7 +84,6 @@ export abstract class LyricPlayerBase
 	readonly size: [number, number] = [0, 0];
 	protected isPageVisible = true;
 	protected optimizeOptions: OptimizeLyricOptions = {};
-	protected wheelTimeout: ReturnType<typeof setTimeout> | undefined;
 
 	/**
 	 * 视图额外预渲染（overscan）距离，单位：像素。
@@ -189,150 +188,13 @@ export abstract class LyricPlayerBase
 
 		window.addEventListener("pageshow", this.onPageShow);
 		window.addEventListener("pagehide", this.onPageHide);
-
-		let startScrollY = 0;
-
-		let startTouchPosY = 0;
-		let startTouchStartX = 0;
-		let startTouchStartY = 0;
-
-		let lastMoveY = 0;
-		let startScrollTime = 0;
-		let scrollSpeed = 0;
-		let curScrollId = 0;
-
-		this.element.addEventListener("touchstart", (evt) => {
-			if (this.beginScrollHandler()) {
-				this.scrollState.isUserScrolling = true;
-
-				evt.preventDefault();
-				startScrollY = this.scrollState.scrollOffset;
-
-				startTouchPosY = evt.touches[0].screenY;
-				lastMoveY = startTouchPosY;
-
-				startTouchStartX = evt.touches[0].screenX;
-				startTouchStartY = evt.touches[0].screenY;
-
-				startScrollTime = Date.now();
-				scrollSpeed = 0;
-
-				this.calcLayout(true, true);
-			}
+		attachPlayerScrollHandlers(this.element, this.scrollState, {
+			onBeginScroll: () => this.beginScrollHandler(),
+			onEndScroll: () => this.endScrollHandler(),
+			onLayout: (sync, force) => this.calcLayout(sync, force),
+			containsTarget: (target) => this.element.contains(target),
+			clickTarget: (target) => target.click(),
 		});
-
-		this.element.addEventListener("touchmove", (evt) => {
-			if (this.beginScrollHandler()) {
-				evt.preventDefault();
-				const currentY = evt.touches[0].screenY;
-
-				const deltaY = currentY - startTouchPosY;
-				this.scrollState.scrollOffset = startScrollY - deltaY;
-				this.limitScrollOffset();
-
-				const now = Date.now();
-				const dt = now - startScrollTime;
-				if (dt > 0) {
-					scrollSpeed = (currentY - lastMoveY) / dt;
-				}
-				lastMoveY = currentY;
-				startScrollTime = now;
-
-				this.calcLayout(true, true);
-			}
-		});
-
-		this.element.addEventListener("touchend", (evt) => {
-			if (this.beginScrollHandler()) {
-				evt.preventDefault();
-
-				const touch = evt.changedTouches[0];
-				const moveX = Math.abs(touch.screenX - startTouchStartX);
-				const moveY = Math.abs(touch.screenY - startTouchStartY);
-
-				if (moveX < 10 && moveY < 10) {
-					const target = document.elementFromPoint(
-						touch.clientX,
-						touch.clientY,
-					);
-					if (target && this.element.contains(target)) {
-						(target as HTMLElement).click();
-					}
-					this.scrollState.isUserScrolling = false;
-					this.endScrollHandler();
-					return;
-				}
-
-				startTouchPosY = 0;
-				const scrollId = ++curScrollId;
-
-				if (Math.abs(scrollSpeed) < 0.1) scrollSpeed = 0;
-
-				let lastFrameTime = performance.now();
-
-				const onScrollFrame = (time: number) => {
-					if (scrollId !== curScrollId) return;
-
-					const dt = time - lastFrameTime;
-					lastFrameTime = time;
-
-					if (dt <= 0 || dt > 100) {
-						requestAnimationFrame(onScrollFrame);
-						return;
-					}
-
-					if (Math.abs(scrollSpeed) > 0.05) {
-						this.scrollState.scrollOffset -= scrollSpeed * dt;
-
-						this.limitScrollOffset();
-
-						const frictionFactor = 0.95 ** (dt / 16);
-						scrollSpeed *= frictionFactor;
-
-						this.calcLayout(true, true);
-
-						requestAnimationFrame(onScrollFrame);
-					} else {
-						this.scrollState.isUserScrolling = false;
-						this.endScrollHandler();
-					}
-				};
-
-				requestAnimationFrame(onScrollFrame);
-			} else {
-				this.scrollState.isUserScrolling = false;
-			}
-		});
-
-		this.element.addEventListener(
-			"wheel",
-			(evt) => {
-				if (this.beginScrollHandler()) {
-					evt.preventDefault();
-					// this.scrollState.isUserScrolling = true;
-
-					if (evt.deltaMode === evt.DOM_DELTA_PIXEL) {
-						this.scrollState.scrollOffset += evt.deltaY;
-						this.limitScrollOffset();
-						this.calcLayout(true, false);
-					} else {
-						this.scrollState.scrollOffset += evt.deltaY * 50;
-						this.limitScrollOffset();
-						this.calcLayout(false, false);
-					}
-
-					// if (this.wheelTimeout) {
-					// 	clearTimeout(this.wheelTimeout);
-					// }
-
-					// this.wheelTimeout = setTimeout(() => {
-					// 	this.scrollState.isUserScrolling = false;
-					// 	this.endScrollHandler();
-					// }, 150);
-				}
-			},
-			{ passive: false },
-		);
 	}
 
 	private beginScrollHandler() {
@@ -348,9 +210,6 @@ export abstract class LyricPlayerBase
 		return allowed;
 	}
 	private endScrollHandler() {}
-	private limitScrollOffset() {
-		clampPlayerScrollOffset(this.scrollState);
-	}
 
 	/**
 	 * 设置文字动画的渐变宽度，单位以歌词行的主文字字体大小的倍数为单位，默认为 0.5，即一个全角字符的一半宽度
