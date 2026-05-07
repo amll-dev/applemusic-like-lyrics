@@ -27,3 +27,13 @@ export const LyricLineRenderMode = {
  * @internal
  */
 export type LyricLineRenderMode = ValueOf<typeof LyricLineRenderMode>;
+
+/** 布局对齐锚点 */
+export const LayoutAlignAnchor = {
+	Top: "top",
+	Center: "center",
+	Bottom: "bottom",
+} as const;
+
+/** 布局对齐锚点枚举类型，见 {@link LayoutAlignAnchor} */
+export type LayoutAlignAnchor = ValueOf<typeof LayoutAlignAnchor>;

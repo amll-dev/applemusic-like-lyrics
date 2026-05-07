@@ -11,8 +11,16 @@ import { optimizeLyricLines } from "#utils/optimize-lyric.ts";
 import type { SpringParams } from "#utils/spring.ts";
 import { InterludeDots } from "../dom/interlude-dots.ts";
 import { BottomLineEl } from "./bottom-line.ts";
-import { LyricLineRenderMode, MaskObsceneWordsMode } from "./fixtures.ts";
-import type { PlayerLayoutState } from "./layout.ts";
+import {
+	LayoutAlignAnchor,
+	LyricLineRenderMode,
+	MaskObsceneWordsMode,
+} from "./fixtures.ts";
+import {
+	computeCurrentInterlude,
+	computeLinePosYSpringParams,
+	type PlayerLayoutState,
+} from "./layout.ts";
 import type { LyricLineBase } from "./line.ts";
 import {
 	attachPlayerScrollHandlers,
@@ -67,7 +75,7 @@ export abstract class LyricPlayerBase
 		interludeDotsSize: [0, 0],
 		targetAlignIndex: 0,
 		lastInterludeState: false,
-		alignAnchor: "center",
+		alignAnchor: LayoutAlignAnchor.Center,
 		alignPosition: 0.35,
 		overscanPx: 300,
 	};
@@ -352,7 +360,7 @@ export abstract class LyricPlayerBase
 	 * - 设置成 `center` 的话将会向目标歌词行的垂直中心对齐
 	 * @param alignAnchor 歌词行对齐方式，详情见函数说明
 	 */
-	setAlignAnchor(alignAnchor: "top" | "bottom" | "center"): void {
+	setAlignAnchor(alignAnchor: LayoutAlignAnchor): void {
 		this.layoutState.alignAnchor = alignAnchor;
 	}
 	/**
@@ -396,49 +404,6 @@ export abstract class LyricPlayerBase
 	 */
 	getEnableSpring(): boolean {
 		return !this.disableSpring;
-	}
-
-	/**
-	 * 获取当前播放时间里是否处于间奏区间
-	 * 如果是则会返回单位为毫秒的始末时间
-	 * 否则返回 undefined
-	 *
-	 * 这个只允许内部调用
-	 * @returns [开始时间,结束时间,大概处于的歌词行ID,下一句是否为对唱歌词] 或 undefined 如果不处于间奏区间
-	 */
-	protected getCurrentInterlude():
-		| [number, number, number, boolean]
-		| undefined {
-		const currentTime = this.timelineState.currentTime + 20;
-		const currentIndex = this.timelineState.scrollToIndex;
-		const lines = this.processedLines;
-
-		const checkGap = (
-			k: number,
-		): [number, number, number, boolean] | undefined => {
-			if (k < -1 || k >= lines.length - 1) return undefined;
-
-			const prevLine = k === -1 ? null : lines[k];
-			const nextLine = lines[k + 1];
-
-			const gapStart = prevLine ? prevLine.endTime : 0;
-			const gapEnd = Math.max(gapStart, nextLine.startTime - 250);
-
-			if (gapEnd - gapStart < 4000) {
-				return undefined;
-			}
-
-			if (gapEnd > currentTime && gapStart < currentTime) {
-				return [Math.max(gapStart, currentTime), gapEnd, k, nextLine.isDuet];
-			}
-			return undefined;
-		};
-
-		return (
-			checkGap(currentIndex - 1) ||
-			checkGap(currentIndex) ||
-			checkGap(currentIndex + 1)
-		);
 	}
 
 	/**
@@ -553,46 +518,6 @@ export abstract class LyricPlayerBase
 		if (commitResult.shouldLayout) this.calcLayout();
 	}
 
-	protected updateDynamicSpringParams(): void {
-		if (!this.getEnableSpring() || this.processedLines.length === 0) return;
-
-		const currentIndex = this.timelineState.scrollToIndex;
-		const currentLine = this.processedLines[currentIndex];
-		const prevLine = this.processedLines[currentIndex - 1];
-
-		if (currentLine && prevLine) {
-			const interval =
-				currentLine.startTime -
-				(prevLine?.words[0]?.startTime ?? prevLine.startTime);
-
-			const MIN_INTERVAL = 100;
-			const MAX_INTERVAL = 800;
-			const clampedInterval = Math.max(
-				MIN_INTERVAL,
-				Math.min(MAX_INTERVAL, interval),
-			);
-
-			const MAX_STIFFNESS = 220;
-			const MIN_STIFFNESS = 170;
-
-			let ratio =
-				1 - (clampedInterval - MIN_INTERVAL) / (MAX_INTERVAL - MIN_INTERVAL);
-
-			ratio = ratio ** 0.2;
-
-			const targetStiffness =
-				MIN_STIFFNESS + ratio * (MAX_STIFFNESS - MIN_STIFFNESS);
-
-			const dampingMultiplier = 2.2;
-			const targetDamping = Math.sqrt(targetStiffness) * dampingMultiplier;
-
-			this.setLinePosYSpringParams({
-				stiffness: targetStiffness,
-				damping: targetDamping,
-			});
-		}
-	}
-
 	/**
 	 * 重新布局定位歌词行的位置，调用完成后再逐帧调用 `update`
 	 * 函数即可让歌词通过动画移动到目标位置。
@@ -611,7 +536,11 @@ export abstract class LyricPlayerBase
 	 * @param force 是否绕过弹簧效果强制更新位置
 	 */
 	async calcLayout(sync = false, force = false): Promise<void> {
-		const interlude = this.getCurrentInterlude();
+		const interlude = computeCurrentInterlude({
+			currentTime: this.timelineState.currentTime,
+			scrollToIndex: this.timelineState.scrollToIndex,
+			processedLines: this.processedLines,
+		});
 		const isInterludeActive = !!interlude;
 
 		if (
@@ -620,12 +549,15 @@ export abstract class LyricPlayerBase
 		) {
 			this.layoutState.lastInterludeState = isInterludeActive;
 
-			if (this.timelineState.isSeeking) {
-				this.setLinePosYSpringParams({ stiffness: 90, damping: 15 });
-			} else if (isInterludeActive) {
-				this.setLinePosYSpringParams({ stiffness: 90, damping: 15 });
-			} else {
-				this.updateDynamicSpringParams();
+			const springParams = computeLinePosYSpringParams({
+				enabled: this.getEnableSpring(),
+				processedLines: this.processedLines,
+				scrollToIndex: this.timelineState.scrollToIndex,
+				isSeeking: this.timelineState.isSeeking,
+				isInterludeActive,
+			});
+			if (springParams.shouldUpdate && springParams.params) {
+				this.setLinePosYSpringParams(springParams.params);
 			}
 		}
 
@@ -633,7 +565,7 @@ export abstract class LyricPlayerBase
 		const targetAlignIndex = this.timelineState.scrollToIndex;
 		let isNextDuet = false;
 		if (interlude) {
-			isNextDuet = interlude[3];
+			isNextDuet = interlude.isNextDuet;
 		} else {
 			this.interludeDots.setInterlude(undefined);
 		}
@@ -644,7 +576,7 @@ export abstract class LyricPlayerBase
 			this.layoutState.interludeDotsSize[1] + dotMargin * 2;
 
 		if (interlude) {
-			if (interlude[2] !== -1) {
+			if (interlude.anchorLineIndex !== -1) {
 				curPos -= totalInterludeHeight;
 			}
 		}
@@ -680,13 +612,13 @@ export abstract class LyricPlayerBase
 
 		if (targetLineHeight > 0) {
 			switch (this.layoutState.alignAnchor) {
-				case "bottom":
+				case LayoutAlignAnchor.Bottom:
 					curPos -= targetLineHeight;
 					break;
-				case "center":
+				case LayoutAlignAnchor.Center:
 					curPos -= targetLineHeight / 2;
 					break;
-				case "top":
+				case LayoutAlignAnchor.Top:
 					break;
 			}
 		}
@@ -702,7 +634,7 @@ export abstract class LyricPlayerBase
 				(i >= this.timelineState.scrollToIndex && i < latestIndex);
 			const line = lineObj.getLine();
 
-			const shouldShowDots = interlude && i === interlude[2] + 1;
+			const shouldShowDots = interlude && i === interlude.anchorLineIndex + 1;
 
 			if (!setDots && shouldShowDots) {
 				setDots = true;
@@ -717,7 +649,10 @@ export abstract class LyricPlayerBase
 				this.interludeDots.setTransform(targetX, curPos);
 
 				if (interlude) {
-					this.interludeDots.setInterlude([interlude[0], interlude[1]]);
+					this.interludeDots.setInterlude([
+						interlude.startTime,
+						interlude.endTime,
+					]);
 				}
 				curPos += this.layoutState.interludeDotsSize[1];
 				curPos += dotMargin;
@@ -728,7 +663,9 @@ export abstract class LyricPlayerBase
 			if (this.hidePassedLines) {
 				if (
 					i <
-						(interlude ? interlude[2] + 1 : this.timelineState.scrollToIndex) &&
+						(interlude
+							? interlude.anchorLineIndex + 1
+							: this.timelineState.scrollToIndex) &&
 					this.timelineState.isPlaying
 				) {
 					// 为了避免浏览器优化，这里使用了一个极小但不为零的值（几乎不可见）
