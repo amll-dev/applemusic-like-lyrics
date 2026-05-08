@@ -1,4 +1,5 @@
 import type { LyricLine } from "#interfaces";
+import { clamp } from "#utils/clamp.ts";
 import type { SpringParams } from "#utils/spring.ts";
 import { type LayoutAlignAnchor, LyricLineRenderMode } from "./fixtures";
 import type { PlayerTimelineState } from "./timeline.ts";
@@ -160,10 +161,7 @@ export function computeLinePosYSpringParams(
 
 	const MIN_INTERVAL = 100;
 	const MAX_INTERVAL = 800;
-	const clampedInterval = Math.max(
-		MIN_INTERVAL,
-		Math.min(MAX_INTERVAL, interval),
-	);
+	const clampedInterval = clamp(interval, MIN_INTERVAL, MAX_INTERVAL);
 
 	const MAX_STIFFNESS = 220;
 	const MIN_STIFFNESS = 170;

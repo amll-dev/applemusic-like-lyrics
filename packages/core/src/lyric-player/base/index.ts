@@ -30,6 +30,7 @@ import {
 	computePlayerTimeState,
 	type PlayerTimelineState,
 } from "./timeline.ts";
+import { clampPositive } from "#utils/clamp.ts";
 
 export type { LyricLineBase } from "./line.ts";
 export type { PlayerLayoutState } from "./layout.ts";
@@ -374,7 +375,7 @@ export abstract class LyricPlayerBase
 	 * @param px 像素值，默认 300
 	 */
 	setOverscanPx(px: number): void {
-		this.layoutState.overscanPx = Math.max(0, px | 0);
+		this.layoutState.overscanPx = clampPositive(px | 0);
 	}
 	/** 获取当前 overscan 像素距离 */
 	getOverscanPx(): number {

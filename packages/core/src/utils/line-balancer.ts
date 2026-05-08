@@ -1,3 +1,4 @@
+import { clampPositive } from "./clamp.ts";
 import { type ChildNodeInfo, calcBalancedBreaks } from "./lyric-line-break.ts";
 
 let sharedCanvasCtx: CanvasRenderingContext2D | null = null;
@@ -186,7 +187,7 @@ export class LineBalancer {
 						const marginLeft = Number.parseFloat(elStyle.marginLeft) || 0;
 						const marginRight = Number.parseFloat(elStyle.marginRight) || 0;
 						childInfos.push({
-							width: Math.max(0, rect.width + marginLeft + marginRight),
+							width: clampPositive(rect.width + marginLeft + marginRight),
 							text: el.textContent ?? "",
 							isSpace: false,
 						});

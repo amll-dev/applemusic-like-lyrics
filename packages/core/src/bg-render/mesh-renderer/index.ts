@@ -17,6 +17,7 @@ import { generateControlPoints } from "./cp-generate.ts";
 import { CONTROL_POINT_PRESETS } from "./cp-presets.ts";
 import meshFragShader from "./mesh.frag.glsl?raw";
 import meshVertShader from "./mesh.vert.glsl?raw";
+import { clamp01 } from "#utils/clamp.ts";
 
 const quadVertShader = `
 attribute vec2 a_pos;
@@ -1020,7 +1021,7 @@ export class MeshGradientRenderer extends BaseRenderer {
 			this.quadProgram.setUniform1i("u_texture", 0);
 			this.quadProgram.setUniform1f(
 				"u_alpha",
-				easeInOutSine(Math.min(1, Math.max(0, state.alpha))),
+				easeInOutSine(clamp01(state.alpha)),
 			);
 
 			gl.activeTexture(gl.TEXTURE0);

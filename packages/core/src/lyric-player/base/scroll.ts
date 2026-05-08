@@ -1,3 +1,5 @@
+import { clamp } from "#utils/clamp.ts";
+
 /**
  * 播放器滚动状态。
  *
@@ -30,9 +32,10 @@ export interface PlayerScrollState {
  * 后，应调用本函数以避免视图越界。
  */
 export function clampPlayerScrollOffset(scrollState: PlayerScrollState): void {
-	scrollState.scrollOffset = Math.max(
-		Math.min(scrollState.scrollBoundary.maxOffset, scrollState.scrollOffset),
+	scrollState.scrollOffset = clamp(
+		scrollState.scrollOffset,
 		scrollState.scrollBoundary.minOffset,
+		scrollState.scrollBoundary.maxOffset,
 	);
 }
 

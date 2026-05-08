@@ -4,6 +4,7 @@
  * 目的是取代原先大量的预设控制点代码
  */
 
+import { clamp01 } from "#utils/clamp.ts";
 import {
 	type ControlPointConf,
 	type ControlPointPreset,
@@ -14,12 +15,8 @@ import {
 const randomRange = (min: number, max: number): number =>
 	Math.random() * (max - min) + min;
 
-function clamp(x: number, min: number, max: number): number {
-	return Math.min(Math.max(x, min), max);
-}
-
 function smoothstep(edge0: number, edge1: number, x: number): number {
-	const t = clamp((x - edge0) / (edge1 - edge0), 0, 1);
+	const t = clamp01((x - edge0) / (edge1 - edge0));
 	return t * t * (3 - 2 * t);
 }
 
@@ -93,7 +90,7 @@ function smoothifyControlPoints(
 			}
 		}
 		grid = newGrid;
-		f = Math.min(1, Math.max(f + factorIterationModifier, 0));
+		f = clamp01(f + factorIterationModifier);
 	}
 
 	for (let j = 0; j < h; j++) {

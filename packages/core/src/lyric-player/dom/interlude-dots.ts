@@ -1,5 +1,6 @@
 import type { Disposable, HasElement } from "#interfaces";
 import styles from "#styles/lyric-player.module.css";
+import { clamp, clamp01, clampPositive } from "#utils/clamp.ts";
 
 function easeInOutBack(x: number): number {
 	const c1 = 1.70158;
@@ -13,9 +14,6 @@ function easeInOutBack(x: number): number {
 function easeOutExpo(x: number): number {
 	return x === 1 ? 1 : 1 - 2 ** (-10 * x);
 }
-
-const clamp = (min: number, cur: number, max: number) =>
-	Math.max(min, Math.min(cur, max));
 
 export class InterludeDots implements HasElement, Disposable {
 	private element: HTMLElement = document.createElement("div");
@@ -105,16 +103,12 @@ export class InterludeDots implements HasElement, Disposable {
 						);
 				}
 				if (interludeDuration - currentDuration < 375) {
-					globalOpacity *= clamp(
-						0,
-						(interludeDuration - currentDuration) / 375,
-						1,
-					);
+					globalOpacity *= clamp01((interludeDuration - currentDuration) / 375);
 				}
 
-				const dotsDuration = Math.max(0, interludeDuration - 750);
+				const dotsDuration = clampPositive(interludeDuration - 750);
 
-				scale = Math.max(0, scale) * 0.7;
+				scale = clampPositive(scale) * 0.7;
 
 				curStyle += ` scale(${scale})`;
 
@@ -135,21 +129,9 @@ export class InterludeDots implements HasElement, Disposable {
 					1,
 				);
 
-				this.dot0.style.opacity = `${clamp(
-					0,
-					Math.max(0, globalOpacity * dot0Opacity),
-					1,
-				)}`;
-				this.dot1.style.opacity = `${clamp(
-					0,
-					Math.max(0, globalOpacity * dot1Opacity),
-					1,
-				)}`;
-				this.dot2.style.opacity = `${clamp(
-					0,
-					Math.max(0, globalOpacity * dot2Opacity),
-					1,
-				)}`;
+				this.dot0.style.opacity = `${clamp01(globalOpacity * dot0Opacity)}`;
+				this.dot1.style.opacity = `${clamp01(globalOpacity * dot1Opacity)}`;
+				this.dot2.style.opacity = `${clamp01(globalOpacity * dot2Opacity)}`;
 			} else {
 				curStyle += " scale(0)";
 				this.dot0.style.opacity = "0";

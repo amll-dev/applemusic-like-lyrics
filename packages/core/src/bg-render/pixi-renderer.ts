@@ -10,6 +10,7 @@ import {
 	loadResourceFromUrl,
 } from "../utils/resource";
 import { BaseRenderer } from "./base";
+import { clampPositive } from "#utils/clamp.ts";
 
 class TimedContainer extends Container {
 	public time = 0;
@@ -22,7 +23,7 @@ export class PixiRenderer extends BaseRenderer {
 	private lastContainer: Set<TimedContainer> = new Set();
 	private onTick = (delta: number): void => {
 		for (const lastContainer of this.lastContainer) {
-			lastContainer.alpha = Math.max(0, lastContainer.alpha - delta / 60);
+			lastContainer.alpha = clampPositive(lastContainer.alpha - delta / 60);
 			if (lastContainer.alpha <= 0) {
 				this.app.stage.removeChild(lastContainer);
 				this.lastContainer.delete(lastContainer);

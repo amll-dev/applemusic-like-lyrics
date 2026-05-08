@@ -8,6 +8,7 @@ import { LineBalancer } from "#utils/line-balancer.ts";
 import { chunkAndSplitLyricWords } from "#utils/lyric-split-words.ts";
 import { createMatrix4, matrix4ToCSS, scaleMatrix4 } from "#utils/matrix.ts";
 import type { DomLyricPlayer } from ".";
+import { clamp, clamp01, clampPositive } from "#utils/clamp.ts";
 
 interface RealWord extends LyricWord {
 	mainElement: HTMLSpanElement;
@@ -23,7 +24,7 @@ interface RealWord extends LyricWord {
 const ANIMATION_FRAME_QUANTITY = 32;
 
 const norNum = (min: number, max: number) => (x: number) =>
-	Math.min(1, Math.max(0, (x - min) / (max - min)));
+	clamp01((x - min) / (max - min));
 const EMP_EASING_MID = 0.5;
 const beginNum = norNum(0, EMP_EASING_MID);
 const endNum = norNum(EMP_EASING_MID, 1);
@@ -201,8 +202,7 @@ export class LyricLineEl extends LyricLineBase {
 		this.element.classList.add(styles.active);
 		const main = this.element.children[0] as HTMLDivElement;
 
-		const relativeTime = Math.max(
-			0,
+		const relativeTime = clampPositive(
 			maskAnimationTime - this.lyricLine.startTime,
 		);
 		const actualMaskTime =
@@ -210,8 +210,7 @@ export class LyricLineEl extends LyricLineBase {
 				? this.lyricPlayer.getCurrentTime()
 				: maskAnimationTime;
 
-		const maskRelativeTime = Math.max(
-			0,
+		const maskRelativeTime = clampPositive(
 			actualMaskTime - this.lyricLine.startTime,
 		);
 
@@ -336,7 +335,7 @@ export class LyricLineEl extends LyricLineBase {
 		const t = maskAnimationTime - this.lyricLine.startTime;
 		for (const word of this.splittedWords) {
 			for (const a of word.maskAnimations) {
-				a.currentTime = Math.min(this.totalDuration, Math.max(0, t));
+				a.currentTime = clamp(t, 0, this.totalDuration);
 				a.playbackRate = 1;
 				if (t >= 0 && t < this.totalDuration) a.play();
 				else a.pause();
@@ -643,7 +642,7 @@ export class LyricLineEl extends LyricLineBase {
 		delay: number,
 		rubyCharCount: number,
 	): Animation[] {
-		const de = Math.max(0, delay);
+		const de = clampPositive(delay);
 		let du = Math.max(1000, duration);
 		const anchorCharCount =
 			rubyCharCount > 0 ? rubyCharCount : Math.max(1, characterElements.length);
@@ -826,7 +825,8 @@ export class LyricLineEl extends LyricLineBase {
 		// 所以要以单词的结束时间为准
 		const totalFadeDuration =
 			Math.max(
-				this.splittedWords.reduce((pv, w) => Math.max(w.endTime, pv), 0),
+				0,
+				...this.splittedWords.map((w) => w.endTime),
 				this.lyricLine.endTime,
 			) - this.lyricLine.startTime;
 		this.splittedWords.forEach((word, i) => {
@@ -854,7 +854,7 @@ export class LyricLineEl extends LyricLineBase {
 					this.splittedWords.slice(0, i).reduce((a, b) => a + b.width, 0) +
 					(this.splittedWords[0] ? fadeWidth : 0);
 				const minOffset = -(word.width + word.padding * 2 + fadeWidth);
-				const clampOffset = (x: number) => Math.max(minOffset, Math.min(0, x));
+				const clampOffset = (x: number) => clamp(x, minOffset, 0);
 				let curPos = -widthBeforeSelf - word.width - word.padding - fadeWidth;
 				let timeOffset = 0;
 				const frames: Keyframe[] = [];
@@ -864,7 +864,7 @@ export class LyricLineEl extends LyricLineBase {
 					// 此处如果添加过渡函数，会导致单词时序不准确，所以不添加
 					// const easing = "cubic-bezier(.33,.12,.83,.9)";
 					const moveOffset = curPos - lastPos;
-					const time = Math.max(0, Math.min(1, timeOffset));
+					const time = clamp01(timeOffset);
 					const duration = time - lastTime;
 					const d = Math.abs(duration / moveOffset);
 					// 因为有可能会和之前的动画有边界
@@ -908,8 +908,7 @@ export class LyricLineEl extends LyricLineBase {
 					}
 					// 移动
 					{
-						const fadeDuration = Math.max(
-							0,
+						const fadeDuration = clampPositive(
 							otherWord.endTime - otherWord.startTime,
 						);
 						const rubySegments = this.getRubySegments(otherWord);
@@ -937,7 +936,7 @@ export class LyricLineEl extends LyricLineBase {
 								timeOffset += rubyStaticDuration / totalFadeDuration;
 								if (rubyStaticDuration > 0) pushFrame();
 								lastTimeStamp = rubyStartStamp;
-								const rubyDuration = Math.max(0, rubyEnd - rubyStart);
+								const rubyDuration = clampPositive(rubyEnd - rubyStart);
 								const perCharDuration = rubyDuration / ruby.word.length;
 								for (
 									let rubyCharIndex = 0;
@@ -1018,7 +1017,7 @@ export class LyricLineEl extends LyricLineBase {
 	}
 
 	private updateMaskAlphaTargets(scale: number) {
-		const factor = Math.max(0.0, Math.min(1.0, (scale - 0.97) / 0.03));
+		const factor = clamp01((scale - 0.97) / 0.03);
 		const dynamicDarkAlpha = factor * 0.2 + 0.2;
 		const dynamicBrightAlpha = factor * 0.8 + 0.2;
 
