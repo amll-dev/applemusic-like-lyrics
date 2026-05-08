@@ -49,7 +49,8 @@
 				"tsconfig.base.json",
 				"packages/docs/**",
 				"packages/*/docs/**",
-				"packages/playground/**"
+				"packages/playground/**",
+				"patches/**"
 			]
 		},
 		"version": {
