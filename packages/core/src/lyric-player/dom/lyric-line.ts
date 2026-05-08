@@ -195,8 +195,8 @@ export class LyricLineEl extends LyricLineBase {
 
 	private isEnabled = false;
 	async enable(
-		maskAnimationTime: number = this.lyricLine.startTime,
-		shouldPlay = true,
+		maskAnimationTime: number = this.lyricPlayer.getCurrentTime(),
+		shouldPlay: boolean = this.lyricPlayer.getIsPlaying(),
 	): Promise<void> {
 		this.isEnabled = true;
 		this.element.classList.add(styles.active);
@@ -205,14 +205,6 @@ export class LyricLineEl extends LyricLineBase {
 		const relativeTime = clampPositive(
 			maskAnimationTime - this.lyricLine.startTime,
 		);
-		const actualMaskTime =
-			maskAnimationTime === this.lyricLine.startTime
-				? this.lyricPlayer.getCurrentTime()
-				: maskAnimationTime;
-
-		const maskRelativeTime = clampPositive(
-			actualMaskTime - this.lyricLine.startTime,
-		);
 
 		for (const word of this.splittedWords) {
 			for (const a of word.elementAnimations) {
@@ -220,32 +212,26 @@ export class LyricLineEl extends LyricLineBase {
 				a.playbackRate = 1;
 
 				const timing = a.effect?.getComputedTiming();
-				const duration = (timing?.duration as number) || 0;
-				const delay = (timing?.delay as number) || 0;
+				const duration = Number(timing?.duration ?? 0);
+				const delay = Number(timing?.delay ?? 0);
 				const endTime = delay + duration;
 
-				if (shouldPlay && relativeTime < endTime) {
-					a.play();
-				} else {
-					a.pause();
-				}
+				if (shouldPlay && relativeTime < endTime) a.play();
+				else a.pause();
 			}
 
 			for (const a of word.maskAnimations) {
-				const t = Math.min(this.totalDuration, maskRelativeTime);
+				const t = Math.min(this.totalDuration, relativeTime);
 				a.currentTime = t;
 				a.playbackRate = 1;
 
 				const timing = a.effect?.getComputedTiming();
-				const duration = (timing?.duration as number) || 0;
-				const delay = (timing?.delay as number) || 0;
+				const duration = Number(timing?.duration ?? 0);
+				const delay = Number(timing?.delay ?? 0);
 				const endTime = delay + duration;
 
-				if (shouldPlay && t < endTime) {
-					a.play();
-				} else {
-					a.pause();
-				}
+				if (shouldPlay && t < endTime) a.play();
+				else a.pause();
 			}
 		}
 		main.classList.add(styles.active);

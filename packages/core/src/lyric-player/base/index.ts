@@ -508,10 +508,7 @@ export abstract class LyricPlayerBase
 			this.currentLyricLineObjects[id]?.disable();
 
 		for (const id of commitResult.linesToEnable)
-			this.currentLyricLineObjects[id]?.enable(
-				commitResult.enableAtTime,
-				commitResult.enableWithPlayingState,
-			);
+			this.currentLyricLineObjects[id]?.enable();
 
 		if (commitResult.shouldResetScroll) this.resetScroll();
 		if (commitResult.shouldLayout) this.calcLayout();

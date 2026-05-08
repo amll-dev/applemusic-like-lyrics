@@ -169,10 +169,6 @@ export interface CommitPlayerTimeStateResult {
 	linesToEnable: number[];
 	/** 需要禁用的歌词行索引列表 */
 	linesToDisable: number[];
-	/** 启用歌词行时应使用的时间参数 */
-	enableAtTime?: number;
-	/** 启用歌词行时应使用的播放状态参数 */
-	enableWithPlayingState?: boolean;
 }
 
 /**
@@ -257,7 +253,5 @@ export function commitPlayerTimeState(
 		shouldResetScroll,
 		linesToEnable,
 		linesToDisable: [...linesToDisable],
-		enableAtTime: isSeeking ? time : undefined,
-		enableWithPlayingState: isSeeking ? timelineState.isPlaying : undefined,
 	};
 }
