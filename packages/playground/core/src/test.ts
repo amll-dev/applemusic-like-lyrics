@@ -38,6 +38,9 @@ const audio = document.createElement("audio");
 audio.volume = 0.5;
 audio.preload = "auto";
 
+audio.addEventListener("play", () => lyricPlayer.resume());
+audio.addEventListener("pause", () => lyricPlayer.pause());
+
 const debugValues = {
 	lyric: new URL(location.href).searchParams.get("lyric") || "",
 	music: new URL(location.href).searchParams.get("music") || "",
@@ -79,10 +82,8 @@ const debugValues = {
 		this.playing = false;
 		if (audio.paused) {
 			audio.play();
-			lyricPlayer.resume();
 		} else {
 			audio.pause();
-			lyricPlayer.pause();
 		}
 	},
 	fadeWidth: 0.5,
