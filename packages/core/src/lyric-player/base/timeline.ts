@@ -202,7 +202,7 @@ export function commitPlayerTimeState(
 			timelineState.bufferedLines,
 		);
 		for (const id of removedHotIds) linesToDisable.add(id);
-		for (const id of addedIds) linesToEnable.push(id);
+		for (const id of timelineState.hotLines) linesToEnable.push(id);
 		for (const id of removedBufferedIds) linesToDisable.add(id);
 
 		shouldResetScroll = true;
