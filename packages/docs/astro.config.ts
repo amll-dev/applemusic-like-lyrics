@@ -96,6 +96,9 @@ const contributeSidebar = [
 export default defineConfig({
 	site: "https://amll.dev",
 	trailingSlash: "never",
+	build: {
+		format: "file",
+	},
 	integrations: [
 		react(),
 		starlight({
