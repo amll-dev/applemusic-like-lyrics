@@ -289,6 +289,9 @@
     "@applemusic-like-lyrics/lyric",
     "nx",
   ],
+  "patchedDependencies": {
+    "@astrojs/starlight@0.38.3": "patches/@astrojs%2Fstarlight@0.38.3.patch",
+  },
   "catalog": {
     "@biomejs/biome": "^2.4.8",
     "@rolldown/plugin-babel": "^0.2.3",

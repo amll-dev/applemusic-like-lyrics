@@ -1,0 +1,25 @@
+diff --git a/utils/createPathFormatter.ts b/utils/createPathFormatter.ts
+index 52c9527c6d8c6756125c2f746cf14d055ed1e3ef..081974cdd61c42b1aed306449e9bb7be4d4ecd19 100644
+--- a/utils/createPathFormatter.ts
++++ b/utils/createPathFormatter.ts
+@@ -37,7 +37,8 @@ function formatPath(
+ 	href: string,
+ 	{ format = 'directory', trailingSlash = 'ignore' }: FormatPathOptions
+ ) {
+-	const formatStrategy = formatStrategies[format];
++	const useCleanFileUrls = format === 'file' && trailingSlash === 'never';
++	const formatStrategy = useCleanFileUrls ? defaultFormatStrategy : formatStrategies[format];
+ 	const trailingSlashStrategy = trailingSlashStrategies[trailingSlash];
+ 
+ 	// Handle extension
+@@ -46,8 +47,8 @@ function formatPath(
+ 	// Add base
+ 	href = formatStrategy.addBase(href);
+ 
+-	// Skip trailing slash handling for `build.format: 'file'`
+-	if (format === 'file') return href;
++	// Skip trailing slash handling for `build.format: 'file'`, except when clean URLs are used.
++	if (format === 'file' && !useCleanFileUrls) return href;
+ 
+ 	// Handle trailing slash
+ 	href = href === '/' ? href : trailingSlashStrategy(href);
