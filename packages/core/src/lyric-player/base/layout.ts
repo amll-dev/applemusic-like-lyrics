@@ -1,7 +1,7 @@
 import type { LyricLine } from "#interfaces";
 import { clamp } from "#utils/clamp.ts";
 import type { SpringParams } from "#utils/spring.ts";
-import { type LayoutAlignAnchor, LyricLineRenderMode } from "./fixtures";
+import { type LayoutAlignAnchor, LyricLineRenderMode } from "./consts.ts";
 import type { PlayerTimelineState } from "./timeline.ts";
 
 /**

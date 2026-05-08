@@ -1,7 +1,7 @@
 import type { Disposable, LyricLine, LyricWord } from "#interfaces";
 import { isCJK } from "#utils/is-cjk.ts";
 import { Spring } from "#utils/spring.ts";
-import { LyricLineRenderMode } from "./fixtures.ts";
+import { LyricLineRenderMode } from "./consts.ts";
 
 interface LineTransforms {
 	posY: Spring;

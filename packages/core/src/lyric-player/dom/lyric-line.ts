@@ -1,5 +1,5 @@
 import bezier from "bezier-easing";
-import { LyricLineRenderMode } from "#lyric/base/fixtures.ts";
+import { LyricLineRenderMode } from "#lyric/base/consts.ts";
 import { LyricLineBase } from "#lyric/base/line.ts";
 import type { LyricLine, LyricWord } from "#interfaces";
 import styles from "#styles/lyric-player.module.css";

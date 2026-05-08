@@ -11,7 +11,7 @@ import { optimizeLyricLines } from "#utils/optimize-lyric.ts";
 import type { SpringParams } from "#utils/spring.ts";
 import { InterludeDots } from "../dom/interlude-dots.ts";
 import { BottomLineEl } from "./bottom-line.ts";
-import { LayoutAlignAnchor, MaskObsceneWordsMode } from "./fixtures.ts";
+import { LayoutAlignAnchor, MaskObsceneWordsMode } from "./consts.ts";
 import {
 	computeLineBlur,
 	computeLinePresentation,
