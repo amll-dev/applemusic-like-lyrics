@@ -1,4 +1,3 @@
-/.yarn/**            linguist-vendored
-/.yarn/releases/*    binary
-/.yarn/plugins/**/*  binary
-/.pnp.*              binary linguist-generated
+*.md   linguist-documentation
+*.mdx  linguist-documentation
+packages/playground/core/src/components/ui/**  linguist-vendored

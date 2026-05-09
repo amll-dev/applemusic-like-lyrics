@@ -35,6 +35,7 @@
 				".nx/**",
 				".editorconfig",
 				".gitignore",
+				".gitattributes",
 				"biome.json",
 				"Cargo.lock",
 				"Cargo.toml",

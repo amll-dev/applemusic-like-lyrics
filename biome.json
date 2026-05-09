@@ -1,5 +1,8 @@
 {
 	"$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+	"files": {
+		"includes": ["**", "!packages/playground/core/src/components/ui"]
+	},
 	"formatter": {
 		"enabled": true,
 		"formatWithErrors": false,
