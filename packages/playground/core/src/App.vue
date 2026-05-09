@@ -1,10 +1,22 @@
 <script setup lang="ts">
-import ModeToggle from "./components/ModeToggle.vue";
+import AppSidebar from "@/components/AppSidebar.vue";
+import {
+	SidebarInset,
+	SidebarProvider,
+	SidebarTrigger,
+} from "@/components/ui/sidebar";
 </script>
-
 <template>
-	<div>
-		<h1>Welcome to your new project</h1>
-		<ModeToggle />
-	</div>
+	<SidebarProvider>
+		<AppSidebar variant="inset" />
+		<SidebarInset class="relative">
+			<SidebarTrigger class="absolute m-3.5" />
+		</SidebarInset>
+	</SidebarProvider>
 </template>
+<style>
+:root {
+	scrollbar-width: thin;
+	scrollbar-color: var(--border) transparent;
+}
+</style>

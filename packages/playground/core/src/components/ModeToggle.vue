@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useColorMode } from "@vueuse/core";
-import { MoonIcon, SunIcon, SunMoonIcon } from "lucide-vue-next";
+import { ContrastIcon, MoonIcon, SunIcon } from "lucide-vue-next";
 import { computed } from "vue";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,13 +10,13 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const mode = useColorMode({ disableTransition: false });
-const switchToLight = () => (mode.value = "light");
-const switchToDark = () => (mode.value = "dark");
-const switchToSystem = () => (mode.value = "auto");
+const { store } = useColorMode();
+const switchToLight = () => (store.value = "light");
+const switchToDark = () => (store.value = "dark");
+const switchToSystem = () => (store.value = "auto");
 
-const isLight = computed(() => mode.value === "light");
-const isDark = computed(() => mode.value === "dark");
+const isLight = computed(() => store.value === "light");
+const isDark = computed(() => store.value === "dark");
 </script>
 
 <template>
@@ -25,14 +25,14 @@ const isDark = computed(() => mode.value === "dark");
 			<Button variant="outline">
 				<SunIcon v-if="isLight" />
 				<MoonIcon v-else-if="isDark" />
-				<SunMoonIcon v-else />
+				<ContrastIcon v-else />
 				<span class="sr-only">Toggle theme</span>
 			</Button>
 		</DropdownMenuTrigger>
 		<DropdownMenuContent align="end">
-			<DropdownMenuItem @click="switchToLight"> Light </DropdownMenuItem>
-			<DropdownMenuItem @click="switchToDark"> Dark </DropdownMenuItem>
-			<DropdownMenuItem @click="switchToSystem"> System </DropdownMenuItem>
+			<DropdownMenuItem @click="switchToLight"> 亮色 </DropdownMenuItem>
+			<DropdownMenuItem @click="switchToDark"> 暗色 </DropdownMenuItem>
+			<DropdownMenuItem @click="switchToSystem"> 跟随系统 </DropdownMenuItem>
 		</DropdownMenuContent>
 	</DropdownMenu>
 </template>
