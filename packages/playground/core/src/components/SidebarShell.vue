@@ -1,24 +1,8 @@
 <script setup lang="ts">
-import {
-	ListIndentIncreaseIcon,
-	MusicIcon,
-	PackageIcon,
-	PlayIcon,
-} from "lucide-vue-next";
+import { PackageIcon } from "lucide-vue-next";
 import type { SidebarProps } from "@/components/ui/sidebar";
-
-import {
-	Sidebar,
-	SidebarContent,
-	SidebarFooter,
-	SidebarHeader,
-	// SidebarMenu,
-	// SidebarMenuItem,
-} from "@/components/ui/sidebar";
-import ModeToggle from "./ModeToggle.vue";
-import Button from "./ui/button/Button.vue";
-import ButtonGroup from "./ui/button-group/ButtonGroup.vue";
-import Slider from "./ui/slider/Slider.vue";
+import AudioPlayer from "./AudioPlayer.vue";
+import Controller from "./Controller.vue";
 
 const props = withDefaults(defineProps<SidebarProps>(), {});
 </script>
@@ -38,20 +22,8 @@ const props = withDefaults(defineProps<SidebarProps>(), {});
 				</div>
 			</div>
 		</SidebarHeader>
-		<SidebarContent> </SidebarContent>
-		<SidebarFooter class="p-3 gap-2">
-			<Slider class="mt-2 mb-2" :default-value="[50]" :max="100" :step="1" />
-			<div class="flex gap-2 justify-between">
-				<div class="flex gap-2">
-					<Button> <PlayIcon /> </Button>
-					<ButtonGroup>
-						<Button variant="outline"> <MusicIcon /> </Button>
-						<Button variant="outline"> <ListIndentIncreaseIcon /> </Button>
-					</ButtonGroup>
-				</div>
-				<ModeToggle />
-			</div>
-		</SidebarFooter>
+		<Controller />
+		<AudioPlayer />
 	</Sidebar>
 </template>
 
