@@ -1,20 +1,25 @@
 <script setup lang="ts">
-import AppSidebar from "@/components/AppSidebar.vue";
-import {
-	SidebarInset,
-	SidebarProvider,
-	SidebarTrigger,
-} from "@/components/ui/sidebar";
+import SidebarShell from "@/components/SidebarShell.vue";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import LyricPlayer from "./components/MainPlayer.vue";
 </script>
 <template>
 	<SidebarProvider>
-		<AppSidebar variant="inset" />
-		<SidebarInset class="relative">
-			<SidebarTrigger class="absolute m-3.5" />
+		<SidebarShell variant="inset" />
+		<SidebarInset class="relative overflow-hidden">
+			<LyricPlayer />
 		</SidebarInset>
 	</SidebarProvider>
 </template>
 <style>
+html,
+body,
+#app {
+	margin: 0;
+	min-height: 100%;
+	overflow: hidden;
+}
+
 :root {
 	scrollbar-width: thin;
 	scrollbar-color: var(--border) transparent;

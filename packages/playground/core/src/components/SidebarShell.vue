@@ -1,8 +1,15 @@
 <script setup lang="ts">
 import { PackageIcon } from "lucide-vue-next";
-import type { SidebarProps } from "@/components/ui/sidebar";
-import AudioPlayer from "./AudioPlayer.vue";
-import Controller from "./Controller.vue";
+import {
+	Sidebar,
+	SidebarContent,
+	SidebarHeader,
+	type SidebarProps,
+} from "@/components/ui/sidebar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import AudioPlayer from "./AudioController.vue";
+import BackgroundController from "./BackgroundController.vue";
+import LyricController from "./LyricController.vue";
 
 const props = withDefaults(defineProps<SidebarProps>(), {});
 </script>
@@ -22,7 +29,16 @@ const props = withDefaults(defineProps<SidebarProps>(), {});
 				</div>
 			</div>
 		</SidebarHeader>
-		<Controller />
+		<SidebarContent class="p-3">
+			<Tabs default-value="lyric">
+				<TabsList class="flex w-[unset]">
+					<TabsTrigger value="background"> 背景效果 </TabsTrigger>
+					<TabsTrigger value="lyric"> 歌词效果 </TabsTrigger>
+				</TabsList>
+				<TabsContent value="background"> <BackgroundController /> </TabsContent>
+				<TabsContent value="lyric"> <LyricController /> </TabsContent>
+			</Tabs>
+		</SidebarContent>
 		<AudioPlayer />
 	</Sidebar>
 </template>
