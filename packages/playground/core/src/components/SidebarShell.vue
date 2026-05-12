@@ -49,19 +49,13 @@ const props = withDefaults(defineProps<SidebarProps>(), {});
 <style>
 [data-slot="sidebar-container"],
 [data-slot="sidebar-gap"] {
-	transition-timing-function: cubic-bezier(0, 0.8, 0.2, 1);
+	transition: none;
 }
 
-[data-slot="sidebar-inset"] {
-	transition:
-		margin 0.1s linear,
-		padding 0.1s linear,
-		border-radius 0.1s linear;
-
-	[data-slot="sidebar"][data-collapsible="offcanvas"] + & {
-		margin: 0;
-		padding: calc(var(--spacing) * 2);
-		border-radius: 0;
-	}
+[data-slot="sidebar"][data-collapsible="offcanvas"]
+	+ [data-slot="sidebar-inset"] {
+	margin: 0;
+	padding: calc(var(--spacing) * 2);
+	border-radius: 0;
 }
 </style>
