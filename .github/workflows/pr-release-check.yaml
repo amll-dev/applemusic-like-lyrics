@@ -38,11 +38,6 @@ jobs:
         with:
           node-version: "24"
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          cache: true
-
       - name: Decide whether a release plan is required
         id: release-requirements
         run: node .github/scripts/check-release-requirements.mjs
@@ -50,6 +45,12 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
+
+      - name: Setup pnpm
+        if: steps.release-requirements.outputs.requires_release_plan == 'true'
+        uses: pnpm/action-setup@v6
+        with:
+          cache: true
 
       - name: Install dependencies
         if: steps.release-requirements.outputs.requires_release_plan == 'true'
