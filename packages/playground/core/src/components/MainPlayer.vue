@@ -318,5 +318,9 @@ watch(
 		ref="playerEl"
 		id="player"
 		class="absolute top-0 right-0 bottom-0 left-0 overflow-hidden bg-black text-white"
+		:style="{
+			fontFamily: player.lyric.fontFamily || undefined,
+			fontWeight: player.lyric.fontWeight
+		}"
 	/>
 </template>

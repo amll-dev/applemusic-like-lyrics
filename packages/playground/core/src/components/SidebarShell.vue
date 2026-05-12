@@ -20,7 +20,7 @@ const props = withDefaults(defineProps<SidebarProps>(), {});
 		<SidebarHeader class="border-b border-sidebar-border p-3">
 			<div class="flex gap-2 items-center">
 				<div
-					class="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground"
+					class="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-sidebar-primary-foreground"
 				>
 					<PackageIcon class="size-4" />
 				</div>

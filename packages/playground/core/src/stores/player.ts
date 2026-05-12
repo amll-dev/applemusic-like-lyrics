@@ -45,6 +45,8 @@ export const usePlayerStore = defineStore("player", {
 			fadeWidth: 0.5,
 			enableBlur: true,
 			enableSpring: true,
+			fontFamily: "",
+			fontWeight: 600,
 			verticalSpring: {
 				mass: 1,
 				damping: 15,

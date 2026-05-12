@@ -1,10 +1,16 @@
 <script setup lang="ts">
-import { ArrowDownUpIcon, ExpandIcon, WandIcon } from "lucide-vue-next";
+import {
+	ArrowDownUpIcon,
+	ExpandIcon,
+	TypeIcon,
+	WandIcon,
+} from "lucide-vue-next";
 import { Separator } from "@/components/ui/separator";
 import { usePlayerStore } from "@/stores/player";
 import ControllerSlider from "./ControllerSlider.vue";
 import ControllerSliderGroup from "./ControllerSliderGroup.vue";
 import ControllerSwitch from "./ControllerSwitch.vue";
+import Input from "./ui/input/Input.vue";
 
 const player = usePlayerStore();
 
@@ -19,6 +25,30 @@ const springFields = [
 	<div class="space-y-4 py-1">
 		<section class="space-y-2.5">
 			<h3 class="text-sm font-bold flex items-center gap-1">
+				<TypeIcon :size="16" />
+				歌词字体
+			</h3>
+			<Input
+				id="font-family"
+				v-model="player.lyric.fontFamily"
+				placeholder="Inter, sans-serif"
+			/>
+			<ControllerSliderGroup>
+				<ControllerSlider
+					v-model="player.lyric.fontWeight"
+					title="字重"
+					:min="100"
+					:max="900"
+					:step="100"
+					:precision="0"
+				/>
+			</ControllerSliderGroup>
+		</section>
+
+		<Separator />
+
+		<section class="space-y-2.5">
+			<h3 class="text-sm font-bold flex items-center gap-1">
 				<WandIcon :size="16" />
 				歌词行效果
 			</h3>
@@ -27,7 +57,7 @@ const springFields = [
 					v-model="player.lyric.fadeWidth"
 					title="歌词渐变宽度"
 					:min="0"
-					:max="10"
+					:max="3"
 					:step="0.01"
 					:precision="2"
 				/>
