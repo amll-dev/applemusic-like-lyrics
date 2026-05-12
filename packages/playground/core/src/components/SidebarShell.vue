@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AudioPlayer from "./AudioController.vue";
 import BackgroundController from "./BackgroundController.vue";
 import LyricController from "./LyricController.vue";
+import SourceController from "./SourceController.vue";
 
 const props = withDefaults(defineProps<SidebarProps>(), {});
 </script>
@@ -32,11 +33,13 @@ const props = withDefaults(defineProps<SidebarProps>(), {});
 		<SidebarContent class="p-3">
 			<Tabs default-value="lyric">
 				<TabsList class="flex w-[unset]">
-					<TabsTrigger value="background"> 背景效果 </TabsTrigger>
-					<TabsTrigger value="lyric"> 歌词效果 </TabsTrigger>
+					<TabsTrigger value="lyric"> 歌词 </TabsTrigger>
+					<TabsTrigger value="background"> 背景 </TabsTrigger>
+					<TabsTrigger value="source"> 源 </TabsTrigger>
 				</TabsList>
 				<TabsContent value="background"> <BackgroundController /> </TabsContent>
 				<TabsContent value="lyric"> <LyricController /> </TabsContent>
+				<TabsContent value="source"> <SourceController /> </TabsContent>
 			</Tabs>
 		</SidebarContent>
 		<AudioPlayer />
