@@ -57,13 +57,20 @@ function openFile(accept: string, onFile: (file: File) => void): void {
 			<span>{{ currentTimeLabel }}</span>
 			<span>{{ durationLabel }}</span>
 		</div>
-		<Slider v-model="currentTime" class="mt-1 mb-2" :max="maxTime" :step="1" />
+		<Slider
+			v-model="currentTime"
+			class="mt-1 mb-2"
+			:max="maxTime"
+			:step="1"
+			:disabled="!player.source.musicUrl"
+		/>
 		<div class="flex gap-2 justify-between">
 			<div class="flex gap-2">
 				<Button
 					size="icon"
 					:aria-label="player.audio.playing ? '暂停' : '播放'"
 					@click="player.togglePlayback"
+					:disabled="!player.source.musicUrl"
 				>
 					<PauseIcon v-if="player.audio.playing" />
 					<PlayIcon v-else />
