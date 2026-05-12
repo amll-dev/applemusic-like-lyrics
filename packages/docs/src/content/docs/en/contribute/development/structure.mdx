@@ -6,7 +6,7 @@ import { FileTree } from "@astrojs/starlight/components";
 
 ## Monorepo Structure
 
-The repository uses `Nx` for task orchestration and `bun workspace` for dependency management. Main directories are:
+The repository uses `Nx` for task orchestration and `pnpm workspace` for dependency management. Main directories are:
 
 <FileTree>
 
@@ -51,7 +51,7 @@ Release config in `nx.json` includes two major groups:
 Run:
 
 ```sh
-bun nx graph
+pnpm nx graph
 ```
 
 to view the full dependency graph.
@@ -67,7 +67,7 @@ Nx provides convenient aliases; you do not need to type the `@applemusic-like-ly
 For example, to build `@applemusic-like-lyrics/react`:
 
 ```sh
-bun nx build react
+pnpm nx build react
 ```
 
 Nx resolves dependencies automatically, so it builds `core` first, then `react`.
@@ -76,18 +76,18 @@ We provide web apps in `package/playground` for testing, based on Vite with HMR 
 
 ```sh
 # Start dev server for package/playground/core
-bun nx dev core
+pnpm nx dev core
 
 # Same for others
-bun nx dev react
-bun nx dev vue
-bun nx dev react-full
+pnpm nx dev react
+pnpm nx dev vue
+pnpm nx dev react-full
 ```
 
 To build all libraries:
 
 ```sh
-bun build:libs
+pnpm build:libs
 ```
 
 It builds all packages in parallel with dependency-aware ordering.
@@ -98,9 +98,9 @@ Similarly, the docs site alias is `docs`, with these commands:
 
 ```sh
 # Start docs dev server
-bun nx dev docs
+pnpm nx dev docs
 # Build docs site
-bun nx build docs
+pnpm nx build docs
 ```
 
 Dependencies are handled automatically.

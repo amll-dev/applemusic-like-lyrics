@@ -1,7 +1,7 @@
-import { beforeAll, describe, expect, it } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { DOMImplementation, DOMParser, XMLSerializer } from "@xmldom/xmldom";
+import { beforeAll, describe, expect, it } from "vitest";
 import type { AmllLyricLine, SubLyricContent, TTMLResult } from "../src/index";
 import {
 	TTMLGenerator,
@@ -770,7 +770,7 @@ describe("TTML BlockIndex Boundary Tests", () => {
 		let previousBlockIndex = 0;
 		for (const line of result.lines) {
 			expect(line.blockIndex).toBeDefined();
-			expect(line.blockIndex).toBeNumber();
+			expect(line.blockIndex).toBeTypeOf("number");
 			expect(line.blockIndex).toBeGreaterThanOrEqual(previousBlockIndex);
 
 			if (line.blockIndex !== undefined) {

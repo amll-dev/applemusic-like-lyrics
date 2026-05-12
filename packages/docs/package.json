@@ -3,12 +3,12 @@
 	"type": "module",
 	"version": "0.0.1",
 	"scripts": {
-		"dev": "astro dev --bun",
-		"build": "astro build --bun",
+		"dev": "astro dev",
+		"build": "astro build",
 		"build:full": "run-s build:full:projects build:full:copy-playground",
 		"build:full:projects": "PLAYGROUND_BASE_URL=/playground/ nx run-many --target=build --projects=docs,playground-core",
-		"build:full:copy-playground": "bun ./scripts/copy-playground.js",
-		"preview": "astro preview --bun"
+		"build:full:copy-playground": "node ./scripts/copy-playground.js",
+		"preview": "astro preview"
 	},
 	"dependencies": {
 		"@applemusic-like-lyrics/core": "workspace:^",

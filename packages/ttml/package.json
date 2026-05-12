@@ -43,14 +43,15 @@
 		"build": "run-p typecheck \"build-only {@}\" --",
 		"build:dev": "tsdown",
 		"fmt": "biome format --write ./src",
-		"test": "bun test",
-		"test:watch": "bun test --watch",
-		"test:coverage": "bun test --coverage"
+		"test": "vitest test",
+		"test:watch": "vitest test --watch",
+		"test:coverage": "vitest test --coverage"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "catalog:",
 		"@xmldom/xmldom": "^0.9.10",
 		"tsdown": "catalog:",
-		"typedoc": "catalog:"
+		"typedoc": "catalog:",
+		"vitest": "catalog:"
 	}
 }

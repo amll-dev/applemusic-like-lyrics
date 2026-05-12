@@ -6,7 +6,10 @@ export async function extractCoverBlob(file: File): Promise<Blob | null> {
 	if (!cover) return null;
 
 	const data = new Uint8Array(cover.data);
-	return new Blob([data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength)], {
-		type: cover.format,
-	});
+	return new Blob(
+		[data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength)],
+		{
+			type: cover.format,
+		},
+	);
 }

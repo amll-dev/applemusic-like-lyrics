@@ -33,24 +33,32 @@ export default defineConfig({
 		},
 	},
 	build: {
-		rollupOptions: {
+		rolldownOptions: {
 			output: {
-				manualChunks(rawId) {
-					if (!rawId.includes("node_modules")) return;
-					const id = rawId.split("node_modules/.bun/")[1];
-					if (
-						id.startsWith("vue") ||
-						id.startsWith("@vue") ||
-						id.startsWith("pinia") ||
-						id.startsWith("@vueuse") ||
-						id.startsWith("reka-ui") ||
-						id.startsWith("@floating-ui") ||
-						id.startsWith("tailwind") ||
-						id.startsWith("lucide-vue-next")
-					)
-						return "ui";
-					if (id.startsWith("@pixi") || id.startsWith("jss")) return "renderer";
-					return "vendor";
+				codeSplitting: {
+					groups: [
+						{
+							name: "ui",
+							test: /node_modules[\\/](vue|@vue|pinia|@vueuse|reka-ui|@floating-ui|tailwind|lucide-vue-next)/,
+							priority: 20,
+						},
+						{
+							name: "renderer",
+							test: /node_modules[\\/](@pixi|jss)/,
+							priority: 15,
+						},
+						{
+							name: "vendor",
+							test: /node_modules/,
+							priority: 10,
+						},
+						{
+							name: "common",
+							minShareCount: 2,
+							minSize: 10000,
+							priority: 5,
+						},
+					],
 				},
 			},
 		},

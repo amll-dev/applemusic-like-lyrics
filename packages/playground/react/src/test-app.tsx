@@ -3,10 +3,13 @@ import {
 	parseTTML,
 	type LyricLine as RawLyricLine,
 } from "@applemusic-like-lyrics/lyric";
+import {
+	BackgroundRender,
+	LyricPlayer,
+	type LyricPlayerRef,
+} from "@applemusic-like-lyrics/react";
 import type { FC } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { BackgroundRender } from "@applemusic-like-lyrics/react";
-import { LyricPlayer, type LyricPlayerRef } from "@applemusic-like-lyrics/react";
 
 const mapTTMLLyric = (line: RawLyricLine): LyricLine => ({
 	...line,

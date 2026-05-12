@@ -16,7 +16,7 @@
 			"test": {
 				"executor": "nx:run-commands",
 				"options": {
-					"command": "bun test",
+					"command": "vitest test",
 					"cwd": "packages/lyric"
 				}
 			},
@@ -51,18 +51,19 @@
 		"build:dev": "tsdown",
 		"fmt": "biome format --write ./src",
 		"dev": "vite dev",
-		"test": "bun test",
-		"test:watch": "bun test --watch",
-		"test:coverage": "bun test --coverage"
+		"test": "vitest test",
+		"test:watch": "vitest test --watch",
+		"test:coverage": "vitest test --coverage"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "catalog:",
 		"@types/node": "^25.5.2",
 		"@types/pako": "^2.0.4",
-		"tsdown": "catalog:"
+		"tsdown": "catalog:",
+		"vitest": "catalog:"
 	},
 	"dependencies": {
-		"pako": "^2.1.0",
-		"@applemusic-like-lyrics/ttml": "workspace:^"
+		"@applemusic-like-lyrics/ttml": "workspace:^",
+		"pako": "^2.1.0"
 	}
 }

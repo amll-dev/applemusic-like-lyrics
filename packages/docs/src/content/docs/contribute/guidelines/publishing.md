@@ -21,9 +21,9 @@ npm 包发布通过 GitHub Actions 手动触发，工作流文件：
 ## 工作流执行步骤摘要
 
 1. 当 `mode=publish` 时，强校验当前分支必须是 `main`。
-2. 安装依赖与发布环境（Bun、Node 24、Rust、wasm-pack）。
+2. 安装依赖与发布环境（pnpm、Node 24、Rust、wasm-pack）。
 3. 校验 trusted publishing 运行时（Node 版本等）。
-4. 执行 `bun install --frozen-lockfile`。
+4. 执行 `pnpm install --frozen-lockfile`。
 5. 执行 `npx nx release --skip-publish --preid alpha` 创建 release commit 与 tags。
 6. 格式化 `package.json` 并 amend release commit。
 7. 当 `mode=publish` 时：

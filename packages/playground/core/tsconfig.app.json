@@ -5,6 +5,6 @@
 		"isolatedDeclarations": false,
 		"paths": {
 			"@/*": ["./src/*"]
-		},
+		}
 	}
 }

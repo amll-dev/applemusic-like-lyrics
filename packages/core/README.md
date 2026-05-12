@@ -78,6 +78,6 @@ The main styles are provided by `@applemusic-like-lyrics/core/style.css`. Common
 ## Development
 
 ```bash
-bun run --cwd packages/core dev
-bun run --cwd packages/core build
+pnpm --filter @applemusic-like-lyrics/core dev
+pnpm --filter @applemusic-like-lyrics/core build
 ```

@@ -21,9 +21,9 @@ The trigger is `workflow_dispatch` with a `mode` parameter:
 ## Workflow Steps Summary
 
 1. When `mode=publish`, strictly validate current branch is `main`.
-2. Install dependencies and release environment (Bun, Node 24, Rust, wasm-pack).
+2. Install dependencies and release environment (pnpm, Node 24, Rust, wasm-pack).
 3. Validate trusted publishing runtime requirements (Node version, etc.).
-4. Run `bun install --frozen-lockfile`.
+4. Run `pnpm install --frozen-lockfile`.
 5. Run `npx nx release --skip-publish --preid alpha` to create release commit and tags.
 6. Format `package.json` and amend the release commit.
 7. When `mode=publish`:

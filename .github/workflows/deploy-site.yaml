@@ -30,8 +30,10 @@ jobs:
       - name: Setup Github Pages
         uses: actions/configure-pages@v6
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          cache: true
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
@@ -39,10 +41,10 @@ jobs:
           node-version: "24"
 
       - name: Install dependencies
-        run: bun install
+        run: pnpm install
 
       - name: Build docs
-        run: bun nx build:full docs
+        run: pnpm nx build:full docs
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v5

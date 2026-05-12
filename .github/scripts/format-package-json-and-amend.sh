@@ -9,7 +9,7 @@ if [ "${#package_json_files[@]}" -eq 0 ]; then
     exit 0
 fi
 
-bun biome format --write "${package_json_files[@]}"
+pnpm biome format --write "${package_json_files[@]}"
 
 if git diff --quiet -- "${package_json_files[@]}"; then
     echo "No package.json formatting changes detected."

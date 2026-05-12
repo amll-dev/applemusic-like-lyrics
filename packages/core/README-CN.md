@@ -78,6 +78,6 @@ player.update(0) // 更新歌词组件动画（需要逐帧调用）
 ## 开发与构建
 
 ```bash
-bun run --cwd packages/core dev
-bun run --cwd packages/core build
+pnpm --filter @applemusic-like-lyrics/core dev
+pnpm --filter @applemusic-like-lyrics/core build
 ```

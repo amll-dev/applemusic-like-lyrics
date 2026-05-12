@@ -14,12 +14,12 @@ The workflow runs two groups of checks:
 
 1. `Release metadata`
    - Determines whether this PR requires a release plan.
-   - Runs `bun run release:plan:check --base=... --head=...` when needed.
+   - Runs `pnpm run release:plan:check --base=... --head=...` when needed.
 
 2. `Build libs`
-   - Installs Bun dependencies (`bun install --frozen-lockfile`).
+   - Installs pnpm dependencies (`pnpm install --frozen-lockfile`).
    - Installs Rust `stable`, `wasm32-unknown-unknown`, and `wasm-pack@v0.13.1`.
-   - Runs `bun run ci:build:libs`.
+   - Runs `pnpm run ci:build:libs`.
 
 ## When a Release Plan Is Required
 
@@ -35,7 +35,7 @@ Run in the repository root:
 
 ```bash
 # Generate plans only for touched projects (default behavior)
-bun nx release plan
+pnpm nx release plan
 ```
 
 Then choose the bump level for each package and enter changelog messages as prompted.

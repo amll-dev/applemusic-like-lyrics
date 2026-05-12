@@ -1,4 +1,4 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it } from "vitest";
 import { parseLrc, stringifyLrc } from "../src/formats/lrc";
 import { MAX_LRC_TIMESTAMP } from "../src/utils";
 import { timeStampsTestCases } from "./timestampcase.fixture";

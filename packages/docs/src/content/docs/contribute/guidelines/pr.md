@@ -14,12 +14,12 @@ title: PR 流程
 
 1. `Release metadata`
   - 判断本次 PR 是否需要 release plan。
-  - 在需要时执行 `bun run release:plan:check --base=... --head=...`。
+  - 在需要时执行 `pnpm run release:plan:check --base=... --head=...`。
 
 2. `Build libs`
-  - 安装 Bun 依赖（`bun install --frozen-lockfile`）。
+  - 安装 pnpm 依赖（`pnpm install --frozen-lockfile`）。
   - 安装 Rust `stable`、`wasm32-unknown-unknown`、`wasm-pack@v0.13.1`。
-  - 执行 `bun run ci:build:libs`。
+  - 执行 `pnpm run ci:build:libs`。
 
 ## 什么时候需要 release plan
 
@@ -35,7 +35,7 @@ title: PR 流程
 
 ```bash
 # 只为本次 touched 项目生成计划（默认行为）
-bun nx release plan
+pnpm nx release plan
 ```
 
 然后根据提示选择各包变动幅度并输入 changelog。

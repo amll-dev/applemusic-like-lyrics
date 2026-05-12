@@ -1,4 +1,4 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it } from "vitest";
 import { parseLrcA2, stringifylrcA2 } from "../src/formats/lrca2";
 import { timeStampsTestCases } from "./timestampcase.fixture";
 
