@@ -216,6 +216,38 @@ function onLineClick(event: Event): void {
 	player.seek(lineEvent.line.getLine().startTime / 1000);
 }
 
+function isEditableTarget(target: EventTarget | null): boolean {
+	if (!(target instanceof HTMLElement)) return false;
+	const tagName = target.tagName.toLowerCase();
+	return (
+		tagName === "input" ||
+		tagName === "textarea" ||
+		tagName === "select" ||
+		target.isContentEditable
+	);
+}
+
+function onGlobalKeyDown(event: KeyboardEvent): void {
+	if (event.defaultPrevented || isEditableTarget(event.target)) return;
+
+	if (event.code === "Space") {
+		event.preventDefault();
+		player.togglePlayback();
+		return;
+	}
+
+	if (event.code === "ArrowLeft") {
+		event.preventDefault();
+		player.seek(player.audio.currentTime - 5);
+		return;
+	}
+
+	if (event.code === "ArrowRight") {
+		event.preventDefault();
+		player.seek(player.audio.currentTime + 5);
+	}
+}
+
 onMounted(() => {
 	const host = playerEl.value;
 	if (!host) return;
@@ -234,10 +266,12 @@ onMounted(() => {
 	applyPlayback(player.audio.playing);
 	void loadLyric();
 	startFrameLoop();
+	window.addEventListener("keydown", onGlobalKeyDown);
 });
 
 onBeforeUnmount(() => {
 	stopFrameLoop();
+	window.removeEventListener("keydown", onGlobalKeyDown);
 
 	lyricPlayerRef.value?.removeEventListener("line-click", onLineClick);
 	lyricPlayerRef.value?.dispose();

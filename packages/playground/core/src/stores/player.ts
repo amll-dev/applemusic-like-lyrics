@@ -15,6 +15,12 @@ function revokeObjectUrl(url: string): void {
 	if (url) URL.revokeObjectURL(url);
 }
 
+function clampTime(time: number, duration: number): number {
+	const safeTime = Number.isFinite(time) ? time : 0;
+	const safeDuration = Number.isFinite(duration) && duration > 0 ? duration : 0;
+	return Math.min(Math.max(0, safeTime), safeDuration);
+}
+
 export const usePlayerStore = defineStore("player", {
 	state: () => ({
 		source: {
@@ -161,11 +167,11 @@ export const usePlayerStore = defineStore("player", {
 			this.audio.playing = playing;
 		},
 		seek(time: number): void {
-			this.audio.currentTime = Math.max(0, time);
+			this.audio.currentTime = clampTime(time, this.audio.duration);
 			this.audio.seekRevision += 1;
 		},
 		syncCurrentTime(time: number): void {
-			this.audio.currentTime = Math.max(0, time);
+			this.audio.currentTime = clampTime(time, this.audio.duration);
 		},
 		setDuration(duration: number): void {
 			this.audio.duration =
