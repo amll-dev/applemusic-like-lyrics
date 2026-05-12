@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { BrushIcon, MonitorPlayIcon } from "lucide-vue-next";
-import { ref } from "vue";
 import {
 	Select,
 	SelectContent,
@@ -9,16 +8,12 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { usePlayerStore } from "@/stores/player";
 import ControllerSlider from "./ControllerSlider.vue";
 import ControllerSliderGroup from "./ControllerSliderGroup.vue";
 import ControllerSwitch from "./ControllerSwitch.vue";
 
-const playing = ref(true);
-const staticMode = ref(false);
-const renderer = ref("mg");
-const scale = ref([1]);
-const fps = ref([60]);
-const flowSpeed = ref([0.2]);
+const player = usePlayerStore();
 </script>
 
 <template>
@@ -29,12 +24,12 @@ const flowSpeed = ref([0.2]);
 				播放状态
 			</h3>
 			<ControllerSwitch
-				v-model="playing"
+				v-model="player.background.playing"
 				title="播放"
 				description="暂停或恢复背景动画"
 			/>
 			<ControllerSwitch
-				v-model="staticMode"
+				v-model="player.background.staticMode"
 				title="静态模式"
 				description="固定背景流动状态"
 			/>
@@ -47,7 +42,7 @@ const flowSpeed = ref([0.2]);
 				<BrushIcon :size="16" />
 				渲染选项
 			</h3>
-			<Select v-model="renderer">
+			<Select v-model="player.background.renderer">
 				<SelectTrigger class="w-full">
 					<SelectValue placeholder="选择渲染器" />
 				</SelectTrigger>
@@ -59,7 +54,7 @@ const flowSpeed = ref([0.2]);
 
 			<ControllerSliderGroup>
 				<ControllerSlider
-					v-model="scale"
+					v-model="player.background.scale"
 					title="分辨率比率"
 					:min="0.01"
 					:max="1"
@@ -67,7 +62,7 @@ const flowSpeed = ref([0.2]);
 					:precision="2"
 				/>
 				<ControllerSlider
-					v-model="fps"
+					v-model="player.background.fps"
 					title="帧率"
 					:min="1"
 					:max="240"
@@ -75,7 +70,7 @@ const flowSpeed = ref([0.2]);
 					suffix="FPS"
 				/>
 				<ControllerSlider
-					v-model="flowSpeed"
+					v-model="player.background.flowSpeed"
 					title="流动速度"
 					:min="0"
 					:max="5"

@@ -6,15 +6,47 @@ import {
 	PlayIcon,
 	TextAlignStartIcon,
 } from "lucide-vue-next";
-import { ref } from "vue";
+import { computed } from "vue";
+import { usePlayerStore } from "@/stores/player";
 import ModeToggle from "./ModeToggle.vue";
 import Button from "./ui/button/Button.vue";
 import ButtonGroup from "./ui/button-group/ButtonGroup.vue";
 import SidebarFooter from "./ui/sidebar/SidebarFooter.vue";
 import Slider from "./ui/slider/Slider.vue";
 
-const currentTime = ref([0]);
-const isPlaying = ref(false);
+const player = usePlayerStore();
+
+const currentTime = computed({
+	get: () => [player.audio.currentTime],
+	set: (value) => player.seek(value[0] ?? 0),
+});
+
+const maxTime = computed(() =>
+	Math.max(1, player.audio.duration, player.audio.currentTime),
+);
+
+const currentTimeLabel = computed(() => formatTime(player.audio.currentTime));
+const durationLabel = computed(() => formatTime(player.audio.duration));
+
+function formatTime(time: number): string {
+	const normalizedTime = Math.max(0, Number.isFinite(time) ? time : 0);
+	const minutes = Math.floor(normalizedTime / 60);
+	const seconds = Math.floor(normalizedTime % 60);
+	return `${minutes.toString().padStart(2, "0")}:${seconds
+		.toString()
+		.padStart(2, "0")}`;
+}
+
+function openFile(accept: string, onFile: (file: File) => void): void {
+	const input = document.createElement("input");
+	input.type = "file";
+	input.accept = accept;
+	input.onchange = () => {
+		const file = input.files?.[0];
+		if (file) onFile(file);
+	};
+	input.click();
+}
 </script>
 
 <template>
@@ -22,24 +54,43 @@ const isPlaying = ref(false);
 		<div
 			class="flex items-center justify-between px-1 text-xs text-muted-foreground"
 		>
-			<span>{{ currentTime[0] }}s</span>
-			<span>00:00</span>
+			<span>{{ currentTimeLabel }}</span>
+			<span>{{ durationLabel }}</span>
 		</div>
-		<Slider v-model="currentTime" class="mt-1 mb-2" :max="300" :step="1" />
+		<Slider v-model="currentTime" class="mt-1 mb-2" :max="maxTime" :step="1" />
 		<div class="flex gap-2 justify-between">
 			<div class="flex gap-2">
-				<Button size="icon" @click="isPlaying = !isPlaying">
-					<PauseIcon v-if="isPlaying" />
+				<Button
+					size="icon"
+					:aria-label="player.audio.playing ? '暂停' : '播放'"
+					@click="player.togglePlayback"
+				>
+					<PauseIcon v-if="player.audio.playing" />
 					<PlayIcon v-else />
 				</Button>
 				<ButtonGroup>
-					<Button variant="outline" size="icon" aria-label="打开歌词">
+					<Button
+						variant="outline"
+						size="icon"
+						aria-label="打开歌词"
+						@click="openFile('.ttml,.lrc,.alrc,.yrc,.lys,.lyl,.lqe,.qrc,.eslrc', player.setLocalLyricFile)"
+					>
 						<TextAlignStartIcon />
 					</Button>
-					<Button variant="outline" size="icon" aria-label="打开歌曲">
+					<Button
+						variant="outline"
+						size="icon"
+						aria-label="打开歌曲"
+						@click="openFile('audio/*', player.setLocalMusicFile)"
+					>
 						<MusicIcon />
 					</Button>
-					<Button variant="outline" size="icon" aria-label="打开专辑图">
+					<Button
+						variant="outline"
+						size="icon"
+						aria-label="打开专辑图"
+						@click="openFile('image/*,video/*', player.setLocalAlbumFile)"
+					>
 						<ImageIcon />
 					</Button>
 				</ButtonGroup>

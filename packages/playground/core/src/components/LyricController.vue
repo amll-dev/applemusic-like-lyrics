@@ -1,35 +1,12 @@
 <script setup lang="ts">
 import { ArrowDownUpIcon, ExpandIcon, WandIcon } from "lucide-vue-next";
-import { ref } from "vue";
 import { Separator } from "@/components/ui/separator";
+import { usePlayerStore } from "@/stores/player";
 import ControllerSlider from "./ControllerSlider.vue";
 import ControllerSliderGroup from "./ControllerSliderGroup.vue";
 import ControllerSwitch from "./ControllerSwitch.vue";
 
-interface SpringParams {
-	mass: number[];
-	damping: number[];
-	stiffness: number[];
-	soft: boolean;
-}
-
-const fadeWidth = ref([0.5]);
-const enableBlur = ref(true);
-const enableSpring = ref(true);
-
-const verticalSpring = ref<SpringParams>({
-	mass: [1],
-	damping: [15],
-	stiffness: [100],
-	soft: false,
-});
-
-const scaleSpring = ref<SpringParams>({
-	mass: [1],
-	damping: [20],
-	stiffness: [100],
-	soft: false,
-});
+const player = usePlayerStore();
 
 const springFields = [
 	{ key: "mass", label: "质量", min: 0.1, max: 5, step: 0.1 },
@@ -47,7 +24,7 @@ const springFields = [
 			</h3>
 			<ControllerSliderGroup>
 				<ControllerSlider
-					v-model="fadeWidth"
+					v-model="player.lyric.fadeWidth"
 					title="歌词渐变宽度"
 					:min="0"
 					:max="10"
@@ -56,12 +33,12 @@ const springFields = [
 				/>
 			</ControllerSliderGroup>
 			<ControllerSwitch
-				v-model="enableBlur"
+				v-model="player.lyric.enableBlur"
 				title="歌词模糊"
 				description="为非焦点行启用模糊效果"
 			/>
 			<ControllerSwitch
-				v-model="enableSpring"
+				v-model="player.lyric.enableSpring"
 				title="使用弹簧动画"
 				description="使用物理弹簧替代 CSS transition"
 			/>
@@ -82,11 +59,11 @@ const springFields = [
 					:min="field.min"
 					:max="field.max"
 					:step="field.step"
-					v-model="verticalSpring[field.key]"
+					v-model="player.lyric.verticalSpring[field.key]"
 				/>
 			</ControllerSliderGroup>
 			<ControllerSwitch
-				v-model="verticalSpring.soft"
+				v-model="player.lyric.verticalSpring.soft"
 				title="强制软弹簧"
 				description="阻力小于 1 时可用"
 			/>
@@ -107,11 +84,11 @@ const springFields = [
 					:min="field.min"
 					:max="field.max"
 					:step="field.step"
-					v-model="scaleSpring[field.key]"
+					v-model="player.lyric.scaleSpring[field.key]"
 				/>
 			</ControllerSliderGroup>
 			<ControllerSwitch
-				v-model="scaleSpring.soft"
+				v-model="player.lyric.scaleSpring.soft"
 				title="强制软弹簧"
 				description="阻力小于 1 时可用"
 			/>

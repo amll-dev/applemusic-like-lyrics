@@ -22,6 +22,7 @@
 		"jss": "^10.10.0",
 		"jss-preset-default": "^10.10.0",
 		"lucide-vue-next": "^1.0.0",
+		"pinia": "^3.0.4",
 		"reka-ui": "^2.9.7",
 		"shadcn-vue": "^2.6.2",
 		"tailwind-merge": "^3.5.0",

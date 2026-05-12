@@ -4,7 +4,7 @@ import { Slider } from "@/components/ui/slider";
 
 const props = withDefaults(
 	defineProps<{
-		modelValue: number[];
+		modelValue: number;
 		title: string;
 		min: number;
 		max: number;
@@ -19,16 +19,16 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-	"update:modelValue": [value: number[]];
+	"update:modelValue": [value: number];
 }>();
 
 const value = computed({
-	get: () => props.modelValue,
-	set: (nextValue) => emit("update:modelValue", nextValue),
+	get: () => [props.modelValue],
+	set: (nextValue) => emit("update:modelValue", nextValue[0] ?? props.min),
 });
 
 const displayValue = computed(() => {
-	const currentValue = value.value[0] ?? props.min;
+	const currentValue = props.modelValue;
 	const formattedValue =
 		props.precision === undefined
 			? String(currentValue)
