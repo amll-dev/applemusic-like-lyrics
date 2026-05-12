@@ -51,6 +51,8 @@
 				"packages/docs/**",
 				"packages/*/docs/**",
 				"packages/playground/**",
+				"packages/fft",
+				"packages/ws-protocol",
 				"patches/**",
 				"**/test/**",
 				"**/tests/**"
@@ -89,11 +91,9 @@
 			},
 			"libraries": {
 				"projects": [
-					"@applemusic-like-lyrics/fft",
 					"@applemusic-like-lyrics/lyric",
 					"@applemusic-like-lyrics/react-full",
-					"@applemusic-like-lyrics/ttml",
-					"@applemusic-like-lyrics/ws-protocol"
+					"@applemusic-like-lyrics/ttml"
 				],
 				"projectsRelationship": "independent"
 			}

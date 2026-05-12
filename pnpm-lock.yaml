@@ -209,8 +209,6 @@ importers:
         specifier: ^1.5.1
         version: 1.5.1(typedoc@0.28.19(typescript@5.9.3))
 
-  packages/fft: {}
-
   packages/lyric:
     dependencies:
       '@applemusic-like-lyrics/ttml':
@@ -730,8 +728,6 @@ importers:
       vue:
         specifier: ^3.5.30
         version: 3.5.34(typescript@5.9.3)
-
-  packages/ws-protocol: {}
 
 packages:
 

@@ -18,7 +18,6 @@ title: PR 流程
 
 2. `Build libs`
   - 安装 pnpm 依赖（`pnpm install --frozen-lockfile`）。
-  - 安装 Rust `stable`、`wasm32-unknown-unknown`、`wasm-pack@v0.13.1`。
   - 执行 `pnpm run ci:build:libs`。
 
 ## 什么时候需要 release plan

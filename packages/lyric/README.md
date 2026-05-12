@@ -14,7 +14,7 @@ Below is the original docs.
 [![npm](https://img.shields.io/npm/dt/%40applemusic-like-lyrics/lyric)](https://www.npmjs.com/package/@applemusic-like-lyrics/lyric)
 [![npm](https://img.shields.io/npm/v/%40applemusic-like-lyrics%2Flyric)](https://www.npmjs.com/package/@applemusic-like-lyrics/lyric)
 
-A lyric parsing/generation module for AMLL, written in Rust and built into a WASM module using `wasm-pack` for use in other projects.
+A lyric parsing/generation module for AMLL, written entirely in TypeScript.
 
 Since this module focuses only on lyric content, it discards all information unrelated to lyrics. If you need to get detailed information from a lyric file (such as artist), please consider using other frameworks.
 

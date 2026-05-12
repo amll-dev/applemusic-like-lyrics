@@ -74,8 +74,6 @@ GPU 性能在以下状况下能够以预期尺寸下满 60 帧运行：
 
 -   [Node.js](https://nodejs.org/)
 -   [pnpm](https://pnpm.io/)
--   [Rust 工具链](https://rustup.rs/)
--   [wasm-pack](https://rustwasm.github.io/wasm-pack/)
 
 ### 构建组件库
 

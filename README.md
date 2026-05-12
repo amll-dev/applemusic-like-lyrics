@@ -73,8 +73,6 @@ GPU performance capable of running at full 60 fps at the expected sizes under th
 
 -   [Node.js](https://nodejs.org/)
 -   [pnpm](https://pnpm.io/)
--   [Rust toolchain](https://rustup.rs/)
--   [wasm-pack](https://rustwasm.github.io/wasm-pack/)
 
 ### Building the component libraries
 

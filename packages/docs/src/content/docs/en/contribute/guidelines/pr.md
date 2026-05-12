@@ -18,7 +18,6 @@ The workflow runs two groups of checks:
 
 2. `Build libs`
    - Installs pnpm dependencies (`pnpm install --frozen-lockfile`).
-   - Installs Rust `stable`, `wasm32-unknown-unknown`, and `wasm-pack@v0.13.1`.
    - Runs `pnpm run ci:build:libs`.
 
 ## When a Release Plan Is Required
