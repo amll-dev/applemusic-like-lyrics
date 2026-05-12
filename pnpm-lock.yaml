@@ -61,6 +61,9 @@ catalogs:
       specifier: ^4.1.5
       version: 4.1.5
 
+patchedDependencies:
+  '@astrojs/starlight': 5023ee1db63fdacf7facb74ad66ca344d6a8a15acd48f1801e970c247c8613db
+
 importers:
 
   .:
@@ -167,7 +170,7 @@ importers:
         version: 5.0.4(@types/node@25.7.0)(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(jiti@2.7.0)(lightningcss@1.32.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(stylus@0.57.0)(yaml@2.9.0)
       '@astrojs/starlight':
         specifier: ^0.39.2
-        version: 0.39.2(astro@6.3.1(@types/node@25.7.0)(jiti@2.7.0)(lightningcss@1.32.0)(rollup@4.60.3)(stylus@0.57.0)(yaml@2.9.0))(typescript@5.9.3)
+        version: 0.39.2(patch_hash=5023ee1db63fdacf7facb74ad66ca344d6a8a15acd48f1801e970c247c8613db)(astro@6.3.1(@types/node@25.7.0)(jiti@2.7.0)(lightningcss@1.32.0)(rollup@4.60.3)(stylus@0.57.0)(yaml@2.9.0))(typescript@5.9.3)
       '@types/react':
         specifier: 'catalog:'
         version: 19.2.14
@@ -188,7 +191,7 @@ importers:
         version: 0.34.5
       starlight-sidebar-topics:
         specifier: ^0.7.1
-        version: 0.7.1(@astrojs/starlight@0.39.2(astro@6.3.1(@types/node@25.7.0)(jiti@2.7.0)(lightningcss@1.32.0)(rollup@4.60.3)(stylus@0.57.0)(yaml@2.9.0))(typescript@5.9.3))
+        version: 0.7.1(@astrojs/starlight@0.39.2(patch_hash=5023ee1db63fdacf7facb74ad66ca344d6a8a15acd48f1801e970c247c8613db)(astro@6.3.1(@types/node@25.7.0)(jiti@2.7.0)(lightningcss@1.32.0)(rollup@4.60.3)(stylus@0.57.0)(yaml@2.9.0))(typescript@5.9.3))
     devDependencies:
       typedoc:
         specifier: 'catalog:'
@@ -7660,7 +7663,7 @@ snapshots:
       stream-replace-string: 2.0.0
       zod: 4.4.3
 
-  '@astrojs/starlight@0.39.2(astro@6.3.1(@types/node@25.7.0)(jiti@2.7.0)(lightningcss@1.32.0)(rollup@4.60.3)(stylus@0.57.0)(yaml@2.9.0))(typescript@5.9.3)':
+  '@astrojs/starlight@0.39.2(patch_hash=5023ee1db63fdacf7facb74ad66ca344d6a8a15acd48f1801e970c247c8613db)(astro@6.3.1(@types/node@25.7.0)(jiti@2.7.0)(lightningcss@1.32.0)(rollup@4.60.3)(stylus@0.57.0)(yaml@2.9.0))(typescript@5.9.3)':
     dependencies:
       '@astrojs/markdown-remark': 7.1.1
       '@astrojs/mdx': 5.0.4(astro@6.3.1(@types/node@25.7.0)(jiti@2.7.0)(lightningcss@1.32.0)(rollup@4.60.3)(stylus@0.57.0)(yaml@2.9.0))
@@ -14552,9 +14555,9 @@ snapshots:
 
   stackback@0.0.2: {}
 
-  starlight-sidebar-topics@0.7.1(@astrojs/starlight@0.39.2(astro@6.3.1(@types/node@25.7.0)(jiti@2.7.0)(lightningcss@1.32.0)(rollup@4.60.3)(stylus@0.57.0)(yaml@2.9.0))(typescript@5.9.3)):
+  starlight-sidebar-topics@0.7.1(@astrojs/starlight@0.39.2(patch_hash=5023ee1db63fdacf7facb74ad66ca344d6a8a15acd48f1801e970c247c8613db)(astro@6.3.1(@types/node@25.7.0)(jiti@2.7.0)(lightningcss@1.32.0)(rollup@4.60.3)(stylus@0.57.0)(yaml@2.9.0))(typescript@5.9.3)):
     dependencies:
-      '@astrojs/starlight': 0.39.2(astro@6.3.1(@types/node@25.7.0)(jiti@2.7.0)(lightningcss@1.32.0)(rollup@4.60.3)(stylus@0.57.0)(yaml@2.9.0))(typescript@5.9.3)
+      '@astrojs/starlight': 0.39.2(patch_hash=5023ee1db63fdacf7facb74ad66ca344d6a8a15acd48f1801e970c247c8613db)(astro@6.3.1(@types/node@25.7.0)(jiti@2.7.0)(lightningcss@1.32.0)(rollup@4.60.3)(stylus@0.57.0)(yaml@2.9.0))(typescript@5.9.3)
       picomatch: 4.0.4
 
   stats.js@0.17.0: {}

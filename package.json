@@ -18,10 +18,5 @@
 		"format": "biome format . --write",
 		"release:plan:check": "nx release plan:check"
 	},
-	"packageManager": "pnpm@11.1.0",
-	"pnpm": {
-		"patchedDependencies": {
-			"@astrojs/starlight@0.39.2": "patches/@astrojs%2Fstarlight@0.39.2.patch"
-		}
-	}
+	"packageManager": "pnpm@11.1.0"
 }
