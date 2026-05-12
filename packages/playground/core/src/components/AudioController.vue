@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import {
 	ImageIcon,
-	ListIndentIncreaseIcon,
 	MusicIcon,
 	PauseIcon,
 	PlayIcon,
+	TextAlignStartIcon,
 } from "lucide-vue-next";
 import { ref } from "vue";
 import ModeToggle from "./ModeToggle.vue";
@@ -33,14 +33,14 @@ const isPlaying = ref(false);
 					<PlayIcon v-else />
 				</Button>
 				<ButtonGroup>
+					<Button variant="outline" size="icon" aria-label="打开歌词">
+						<TextAlignStartIcon />
+					</Button>
 					<Button variant="outline" size="icon" aria-label="打开歌曲">
 						<MusicIcon />
 					</Button>
 					<Button variant="outline" size="icon" aria-label="打开专辑图">
 						<ImageIcon />
-					</Button>
-					<Button variant="outline" size="icon" aria-label="打开歌词">
-						<ListIndentIncreaseIcon />
 					</Button>
 				</ButtonGroup>
 			</div>

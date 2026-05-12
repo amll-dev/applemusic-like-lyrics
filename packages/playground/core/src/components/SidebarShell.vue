@@ -31,15 +31,15 @@ const props = withDefaults(defineProps<SidebarProps>(), {});
 			</div>
 		</SidebarHeader>
 		<SidebarContent class="p-3">
-			<Tabs default-value="lyric">
+			<Tabs default-value="source">
 				<TabsList class="flex w-[unset]">
+					<TabsTrigger value="source"> 源 </TabsTrigger>
 					<TabsTrigger value="lyric"> 歌词 </TabsTrigger>
 					<TabsTrigger value="background"> 背景 </TabsTrigger>
-					<TabsTrigger value="source"> 源 </TabsTrigger>
 				</TabsList>
+				<TabsContent value="source"> <SourceController /> </TabsContent>
 				<TabsContent value="background"> <BackgroundController /> </TabsContent>
 				<TabsContent value="lyric"> <LyricController /> </TabsContent>
-				<TabsContent value="source"> <SourceController /> </TabsContent>
 			</Tabs>
 		</SidebarContent>
 		<AudioPlayer />
