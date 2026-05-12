@@ -34,7 +34,7 @@ export const usePlayerStore = defineStore("player", {
 		},
 		audio: {
 			currentTime: 0,
-			duration: 300,
+			duration: 0,
 			playing: false,
 			seekRevision: 0,
 			error: "",
@@ -147,7 +147,7 @@ export const usePlayerStore = defineStore("player", {
 		},
 		setDuration(duration: number): void {
 			this.audio.duration =
-				Number.isFinite(duration) && duration > 0 ? duration : 300;
+				Number.isFinite(duration) && duration > 0 ? duration : 0;
 		},
 		setAudioError(error: string): void {
 			this.audio.error = error;

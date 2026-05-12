@@ -55,7 +55,7 @@ class AudioRuntime {
 			this.audio.pause();
 			this.audio.removeAttribute("src");
 			this.audio.load();
-			this.store?.setDuration(300);
+			this.store?.setDuration(0);
 			return;
 		}
 
