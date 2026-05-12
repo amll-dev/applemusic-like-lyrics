@@ -6,7 +6,7 @@
 		"dev": "astro dev",
 		"build": "astro build",
 		"build:full": "run-s build:full:projects build:full:copy-playground",
-		"build:full:projects": "PLAYGROUND_BASE_URL=/playground/ nx run-many --target=build --projects=docs,playground-core",
+		"build:full:projects": "cross-env PLAYGROUND_BASE_URL=/playground/ nx run-many --target=build --projects=docs,playground-core",
 		"build:full:copy-playground": "node ./scripts/copy-playground.js",
 		"preview": "astro preview"
 	},
@@ -24,6 +24,7 @@
 		"starlight-sidebar-topics": "^0.7.1"
 	},
 	"devDependencies": {
+		"cross-env": "^10.1.0",
 		"typedoc": "catalog:",
 		"typedoc-plugin-mark-react-functional-components": "^0.2.2",
 		"typedoc-plugin-markdown": "catalog:",
