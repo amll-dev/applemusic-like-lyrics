@@ -53,6 +53,6 @@
 		"sharp"
 	],
 	"patchedDependencies": {
-		"@astrojs/starlight@0.38.3": "patches/@astrojs%2Fstarlight@0.38.3.patch"
+		"@astrojs/starlight@0.39.2": "patches/@astrojs%2Fstarlight@0.39.2.patch"
 	}
 }

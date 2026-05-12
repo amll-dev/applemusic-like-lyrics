@@ -40,37 +40,43 @@ const referenceSidebar = [
 		label: "Core 核心",
 		translations: { en: "Core" },
 		collapsed: true,
-		autogenerate: { directory: "reference/core", collapsed: true },
+		items: [{ autogenerate: { directory: "reference/core", collapsed: true } }],
 	},
 	{
 		label: "React 绑定",
 		translations: { en: "React Bindings" },
 		collapsed: true,
-		autogenerate: { directory: "reference/react", collapsed: true },
+		items: [
+			{ autogenerate: { directory: "reference/react", collapsed: true } },
+		],
 	},
 	{
 		label: "React Full 组件库",
 		translations: { en: "React Full Components" },
 		collapsed: true,
-		autogenerate: { directory: "reference/react-full", collapsed: true },
+		items: [
+			{ autogenerate: { directory: "reference/react-full", collapsed: true } },
+		],
 	},
 	{
 		label: "Vue 绑定",
 		translations: { en: "Vue Bindings" },
 		collapsed: true,
-		autogenerate: { directory: "reference/vue", collapsed: true },
+		items: [{ autogenerate: { directory: "reference/vue", collapsed: true } }],
 	},
 	{
 		label: "Lyric 歌词处理",
 		translations: { en: "Lyric Processing" },
 		collapsed: true,
-		autogenerate: { directory: "reference/lyric", collapsed: true },
+		items: [
+			{ autogenerate: { directory: "reference/lyric", collapsed: true } },
+		],
 	},
 	{
 		label: "TTML 歌词处理",
 		translations: { en: "TTML Processing" },
 		collapsed: true,
-		autogenerate: { directory: "reference/ttml", collapsed: true },
+		items: [{ autogenerate: { directory: "reference/ttml", collapsed: true } }],
 	},
 ];
 
@@ -133,10 +139,17 @@ export default defineConfig({
 						items: referenceSidebar,
 					},
 					{
+						id: "docs",
+						label: { "zh-CN": "试验场", en: "Playground" },
+						link: "/playground",
+						icon: "puzzle",
+						items: docsSidebar,
+					},
+					{
 						id: "contribute",
 						label: { "zh-CN": "贡献指南", en: "Contributing" },
 						link: "/contribute",
-						icon: "rocket",
+						icon: "code-branch",
 						items: contributeSidebar,
 					},
 				]),

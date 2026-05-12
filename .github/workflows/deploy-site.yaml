@@ -42,7 +42,7 @@ jobs:
         run: bun install
 
       - name: Build docs
-        run: bun nx build docs
+        run: bun nx build:full docs
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v5
