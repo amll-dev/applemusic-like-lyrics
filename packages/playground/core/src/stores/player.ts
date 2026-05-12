@@ -31,6 +31,7 @@ export const usePlayerStore = defineStore("player", {
 			lyric: "",
 			music: "",
 			album: "",
+			extractedAlbum: "",
 		},
 		audio: {
 			currentTime: 0,
@@ -94,6 +95,10 @@ export const usePlayerStore = defineStore("player", {
 				revokeObjectUrl(this.localObjectUrls.album);
 				this.localObjectUrls.album = "";
 			}
+			if (url !== this.localObjectUrls.extractedAlbum) {
+				revokeObjectUrl(this.localObjectUrls.extractedAlbum);
+				this.localObjectUrls.extractedAlbum = "";
+			}
 			this.source.albumUrl = url;
 			this.source.albumName = url;
 		},
@@ -118,6 +123,21 @@ export const usePlayerStore = defineStore("player", {
 			this.source.albumUrl = url;
 			this.source.albumName = file.name;
 		},
+		setExtractedAlbumBlob(blob: Blob, name: string): void {
+			revokeObjectUrl(this.localObjectUrls.extractedAlbum);
+			const url = URL.createObjectURL(blob);
+			this.localObjectUrls.extractedAlbum = url;
+			this.source.albumUrl = url;
+			this.source.albumName = name;
+		},
+		clearExtractedAlbum(): void {
+			if (this.source.albumUrl === this.localObjectUrls.extractedAlbum) {
+				this.source.albumUrl = "";
+				this.source.albumName = "";
+			}
+			revokeObjectUrl(this.localObjectUrls.extractedAlbum);
+			this.localObjectUrls.extractedAlbum = "";
+		},
 		reloadLyric(): void {
 			this.source.lyricRevision += 1;
 		},
@@ -128,9 +148,11 @@ export const usePlayerStore = defineStore("player", {
 			revokeObjectUrl(this.localObjectUrls.lyric);
 			revokeObjectUrl(this.localObjectUrls.music);
 			revokeObjectUrl(this.localObjectUrls.album);
+			revokeObjectUrl(this.localObjectUrls.extractedAlbum);
 			this.localObjectUrls.lyric = "";
 			this.localObjectUrls.music = "";
 			this.localObjectUrls.album = "";
+			this.localObjectUrls.extractedAlbum = "";
 		},
 		togglePlayback(): void {
 			this.audio.playing = !this.audio.playing;

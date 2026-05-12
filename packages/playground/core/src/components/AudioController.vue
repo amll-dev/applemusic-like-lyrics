@@ -7,6 +7,7 @@ import {
 	TextAlignStartIcon,
 } from "lucide-vue-next";
 import { computed } from "vue";
+import { extractCoverBlob } from "@/lib/extract-cover";
 import { usePlayerStore } from "@/stores/player";
 import ModeToggle from "./ModeToggle.vue";
 import Button from "./ui/button/Button.vue";
@@ -46,6 +47,20 @@ function openFile(accept: string, onFile: (file: File) => void): void {
 		if (file) onFile(file);
 	};
 	input.click();
+}
+
+async function openLocalMusicFile(file: File): Promise<void> {
+	player.setLocalMusicFile(file);
+	try {
+		const cover = await extractCoverBlob(file);
+		if (cover) {
+			player.setExtractedAlbumBlob(cover, `${file.name} cover`);
+		} else {
+			player.clearExtractedAlbum();
+		}
+	} catch {
+		player.clearExtractedAlbum();
+	}
 }
 </script>
 
@@ -88,7 +103,7 @@ function openFile(accept: string, onFile: (file: File) => void): void {
 						variant="outline"
 						size="icon"
 						aria-label="打开歌曲"
-						@click="openFile('audio/*', player.setLocalMusicFile)"
+						@click="openFile('audio/*', openLocalMusicFile)"
 					>
 						<MusicIcon />
 					</Button>

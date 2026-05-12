@@ -11,6 +11,7 @@ import { computed } from "vue";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import { extractCoverBlob } from "@/lib/extract-cover";
 import { usePlayerStore } from "@/stores/player";
 
 const player = usePlayerStore();
@@ -37,6 +38,20 @@ function openFile(accept: string, onFile: (file: File) => void): void {
 		if (file) onFile(file);
 	};
 	input.click();
+}
+
+async function openLocalMusicFile(file: File): Promise<void> {
+	player.setLocalMusicFile(file);
+	try {
+		const cover = await extractCoverBlob(file);
+		if (cover) {
+			player.setExtractedAlbumBlob(cover, `${file.name} cover`);
+		} else {
+			player.clearExtractedAlbum();
+		}
+	} catch {
+		player.clearExtractedAlbum();
+	}
 }
 </script>
 
@@ -79,7 +94,7 @@ function openFile(accept: string, onFile: (file: File) => void): void {
 				class="w-full"
 				variant="outline"
 				size="sm"
-				@click="openFile('audio/*', player.setLocalMusicFile)"
+				@click="openFile('audio/*', openLocalMusicFile)"
 			>
 				<FileAudioIcon />
 				打开本地歌曲
