@@ -20,3 +20,4 @@ target/
 *.tsbuildinfo
 .million/
 **/dist
+.playwright*/

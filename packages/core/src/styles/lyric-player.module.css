@@ -144,6 +144,11 @@
 		will-change: transform;
 		vertical-align: bottom;
 
+		& span {
+			padding: 1em;
+			margin: -1em;
+		}
+
 		&.emphasize,
 		span.emphasize {
 			padding: 1em;
@@ -151,8 +156,6 @@
 			backface-visibility: hidden;
 
 			& > span {
-				padding: 1em;
-				margin: -1em;
 				will-change: transform;
 				backface-visibility: hidden;
 			}
