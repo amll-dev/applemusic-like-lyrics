@@ -51,7 +51,9 @@
 				"packages/docs/**",
 				"packages/*/docs/**",
 				"packages/playground/**",
-				"patches/**"
+				"patches/**",
+				"**/test/**",
+				"**/tests/**"
 			]
 		},
 		"version": {
