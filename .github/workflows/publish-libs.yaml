@@ -75,10 +75,10 @@ jobs:
         run: bash .github/scripts/ensure-release-plans-exist.sh
 
       - name: Print Environment Info
-        run: npx nx report
+        run: pnpm nx report
 
       - name: Create release commit and tags
-        run: npx nx release --skip-publish --preid alpha
+        run: pnpm nx release --skip-publish --preid alpha
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -91,6 +91,6 @@ jobs:
 
       - name: Publish packages to npm
         if: github.event.inputs.mode == 'publish'
-        run: npx nx release publish --excludeTaskDependencies
+        run: pnpm nx release publish --excludeTaskDependencies
         env:
           NPM_CONFIG_PROVENANCE: true
