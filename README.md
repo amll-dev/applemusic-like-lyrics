@@ -1,6 +1,6 @@
 <div align=center>
 
-![Apple Music-like Lyrics - A lyric page component library for Web](https://github.com/user-attachments/assets/ca6a98d4-28ea-4fb6-beec-7948f2ac87ec)
+![Apple Music-like Lyrics - A lyric page component library for Web](https://github.com/user-attachments/assets/cd6e4ba3-2640-4aab-aeb1-0762f97c8880)
 
 English / [简体中文](./README-CN.md)
 
