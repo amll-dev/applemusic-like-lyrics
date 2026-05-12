@@ -13,7 +13,7 @@ class AudioRuntime {
 		this.audio.style.display = "none";
 		this.audio.addEventListener("play", this.onPlay);
 		this.audio.addEventListener("pause", this.onPause);
-		this.audio.addEventListener("ended", this.onPause);
+		this.audio.addEventListener("ended", this.onEnded);
 		this.audio.addEventListener("loadedmetadata", this.onLoadedMetadata);
 		this.audio.addEventListener("durationchange", this.onLoadedMetadata);
 		this.audio.addEventListener("error", this.onError);
@@ -24,6 +24,11 @@ class AudioRuntime {
 	};
 
 	private readonly onPause = (): void => {
+		this.store?.setPlaying(false);
+	};
+
+	private readonly onEnded = (): void => {
+		this.store?.syncCurrentTime(this.audio.duration);
 		this.store?.setPlaying(false);
 	};
 
@@ -75,6 +80,10 @@ class AudioRuntime {
 		}
 
 		if (!this.audio.src) return;
+
+		if (this.audio.ended) {
+			this.store?.seek(0);
+		}
 
 		try {
 			await this.audio.play();
