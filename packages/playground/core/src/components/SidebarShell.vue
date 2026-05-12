@@ -13,6 +13,7 @@ import LyricController from "./LyricController.vue";
 import SourceController from "./SourceController.vue";
 
 const props = withDefaults(defineProps<SidebarProps>(), {});
+const coreVersion = __AMLL_CORE_VERSION__;
 </script>
 
 <template>
@@ -26,7 +27,7 @@ const props = withDefaults(defineProps<SidebarProps>(), {});
 				</div>
 				<div class="flex flex-col gap-1 leading-none">
 					<span class="font-medium"> AMLL Playground </span>
-					<span class="text-xs/3 opacity-75"> Core v0.4.2 </span>
+					<span class="text-xs/3 opacity-75"> Core v{{ coreVersion }} </span>
 				</div>
 			</div>
 		</SidebarHeader>

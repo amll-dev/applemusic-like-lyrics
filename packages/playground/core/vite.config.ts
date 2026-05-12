@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath, URL } from "node:url";
 
@@ -5,8 +6,15 @@ import tailwindcss from "@tailwindcss/vite";
 import vue from "@vitejs/plugin-vue";
 import { defineConfig } from "vite";
 
+const corePackageJson = JSON.parse(
+	readFileSync(path.resolve(__dirname, "../../core/package.json"), "utf-8"),
+) as { version: string };
+
 export default defineConfig({
 	base: process.env.PLAYGROUND_BASE_URL || "/",
+	define: {
+		__AMLL_CORE_VERSION__: JSON.stringify(corePackageJson.version),
+	},
 	plugins: [vue(), tailwindcss()],
 	resolve: {
 		alias: {
