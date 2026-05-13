@@ -7,6 +7,7 @@ export default defineConfig({
 	entry: { "amll-vue": "./src/index.ts" },
 	dts: {
 		tsgo: true,
+		tsconfig: "./tsconfig.dts.json",
 	},
 	plugins: [
 		pluginBabel({

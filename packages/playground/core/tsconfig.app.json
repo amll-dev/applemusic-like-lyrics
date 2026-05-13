@@ -4,7 +4,9 @@
 	"compilerOptions": {
 		"isolatedDeclarations": false,
 		"paths": {
-			"@/*": ["./src/*"]
+			"@/*": ["./src/*"],
+			"@applemusic-like-lyrics/core": ["../../core/src/index.ts"],
+			"@applemusic-like-lyrics/lyric": ["../../lyric/src/index.ts"]
 		}
 	}
 }

@@ -55,7 +55,9 @@
 				"packages/ws-protocol",
 				"patches/**",
 				"**/test/**",
-				"**/tests/**"
+				"**/tests/**",
+				"**/tsconfig*",
+				"**/tsdown*"
 			]
 		},
 		"version": {

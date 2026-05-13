@@ -1,0 +1,9 @@
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		// 让 tsgo 解析 dist 下的类型声明而非源码，避免在 core/src 下生成 .d.ts 文件
+		"paths": {
+			"@applemusic-like-lyrics/core": ["../core/dist/amll-core.d.mts"]
+		}
+	}
+}

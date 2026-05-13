@@ -31,6 +31,21 @@
 		"noPropertyAccessFromIndexSignature": false,
 		"noUncheckedIndexedAccess": false,
 		"exactOptionalPropertyTypes": false,
-		"noImplicitReturns": true
+		"noImplicitReturns": true,
+
+		// 映射各个子包的路径以便让 IDE 可以跳转到实际的源码而不是 dist 目录
+		"paths": {
+			"@applemusic-like-lyrics/core": ["./packages/core/src/index.ts"],
+			"@applemusic-like-lyrics/core/style.css": [
+				"./packages/core/src/styles/index.css"
+			],
+			"@applemusic-like-lyrics/react": ["./packages/react/src/index.ts"],
+			"@applemusic-like-lyrics/vue": ["./packages/vue/src/index.ts"],
+			"@applemusic-like-lyrics/react-full": [
+				"./packages/react-full/src/index.ts"
+			],
+			"@applemusic-like-lyrics/lyric": ["./packages/lyric/src/index.ts"],
+			"@applemusic-like-lyrics/ttml": ["./packages/ttml/src/index.ts"]
+		}
 	}
 }
