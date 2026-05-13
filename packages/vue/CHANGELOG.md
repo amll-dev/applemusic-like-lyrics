@@ -13,7 +13,7 @@
 
 ### Contributors
 
-- Linho
+- Linho [@Linho1219](https://github.com/Linho1219)
 
 ## 0.4.2 (2026-05-01)
 
@@ -26,7 +26,7 @@
 ### Contributors
 
 - apoint123 [@apoint123](https://github.com/apoint123)
-- Linho
+- Linho [@Linho1219](https://github.com/Linho1219)
 
 ## 0.4.1 (2026-04-23)
 

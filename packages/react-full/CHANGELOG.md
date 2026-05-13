@@ -6,7 +6,7 @@
 
 ### Contributors
 
-- Linho
+- Linho [@Linho1219](https://github.com/Linho1219)
 
 ## 0.3.2 (2026-04-23)
 
