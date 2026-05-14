@@ -2,7 +2,7 @@
 title: 快速开始
 ---
 
-import { Tabs, TabItem } from "@astrojs/starlight/components";
+import PackageInstall from "#components/PackageInstall.astro";
 
 AMLL 提供两个 npm 包，用于歌词格式正反序列化：
 
@@ -13,31 +13,7 @@ AMLL 提供两个 npm 包，用于歌词格式正反序列化：
 
 ## Lyric 包
 
-<Tabs syncKey="pkg">
-<TabItem label="npm">
-
-```sh
-npm install @applemusic-like-lyrics/lyric
-```
-
-</TabItem>
-
-<TabItem label="pnpm">
-
-```sh
-pnpm add @applemusic-like-lyrics/lyric
-```
-
-</TabItem>
-
-<TabItem label="Yarn">
-
-```sh
-yarn add @applemusic-like-lyrics/lyric
-```
-
-</TabItem>
-</Tabs>
+<PackageInstall packages="@applemusic-like-lyrics/lyric" />
 
 Lyric 包支持如下格式：
 
@@ -66,31 +42,7 @@ Lyric 包还支持 QQ 音乐加密逐词格式的加解密。提供 [`decryptQrc
 
 ## TTML 包
 
-<Tabs syncKey="pkg">
-<TabItem label="npm">
-
-```sh
-npm install @applemusic-like-lyrics/ttml
-```
-
-</TabItem>
-
-<TabItem label="pnpm">
-
-```sh
-pnpm add @applemusic-like-lyrics/ttml
-```
-
-</TabItem>
-
-<TabItem label="Yarn">
-
-```sh
-yarn add @applemusic-like-lyrics/ttml
-```
-
-</TabItem>
-</Tabs>
+<PackageInstall packages="@applemusic-like-lyrics/ttml" />
 
 TTML 包提供 TTML 格式的正反序列化能力。有关 TTML 格式的详细信息，请转到 [TTML 格式介绍](./ttml)。
 
@@ -125,12 +77,12 @@ import { TTMLParser, TTMLGenerator } from "@applemusic-like-lyrics/ttml";
 import { DOMParser, DOMImplementation, XMLSerializer } from "@xmldom/xmldom";
 
 const parser = new TTMLParser({
-    domParser: new DOMParser(),
+	domParser: new DOMParser(),
 });
 
 const generator = new TTMLGenerator({
-    domImplementation: new DOMImplementation(),
-    xmlSerializer: new XMLSerializer(),
+	domImplementation: new DOMImplementation(),
+	xmlSerializer: new XMLSerializer(),
 });
 ```
 

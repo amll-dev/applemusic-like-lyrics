@@ -20,24 +20,24 @@ Apple Music Like Lyrics，缩写为 AMLL，是一个 Apple Music 风格的开源
 AMLL 以 npm 包的形式分发，提供了从展示组件、框架绑定到歌词处理的一系列工具：
 
 - **组件相关**（浏览器端）
-    - [@applemusic-like-lyrics/core](https://www.npmjs.com/package/@applemusic-like-lyrics/core)  
-      AMLL 核心库，框架无关的逐字歌词与背景渲染组件
-    - [@applemusic-like-lyrics/react](https://www.npmjs.com/package/@applemusic-like-lyrics/react)  
-      核心库的 React 绑定
-    - [@applemusic-like-lyrics/vue](https://www.npmjs.com/package/@applemusic-like-lyrics/vue)  
-      核心库的 Vue 绑定
-    - [@applemusic-like-lyrics/react-full](https://www.npmjs.com/package/@applemusic-like-lyrics/react-full)  
-      开箱即用的完整播放器封装，包含进度条、封面、歌词、背景等，仅支持 React
+  - [@applemusic-like-lyrics/core](https://www.npmjs.com/package/@applemusic-like-lyrics/core)  
+    AMLL 核心库，框架无关的逐字歌词与背景渲染组件
+  - [@applemusic-like-lyrics/react](https://www.npmjs.com/package/@applemusic-like-lyrics/react)  
+    核心库的 React 绑定
+  - [@applemusic-like-lyrics/vue](https://www.npmjs.com/package/@applemusic-like-lyrics/vue)  
+    核心库的 Vue 绑定
+  - [@applemusic-like-lyrics/react-full](https://www.npmjs.com/package/@applemusic-like-lyrics/react-full)  
+    开箱即用的完整播放器封装，包含进度条、封面、歌词、背景等，仅支持 React
 
 - **外围工具**（浏览器与 Node 双端）
-    - [@applemusic-like-lyrics/ttml](https://www.npmjs.com/package/@applemusic-like-lyrics/ttml)  
-      TTML 逐字歌词格式的解析与生成库
-    - [@applemusic-like-lyrics/lyric](https://www.npmjs.com/package/@applemusic-like-lyrics/lyric)  
-      主流各歌词格式的解析与生成库，例如 LRC、YRC、LQE 等
-    - [@applemusic-like-lyrics/fft](https://www.npmjs.com/package/@applemusic-like-lyrics/fft) （已分离至 [独立仓库](https://github.com/amll-dev/fft)）  
-      基于 Rust WASM 的高性能音频可视化模块，将音频波形数据转换成频谱
-    - [@applemusic-like-lyrics/ws-protocol](https://www.npmjs.com/package/@applemusic-like-lyrics/ws-protocol) （已分离至 [独立仓库](https://github.com/amll-dev/ws-protocol)）  
-      基于 Rust WASM 的高性能歌词播放器协议库，用于同步播放进度和播放信息
+  - [@applemusic-like-lyrics/ttml](https://www.npmjs.com/package/@applemusic-like-lyrics/ttml)  
+    TTML 逐字歌词格式的解析与生成库
+  - [@applemusic-like-lyrics/lyric](https://www.npmjs.com/package/@applemusic-like-lyrics/lyric)  
+    主流各歌词格式的解析与生成库，例如 LRC、YRC、LQE 等
+  - [@applemusic-like-lyrics/fft](https://www.npmjs.com/package/@applemusic-like-lyrics/fft) （已分离至 [独立仓库](https://github.com/amll-dev/fft)）  
+    基于 Rust WASM 的高性能音频可视化模块，将音频波形数据转换成频谱
+  - [@applemusic-like-lyrics/ws-protocol](https://www.npmjs.com/package/@applemusic-like-lyrics/ws-protocol) （已分离至 [独立仓库](https://github.com/amll-dev/ws-protocol)）  
+    基于 Rust WASM 的高性能歌词播放器协议库，用于同步播放进度和播放信息
 
 AMLL 系列包 **均以 [AGPL v3 only](https://spdx.org/licenses/GPL-3.0.html) 开放源代码**，仓库位于 [GitHub](https://github.com/amll-dev/applemusic-like-lyrics)。在遵守开源协议的前提下，你可以将其集成到你的项目中。
 

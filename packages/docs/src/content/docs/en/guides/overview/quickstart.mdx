@@ -8,6 +8,7 @@ import {
     Tabs,
     TabItem,
 } from "@astrojs/starlight/components";
+import PackageInstall from "../../../../../components/PackageInstall.astro";
 
 This page quickly shows how to integrate AMLL lyric components into your project. AMLL does not provide CDN script usage; a bundler is required.
 
@@ -17,59 +18,23 @@ For tooling packages outside the rendering component libraries, see [API Referen
 
 Install AMLL core library:
 
-<Tabs syncKey="pkg">
-<TabItem label="npm">
-
-```sh
-npm install @applemusic-like-lyrics/core
-```
-
-</TabItem>
-
-<TabItem label="pnpm">
-
-```sh
-pnpm add @applemusic-like-lyrics/core
-```
-
-</TabItem>
-
-<TabItem label="Yarn">
-
-```sh
-yarn add @applemusic-like-lyrics/core
-```
-
-</TabItem>
-</Tabs>
+<PackageInstall packages="@applemusic-like-lyrics/core" />
 
 AMLL also declares several graphics and animation libraries as peer dependencies to reuse dependencies that may already exist in your project. Some package managers/configurations install peers automatically; if not, install them manually.
 
-<Tabs syncKey="pkg">
-<TabItem label="npm">
-
-```sh
-npm install @pixi/app @pixi/core @pixi/display @pixi/filter-blur @pixi/filter-bulge-pinch @pixi/filter-color-matrix @pixi/sprite jss jss-preset-default
-```
-
-</TabItem>
-
-<TabItem label="pnpm">
-
-```sh
-pnpm add @pixi/app @pixi/core @pixi/display @pixi/filter-blur @pixi/filter-bulge-pinch @pixi/filter-color-matrix @pixi/sprite jss jss-preset-default
-```
-
-</TabItem>
-
-<TabItem label="Yarn">
-
-```sh
-yarn add @pixi/app @pixi/core @pixi/display @pixi/filter-blur @pixi/filter-bulge-pinch @pixi/filter-color-matrix @pixi/sprite jss jss-preset-default
-```
-
-</TabItem>
-</Tabs>
+<PackageInstall
+    packages={[
+        "@pixi/app",
+        "@pixi/core",
+        "@pixi/display",
+        "@pixi/filter-blur",
+        "@pixi/filter-bulge-pinch",
+        "@pixi/filter-color-matrix",
+        "@pixi/sprite",
+        "jss",
+        "jss-preset-default",
+    ]}
+/>
 
 Then you can use the vanilla package directly, or use React/Vue bindings.
 
@@ -124,31 +89,7 @@ See [API Reference: Core](/en/reference/core) for full details.
 
 Make sure `react` and `react-dom` are installed. Then install AMLL React bindings:
 
-<Tabs syncKey="pkg">
-<TabItem label="npm">
-
-```sh
-npm install @applemusic-like-lyrics/react
-```
-
-</TabItem>
-
-<TabItem label="pnpm">
-
-```sh
-pnpm add @applemusic-like-lyrics/react
-```
-
-</TabItem>
-
-<TabItem label="Yarn">
-
-```sh
-yarn add @applemusic-like-lyrics/react
-```
-
-</TabItem>
-</Tabs>
+<PackageInstall packages="@applemusic-like-lyrics/react" />
 
 The React binding package exports [`LyricPlayer`](/en/reference/react/variablelyricplayer) as the main component.
 
@@ -195,31 +136,7 @@ See [API Reference: React](/en/reference/react) for full interface documentation
 
 Make sure Vue is installed. Then install AMLL Vue bindings:
 
-<Tabs syncKey="pkg">
-<TabItem label="npm">
-
-```sh
-npm install @applemusic-like-lyrics/vue
-```
-
-</TabItem>
-
-<TabItem label="pnpm">
-
-```sh
-pnpm add @applemusic-like-lyrics/vue
-```
-
-</TabItem>
-
-<TabItem label="Yarn">
-
-```sh
-yarn add @applemusic-like-lyrics/vue
-```
-
-</TabItem>
-</Tabs>
+<PackageInstall packages="@applemusic-like-lyrics/vue" />
 
 The Vue package exports [`LyricPlayer`](/en/reference/vue/classlyricplayer) as the main component.
 

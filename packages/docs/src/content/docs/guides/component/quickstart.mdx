@@ -3,11 +3,12 @@ title: 快速开始
 ---
 
 import {
-    CardGrid,
-    LinkCard,
-    Tabs,
-    TabItem,
+	CardGrid,
+	LinkCard,
+	Tabs,
+	TabItem,
 } from "@astrojs/starlight/components";
+import PackageInstall from "#components/PackageInstall.astro";
 
 下面快速介绍如何将 AMLL 歌词组件集成到你的项目中。请注意，AMLL 不提供 CDN 引入方式，必须使用 bundler。
 
@@ -17,78 +18,42 @@ import {
 
 安装 AMLL 核心库：
 
-<Tabs syncKey="pkg">
-<TabItem label="npm">
-
-```sh
-npm install @applemusic-like-lyrics/core
-```
-
-</TabItem>
-
-<TabItem label="pnpm">
-
-```sh
-pnpm add @applemusic-like-lyrics/core
-```
-
-</TabItem>
-
-<TabItem label="Yarn">
-
-```sh
-yarn add @applemusic-like-lyrics/core
-```
-
-</TabItem>
-</Tabs>
+<PackageInstall packages="@applemusic-like-lyrics/core" />
 
 此外，AMLL 将一些图形与动画库声明为 peer，这是为了复用项目中可能存在的相关依赖。一些包管理器或配置下可能会自动安装 peer，若没有，需要手动安装。
 
-<Tabs syncKey="pkg">
-<TabItem label="npm">
-
-```sh
-npm install @pixi/app @pixi/core @pixi/display @pixi/filter-blur @pixi/filter-bulge-pinch @pixi/filter-color-matrix @pixi/sprite jss jss-preset-default
-```
-
-</TabItem>
-
-<TabItem label="pnpm">
-
-```sh
-pnpm add @pixi/app @pixi/core @pixi/display @pixi/filter-blur @pixi/filter-bulge-pinch @pixi/filter-color-matrix @pixi/sprite jss jss-preset-default
-```
-
-</TabItem>
-
-<TabItem label="Yarn">
-
-```sh
-yarn add @pixi/app @pixi/core @pixi/display @pixi/filter-blur @pixi/filter-bulge-pinch @pixi/filter-color-matrix @pixi/sprite jss jss-preset-default
-```
-
-</TabItem>
-</Tabs>
+<PackageInstall
+	packages={[
+		"@pixi/app",
+		"@pixi/core",
+		"@pixi/display",
+		"@pixi/filter-blur",
+		"@pixi/filter-bulge-pinch",
+		"@pixi/filter-color-matrix",
+		"@pixi/sprite",
+		"jss",
+		"jss-preset-default",
+	]}
+/>
 
 接下来你可以使用原生包，也可以使用 React 或 Vue 绑定。
 
 <CardGrid>
-    <LinkCard
-        title="使用 Vanilla 方式引入"
-        description="不使用前端框架"
-        href="#使用-vanilla-方式引入"
-    />
-    <LinkCard
-        title="使用 React 绑定"
-        description="项目使用 React 框架"
-        href="#使用-react-绑定"
-    />
-    <LinkCard
-        title="使用 Vue 绑定"
-        description="项目使用 Vue 框架"
-        href="#使用-vue-绑定"
-    />
+	<LinkCard
+		title="使用 Vanilla 方式引入"
+		description="不使用前端框架"
+		href="#使用-vanilla-方式引入"
+	/>
+	<LinkCard
+		title="使用 React 绑定"
+		description="项目使用 React 框架"
+		href="#使用-react-绑定"
+	/>
+	<LinkCard
+		title="使用 Vue 绑定"
+		description="项目使用 Vue 框架"
+		href="#使用-vue-绑定"
+	/>
 </CardGrid>
 
 ## 使用 Vanilla 方式引入
@@ -124,31 +89,7 @@ player.update(0);
 
 确保你已安装 `react` 和 `react-dom` 包。然后安装 AMLL React 绑定包：
 
-<Tabs syncKey="pkg">
-<TabItem label="npm">
-
-```sh
-npm install @applemusic-like-lyrics/react
-```
-
-</TabItem>
-
-<TabItem label="pnpm">
-
-```sh
-pnpm add @applemusic-like-lyrics/react
-```
-
-</TabItem>
-
-<TabItem label="Yarn">
-
-```sh
-yarn add @applemusic-like-lyrics/react
-```
-
-</TabItem>
-</Tabs>
+<PackageInstall packages="@applemusic-like-lyrics/react" />
 
 React 绑定包拥有具名导出 [`LyricPlayer`](/reference/react/variablelyricplayer) 作为核心组件。下面是一段示例。
 
@@ -166,28 +107,28 @@ setLyricLines(parsedResult); // 设置歌词
 
 let lastTime = -1;
 const frame = (time) => {
-    if (lastTime === -1) {
-        lastTime = time;
-    }
-    if (!audio.paused) {
-        const time = (audio.currentTime * 1000) | 0;
-        setCurrentTime(time);
-    }
-    lastTime = time;
-    requestAnimationFrame(frame); // 逐帧调用
+	if (lastTime === -1) {
+		lastTime = time;
+	}
+	if (!audio.paused) {
+		const time = (audio.currentTime * 1000) | 0;
+		setCurrentTime(time);
+	}
+	lastTime = time;
+	requestAnimationFrame(frame); // 逐帧调用
 };
 requestAnimationFrame(frame);
 
 function App() {
-    return (
-        <>
-            <audio id="amll-audio" src="Audio-Music-Src" controls />
-            <LyricPlayer
-                lyricLines={lyricLines} // 设置歌词
-                currentTime={currentTime} // 通过逐帧调用函数，设置播放时间
-            />
-        </>
-    );
+	return (
+		<>
+			<audio id="amll-audio" src="Audio-Music-Src" controls />
+			<LyricPlayer
+				lyricLines={lyricLines} // 设置歌词
+				currentTime={currentTime} // 通过逐帧调用函数，设置播放时间
+			/>
+		</>
+	);
 }
 export default App;
 ```
@@ -198,31 +139,7 @@ export default App;
 
 确保你已安装 Vue。然后安装 AMLL Vue 绑定包：
 
-<Tabs syncKey="pkg">
-<TabItem label="npm">
-
-```sh
-npm install @applemusic-like-lyrics/vue
-```
-
-</TabItem>
-
-<TabItem label="pnpm">
-
-```sh
-pnpm add @applemusic-like-lyrics/vue
-```
-
-</TabItem>
-
-<TabItem label="Yarn">
-
-```sh
-yarn add @applemusic-like-lyrics/vue
-```
-
-</TabItem>
-</Tabs>
+<PackageInstall packages="@applemusic-like-lyrics/vue" />
 
 Vue 绑定包拥有具名导出 [`LyricPlayer`](/reference/vue/classlyricplayer) 作为核心组件。歌词对象、播放进度等均以组件的响应式属性传入。下面是一段示例代码。
 
@@ -231,12 +148,12 @@ Vue 绑定包拥有具名导出 [`LyricPlayer`](/reference/vue/classlyricplayer)
 
 ```vue
 <template>
-    <LyricPlayer
-        :lyric-lines="amllLyricLines"
-        :current-time="progressRef"
-        :playing="playingRef"
-    />
-    <audio src="..." ref="audioElRef"></audio>
+	<LyricPlayer
+		:lyric-lines="amllLyricLines"
+		:current-time="progressRef"
+		:playing="playingRef"
+	/>
+	<audio src="..." ref="audioElRef"></audio>
 </template>
 
 <script setup lang="ts">
@@ -254,20 +171,20 @@ const playingRef = ref(false);
 const audioElRef = useTemplateRef("audioElRef");
 
 function onFrame() {
-    if (audioElRef.value)
-        progressRef.value = Math.round(audioElRef.value.currentTime * 1000);
-    if (playingRef.value) requestAnimationFrame(onFrame);
+	if (audioElRef.value)
+		progressRef.value = Math.round(audioElRef.value.currentTime * 1000);
+	if (playingRef.value) requestAnimationFrame(onFrame);
 }
 
 onMounted(() => {
-    if (!audioElRef.value) return;
-    audioElRef.value.addEventListener("play", () => {
-        playingRef.value = true;
-        requestAnimationFrame(onFrame);
-    });
-    audioElRef.value.addEventListener("pause", () => {
-        playingRef.value = false;
-    });
+	if (!audioElRef.value) return;
+	audioElRef.value.addEventListener("play", () => {
+		playingRef.value = true;
+		requestAnimationFrame(onFrame);
+	});
+	audioElRef.value.addEventListener("pause", () => {
+		playingRef.value = false;
+	});
 });
 </script>
 ```
@@ -278,12 +195,12 @@ onMounted(() => {
 
 ```vue
 <template>
-    <LyricPlayer
-        :lyric-lines="amllLyricLines"
-        :current-time="progressRef"
-        :playing="playingRef"
-    />
-    <audio src="..." ref="audioElRef"></audio>
+	<LyricPlayer
+		:lyric-lines="amllLyricLines"
+		:current-time="progressRef"
+		:playing="playingRef"
+	/>
+	<audio src="..." ref="audioElRef"></audio>
 </template>
 
 <script lang="ts">
@@ -294,41 +211,41 @@ import { LyricPlayer } from "@applemusic-like-lyrics/vue";
 import "@applemusic-like-lyrics/core/style.css";
 
 export default defineComponent({
-    components: {
-        LyricPlayer,
-    },
-    data() {
-        return {
-            amllLyricLines: [] as LyricLine[],
-            progressRef: 0,
-            playingRef: false,
-        };
-    },
-    mounted() {
-        const audioEl = this.$refs.audioElRef as HTMLAudioElement | null;
-        if (!audioEl) return;
+	components: {
+		LyricPlayer,
+	},
+	data() {
+		return {
+			amllLyricLines: [] as LyricLine[],
+			progressRef: 0,
+			playingRef: false,
+		};
+	},
+	mounted() {
+		const audioEl = this.$refs.audioElRef as HTMLAudioElement | null;
+		if (!audioEl) return;
 
-        audioEl.addEventListener("play", () => {
-            this.playingRef = true;
-            this.onFrame();
-        });
+		audioEl.addEventListener("play", () => {
+			this.playingRef = true;
+			this.onFrame();
+		});
 
-        audioEl.addEventListener("pause", () => {
-            this.playingRef = false;
-        });
-    },
-    methods: {
-        onFrame() {
-            const audioEl = this.$refs.audioElRef as HTMLAudioElement | null;
-            if (audioEl) {
-                this.progressRef = Math.round(audioEl.currentTime * 1000);
-            }
+		audioEl.addEventListener("pause", () => {
+			this.playingRef = false;
+		});
+	},
+	methods: {
+		onFrame() {
+			const audioEl = this.$refs.audioElRef as HTMLAudioElement | null;
+			if (audioEl) {
+				this.progressRef = Math.round(audioEl.currentTime * 1000);
+			}
 
-            if (this.playingRef) {
-                requestAnimationFrame(this.onFrame);
-            }
-        },
-    },
+			if (this.playingRef) {
+				requestAnimationFrame(this.onFrame);
+			}
+		},
+	},
 });
 </script>
 ```
