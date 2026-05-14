@@ -84,17 +84,16 @@ async function loadLyric() {
 	player.setCurrentTime(currentTime, true);
 }
 
-// update 需要逐帧调用；播放时同步当前进度给 setCurrentTime
+// 播放时持续同步音频进度
 let lastFrameTime = -1;
 function onFrame(frameTime) {
 	const delta = lastFrameTime === -1 ? 0 : frameTime - lastFrameTime;
 	lastFrameTime = frameTime;
 
 	if (!audio.paused) {
-		// setCurrentTime 方法接受当前时间，以毫秒计
 		player.setCurrentTime(Math.round(audio.currentTime * 1000));
 	}
-	// update 方法接受每帧时间增量
+
 	player.update(delta);
 	requestAnimationFrame(onFrame);
 }
@@ -102,8 +101,7 @@ function onFrame(frameTime) {
 audio.addEventListener("play", () => player.resume());
 audio.addEventListener("pause", () => player.pause());
 audio.addEventListener("seeked", () => {
-	// 对于较大的时间跳变，需为 setCurrentTime 提供第二个参数 isSeek 标志
-	// 此时组件会强制对齐位置，对所有歌词整体执行快速移动效果
+	// 跳转后立即对齐歌词位置
 	player.setCurrentTime(Math.round(audio.currentTime * 1000), true);
 });
 
@@ -111,9 +109,7 @@ loadLyric();
 requestAnimationFrame(onFrame);
 ```
 
-其中的 [`setLyricLines`](/reference/core/classlyricplayerbase#setlyriclines) 方法接受 [`LyricLine`](/reference/core/interfacelyricline) 类型的对象。在传入之后不应再修改这一对象的属性，否则可能导致问题。`parseTTML` 返回的是包含元数据的对象，真正传给组件的是其中的 `.lines`。
-
-[`setCurrentTime`](/reference/core/classlyricplayerbase#setcurrenttime) 方法接受当前播放进度（整数，单位毫秒）作为参数；[`update`](/reference/core/classlyricplayerbase#update) 方法接受距离上一帧的时间差（单位毫秒）作为参数。使用原生方式时需要逐帧调用 `update`，并在播放时同步调用 `setCurrentTime`；跳转后可以传入第二个参数 `true` 强制对齐歌词位置。
+有关更详细的时序管理，请转到 [时序与生命周期](./sequence)。
 
 你可以前往 [API 参考：Core 核心](/reference/core) 获取详细的接口文档。
 
@@ -123,7 +119,7 @@ requestAnimationFrame(onFrame);
 
 <PackageInstall packages="@applemusic-like-lyrics/react" />
 
-React 绑定包拥有具名导出 [`LyricPlayer`](/reference/react/variablelyricplayer) 作为核心组件。下面是一段示例，假设 TTML 歌词文件在 `/lyrics/song.ttml` 上提供。
+React 绑定包拥有具名导出 [`LyricPlayer`](/reference/react/variablelyricplayer) 作为核心组件。下面是一段示例，假设 TTML 歌词文件在 `/lyrics/song.ttml` 上提供、音频文件在 `/music/song.m4a` 上提供。
 
 ```tsx
 import { useEffect, useRef, useState } from "react";
@@ -165,7 +161,6 @@ function App() {
 		const onFrame = () => {
 			const audio = audioRef.current;
 			if (audio && !audio.paused) {
-				// React 绑定会在 currentTime 变化时同步到底层歌词组件
 				setCurrentTime(Math.round(audio.currentTime * 1000));
 			}
 			frameId = requestAnimationFrame(onFrame);
@@ -177,14 +172,12 @@ function App() {
 
 	return (
 		<>
-			{/* playing 会控制歌词中的暂停/恢复类动画 */}
 			<LyricPlayer
 				lyricLines={lyricLines}
 				currentTime={currentTime}
 				playing={playing}
 				style={{ height: 420 }}
 			/>
-			{/* 跳转后主动同步一次，避免等待下一帧才对齐 */}
 			<audio
 				ref={audioRef}
 				src="/music/song.m4a"
@@ -209,7 +202,7 @@ export default App;
 
 <PackageInstall packages="@applemusic-like-lyrics/vue" />
 
-Vue 绑定包拥有具名导出 [`LyricPlayer`](/reference/vue/classlyricplayer) 作为核心组件。歌词对象、播放进度等均以组件的响应式属性传入。下面是一段示例，假设 TTML 歌词文件在 `/lyrics/song.ttml` 上提供。
+Vue 绑定包拥有具名导出 [`LyricPlayer`](/reference/vue/classlyricplayer) 作为核心组件。歌词对象、播放进度等均以组件的响应式属性传入。下面是一段示例，假设 TTML 歌词文件在 `/lyrics/song.ttml` 上提供、音频文件在 `/music/song.m4a` 上提供。
 
 ```vue
 <template>
@@ -259,7 +252,6 @@ async function loadLyric() {
 
 function syncCurrentTime() {
 	if (audioEl.value) {
-		// Vue 绑定会在 currentTime 变化时同步到底层歌词组件
 		currentTime.value = Math.round(audioEl.value.currentTime * 1000);
 	}
 }
@@ -272,7 +264,6 @@ function onFrame() {
 function onPlay() {
 	playing.value = true;
 	cancelAnimationFrame(frameId);
-	// 播放时逐帧把 audio 的当前进度同步到组件
 	onFrame();
 }
 
