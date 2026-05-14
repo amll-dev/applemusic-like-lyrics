@@ -2,6 +2,7 @@
 	"extends": "../../../tsconfig.base.json",
 	"include": ["src"],
 	"compilerOptions": {
+		"isolatedDeclarations": false,
 		"jsxImportSource": "vue",
 		"jsx": "preserve"
 	}

@@ -39,13 +39,13 @@
 <script setup lang="ts">
 import type { LyricLine } from "@applemusic-like-lyrics/core";
 import { parseTTML } from "@applemusic-like-lyrics/lyric";
-import { onMounted, reactive, ref, shallowRef } from "vue";
 import {
 	BackgroundRender,
 	type BackgroundRenderRef,
 	LyricPlayer,
 	type LyricPlayerRef,
 } from "@applemusic-like-lyrics/vue";
+import { onMounted, reactive, ref, shallowRef } from "vue";
 
 const audioRef = ref<HTMLAudioElement>();
 const state = reactive({
