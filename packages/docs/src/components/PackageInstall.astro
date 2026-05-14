@@ -1,0 +1,30 @@
+---
+import { Code, TabItem, Tabs } from "@astrojs/starlight/components";
+
+interface Props {
+	packages: string | string[];
+	dev?: boolean;
+	syncKey?: string;
+}
+
+const { packages, dev = false, syncKey = "pkg" } = Astro.props;
+const packageList = Array.isArray(packages)
+	? packages
+	: packages.split(/\s+/).filter(Boolean);
+const packageNames = packageList.join(" ");
+const devFlag = dev ? " -D" : "";
+
+const commands = [
+	{ label: "npm", command: `npm install${devFlag} ${packageNames}` },
+	{ label: "pnpm", command: `pnpm add${devFlag} ${packageNames}` },
+	{ label: "Yarn", command: `yarn add${devFlag} ${packageNames}` },
+];
+---
+
+<Tabs syncKey={syncKey}>
+	{commands.map(({ label, command }) => (
+			<TabItem label={label}>
+				<Code code={command} lang="sh" />
+			</TabItem>
+		))}
+</Tabs>
