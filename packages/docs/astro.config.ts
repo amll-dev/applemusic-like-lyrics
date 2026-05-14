@@ -13,7 +13,11 @@ const docsSidebar = [
 	{
 		label: "歌词组件",
 		translations: { en: "Lyric Component" },
-		items: [{ slug: "guides/component/quickstart" }],
+		items: [
+			{ slug: "guides/component/quickstart" },
+			{ slug: "guides/component/sequence" },
+			{ slug: "guides/component/customize" },
+		],
 	},
 	{
 		label: "React 绑定",
