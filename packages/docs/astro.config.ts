@@ -104,8 +104,21 @@ export default defineConfig({
 		react(),
 		starlight({
 			favicon: "favicon.ico",
-			title: "AppleMusic-like Lyrics",
-			customCss: ["./src/styles/custom.css"],
+			title: "Apple Music-like Lyrics",
+			logo: {
+				src: "./src/assets/amll-logo.png",
+				alt: "Apple Music-like Lyrics",
+			},
+			customCss: [
+				"./src/styles/consts.css",
+				"./src/styles/frame.css",
+				"./src/styles/content.css",
+			],
+			expressiveCode: {
+				themes: ["github-dark", "github-light"],
+				useStarlightDarkModeSwitch: true,
+				useStarlightUiThemeColors: false,
+			},
 			locales: {
 				root: { label: "简体中文", lang: "zh-CN" },
 				en: { label: "English", lang: "en" },
