@@ -3,7 +3,7 @@ import {
 	MeshGradientRenderer,
 	PixiRenderer,
 } from "@applemusic-like-lyrics/core";
-import type { usePlayerStore, BackgroundRendererMode } from "@/stores/player";
+import type { BackgroundRendererMode, usePlayerStore } from "@/stores/player";
 
 type PlayerStore = ReturnType<typeof usePlayerStore>;
 type PlayerBackground =

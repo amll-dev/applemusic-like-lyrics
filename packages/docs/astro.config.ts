@@ -16,7 +16,6 @@ const docsSidebar = [
 		items: [
 			{ slug: "guides/component/quickstart" },
 			{ slug: "guides/component/sequence" },
-			{ slug: "guides/component/customize" },
 		],
 	},
 	{
