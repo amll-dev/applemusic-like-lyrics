@@ -3,6 +3,7 @@ import { Icon } from "@astrojs/starlight/components";
 import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro";
 import { AMLLPreview } from "../components/AMLLPreview";
 import "../styles/index.css";
+import { amllCoreVersionLabel } from "../utils/core-version";
 
 const entryLinks = [
 	{
@@ -52,17 +53,14 @@ const topicLinks = [
 				<AMLLPreview client:only="react" />
 			</div>
 			<div class="home-hero-copy">
-				<p class="home-eyebrow">AMLL 文档</p>
+				<p class="home-eyebrow">{amllCoreVersionLabel}</p>
 				<h1 id="home-title">Apple Music-like Lyrics</h1>
 				<p class="home-summary">
 					面向网页的 Apple Music
 					风格逐字歌词组件库，覆盖渲染组件、框架绑定和歌词格式处理。
 				</p>
 				<div class="home-actions">
-					<a
-						class="home-button home-button-primary"
-						href="/guides"
-					>
+					<a class="home-button home-button-primary" href="/guides">
 						使用文档
 						<Icon name="right-arrow" />
 					</a>

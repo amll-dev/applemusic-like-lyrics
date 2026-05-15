@@ -3,6 +3,7 @@ import { Icon } from "@astrojs/starlight/components";
 import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro";
 import { AMLLPreview } from "../../components/AMLLPreview";
 import "../../styles/index.css";
+import { amllCoreVersionLabel } from "../../utils/core-version";
 
 const entryLinks = [
 	{
@@ -13,7 +14,8 @@ const entryLinks = [
 	},
 	{
 		title: "Lyric Processing",
-		description: "Parse, generate, and convert formats including LRC, TTML, and more.",
+		description:
+			"Parse, generate, and convert formats including LRC, TTML, and more.",
 		href: "/en/guides/lyric/quickstart",
 		icon: "document",
 	},
@@ -53,17 +55,14 @@ const topicLinks = [
 				<AMLLPreview client:only="react" />
 			</div>
 			<div class="home-hero-copy">
-				<p class="home-eyebrow">AMLL Docs</p>
+				<p class="home-eyebrow">{amllCoreVersionLabel}</p>
 				<h1 id="home-title">Apple Music-like Lyrics</h1>
 				<p class="home-summary">
 					Apple Music style word-by-word lyric rendering for the web, from UI
 					components to framework bindings and lyric format tooling.
 				</p>
 				<div class="home-actions">
-					<a
-						class="home-button home-button-primary"
-						href="/en/guides"
-					>
+					<a class="home-button home-button-primary" href="/en/guides">
 						Guides
 						<Icon name="right-arrow" />
 					</a>
