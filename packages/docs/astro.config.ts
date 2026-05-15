@@ -104,10 +104,10 @@ export default defineConfig({
 		react(),
 		starlight({
 			favicon: "favicon.ico",
-			title: "Apple Music-like Lyrics",
+			title: "AMLL Docs",
 			logo: {
 				src: "./src/assets/amll-logo.png",
-				alt: "Apple Music-like Lyrics",
+				alt: "AMLL",
 			},
 			customCss: [
 				"./src/styles/consts.css",

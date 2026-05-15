@@ -1,6 +1,6 @@
 :root {
-	--amll-accent: #ff456f;
-	--amll-accent-strong: #d51d4e;
+	--amll-accent: #ff4545;
+	--amll-accent-strong: #d51d1d;
 	--amll-secondary: #10b89c;
 	--amll-radius: 0.5rem;
 	--amll-nav-border: color-mix(in srgb, var(--sl-color-white) 9%, transparent);
@@ -14,16 +14,16 @@
 	--sl-color-text: var(--sl-color-gray-1);
 	--amll-page-illumination: radial-gradient(
 		49.63% 57.02% at 58.99% -7.2%,
-		rgba(255, 115, 168, 0.1) 39.4%,
+		rgba(255, 96, 109, 0.1) 39.4%,
 		rgba(0, 0, 0, 0) 100%
 	);
 }
 
 :root[data-theme="light"] {
-	--sl-color-accent-high: #9b123a;
+	--sl-color-accent-high: #8f1010;
 	--sl-color-accent: var(--amll-accent);
 	--sl-color-accent-low: #ffe8ef;
-	--sl-color-text-accent: #d51d4e;
+	--sl-color-text-accent: #cc2d1f;
 	--sl-color-text-invert: #fff7fa;
 	--sl-color-bg: #fffafb;
 	--sl-color-bg-nav: rgb(255, 252, 254);
@@ -52,12 +52,12 @@
 }
 
 :root[data-theme="dark"] {
-	--sl-color-accent-high: #ff9aad;
-	--sl-color-accent: #ff5478;
-	--sl-color-accent-low: #39111d;
-	--sl-color-text-accent: #ff8ea3;
-	--sl-color-text-invert: #250812;
-	--sl-color-bg: #0f0d10;
+	--sl-color-accent-high: #ffa19a;
+	--sl-color-accent: #ff5754;
+	--sl-color-accent-low: #2c1515;
+	--sl-color-text-accent: #ff928e;
+	--sl-color-text-invert: #250808;
+	--sl-color-bg: #100d0d;
 	--sl-color-bg-nav: rgba(15, 13, 16, 0.82);
 	--sl-color-bg-sidebar: rgba(17, 15, 19, 0.74);
 	--sl-color-bg-inline-code: #21181d;

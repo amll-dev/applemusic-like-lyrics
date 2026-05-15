@@ -37,12 +37,16 @@
 		color: var(--sl-color-gray-2);
 	}
 
-	.expressive-code figure.frame {
+	.expressive-code figure.frame,
+	starlight-file-tree {
 		background-color: var(--amll-surface);
-		border-color: var(--amll-muted-border);
+		border: 1px solid var(--amll-muted-border);
 		border-radius: 0.55rem;
 		overflow: hidden;
 		box-shadow: none;
+	}
+
+	.expressive-code figure.frame {
 		figcaption.header {
 			background-color: var(--amll-surface);
 			border: none;

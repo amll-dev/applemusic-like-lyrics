@@ -124,10 +124,6 @@
 	font-weight: 700;
 	line-height: 1;
 	text-decoration: none;
-	transition:
-		background-color 0.15s,
-		border-color 0.15s,
-		transform 0.05s;
 
 	&:hover {
 		border-color: color-mix(
@@ -148,7 +144,7 @@
 		);
 
 		&:hover {
-			background: linear-gradient(135deg, #ff5b80, var(--amll-accent-strong));
+			filter: brightness(1.1);
 		}
 	}
 }
@@ -260,11 +256,6 @@
 	border-radius: 999px;
 	color: var(--sl-color-gray-2);
 	text-decoration: none;
-	transition:
-		background-color 0.15s,
-		border-color 0.15s,
-		color 0.15s,
-		transform 0.05s;
 }
 
 .home-topic-links a:hover {
