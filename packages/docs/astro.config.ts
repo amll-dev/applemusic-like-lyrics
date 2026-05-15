@@ -8,20 +8,15 @@ const docsSidebar = [
 	{
 		label: "概览",
 		translations: { en: "Overview" },
-		items: [
-			{ slug: "guides/overview/intro" },
-			{ slug: "guides/overview/quickstart" },
-			{ slug: "guides/overview/eco" },
-		],
+		items: [{ slug: "guides/overview/intro" }, { slug: "guides/overview/eco" }],
 	},
 	{
-		label: "React 绑定",
-		translations: { en: "React Bindings" },
+		label: "歌词组件",
+		translations: { en: "Lyric Component" },
 		items: [
-			{ slug: "guides/react/introduction" },
-			{ slug: "guides/react/quick-start" },
-			{ slug: "guides/react/lyric-player" },
-			{ slug: "guides/react/bg-render" },
+			{ slug: "guides/component/quickstart" },
+			{ slug: "guides/component/sequence" },
+			{ slug: "guides/component/background" },
 		],
 	},
 	{

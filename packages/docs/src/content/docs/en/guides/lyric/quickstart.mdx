@@ -2,7 +2,7 @@
 title: Quick Start
 ---
 
-import { Tabs, TabItem } from "@astrojs/starlight/components";
+import PackageInstall from "../../../../../components/PackageInstall.astro";
 
 AMLL provides two npm packages for lyric format parsing and serialization:
 
@@ -13,46 +13,22 @@ AMLL provides two npm packages for lyric format parsing and serialization:
 
 ## Lyric Package
 
-<Tabs syncKey="pkg">
-<TabItem label="npm">
-
-```sh
-npm install @applemusic-like-lyrics/lyric
-```
-
-</TabItem>
-
-<TabItem label="pnpm">
-
-```sh
-pnpm add @applemusic-like-lyrics/lyric
-```
-
-</TabItem>
-
-<TabItem label="Yarn">
-
-```sh
-yarn add @applemusic-like-lyrics/lyric
-```
-
-</TabItem>
-</Tabs>
+<PackageInstall packages="@applemusic-like-lyrics/lyric" />
 
 Supported formats in the Lyric package:
 
-| Format | Extension | Parse | Stringify |
-| --- | --- | --- | --- |
-| TTML | `.ttml` | [`parseTTML`](/en/reference/lyric/functionparsettml) | [`stringifyTTML`](/en/reference/lyric/functionstringifyttml) |
-| LRC | `.lrc` | [`parseLrc`](/en/reference/lyric/functionparselrc) | [`stringifyLrc`](/en/reference/lyric/functionstringifylrc) |
-| LRC A2 | `.lrc`, `.alrc` | [`parseLrcA2`](/en/reference/lyric/functionparselrca2) | [`stringifyLrcA2`](/en/reference/lyric/functionstringifylrca2) |
-| NetEase YRC | `.yrc` | [`parseYrc`](/en/reference/lyric/functionparseyrc) | [`stringifyYrc`](/en/reference/lyric/functionstringifyyrc) |
-| QQ QRC | `.qrc` | [`parseQrc`](/en/reference/lyric/functionparseqrc) | [`stringifyQrc`](/en/reference/lyric/functionstringifyqrc) |
-| EsLyric | `.lrc`, `.eslrc` | [`parseEslrc`](/en/reference/lyric/functionparseeslrc) | [`stringifyEslrc`](/en/reference/lyric/functionstringifyeslrc) |
-| ASS subtitle | `.ass` | Not supported | [`stringifyAss`](/en/reference/lyric/functionstringifyass) |
-| Lyricify Lines | `.lyl` | [`parseLyl`](/en/reference/lyric/functionparselyl) | [`stringifyLyl`](/en/reference/lyric/functionstringifylyl) |
-| Lyricify Syllable | `.lys` | [`parseLys`](/en/reference/lyric/functionparselys) | [`stringifyLys`](/en/reference/lyric/functionstringifylys) |
-| Lyricify Quick Export | `.lqe` | [`parseLqe`](/en/reference/lyric/functionparselqe) | [`stringifyLqe`](/en/reference/lyric/functionstringifylqe) |
+| Format                | Extension        | Parse                                                  | Stringify                                                      |
+| --------------------- | ---------------- | ------------------------------------------------------ | -------------------------------------------------------------- |
+| TTML                  | `.ttml`          | [`parseTTML`](/en/reference/lyric/functionparsettml)   | [`stringifyTTML`](/en/reference/lyric/functionstringifyttml)   |
+| LRC                   | `.lrc`           | [`parseLrc`](/en/reference/lyric/functionparselrc)     | [`stringifyLrc`](/en/reference/lyric/functionstringifylrc)     |
+| LRC A2                | `.lrc`, `.alrc`  | [`parseLrcA2`](/en/reference/lyric/functionparselrca2) | [`stringifyLrcA2`](/en/reference/lyric/functionstringifylrca2) |
+| NetEase YRC           | `.yrc`           | [`parseYrc`](/en/reference/lyric/functionparseyrc)     | [`stringifyYrc`](/en/reference/lyric/functionstringifyyrc)     |
+| QQ QRC                | `.qrc`           | [`parseQrc`](/en/reference/lyric/functionparseqrc)     | [`stringifyQrc`](/en/reference/lyric/functionstringifyqrc)     |
+| EsLyric               | `.lrc`, `.eslrc` | [`parseEslrc`](/en/reference/lyric/functionparseeslrc) | [`stringifyEslrc`](/en/reference/lyric/functionstringifyeslrc) |
+| ASS subtitle          | `.ass`           | Not supported                                          | [`stringifyAss`](/en/reference/lyric/functionstringifyass)     |
+| Lyricify Lines        | `.lyl`           | [`parseLyl`](/en/reference/lyric/functionparselyl)     | [`stringifyLyl`](/en/reference/lyric/functionstringifylyl)     |
+| Lyricify Syllable     | `.lys`           | [`parseLys`](/en/reference/lyric/functionparselys)     | [`stringifyLys`](/en/reference/lyric/functionstringifylys)     |
+| Lyricify Quick Export | `.lqe`           | [`parseLqe`](/en/reference/lyric/functionparselqe)     | [`stringifyLqe`](/en/reference/lyric/functionstringifylqe)     |
 
 All parse and stringify methods above are synchronous.
 
@@ -66,31 +42,7 @@ For format details, see [Lyric Formats](./formats).
 
 ## TTML Package
 
-<Tabs syncKey="pkg">
-<TabItem label="npm">
-
-```sh
-npm install @applemusic-like-lyrics/ttml
-```
-
-</TabItem>
-
-<TabItem label="pnpm">
-
-```sh
-pnpm add @applemusic-like-lyrics/ttml
-```
-
-</TabItem>
-
-<TabItem label="Yarn">
-
-```sh
-yarn add @applemusic-like-lyrics/ttml
-```
-
-</TabItem>
-</Tabs>
+<PackageInstall packages="@applemusic-like-lyrics/ttml" />
 
 The TTML package provides TTML parsing and serialization. For format details, see [TTML Format](./ttml).
 
@@ -121,12 +73,12 @@ import { TTMLParser, TTMLGenerator } from "@applemusic-like-lyrics/ttml";
 import { DOMParser, DOMImplementation, XMLSerializer } from "@xmldom/xmldom";
 
 const parser = new TTMLParser({
-    domParser: new DOMParser(),
+	domParser: new DOMParser(),
 });
 
 const generator = new TTMLGenerator({
-    domImplementation: new DOMImplementation(),
-    xmlSerializer: new XMLSerializer(),
+	domImplementation: new DOMImplementation(),
+	xmlSerializer: new XMLSerializer(),
 });
 ```
 

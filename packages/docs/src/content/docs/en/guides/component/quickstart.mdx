@@ -1,0 +1,286 @@
+---
+title: Quick Start
+---
+
+import { CardGrid, LinkCard } from "@astrojs/starlight/components";
+import PackageInstall from "#components/PackageInstall.astro";
+
+This page quickly introduces how to integrate AMLL lyric components into your project. AMLL does not provide a CDN usage mode; you must use a bundler.
+
+For adjacent utility packages other than the component libraries, see the [API Reference](/en/reference).
+
+## Dependencies
+
+Install the AMLL core library:
+
+<PackageInstall packages="@applemusic-like-lyrics/core" />
+
+AMLL also declares several graphics and animation libraries as peer dependencies so it can reuse related dependencies that may already exist in your project. Some package managers or configurations may install peers automatically. If they are not installed, install them manually.
+
+<PackageInstall
+	packages={[
+		"@pixi/app",
+		"@pixi/core",
+		"@pixi/display",
+		"@pixi/filter-blur",
+		"@pixi/filter-bulge-pinch",
+		"@pixi/filter-color-matrix",
+		"@pixi/sprite",
+		"jss",
+		"jss-preset-default",
+	]}
+/>
+
+The examples below use `@applemusic-like-lyrics/lyric` to parse TTML lyric files. If your project can already provide `LyricLine[]` directly, you can skip this package.
+
+<PackageInstall packages="@applemusic-like-lyrics/lyric" />
+
+Next, you can use the vanilla package, or use the React or Vue bindings.
+
+<CardGrid>
+	<LinkCard
+		title="Use Vanilla JS"
+		description="Without a frontend framework"
+		href="#use-vanilla-js"
+	/>
+	<LinkCard
+		title="Use React Bindings"
+		description="For projects using React"
+		href="#use-react-bindings"
+	/>
+	<LinkCard
+		title="Use Vue Bindings"
+		description="For projects using Vue"
+		href="#use-vue-bindings"
+	/>
+</CardGrid>
+
+## Use Vanilla JS
+
+The AMLL core library is framework-agnostic. You can use this method whether or not your project uses a framework.
+
+The example below assumes:
+
+- The page already has `<audio id="audio">` and `<div id="lyric-player">`, and the lyric container has an explicit height.
+- The TTML lyric file is available at `/lyrics/song.ttml`.
+
+```js
+import { LyricPlayer } from "@applemusic-like-lyrics/core";
+import { parseTTML } from "@applemusic-like-lyrics/lyric";
+
+// Bundlers usually handle CSS imports. If anything goes wrong, check your bundler's documentation.
+import "@applemusic-like-lyrics/core/style.css";
+
+const audio = document.querySelector("#audio");
+const playerHost = document.querySelector("#lyric-player");
+const player = new LyricPlayer();
+
+playerHost.appendChild(player.getElement());
+
+async function loadLyric() {
+	const ttml = await fetch("/lyrics/song.ttml").then((res) => res.text());
+	const currentTime = Math.round(audio.currentTime * 1000);
+	player.setLyricLines(parseTTML(ttml).lines, currentTime);
+	player.setCurrentTime(currentTime, true);
+}
+
+// Continuously sync audio progress during playback.
+let lastFrameTime = -1;
+function onFrame(frameTime) {
+	const delta = lastFrameTime === -1 ? 0 : frameTime - lastFrameTime;
+	lastFrameTime = frameTime;
+
+	if (!audio.paused) {
+		player.setCurrentTime(Math.round(audio.currentTime * 1000));
+	}
+
+	player.update(delta);
+	requestAnimationFrame(onFrame);
+}
+
+audio.addEventListener("play", () => player.resume());
+audio.addEventListener("pause", () => player.pause());
+audio.addEventListener("seeked", () => {
+	// Align the lyric position immediately after seeking.
+	player.setCurrentTime(Math.round(audio.currentTime * 1000), true);
+});
+
+loadLyric();
+requestAnimationFrame(onFrame);
+```
+
+For more detailed timing management, see [Timing and Lifecycle](./sequence).
+
+See [API Reference: Core](/en/reference/core) for detailed API documentation.
+
+## Use React Bindings
+
+Make sure you have installed `react` and `react-dom`. Then install the AMLL React binding package:
+
+<PackageInstall packages="@applemusic-like-lyrics/react" />
+
+The React binding package exports [`LyricPlayer`](/en/reference/react/variablelyricplayer) as the core component. The example below assumes the TTML lyric file is available at `/lyrics/song.ttml` and the audio file is available at `/music/song.m4a`.
+
+```tsx
+import { useEffect, useRef, useState } from "react";
+import type { LyricLine } from "@applemusic-like-lyrics/core";
+import { LyricPlayer } from "@applemusic-like-lyrics/react";
+import { parseTTML } from "@applemusic-like-lyrics/lyric";
+
+// Bundlers usually handle CSS imports. If anything goes wrong, check your bundler's documentation.
+import "@applemusic-like-lyrics/core/style.css";
+
+function App() {
+	const audioRef = useRef<HTMLAudioElement>(null);
+	const [lyricLines, setLyricLines] = useState<LyricLine[]>([]);
+	const [currentTime, setCurrentTime] = useState(0);
+	const [playing, setPlaying] = useState(false);
+
+	function syncCurrentTime() {
+		const audio = audioRef.current;
+		if (audio) setCurrentTime(Math.round(audio.currentTime * 1000));
+	}
+
+	useEffect(() => {
+		let canceled = false;
+
+		// parseTTML returns an object with metadata. The component only needs its lines.
+		fetch("/lyrics/song.ttml")
+			.then((res) => res.text())
+			.then((ttml) => {
+				if (!canceled) setLyricLines(parseTTML(ttml).lines);
+			});
+
+		return () => {
+			canceled = true;
+		};
+	}, []);
+
+	useEffect(() => {
+		let frameId = 0;
+		const onFrame = () => {
+			const audio = audioRef.current;
+			if (audio && !audio.paused) {
+				setCurrentTime(Math.round(audio.currentTime * 1000));
+			}
+			frameId = requestAnimationFrame(onFrame);
+		};
+
+		frameId = requestAnimationFrame(onFrame);
+		return () => cancelAnimationFrame(frameId);
+	}, []);
+
+	return (
+		<>
+			<LyricPlayer
+				lyricLines={lyricLines}
+				currentTime={currentTime}
+				playing={playing}
+				style={{ height: 420 }}
+			/>
+			<audio
+				ref={audioRef}
+				src="/music/song.m4a"
+				controls
+				onPlay={() => setPlaying(true)}
+				onPause={() => setPlaying(false)}
+				onEnded={() => setPlaying(false)}
+				onSeeked={syncCurrentTime}
+			/>
+		</>
+	);
+}
+
+export default App;
+```
+
+See [API Reference: React Bindings](/en/reference/react) for detailed API documentation.
+
+## Use Vue Bindings
+
+Make sure you have installed Vue. Then install the AMLL Vue binding package:
+
+<PackageInstall packages="@applemusic-like-lyrics/vue" />
+
+The Vue binding package exports [`LyricPlayer`](/en/reference/vue/classlyricplayer) as the core component. Lyric objects, playback progress, and other state are passed in as reactive component props. The example below assumes the TTML lyric file is available at `/lyrics/song.ttml` and the audio file is available at `/music/song.m4a`.
+
+```vue
+<template>
+	<LyricPlayer
+		class="lyric-player"
+		:lyric-lines="lyricLines"
+		:current-time="currentTime"
+		:playing="playing"
+	/>
+	<audio
+		ref="audioEl"
+		src="/music/song.m4a"
+		controls
+		@play="onPlay"
+		@pause="onPause"
+		@ended="onPause"
+		@seeked="syncCurrentTime"
+	/>
+</template>
+
+<script setup lang="ts">
+import type { LyricLine } from "@applemusic-like-lyrics/core";
+import { parseTTML } from "@applemusic-like-lyrics/lyric";
+import { LyricPlayer } from "@applemusic-like-lyrics/vue";
+import {
+	onBeforeUnmount,
+	onMounted,
+	ref,
+	shallowRef,
+	useTemplateRef,
+} from "vue";
+
+// Bundlers usually handle CSS imports. If anything goes wrong, check your bundler's documentation.
+import "@applemusic-like-lyrics/core/style.css";
+
+const audioEl = useTemplateRef<HTMLAudioElement>("audioEl");
+const lyricLines = shallowRef<LyricLine[]>([]);
+const currentTime = ref(0);
+const playing = ref(false);
+let frameId = 0;
+
+async function loadLyric() {
+	const ttml = await fetch("/lyrics/song.ttml").then((res) => res.text());
+	// parseTTML returns an object with metadata. The component only needs its lines.
+	lyricLines.value = parseTTML(ttml).lines;
+}
+
+function syncCurrentTime() {
+	if (audioEl.value) {
+		currentTime.value = Math.round(audioEl.value.currentTime * 1000);
+	}
+}
+
+function onFrame() {
+	syncCurrentTime();
+	if (playing.value) frameId = requestAnimationFrame(onFrame);
+}
+
+function onPlay() {
+	playing.value = true;
+	cancelAnimationFrame(frameId);
+	onFrame();
+}
+
+function onPause() {
+	playing.value = false;
+	cancelAnimationFrame(frameId);
+}
+
+onMounted(() => void loadLyric());
+onBeforeUnmount(() => cancelAnimationFrame(frameId));
+</script>
+
+<style scoped>
+.lyric-player {
+	height: 420px;
+}
+</style>
+```
+
+See [API Reference: Vue Bindings](/en/reference/vue) for detailed API documentation.

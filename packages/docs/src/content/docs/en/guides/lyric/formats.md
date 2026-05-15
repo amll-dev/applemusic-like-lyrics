@@ -186,13 +186,13 @@ See also [Lyricify Lyrics Helper](https://github.com/WXRIW/Lyricify-Lyrics-Helpe
 
 ## Summary Table
 
-| Format | Extension | Line timing | Word timing | Native translation/transliteration | Native background/duet |
-| --- | --- | :---: | :---: | :---: | :---: |
-| TTML | `.ttml` | Yes | Yes | Yes | Yes |
-| LRC | `.lrc` | Yes | No | No | No |
-| LRC A2 | `.lrc`, `.alrc` | Yes | Yes | No | No |
-| NetEase YRC | `.yrc` | Yes | Yes | No | No |
-| QQ QRC | `.qrc` | Yes | Yes | No | No |
-| Lyricify Lines | `.lyl` | Yes | No | No | No |
-| Lyricify Syllable | `.lys` | Yes | Yes | No | Yes |
-| Lyricify Quick Export | `.lqe` | Yes | Yes | Yes | Yes |
+| Format                | Extension       | Line timing | Word timing | Native translation/transliteration | Native background/duet |
+| --------------------- | --------------- | :---------: | :---------: | :--------------------------------: | :--------------------: |
+| TTML                  | `.ttml`         |     Yes     |     Yes     |                Yes                 |          Yes           |
+| LRC                   | `.lrc`          |     Yes     |     No      |                 No                 |           No           |
+| LRC A2                | `.lrc`, `.alrc` |     Yes     |     Yes     |                 No                 |           No           |
+| NetEase YRC           | `.yrc`          |     Yes     |     Yes     |                 No                 |           No           |
+| QQ QRC                | `.qrc`          |     Yes     |     Yes     |                 No                 |           No           |
+| Lyricify Lines        | `.lyl`          |     Yes     |     No      |                 No                 |           No           |
+| Lyricify Syllable     | `.lys`          |     Yes     |     Yes     |                 No                 |          Yes           |
+| Lyricify Quick Export | `.lqe`          |     Yes     |     Yes     |                Yes                 |          Yes           |

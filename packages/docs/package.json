@@ -10,6 +10,9 @@
 		"build:full:copy-playground": "node ./scripts/copy-playground.js",
 		"preview": "astro preview"
 	},
+	"imports": {
+		"#components/*": "./src/components/*"
+	},
 	"dependencies": {
 		"@applemusic-like-lyrics/core": "workspace:^",
 		"@applemusic-like-lyrics/react": "workspace:^",
