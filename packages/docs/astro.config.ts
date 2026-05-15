@@ -20,16 +20,6 @@ const docsSidebar = [
 		],
 	},
 	{
-		label: "React 绑定",
-		translations: { en: "React Bindings" },
-		items: [
-			{ slug: "guides/react/introduction" },
-			{ slug: "guides/react/quick-start" },
-			{ slug: "guides/react/lyric-player" },
-			{ slug: "guides/react/bg-render" },
-		],
-	},
-	{
 		label: "歌词格式",
 		translations: { en: "Lyric Formats" },
 		items: [
