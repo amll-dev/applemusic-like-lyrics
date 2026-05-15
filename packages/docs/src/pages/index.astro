@@ -1,23 +1,41 @@
 ---
-import { Card, CardGrid, LinkCard } from "@astrojs/starlight/components";
+import { Icon } from "@astrojs/starlight/components";
 import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro";
 import { AMLLPreview } from "../components/AMLLPreview";
 import "../styles/index.css";
 
-// description: 专为网页开发的歌词播放页面组件库
-// template: splash
-// # hero:
-// #   tagline: 专为网页开发的歌词播放页面组件库
-// #   image:
-// #     file: ../../assets/amll-logo.png
-// #   actions:
-// #     - text: 快速入门
-// #       link: /guides/core/introduction
-// #       icon: right-arrow
-// #     - text: 接口参考
-// #       link: /reference/core/classes/lyricplayer
-// #       icon: external
-// #       variant: minimal
+const entryLinks = [
+	{
+		title: "组件快速开始",
+		description: "把逐字歌词组件接入你的前端项目。",
+		href: "/guides/component/quickstart",
+		icon: "rocket",
+	},
+	{
+		title: "歌词处理",
+		description: "解析、生成和转换 LRC、TTML 等歌词格式。",
+		href: "/guides/lyric/quickstart",
+		icon: "document",
+	},
+	{
+		title: "API 参考",
+		description: "查看 Core、React、Vue 与歌词工具包的类型文档。",
+		href: "/reference",
+		icon: "information",
+	},
+	{
+		title: "交互试验场",
+		description: "导入音频和歌词，实时调试播放器效果。",
+		href: "/playground",
+		icon: "puzzle",
+	},
+] as const;
+
+const topicLinks = [
+	{ label: "项目介绍", href: "/guides/overview/intro" },
+	{ label: "生态项目", href: "/guides/overview/eco" },
+	{ label: "贡献指南", href: "/contribute" },
+] as const;
 ---
 
 <StarlightPage
@@ -28,47 +46,62 @@ import "../styles/index.css";
 	})}
 	lang="zh-CN"
 >
-	<div style="height: max(400px, 50vh);">
-		<style scoped>
-		:root[data-theme="light"] {
-			--amll-lp-color: black;
-		}
-		</style>
-		<AMLLPreview client:only="react" />
+	<div class="home-shell">
+		<section class="home-hero" aria-labelledby="home-title">
+			<div class="home-preview" aria-hidden="true">
+				<AMLLPreview client:only="react" />
+			</div>
+			<div class="home-hero-copy">
+				<p class="home-eyebrow">AMLL 文档</p>
+				<h1 id="home-title">Apple Music-like Lyrics</h1>
+				<p class="home-summary">
+					面向网页的 Apple Music
+					风格逐字歌词组件库，覆盖渲染组件、框架绑定和歌词格式处理。
+				</p>
+				<div class="home-actions">
+					<a
+						class="home-button home-button-primary"
+						href="/guides"
+					>
+						使用文档
+						<Icon name="right-arrow" />
+					</a>
+					<a class="home-button" href="/reference">
+						API 参考
+						<Icon name="information" />
+					</a>
+				</div>
+			</div>
+		</section>
+
+		<section class="home-entry" aria-labelledby="home-entry-title">
+			<div class="home-section-heading">
+				<p class="home-eyebrow">探索</p>
+				<h2 id="home-entry-title">准备好开始了吗？</h2>
+			</div>
+			<div class="home-card-grid">
+				{entryLinks.map((link) => (
+						<a class="home-card" href={link.href}>
+							<span class="home-card-icon">
+								<Icon name={link.icon} />
+							</span>
+							<span class="home-card-copy">
+								<strong>{link.title}</strong>
+								<span>{link.description}</span>
+							</span>
+							<Icon name="right-arrow" class="home-card-arrow" />
+						</a>
+					))}
+			</div>
+		</section>
+
+		<nav class="home-topic-links" aria-label="更多文档入口">
+			{topicLinks.map((link) => (
+					<a href={link.href}>
+						{link.label}
+						<Icon name="right-arrow" />
+					</a>
+				))}
+		</nav>
 	</div>
-	<Card title="开始了解 AppleMusic-like Lyrics" icon="open-book">
-		<p>点击下方链接开始阅读文档</p>
-		<CardGrid>
-			<LinkCard
-				title="介绍"
-				description="AMLL 的基本信息"
-				href="/guides/overview/intro"
-			/>
-			<LinkCard
-				title="快速开始"
-				description="将 AMLL 歌词组件集成到你的项目中"
-				href="/guides/component/quickstart"
-			/>
-			<LinkCard
-				title="试验场"
-				description="在交互式环境中试用 AMLL 的功能"
-				href="/playground"
-			/>
-			<LinkCard
-				title="API 文档"
-				description="各包的 API 类型参考文档"
-				href="/reference"
-			/>
-			<LinkCard
-				title="生态"
-				description="AMLL 相关项目介绍与发展"
-				href="/guides/overview/eco"
-			/>
-			<LinkCard
-				title="贡献指南"
-				description="如何参与 AMLL 的开发与维护"
-				href="/contribute"
-			/>
-		</CardGrid>
-	</Card>
 </StarlightPage>

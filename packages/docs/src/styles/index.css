@@ -1,20 +1,322 @@
-/* 隐藏标题 */
-#_top {
+/** biome-ignore-all lint/style/noDescendingSpecificity: Override starlight */
+
+:root[data-theme="light"] {
+	--home-lyric-color: #151316;
+	--home-hero-shade: rgba(255, 250, 252, 0.78);
+	--home-hero-text: #151316;
+	--home-hero-muted: #5e535b;
+	--home-preview-opacity: 0.3;
+}
+
+:root[data-theme="dark"] {
+	--home-lyric-color: #fff8fa;
+	--home-hero-shade: rgba(15, 13, 16, 0.72);
+	--home-hero-text: #fff8fa;
+	--home-hero-muted: #d1c4cb;
+	--home-preview-opacity: 0.3;
+}
+
+.content-panel:first-child {
 	display: none;
 }
 
 .amll-lyric-player {
 	pointer-events: none;
-	--amll-lp-font-size: min(max(max(4.5vh, 2.3vw), 2.5rem), 3.5rem);
-}
-.amll-lyric-player [class*="_lyricMainLine"] {
-	font-weight: bold;
-}
-.amll-lyric-player [class*="_emphasizeWrapper"] span {
-	padding: 1em;
-	margin: -1em;
+	--amll-lp-font-size: 2.2rem;
+	--amll-lp-color: var(--home-lyric-color);
+	[class*="_lyricMainLine"] {
+		font-weight: 800;
+	}
+	[class*="_emphasizeWrapper"] span {
+		padding: 1em;
+		margin: -1em;
+	}
 }
 
-:root {
-	--sl-color-hairline: none;
+.home-shell {
+	width: 100%;
+	overflow: visible;
+}
+
+.home-hero {
+	position: relative;
+	display: grid;
+	align-items: end;
+	width: 100vw;
+	min-height: 34rem;
+	margin-inline: calc(50% - 50vw);
+	padding-block: 4rem 5.5rem;
+	padding-inline: max(var(--sl-content-pad-x), calc((100vw - 68rem) / 2));
+	box-sizing: border-box;
+	isolation: isolate;
+
+	&::after {
+		content: "";
+		position: absolute;
+		inset: auto 0 0;
+		height: 25rem;
+		background: linear-gradient(to bottom, transparent, var(--amll-page-bg));
+		z-index: -1;
+	}
+}
+
+.home-preview {
+	position: absolute;
+	inset: 0;
+	z-index: -2;
+	opacity: var(--home-preview-opacity);
+	max-width: 1600px;
+	margin: 0 auto;
+}
+
+.home-hero-copy {
+	position: relative;
+	z-index: 1;
+	margin-inline: 2rem;
+	color: var(--home-hero-text);
+}
+
+.home-eyebrow {
+	margin: 0 0 0.8rem;
+	color: var(--sl-color-text-accent);
+	font-size: var(--sl-text-sm);
+	font-weight: 700;
+	line-height: 1.2;
+}
+
+.home-hero h1 {
+	margin: 0;
+	color: var(--home-hero-text);
+	font-size: 2.75rem;
+	font-weight: 800;
+	line-height: 0.98;
+	letter-spacing: 0;
+}
+
+.home-summary {
+	margin: 1.25rem 0 0;
+	color: var(--home-hero-muted);
+	font-size: var(--sl-text-lg);
+	line-height: 1.7;
+	text-wrap: balance;
+}
+
+.home-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.75rem;
+	margin-top: 1.6rem;
+}
+
+.home-button.home-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.45rem;
+	min-height: 2.55rem;
+	padding: 0.55rem 0.9rem;
+	box-shadow:
+		0 0 0 1px inset var(--amll-muted-border),
+		var(--amll-shadow-soft);
+	border-radius: 999px;
+	background: var(--amll-surface);
+	color: var(--sl-color-white);
+	font-weight: 700;
+	line-height: 1;
+	text-decoration: none;
+	transition:
+		background-color 0.15s,
+		border-color 0.15s,
+		transform 0.05s;
+
+	&:hover {
+		border-color: color-mix(
+			in srgb,
+			var(--sl-color-text-accent) 44%,
+			transparent
+		);
+		background: var(--amll-surface-hover);
+	}
+
+	&.home-button-primary {
+		border: none;
+		color: white;
+		background: linear-gradient(
+			135deg,
+			var(--sl-color-accent),
+			var(--amll-accent-strong)
+		);
+
+		&:hover {
+			background: linear-gradient(135deg, #ff5b80, var(--amll-accent-strong));
+		}
+	}
+}
+
+.home-entry {
+	position: relative;
+	z-index: 1;
+	margin-top: -2.4rem;
+	padding: 0 var(--sl-content-pad-x) 2rem;
+}
+
+.home-section-heading {
+	display: grid;
+	gap: 0.25rem;
+	margin-bottom: 1rem;
+}
+
+.home-section-heading h2 {
+	margin: 0;
+	color: var(--sl-color-white);
+	font-size: var(--sl-text-2xl);
+	line-height: 1.15;
+}
+
+.home-card-grid {
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 0.8rem;
+}
+
+.home-card.home-card {
+	position: relative;
+	display: grid;
+	grid-template-columns: auto 1fr auto;
+	align-items: center;
+	gap: 0.9rem;
+	min-height: 6.25rem;
+	padding: 1rem;
+	border: 1px solid var(--amll-muted-border);
+	border-radius: var(--amll-radius);
+	background: var(--amll-card-bg);
+	color: var(--sl-color-white);
+	text-decoration: none;
+	box-shadow: var(--amll-shadow-soft);
+
+	&:hover {
+		background: var(--amll-surface-hover);
+	}
+}
+
+.home-card-icon {
+	display: grid;
+	place-items: center;
+	width: 2.25rem;
+	height: 2.25rem;
+	border: 1px solid
+		color-mix(in srgb, var(--sl-color-text-accent) 28%, transparent);
+	border-radius: 0.45rem;
+	background: var(--sl-color-accent-low);
+	color: var(--sl-color-text-accent);
+	svg {
+		/* biome-ignore lint/complexity/noImportantStyles: override starlight */
+		--sl-icon-size: 1.3rem !important;
+	}
+}
+
+.home-card-copy {
+	display: grid;
+	gap: 0.25rem;
+	min-width: 0;
+
+	strong {
+		font-size: var(--sl-text-lg);
+		line-height: 1.2;
+	}
+	span {
+		color: var(--sl-color-gray-3);
+		line-height: 1.5;
+	}
+}
+
+.home-card-arrow {
+	color: var(--sl-color-gray-3);
+	transition:
+		color 0.15s,
+		transform 0.15s;
+	/* biome-ignore lint/complexity/noImportantStyles: override starlight */
+	--sl-icon-size: 1.5rem !important;
+
+	.home-card:hover & {
+		color: var(--sl-color-text);
+		transform: translateX(0.15rem);
+	}
+}
+
+.home-topic-links {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.65rem;
+	padding: 0 var(--sl-content-pad-x) 4rem;
+}
+
+.home-topic-links a {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	padding: 0.5rem 0.75rem;
+	border: 1px solid transparent;
+	border-radius: 999px;
+	color: var(--sl-color-gray-2);
+	text-decoration: none;
+	transition:
+		background-color 0.15s,
+		border-color 0.15s,
+		color 0.15s,
+		transform 0.05s;
+}
+
+.home-topic-links a:hover {
+	border-color: var(--amll-muted-border);
+	background: var(--amll-surface);
+	color: var(--sl-color-white);
+}
+
+@media (min-width: 50rem) {
+	.amll-lyric-player {
+		--amll-lp-font-size: 3rem;
+	}
+	.home-hero {
+		min-height: 37rem;
+		padding-top: 5rem;
+		padding-bottom: 6rem;
+	}
+	.home-hero h1 {
+		font-size: 4rem;
+	}
+	.home-card-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+@media (min-width: 72rem) {
+	.amll-lyric-player {
+		--amll-lp-font-size: 3.35rem;
+	}
+	.home-hero {
+		min-height: 39rem;
+	}
+}
+
+@media (max-width: 36rem) {
+	.home-hero {
+		min-height: 32rem;
+		padding-top: 3rem;
+	}
+	.home-preview {
+		opacity: 0.3;
+	}
+	.home-hero h1 {
+		font-size: 2.35rem;
+	}
+	.home-summary {
+		font-size: var(--sl-text-base);
+	}
+	.home-card.home-card {
+		grid-template-columns: 1fr auto;
+	}
+	.home-card-icon {
+		display: none;
+	}
 }
