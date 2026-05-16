@@ -6,9 +6,10 @@
 
 import type { LyricLine } from "#interfaces";
 import "#styles/index.css";
-import type { LyricLineBase } from "#lyric/base/line.ts";
 import { LyricPlayerBase } from "#lyric/base/index.ts";
+import type { LyricLineBase } from "#lyric/base/line.ts";
 import styles from "#styles/lyric-player.module.css";
+import { LyricLineGroup } from "./lyric-group.ts";
 import { LyricLineEl, type RawLyricLineMouseEvent } from "./lyric-line.ts";
 
 /**
@@ -38,7 +39,7 @@ export type LyricLineMouseEventListener = (evt: LyricLineMouseEvent) => void;
  * 尽可能贴切 Apple Music for iPad 的歌词效果设计，且做了力所能及的优化措施
  */
 export class DomLyricPlayer extends LyricPlayerBase {
-	override currentLyricLineObjects: LyricLineEl[] = [];
+	override currentLyricGroups: LyricLineGroup[] = [];
 
 	override onResize(): void {
 		const computedStyles = getComputedStyle(this.element);
@@ -98,8 +99,9 @@ export class DomLyricPlayer extends LyricPlayerBase {
 
 	override setWordFadeWidth(value = 0.5): void {
 		super.setWordFadeWidth(value);
-		for (const el of this.currentLyricLineObjects) {
-			el.updateMaskImageSync();
+		for (const group of this.currentLyricGroups) {
+			group.mainLine.updateMaskImageSync();
+			group.bgLine?.updateMaskImageSync();
 		}
 	}
 
@@ -119,29 +121,43 @@ export class DomLyricPlayer extends LyricPlayerBase {
 			this.element.style.setProperty("--amll-player-time", `${initialTime}`);
 		}
 
-		for (const line of this.currentLyricLineObjects) {
-			line.removeMouseEventListener("click", this.onLineClickedHandler);
-			line.removeMouseEventListener("contextmenu", this.onLineClickedHandler);
-			line.dispose();
-		}
+		for (const group of this.currentLyricGroups) {
+			const linesToDispose = [group.mainLine, group.bgLine].filter(
+				(line) => !!line,
+			);
 
-		// 创建新的歌词行元素
-		this.currentLyricLineObjects = this.processedLines.map((line, i) => {
+			for (const line of linesToDispose) {
+				line.removeMouseEventListener("click", this.onLineClickedHandler);
+				line.removeMouseEventListener("contextmenu", this.onLineClickedHandler);
+			}
+			group.dispose();
+		}
+		this.currentLyricGroups = [];
+
+		let currentGroup: LyricLineGroup | null = null;
+
+		for (let i = 0; i < this.processedLines.length; i++) {
+			const line = this.processedLines[i];
 			const lineEl = new LyricLineEl(this, line);
+
 			lineEl.addMouseEventListener("click", this.onLineClickedHandler);
 			lineEl.addMouseEventListener("contextmenu", this.onLineClickedHandler);
-			// 不立即挂载到 DOM，进入视图（含 overscan）后在 LyricLineEl 内部挂载
+
 			this.lyricLinesIndexes.set(lineEl, i);
-			// 仍需建立元素到行对象的映射，供 ResizeObserver 使用
-			this.lyricLineElementMap.set(lineEl.getElement(), lineEl);
-			return lineEl;
-		});
+
+			if (!line.isBG || !currentGroup) {
+				currentGroup = new LyricLineGroup(this, lineEl);
+				this.currentLyricGroups.push(currentGroup);
+				this.lyricGroupElementMap.set(currentGroup.element, currentGroup);
+			} else {
+				currentGroup.addBgLine(lineEl);
+			}
+		}
 
 		this.setLinePosXSpringParams({});
 		this.setLinePosYSpringParams({});
 		this.setLineScaleSpringParams({});
 		this.calcLayout(true);
-		// 触发一次更新以便立即挂载在视区/overscan 内的行元素
 		this.update(0);
 	}
 
@@ -149,8 +165,9 @@ export class DomLyricPlayer extends LyricPlayerBase {
 		super.pause();
 		this.element.classList.remove("playing");
 		this.interludeDots.pause();
-		for (const line of this.currentLyricLineObjects) {
-			line.pause();
+		for (const group of this.currentLyricGroups) {
+			group.mainLine.pause();
+			group.bgLine?.pause();
 		}
 	}
 
@@ -158,8 +175,9 @@ export class DomLyricPlayer extends LyricPlayerBase {
 		super.resume();
 		this.element.classList.add("playing");
 		this.interludeDots.resume();
-		for (const line of this.currentLyricLineObjects) {
-			line.resume();
+		for (const group of this.currentLyricGroups) {
+			group.mainLine.resume();
+			group.bgLine?.resume();
 		}
 	}
 
@@ -174,16 +192,16 @@ export class DomLyricPlayer extends LyricPlayerBase {
 		}
 		if (!this.isPageVisible) return;
 		const deltaS = delta / 1000;
-		for (const line of this.currentLyricLineObjects) {
-			line.update(deltaS);
+		for (const group of this.currentLyricGroups) {
+			group.update(deltaS);
 		}
 	}
 
 	override dispose(): void {
 		super.dispose();
 		this.element.remove();
-		for (const el of this.currentLyricLineObjects) {
-			el.dispose();
+		for (const group of this.currentLyricGroups) {
+			group.dispose();
 		}
 		this.bottomLine.dispose();
 		this.interludeDots.dispose();

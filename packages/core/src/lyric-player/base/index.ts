@@ -7,15 +7,17 @@ import type {
 	OptimizeLyricOptions,
 } from "#interfaces";
 import styles from "#styles/lyric-player.module.css";
+import { clampPositive } from "#utils/clamp.ts";
 import { optimizeLyricLines } from "#utils/optimize-lyric.ts";
 import type { SpringParams } from "#utils/spring.ts";
 import { InterludeDots } from "../dom/interlude-dots.ts";
 import { BottomLineEl } from "./bottom-line.ts";
 import { LayoutAlignAnchor, MaskObsceneWordsMode } from "./consts.ts";
+import type { LyricLineGroupBase } from "./group.ts";
 import {
-	computeLineBlur,
-	computeLinePresentation,
 	computeCurrentInterlude,
+	computeGroupPresentation,
+	computeLineBlur,
 	computeLinePosYSpringParams,
 	type PlayerLayoutState,
 } from "./layout.ts";
@@ -30,10 +32,9 @@ import {
 	computePlayerTimeState,
 	type PlayerTimelineState,
 } from "./timeline.ts";
-import { clampPositive } from "#utils/clamp.ts";
 
-export type { LyricLineBase } from "./line.ts";
 export type { PlayerLayoutState } from "./layout.ts";
+export type { LyricLineBase } from "./line.ts";
 export type { PlayerScrollState } from "./scroll.ts";
 export type { PlayerTimelineState } from "./timeline.ts";
 
@@ -52,19 +53,16 @@ export abstract class LyricPlayerBase
 	protected timelineState: PlayerTimelineState = {
 		currentTime: 0,
 		lastCurrentTime: 0,
-		hotLines: new Set(),
-		bufferedLines: new Set(),
+		hotGroups: new Set(),
+		bufferedGroups: new Set(),
 		scrollToIndex: 0,
 		isSeeking: false,
 		isPlaying: true,
 		initialLayoutFinished: false,
 	};
 	/** @internal */
-	lyricLinesSize: WeakMap<LyricLineBase, [number, number]> = new WeakMap();
-	/** @internal */
-	lyricLineElementMap: WeakMap<Element, LyricLineBase> = new WeakMap();
+	lyricGroupElementMap: WeakMap<Element, LyricLineGroupBase> = new WeakMap();
 	protected currentLyricLines: LyricLine[] = [];
-	// protected currentLyricLineObjects: LyricLineBase[] = [];
 	protected processedLines: LyricLine[] = [];
 	protected lyricLinesIndexes: WeakMap<LyricLineBase, number> = new WeakMap();
 	protected isNonDynamic = false;
@@ -93,7 +91,8 @@ export abstract class LyricPlayerBase
 		isScrolled: false,
 		isUserScrolling: false,
 	};
-	protected currentLyricLineObjects: LyricLineBase[] = [];
+	protected currentLyricGroups: LyricLineGroupBase[] = [];
+	lyricGroupSize: WeakMap<LyricLineGroupBase, [number, number]> = new WeakMap();
 	readonly size: [number, number] = [0, 0];
 	protected isPageVisible = true;
 	protected optimizeOptions: OptimizeLyricOptions = {};
@@ -152,19 +151,20 @@ export abstract class LyricPlayerBase
 					shouldRelayout = true;
 				}
 			} else {
-				const lineObj = this.lyricLineElementMap.get(entry.target);
-				if (lineObj) {
+				const groupObj = this.lyricGroupElementMap.get(entry.target);
+				if (groupObj) {
 					const newSize: [number, number] = [
 						entry.target.clientWidth,
 						entry.target.clientHeight,
 					];
-					const oldSize: [number, number] = this.lyricLinesSize.get(
-						lineObj,
+
+					const oldSize: [number, number] = this.lyricGroupSize.get(
+						groupObj,
 					) ?? [0, 0];
 
 					if (newSize[0] !== oldSize[0] || newSize[1] !== oldSize[1]) {
-						this.lyricLinesSize.set(lineObj, newSize);
-						lineObj.onLineSizeChange(newSize);
+						this.lyricGroupSize.set(groupObj, newSize);
+						groupObj.onLineSizeChange(newSize);
 						shouldRelayout = true;
 					}
 				}
@@ -307,8 +307,8 @@ export abstract class LyricPlayerBase
 	}
 
 	rebuildLyricLines(): void {
-		for (const lineObj of this.currentLyricLineObjects) {
-			lineObj.rebuildElement();
+		for (const group of this.currentLyricGroups) {
+			group.rebuildAllLines();
 		}
 	}
 	/**
@@ -429,6 +429,7 @@ export abstract class LyricPlayerBase
 		this.timelineState.initialLayoutFinished = true;
 		this.timelineState.lastCurrentTime = initialTime;
 		this.timelineState.currentTime = initialTime;
+
 		this.currentLyricLines = structuredClone(lines);
 		this.processedLines = structuredClone(this.currentLyricLines);
 		optimizeLyricLines(this.processedLines, this.optimizeOptions);
@@ -443,14 +444,14 @@ export abstract class LyricPlayerBase
 
 		this.hasDuetLine = this.processedLines.some((line) => line.isDuet);
 
-		for (const line of this.currentLyricLineObjects) {
-			line.dispose();
+		for (const group of this.currentLyricGroups) {
+			group.dispose();
 		}
+		this.currentLyricGroups = [];
 
 		this.interludeDots.setInterlude(undefined);
-		this.timelineState.hotLines.clear();
-		this.timelineState.bufferedLines.clear();
-		this.setCurrentTime(0, true);
+		this.timelineState.hotGroups.clear();
+		this.timelineState.bufferedGroups.clear();
 
 		if (import.meta.env.DEV) {
 			console.log("歌词处理完成", this);
@@ -490,7 +491,7 @@ export abstract class LyricPlayerBase
 
 		const stateResult = computePlayerTimeState({
 			time,
-			processedLines: this.processedLines,
+			currentGroups: this.currentLyricGroups,
 			timelineState,
 		});
 
@@ -499,16 +500,16 @@ export abstract class LyricPlayerBase
 		const commitResult = commitPlayerTimeState({
 			timelineState: timelineState,
 			time,
-			processedLines: this.processedLines,
+			currentGroups: this.currentLyricGroups,
 			hasBottomContent,
 			stateResult,
 		});
 
-		for (const id of commitResult.linesToDisable)
-			this.currentLyricLineObjects[id]?.disable();
+		for (const id of commitResult.groupsToDisable)
+			this.currentLyricGroups[id]?.disable();
 
-		for (const id of commitResult.linesToEnable)
-			this.currentLyricLineObjects[id]?.enable();
+		for (const id of commitResult.groupsToEnable)
+			this.currentLyricGroups[id]?.enable();
 
 		if (commitResult.shouldResetScroll) this.resetScroll();
 		if (commitResult.shouldLayout) this.calcLayout();
@@ -535,7 +536,7 @@ export abstract class LyricPlayerBase
 		const interlude = computeCurrentInterlude({
 			currentTime: this.timelineState.currentTime,
 			scrollToIndex: this.timelineState.scrollToIndex,
-			processedLines: this.processedLines,
+			currentGroups: this.currentLyricGroups,
 		});
 		const isInterludeActive = !!interlude;
 
@@ -547,7 +548,7 @@ export abstract class LyricPlayerBase
 
 			const springParams = computeLinePosYSpringParams({
 				enabled: this.getEnableSpring(),
-				processedLines: this.processedLines,
+				currentGroups: this.currentLyricGroups,
 				scrollToIndex: this.timelineState.scrollToIndex,
 				isSeeking: this.timelineState.isSeeking,
 				isInterludeActive,
@@ -578,33 +579,27 @@ export abstract class LyricPlayerBase
 		}
 		// 避免一开始就让所有歌词行挤在一起
 		const LINE_HEIGHT_FALLBACK = this.size[1] / 5;
-		const scrollOffset = this.currentLyricLineObjects
+		const scrollOffset = this.currentLyricGroups
 			.slice(0, targetAlignIndex)
 			.reduce(
-				(acc, el) =>
-					acc +
-					(el.getLine().isBG && this.timelineState.isPlaying
-						? 0
-						: (this.lyricLinesSize.get(el)?.[1] ?? LINE_HEIGHT_FALLBACK)),
+				(acc, group) =>
+					acc + (this.lyricGroupSize.get(group)?.[1] ?? LINE_HEIGHT_FALLBACK),
 				0,
 			);
+
 		this.scrollState.scrollBoundary.minOffset = -scrollOffset;
 		curPos -= scrollOffset;
 		curPos += this.size[1] * this.layoutState.alignPosition;
-		const curLine = this.currentLyricLineObjects[targetAlignIndex];
+
+		const curGroup = this.currentLyricGroups[targetAlignIndex];
 		this.layoutState.targetAlignIndex = targetAlignIndex;
 
-		const isBottomFocused =
-			targetAlignIndex === this.currentLyricLineObjects.length;
+		const isBottomFocused = targetAlignIndex === this.currentLyricGroups.length;
 		this.bottomLine.setFocused(isBottomFocused);
 
-		let targetLineHeight = 0;
-		if (curLine) {
-			targetLineHeight =
-				this.lyricLinesSize.get(curLine)?.[1] ?? LINE_HEIGHT_FALLBACK;
-		} else if (isBottomFocused) {
-			targetLineHeight = this.bottomLine.lineSize[1];
-		}
+		const targetLineHeight = curGroup
+			? (this.lyricGroupSize.get(curGroup)?.[1] ?? LINE_HEIGHT_FALLBACK)
+			: 0;
 
 		if (targetLineHeight > 0) {
 			switch (this.layoutState.alignAnchor) {
@@ -619,13 +614,13 @@ export abstract class LyricPlayerBase
 			}
 		}
 
-		const latestIndex = Math.max(...this.timelineState.bufferedLines);
+		const latestIndex = Math.max(...this.timelineState.bufferedGroups);
 		let delay = 0;
 		let baseDelay = sync ? 0 : 0.05;
 		let setDots = false;
-		this.currentLyricLineObjects.forEach((lineObj, i) => {
-			const hasBuffered = this.timelineState.bufferedLines.has(i);
-			const line = lineObj.getLine();
+
+		this.currentLyricGroups.forEach((group, i) => {
+			const hasBuffered = this.timelineState.bufferedGroups.has(i);
 
 			const shouldShowDots = interlude && i === interlude.anchorLineIndex + 1;
 
@@ -651,50 +646,43 @@ export abstract class LyricPlayerBase
 				curPos += dotMargin;
 			}
 
-			const presentation = computeLinePresentation({
-				line,
-				lineIndex: i,
+			const presentation = computeGroupPresentation({
+				groupIndex: i,
 				scrollToIndex: this.timelineState.scrollToIndex,
 				latestIndex,
 				hasBuffered,
 				hidePassedLines: this.hidePassedLines,
 				isPlaying: this.timelineState.isPlaying,
 				isNonDynamic: this.isNonDynamic,
-				enableScale: this.enableScale,
 				enableBlur: this.enableBlur,
 				isUserScrolling: this.scrollState.isUserScrolling,
 				isCompact: window.innerWidth <= 1024,
 				interlude,
 			});
 
-			lineObj.setTransform(
+			group.setTransform(
 				curPos,
-				presentation.targetScale,
-				presentation.targetOpacity,
-				presentation.blurLevel,
 				force,
 				delay,
-				presentation.renderMode,
+				this.getEnableSpring(),
+				presentation.isActive,
+				presentation.targetOpacity,
+				presentation.blurLevel,
+				this.enableScale,
+				this.timelineState.isPlaying,
 			);
 
-			if (
-				line.isBG &&
-				(presentation.isActive || !this.timelineState.isPlaying)
-			) {
-				curPos += this.lyricLinesSize.get(lineObj)?.[1] ?? LINE_HEIGHT_FALLBACK;
-			} else if (!line.isBG) {
-				curPos += this.lyricLinesSize.get(lineObj)?.[1] ?? LINE_HEIGHT_FALLBACK;
-			}
-			if (curPos >= 0 && !this.timelineState.isSeeking) {
-				if (!line.isBG) delay += baseDelay;
+			curPos += this.lyricGroupSize.get(group)?.[1] ?? LINE_HEIGHT_FALLBACK;
 
+			if (curPos >= 0 && !this.timelineState.isSeeking) {
+				delay += baseDelay;
 				if (i >= this.timelineState.scrollToIndex) baseDelay /= 1.05;
 			}
 		});
 		this.scrollState.scrollBoundary.maxOffset =
 			curPos + this.scrollState.scrollOffset - this.size[1] / 2;
 
-		const bottomIndex = this.currentLyricLineObjects.length;
+		const bottomIndex = this.currentLyricGroups.length;
 		const finalBottomBlur = computeLineBlur({
 			enableBlur: this.enableBlur,
 			isUserScrolling: this.scrollState.isUserScrolling,
@@ -726,8 +714,9 @@ export abstract class LyricPlayerBase
 			...params,
 		};
 		this.bottomLine.lineTransforms.posY.updateParams(this.posYSpringParams);
-		for (const line of this.currentLyricLineObjects) {
-			line.lineTransforms.posY.updateParams(this.posYSpringParams);
+		for (const group of this.currentLyricGroups) {
+			group.posY.updateParams(this.posYSpringParams);
+			group.bgSlideY.updateParams(this.posYSpringParams);
 		}
 	}
 	/**
@@ -744,12 +733,12 @@ export abstract class LyricPlayerBase
 			...this.scaleForBGSpringParams,
 			...params,
 		};
-		for (const lineObj of this.currentLyricLineObjects) {
-			if (lineObj.getLine().isBG) {
-				lineObj.lineTransforms.scale.updateParams(this.scaleForBGSpringParams);
-			} else {
-				lineObj.lineTransforms.scale.updateParams(this.scaleSpringParams);
-			}
+		for (const group of this.currentLyricGroups) {
+			group.mainLine.lineTransforms.scale.updateParams(this.scaleSpringParams);
+
+			group.bgLine?.lineTransforms.scale.updateParams(
+				this.scaleForBGSpringParams,
+			);
 		}
 	}
 	/**

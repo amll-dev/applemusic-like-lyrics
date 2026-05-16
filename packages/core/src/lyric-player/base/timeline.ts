@@ -1,21 +1,21 @@
-import type { LyricLine } from "#interfaces";
 import { eqSet } from "#utils/eq-set.ts";
+import type { LyricLineGroupBase } from "./group.ts";
 
 /**
  * 播放时间线状态。
  *
- * 描述播放器在时间轴上的当前位置，当前处于激活状态的歌词行信息
+ * 描述播放器在时间轴上的当前位置，当前处于激活状态的歌词组信息
  */
 export interface PlayerTimelineState {
 	/** 当前播放时间，单位为毫秒 */
 	currentTime: number;
 	/** 上一次提交到时间线状态的播放时间，单位为毫秒 */
 	lastCurrentTime: number;
-	/** 热行：当前时间 {@link currentTime} 正在命中的行（含主行+可能的背景行） */
-	hotLines: Set<number>;
-	/** 缓冲行：UI 上还保持激活表现的行，通常包含热行，并包含刚结束仍在过渡中的行 */
-	bufferedLines: Set<number>;
-	/** 当前应滚动对齐到的歌词行索引 */
+	/** 热行：当前时间 {@link currentTime} 正在命中的组（含主行+可能的背景行） */
+	hotGroups: Set<number>;
+	/** 缓冲组：UI 上还保持激活表现的组索引，通常包含热组，和刚结束仍在过渡中的组 */
+	bufferedGroups: Set<number>;
+	/** 当前应滚动对齐到的歌词组索引 */
 	scrollToIndex: number;
 	/** 是否正在拖拽进度条。若是，更新时丢弃缓冲行，并根据当前时间直接计算热行 */
 	isSeeking: boolean;
@@ -28,14 +28,14 @@ export interface PlayerTimelineState {
 /** {@link computePlayerTimeState} 的参数类型 */
 export interface ComputePlayerTimeStateInput {
 	time: number;
-	processedLines: LyricLine[];
+	currentGroups: LyricLineGroupBase[];
 	timelineState: Readonly<PlayerTimelineState>;
 }
 
 /** {@link computePlayerTimeState} 的返回类型 */
 export interface ComputePlayerTimeStateResult {
-	/** 计算后的新热行集合 */
-	nextHotLines: Set<number>;
+	/** 计算后的新热组集合 */
+	nextHotGroups: Set<number>;
 	/** 需要新加入热行集合的行索引 */
 	addedIds: Set<number>;
 	/** 需要从热行集合中移除的行索引 */
@@ -55,67 +55,45 @@ export function computePlayerTimeState(
 ): ComputePlayerTimeStateResult {
 	const {
 		time,
-		processedLines,
-		timelineState: { hotLines, bufferedLines },
+		currentGroups,
+		timelineState: { hotGroups, bufferedGroups },
 	} = input;
-	const nextHotLines = new Set(hotLines);
+
+	const nextHotGroups = new Set(hotGroups);
 	const addedIds = new Set<number>();
 	const removedHotIds = new Set<number>();
 	const removedBufferedIds = new Set<number>();
 
-	for (const lastHotId of hotLines) {
-		const line = processedLines[lastHotId];
-		if (!line) {
-			nextHotLines.delete(lastHotId);
-			removedHotIds.add(lastHotId);
-			continue;
-		}
-		if (line.isBG) continue;
-		const nextLine = processedLines[lastHotId + 1];
-		if (nextLine?.isBG) {
-			const nextMainLine = processedLines[lastHotId + 2];
-			const startTime = Math.min(line.startTime, nextLine.startTime);
-			const endTime = Math.min(
-				Math.max(line.endTime, nextMainLine?.startTime ?? Number.MAX_VALUE),
-				Math.max(line.endTime, nextLine.endTime),
-			);
-			if (time < startTime || endTime <= time) {
-				nextHotLines.delete(lastHotId);
-				removedHotIds.add(lastHotId);
-				nextHotLines.delete(lastHotId + 1);
-				removedHotIds.add(lastHotId + 1);
-			}
-		} else if (time < line.startTime || line.endTime <= time) {
-			nextHotLines.delete(lastHotId);
+	for (const lastHotId of hotGroups) {
+		const group = currentGroups[lastHotId];
+		if (!group || time < group.startTime || group.endTime <= time) {
+			nextHotGroups.delete(lastHotId);
 			removedHotIds.add(lastHotId);
 		}
 	}
 
-	for (let id = 0; id < processedLines.length; id++) {
-		const line = processedLines[id];
-		if (!line || line.isBG) continue;
+	for (let id = 0; id < currentGroups.length; id++) {
+		const group = currentGroups[id];
+		if (!group) continue;
+
 		if (
-			line.startTime <= time &&
-			line.endTime > time &&
-			!nextHotLines.has(id)
+			group.startTime <= time &&
+			group.endTime > time &&
+			!nextHotGroups.has(id)
 		) {
-			nextHotLines.add(id);
+			nextHotGroups.add(id);
 			addedIds.add(id);
-			if (processedLines[id + 1]?.isBG) {
-				nextHotLines.add(id + 1);
-				addedIds.add(id + 1);
-			}
 		}
 	}
 
-	for (const id of bufferedLines) {
-		if (!nextHotLines.has(id)) {
+	for (const id of bufferedGroups) {
+		if (!nextHotGroups.has(id)) {
 			removedBufferedIds.add(id);
 		}
 	}
 
 	return {
-		nextHotLines,
+		nextHotGroups,
 		addedIds,
 		removedHotIds,
 		removedBufferedIds,
@@ -130,14 +108,16 @@ export function computePlayerTimeState(
  */
 export function pickScrollToIndexForSeek(
 	time: number,
-	processedLines: LyricLine[],
-	bufferedLines: ReadonlySet<number>,
+	currentGroups: LyricLineGroupBase[],
+	bufferedGroups: ReadonlySet<number>,
 ): number {
-	if (bufferedLines.size > 0) {
-		return Math.min(...bufferedLines);
+	if (bufferedGroups.size > 0) {
+		return Math.min(...bufferedGroups);
 	}
-	const foundIndex = processedLines.findIndex((line) => line.startTime >= time);
-	return foundIndex === -1 ? processedLines.length : foundIndex;
+	const foundIndex = currentGroups.findIndex(
+		(group) => group.startTime >= time,
+	);
+	return foundIndex === -1 ? currentGroups.length : foundIndex;
 }
 
 /**
@@ -152,7 +132,7 @@ export interface CommitPlayerTimeStateInput {
 	/** 当前播放时间，单位为毫秒 */
 	time: number;
 	/** 当前用于计算的歌词数据 */
-	processedLines: LyricLine[];
+	currentGroups: LyricLineGroupBase[];
 	/** 底部附加区域当前是否有可见内容 */
 	hasBottomContent: boolean;
 	/** 由 {@link computePlayerTimeState} 得到的状态转移结果 */
@@ -165,10 +145,10 @@ export interface CommitPlayerTimeStateResult {
 	shouldLayout: boolean;
 	/** 提交后是否需要重置用户滚动状态 */
 	shouldResetScroll: boolean;
-	/** 需要启用的歌词行索引列表 */
-	linesToEnable: number[];
-	/** 需要禁用的歌词行索引列表 */
-	linesToDisable: number[];
+	/** 需要启用的歌词组索引列表 */
+	groupsToEnable: number[];
+	/** 需要禁用的歌词组索引列表 */
+	groupsToDisable: number[];
 }
 
 /**
@@ -181,64 +161,63 @@ export interface CommitPlayerTimeStateResult {
 export function commitPlayerTimeState(
 	input: CommitPlayerTimeStateInput,
 ): CommitPlayerTimeStateResult {
-	const { timelineState, time, processedLines, hasBottomContent, stateResult } =
+	const { timelineState, time, currentGroups, hasBottomContent, stateResult } =
 		input;
 	const { addedIds, removedHotIds, removedBufferedIds } = stateResult;
 	const { isSeeking } = timelineState;
 
 	timelineState.currentTime = time;
-	timelineState.hotLines = stateResult.nextHotLines;
+	timelineState.hotGroups = stateResult.nextHotGroups;
 
 	let shouldLayout = false;
 	let shouldResetScroll = false;
-	const linesToEnable: number[] = [];
-	const linesToDisable = new Set<number>();
+	const groupsToEnable: number[] = [];
+	const groupsToDisable = new Set<number>();
 
 	if (isSeeking) {
-		timelineState.bufferedLines = new Set([...timelineState.hotLines]);
+		timelineState.bufferedGroups = new Set([...timelineState.hotGroups]);
 		timelineState.scrollToIndex = pickScrollToIndexForSeek(
 			time,
-			processedLines,
-			timelineState.bufferedLines,
+			currentGroups,
+			timelineState.bufferedGroups,
 		);
-		for (const id of removedHotIds) linesToDisable.add(id);
-		for (const id of timelineState.hotLines) linesToEnable.push(id);
-		for (const id of removedBufferedIds) linesToDisable.add(id);
+		for (const id of removedHotIds) groupsToDisable.add(id);
+		for (const id of timelineState.hotGroups) groupsToEnable.push(id);
+		for (const id of removedBufferedIds) groupsToDisable.add(id);
 
 		shouldResetScroll = true;
 		shouldLayout = true;
 	} else if (addedIds.size > 0) {
 		for (const id of addedIds) {
-			timelineState.bufferedLines.add(id);
-			linesToEnable.push(id);
+			timelineState.bufferedGroups.add(id);
+			groupsToEnable.push(id);
 		}
 		for (const id of removedBufferedIds) {
-			timelineState.bufferedLines.delete(id);
-			linesToDisable.add(id);
+			timelineState.bufferedGroups.delete(id);
+			groupsToDisable.add(id);
 		}
-		if (timelineState.bufferedLines.size > 0) {
-			timelineState.scrollToIndex = Math.min(...timelineState.bufferedLines);
+		if (timelineState.bufferedGroups.size > 0) {
+			timelineState.scrollToIndex = Math.min(...timelineState.bufferedGroups);
 		}
 		shouldLayout = true;
 	} else if (
 		removedBufferedIds.size > 0 &&
-		eqSet(removedBufferedIds, timelineState.bufferedLines)
+		eqSet(removedBufferedIds, timelineState.bufferedGroups)
 	) {
-		for (const id of timelineState.bufferedLines) {
-			if (timelineState.hotLines.has(id)) continue;
-			timelineState.bufferedLines.delete(id);
-			linesToDisable.add(id);
+		for (const id of timelineState.bufferedGroups) {
+			if (timelineState.hotGroups.has(id)) continue;
+			timelineState.bufferedGroups.delete(id);
+			groupsToDisable.add(id);
 		}
 		shouldLayout = true;
 	}
 
-	if (timelineState.bufferedLines.size === 0 && processedLines.length > 0) {
-		const lastLine = processedLines[processedLines.length - 1];
-		if (time >= lastLine.endTime) {
+	if (timelineState.bufferedGroups.size === 0 && currentGroups.length > 0) {
+		const lastGroup = currentGroups[currentGroups.length - 1];
+		if (time >= lastGroup.endTime) {
 			const targetIndex = hasBottomContent
-				? processedLines.length
-				: processedLines.length - 1;
-
+				? currentGroups.length
+				: currentGroups.length - 1;
 			if (timelineState.scrollToIndex !== targetIndex) {
 				timelineState.scrollToIndex = targetIndex;
 				shouldLayout = true;
@@ -251,7 +230,7 @@ export function commitPlayerTimeState(
 	return {
 		shouldLayout,
 		shouldResetScroll,
-		linesToEnable,
-		linesToDisable: [...linesToDisable],
+		groupsToEnable,
+		groupsToDisable: [...groupsToDisable],
 	};
 }

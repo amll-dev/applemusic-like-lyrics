@@ -1,8 +1,7 @@
-import type { LyricLine } from "#interfaces";
 import { clamp } from "#utils/clamp.ts";
 import type { SpringParams } from "#utils/spring.ts";
-import { type LayoutAlignAnchor, LyricLineRenderMode } from "./consts.ts";
-import type { PlayerTimelineState } from "./timeline.ts";
+import type { LayoutAlignAnchor } from "./consts.ts";
+import type { LyricLineGroupBase } from "./group.ts";
 
 /**
  * 播放器布局状态。
@@ -47,7 +46,7 @@ export interface PlayerInterlude {
 export interface ComputeCurrentInterludeInput {
 	currentTime: number;
 	scrollToIndex: number;
-	processedLines: LyricLine[];
+	currentGroups: LyricLineGroupBase[];
 }
 
 /**
@@ -61,27 +60,25 @@ export function computeCurrentInterlude(
 ): PlayerInterlude | undefined {
 	const currentTime = input.currentTime + 20;
 	const currentIndex = input.scrollToIndex;
-	const lines = input.processedLines;
+	const groups = input.currentGroups;
 
 	const checkGap = (k: number): PlayerInterlude | undefined => {
-		if (k < -1 || k >= lines.length - 1) return undefined;
+		if (k < -1 || k >= groups.length - 1) return undefined;
 
-		const prevLine = k === -1 ? null : lines[k];
-		const nextLine = lines[k + 1];
+		const prevGroup = k === -1 ? null : groups[k];
+		const nextGroup = groups[k + 1];
 
-		const gapStart = prevLine ? prevLine.endTime : 0;
-		const gapEnd = Math.max(gapStart, nextLine.startTime - 250);
+		const gapStart = prevGroup ? prevGroup.endTime : 0;
+		const gapEnd = Math.max(gapStart, nextGroup.startTime - 250);
 
-		if (gapEnd - gapStart < 4000) {
-			return undefined;
-		}
+		if (gapEnd - gapStart < 4000) return undefined;
 
 		if (gapEnd > currentTime && gapStart < currentTime) {
 			return {
 				startTime: Math.max(gapStart, currentTime),
 				endTime: gapEnd,
 				anchorLineIndex: k,
-				isNextDuet: nextLine.isDuet,
+				isNextDuet: nextGroup.mainLine.getLine().isDuet,
 			};
 		}
 		return undefined;
@@ -102,7 +99,7 @@ export interface ComputeLinePosYSpringParamsInput {
 	/** 是否启用弹簧动画 */
 	enabled: boolean;
 	/** 当前用于布局的歌词数据 */
-	processedLines: LyricLine[];
+	currentGroups: LyricLineGroupBase[];
 	/** 当前目标对齐行索引 */
 	scrollToIndex: number;
 	/** 是否处于 seeking 模式 */
@@ -131,13 +128,13 @@ export function computeLinePosYSpringParams(
 ): ComputeLinePosYSpringParamsResult {
 	const {
 		enabled,
-		processedLines,
+		currentGroups,
 		scrollToIndex,
 		isSeeking,
 		isInterludeActive,
 	} = input;
 
-	if (!enabled || processedLines.length === 0) {
+	if (!enabled || currentGroups.length === 0) {
 		return { shouldUpdate: false };
 	}
 
@@ -148,16 +145,14 @@ export function computeLinePosYSpringParams(
 		};
 	}
 
-	const currentLine = processedLines[scrollToIndex];
-	const prevLine = processedLines[scrollToIndex - 1];
+	const currentGroup = currentGroups[scrollToIndex];
+	const prevGroup = currentGroups[scrollToIndex - 1];
 
-	if (!currentLine || !prevLine) {
+	if (!currentGroup || !prevGroup) {
 		return { shouldUpdate: false };
 	}
 
-	const interval =
-		currentLine.startTime -
-		(prevLine.words[0]?.startTime ?? prevLine.startTime);
+	const interval = currentGroup.startTime - prevGroup.startTime;
 
 	const MIN_INTERVAL = 100;
 	const MAX_INTERVAL = 800;
@@ -187,16 +182,14 @@ export function computeLinePosYSpringParams(
 }
 
 /**
- * {@link computeLinePresentation} 的参数类型。
+ * {@link computeGroupPresentation} 的参数类型。
  *
  * 描述一行歌词在当前布局上下文中的全部关键信息，
  * 用于计算其视觉呈现结果。
  */
-export interface ComputeLinePresentationInput {
-	/** 要计算的歌词行 */
-	line: LyricLine;
-	/** 当前歌词行索引 */
-	lineIndex: number;
+export interface ComputeGroupPresentationInput {
+	/** 当前歌词组索引 */
+	groupIndex: number;
 	/** 当前目标对齐行索引 */
 	scrollToIndex: number;
 	/** 当前缓冲区（{@link PlayerTimelineState.bufferedLines}）中最靠后的歌词行索引 */
@@ -209,8 +202,6 @@ export interface ComputeLinePresentationInput {
 	isPlaying: boolean;
 	/** 当前歌词是否为非逐词歌词 */
 	isNonDynamic: boolean;
-	/** 是否启用缩放效果 */
-	enableScale: boolean;
 	/** 是否启用模糊效果 */
 	enableBlur: boolean;
 	/** 是否正在进行滚动交互 */
@@ -221,39 +212,33 @@ export interface ComputeLinePresentationInput {
 	interlude?: PlayerInterlude;
 }
 
-/** {@link computeLinePresentation} 的结果类型 */
-export interface ComputeLinePresentationResult {
+/** {@link ComputeGroupPresentation} 的结果类型 */
+export interface ComputeGroupPresentationResult {
 	/** 当前歌词行是否应视为活跃行 */
 	isActive: boolean;
 	/** 当前歌词行的目标不透明度 */
 	targetOpacity: number;
-	/** 当前歌词行的目标缩放值 */
-	targetScale: number;
 	/** 当前歌词行的目标模糊值 */
 	blurLevel: number;
-	/** 当前歌词行应使用的渲染模式 */
-	renderMode: LyricLineRenderMode;
 }
 
 /**
- * 计算单行歌词在当前布局中的视觉呈现参数。
+ * 计算一组歌词在当前布局中的视觉呈现参数。
  *
  * 根据播放状态、缓冲状态、布局模式与间奏信息，
  * 生成一行歌词最终应使用的 opacity、scale、blur 和 render mode。
  */
-export function computeLinePresentation(
-	input: ComputeLinePresentationInput,
-): ComputeLinePresentationResult {
+export function computeGroupPresentation(
+	input: ComputeGroupPresentationInput,
+): ComputeGroupPresentationResult {
 	const {
-		line,
-		lineIndex,
+		groupIndex,
 		scrollToIndex,
 		latestIndex,
 		hasBuffered,
 		hidePassedLines,
 		isPlaying,
 		isNonDynamic,
-		enableScale,
 		enableBlur,
 		isUserScrolling,
 		isCompact,
@@ -261,12 +246,13 @@ export function computeLinePresentation(
 	} = input;
 
 	const isActive =
-		hasBuffered || (lineIndex >= scrollToIndex && lineIndex < latestIndex);
+		hasBuffered || (groupIndex >= scrollToIndex && groupIndex < latestIndex);
+
 	const blurLevel = computeLineBlur({
 		enableBlur,
 		isUserScrolling,
 		isActive,
-		itemIndex: lineIndex,
+		itemIndex: groupIndex,
 		scrollToIndex,
 		latestIndex,
 		isCompact,
@@ -275,7 +261,8 @@ export function computeLinePresentation(
 	let targetOpacity: number;
 	if (hidePassedLines) {
 		if (
-			lineIndex < (interlude ? interlude.anchorLineIndex + 1 : scrollToIndex) &&
+			groupIndex <
+				(interlude ? interlude.anchorLineIndex + 1 : scrollToIndex) &&
 			isPlaying
 		) {
 			// 为了避免浏览器优化，这里使用了一个极小但不为零的值（几乎不可见）
@@ -291,21 +278,7 @@ export function computeLinePresentation(
 		targetOpacity = isNonDynamic ? 0.2 : 1;
 	}
 
-	const SCALE_ASPECT = enableScale ? 97 : 100;
-	let targetScale = 100;
-	if (!isActive && isPlaying) {
-		targetScale = line.isBG ? 75 : SCALE_ASPECT;
-	}
-
-	return {
-		isActive,
-		targetOpacity,
-		targetScale,
-		blurLevel,
-		renderMode: isActive
-			? LyricLineRenderMode.GRADIENT
-			: LyricLineRenderMode.SOLID,
-	};
+	return { isActive, targetOpacity, blurLevel };
 }
 
 /** {@link computeLineBlur} 的参数类型 */
