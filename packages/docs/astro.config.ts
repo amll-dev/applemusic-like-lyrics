@@ -106,7 +106,7 @@ export default defineConfig({
 			favicon: "favicon.ico",
 			title: "AMLL Docs",
 			logo: {
-				src: "./src/assets/amll-logo.png",
+				src: "./src/assets/amll-logo.svg",
 				alt: "AMLL",
 			},
 			customCss: [
@@ -172,6 +172,9 @@ export default defineConfig({
 					},
 				},
 			],
+			editLink: {
+				baseUrl: "https://github.com/amll-dev/applemusic-like-lyrics/blob/main/packages/docs/",
+			},
 		}),
 	],
 });

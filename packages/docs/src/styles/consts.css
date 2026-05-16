@@ -81,3 +81,25 @@
 	--amll-muted-border: #ffffff1a;
 	--amll-shadow-soft: 0 18px 54px #00000057;
 }
+
+:root {
+	--sl-font:
+		"Inter", -apple-system, BlinkMacSystemFont, sans-serif, "Apple Color Emoji",
+		"Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+	--sl-font-mono:
+		ui-monospace, "Jetbrains Mono", "Iosevka", "Menlo", "Monaco", "Consolas",
+		"Liberation Mono", "Courier New", monospace;
+}
+
+[lang]:where(:is(:lang(zh), :lang(ja), :lang(ko))) {
+	h1,
+	h2,
+	h3,
+	h4,
+	h5,
+	h6,
+	li,
+	p {
+		line-break: strict;
+	}
+}
