@@ -106,7 +106,7 @@ export default defineConfig({
 			favicon: "favicon.ico",
 			title: "AMLL Docs",
 			logo: {
-				src: "./src/assets/amll-logo.png",
+				src: "./src/assets/amll-logo.svg",
 				alt: "AMLL",
 			},
 			customCss: [
