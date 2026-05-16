@@ -1,5 +1,9 @@
 /** biome-ignore-all lint/style/noDescendingSpecificity: Override starlight */
 
+.sl-markdown-content {
+	--sl-content-gap-y: 0;
+}
+
 :root[data-theme="light"] {
 	--home-lyric-color: #151316;
 	--home-hero-shade: rgba(255, 250, 252, 0.78);
@@ -20,12 +24,16 @@
 	display: none;
 }
 
+.content-panel {
+	padding-top: 0;
+}
+
 .amll-lyric-player {
 	pointer-events: none;
 	--amll-lp-font-size: 2.2rem;
 	--amll-lp-color: var(--home-lyric-color);
 	[class*="_lyricMainLine"] {
-		font-weight: 800;
+		font-weight: 600;
 	}
 	[class*="_emphasizeWrapper"] span {
 		padding: 1em;
@@ -43,7 +51,7 @@
 	display: grid;
 	align-items: end;
 	width: 100vw;
-	min-height: 34rem;
+	min-height: 36rem;
 	margin-inline: calc(50% - 50vw);
 	padding-block: 4rem 5.5rem;
 	padding-inline: max(var(--sl-content-pad-x), calc((100vw - 68rem) / 2));
@@ -76,19 +84,33 @@
 	color: var(--home-hero-text);
 }
 
+h1#home-title {
+	margin-top: 1rem;
+}
+
 .home-eyebrow {
-	margin: 0 0 0.8rem;
+	margin: 0 0 0.5rem;
 	color: var(--sl-color-text-accent);
 	font-size: var(--sl-text-sm);
 	font-weight: 700;
-	line-height: 1.2;
+	line-height: 1;
+	.home-hero & {
+		width: fit-content;
+		padding: 0.4rem 0.5rem;
+		background-color: color-mix(
+			in srgb,
+			var(--sl-color-accent) 15%,
+			transparent
+		);
+		border-radius: 0.2rem;
+	}
 }
 
 .home-hero h1 {
 	margin: 0;
 	color: var(--home-hero-text);
 	font-size: 2.75rem;
-	font-weight: 800;
+	font-weight: 700;
 	line-height: 0.98;
 	letter-spacing: 0;
 }
@@ -245,23 +267,23 @@
 	flex-wrap: wrap;
 	gap: 0.65rem;
 	padding: 0 var(--sl-content-pad-x) 4rem;
-}
 
-.home-topic-links a {
-	display: inline-flex;
-	align-items: center;
-	gap: 0.35rem;
-	padding: 0.5rem 0.75rem;
-	border: 1px solid transparent;
-	border-radius: 999px;
-	color: var(--sl-color-gray-2);
-	text-decoration: none;
-}
+	a[href] {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		padding: 0.5rem 0.75rem;
+		border: 1px solid transparent;
+		border-radius: 999px;
+		color: var(--sl-color-gray-2);
+		text-decoration: none;
 
-.home-topic-links a:hover {
-	border-color: var(--amll-muted-border);
-	background: var(--amll-surface);
-	color: var(--sl-color-white);
+		&:hover {
+			border-color: var(--amll-muted-border);
+			background: var(--amll-surface);
+			color: var(--sl-color-white);
+		}
+	}
 }
 
 @media (min-width: 50rem) {
@@ -269,7 +291,7 @@
 		--amll-lp-font-size: 3rem;
 	}
 	.home-hero {
-		min-height: 37rem;
+		min-height: 39rem;
 		padding-top: 5rem;
 		padding-bottom: 6rem;
 	}
@@ -286,13 +308,13 @@
 		--amll-lp-font-size: 3.35rem;
 	}
 	.home-hero {
-		min-height: 39rem;
+		min-height: 42rem;
 	}
 }
 
 @media (max-width: 36rem) {
 	.home-hero {
-		min-height: 32rem;
+		min-height: 34rem;
 		padding-top: 3rem;
 	}
 	.home-preview {
