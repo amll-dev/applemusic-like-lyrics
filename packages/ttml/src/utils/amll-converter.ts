@@ -3,9 +3,11 @@
  * @module amll-converter
  */
 
+import { uid } from "uid";
 import { Elements, Values } from "../constants";
 import type {
 	AmllLyricLine,
+	AmllLyricLineKey,
 	AmllLyricResult,
 	AmllLyricWord,
 	AmllMetadata,
@@ -29,7 +31,7 @@ export function toAmllLyrics(
 
 	const convertToAmllLine = (
 		source: LyricBase,
-		isBG: boolean,
+		parentLyricLineKey: AmllLyricLineKey | undefined,
 		isDuet: boolean,
 	): AmllLyricLine => {
 		let amllWords: AmllLyricWord[] = [];
@@ -99,10 +101,11 @@ export function toAmllLyrics(
 		}
 
 		return {
+			key: uid(),
 			words: amllWords,
 			translatedLyric: transText,
 			romanLyric: romanText,
-			isBG: isBG,
+			parentLyricLineKey,
 			isDuet: isDuet,
 			startTime: source.startTime,
 			endTime: source.endTime,
@@ -141,13 +144,13 @@ export function toAmllLyrics(
 			}
 		}
 
-		const amllMain = convertToAmllLine(line, false, currentIsDuet);
+		const amllMain = convertToAmllLine(line, undefined, currentIsDuet);
 		amllLines.push(amllMain);
 
 		if (line.backgroundVocal) {
 			const simpleBg = convertToAmllLine(
 				line.backgroundVocal,
-				true,
+				amllMain.key,
 				currentIsDuet,
 			);
 			amllLines.push(simpleBg);
@@ -355,7 +358,7 @@ export function toTTMLResult(
 			];
 		}
 
-		if (amllLine.isBG) {
+		if (amllLine.parentLyricLineKey) {
 			if (currentMainLine && !currentMainLine.backgroundVocal) {
 				currentMainLine.backgroundVocal = lyricBase;
 			} else {

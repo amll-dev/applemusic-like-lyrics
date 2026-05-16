@@ -43,8 +43,13 @@ export interface LyricWord extends LyricWordBase {
 	ruby?: LyricWordBase[];
 }
 
+/** 歌词行的唯一键值，对于子行歌词相关功能来说需要提供以正确查询父歌词行 */
+export type LyricLineKey = string | number;
+
 /** 一行歌词，存储多个单词 */
 export interface LyricLine {
+	/** 这个歌词行的唯一键值，对于子行歌词相关功能来说需要提供以正确查询父歌词行 */
+	key?: LyricLineKey;
 	/**
 	 * 该行的所有单词
 	 * 如果是 LyRiC 等只能表达一行歌词的格式，这里就只会有一个单词且通常其始末时间和本结构的 `startTime` 和 `endTime` 相同
@@ -58,8 +63,12 @@ export interface LyricLine {
 	startTime: number;
 	/** 句子的结束时间，单位为毫秒 */
 	endTime: number;
-	/** 该行是否为背景歌词行，当该行歌词的上一句非背景歌词被激活时，这行歌词将会显示出来，注意每个非背景歌词下方只能拥有一个背景歌词 */
-	isBG: boolean;
+	/**
+	 * 该歌词行的父级歌词行键值
+	 * 在 AMLL 中，如果这个歌词存在一个父级歌词，则这个歌词就会成为子歌词（又称背景歌词）
+	 * 且在排版的时候，会根据开始时间早于或晚于父级歌词来考虑将其排序到主歌词行的前面或者后面
+	 */
+	parentLyricLineKey?: LyricLineKey;
 	/** 该行是否为对唱歌词行（即歌词行靠右对齐） */
 	isDuet: boolean;
 }

@@ -3,6 +3,7 @@ import type {
 	Disposable,
 	HasElement,
 	LyricLine,
+	LyricLineKey,
 	LyricWord,
 	OptimizeLyricOptions,
 } from "#interfaces";
@@ -18,6 +19,9 @@ import {
 	computeCurrentInterlude,
 	computeLinePosYSpringParams,
 	type PlayerLayoutState,
+	computeScrollOffset,
+	computeShouldOccupyHeight,
+	computeIsLyricLineActive,
 } from "./layout.ts";
 import type { LyricLineBase } from "./line.ts";
 import {
@@ -63,10 +67,14 @@ export abstract class LyricPlayerBase
 	lyricLinesSize: WeakMap<LyricLineBase, [number, number]> = new WeakMap();
 	/** @internal */
 	lyricLineElementMap: WeakMap<Element, LyricLineBase> = new WeakMap();
+	/** @internal */
+	lyricLineKeyMap: Map<LyricLineKey, LyricLine> = new Map();
 	protected currentLyricLines: LyricLine[] = [];
 	// protected currentLyricLineObjects: LyricLineBase[] = [];
 	protected processedLines: LyricLine[] = [];
-	protected lyricLinesIndexes: WeakMap<LyricLineBase, number> = new WeakMap();
+	protected displayLyricLinesIndicies: WeakMap<LyricLineBase, number> =
+		new WeakMap();
+	protected lyricLinesIndicies: WeakMap<LyricLine, number> = new WeakMap();
 	protected isNonDynamic = false;
 	protected hasDuetLine = false;
 	protected disableSpring = false;
@@ -417,7 +425,7 @@ export abstract class LyricPlayerBase
 	}
 
 	/**
-	 * 设置当前播放歌词，要注意传入后这个数组内的信息不得修改，否则会发生错误
+	 * 设置当前播放歌词，传入的歌词数组结构会被结构化克隆，并对其实行有关的歌词后处理操作
 	 * @param lines 歌词数组
 	 * @param initialTime 初始时间，默认为 0
 	 */
@@ -430,8 +438,11 @@ export abstract class LyricPlayerBase
 		this.timelineState.lastCurrentTime = initialTime;
 		this.timelineState.currentTime = initialTime;
 		this.currentLyricLines = structuredClone(lines);
+		// 排序后确保歌词时序正确，同时决定所有歌词的显示顺序
+		this.currentLyricLines.sort((a, b) => a.startTime - b.startTime);
 		this.processedLines = structuredClone(this.currentLyricLines);
 		optimizeLyricLines(this.processedLines, this.optimizeOptions);
+		this.updateLyricLineKeyMap();
 
 		this.isNonDynamic = true;
 		for (const line of this.processedLines) {
@@ -454,6 +465,15 @@ export abstract class LyricPlayerBase
 
 		if (import.meta.env.DEV) {
 			console.log("歌词处理完成", this);
+		}
+	}
+
+	private updateLyricLineKeyMap() {
+		this.lyricLineKeyMap.clear();
+		for (const line of this.processedLines) {
+			const key = line.key;
+			if (key === undefined) continue;
+			this.lyricLineKeyMap.set(key, line);
 		}
 	}
 
@@ -504,12 +524,6 @@ export abstract class LyricPlayerBase
 			stateResult,
 		});
 
-		for (const id of commitResult.linesToDisable)
-			this.currentLyricLineObjects[id]?.disable();
-
-		for (const id of commitResult.linesToEnable)
-			this.currentLyricLineObjects[id]?.enable();
-
 		if (commitResult.shouldResetScroll) this.resetScroll();
 		if (commitResult.shouldLayout) this.calcLayout();
 	}
@@ -531,7 +545,8 @@ export abstract class LyricPlayerBase
 	 * @param sync 是否同步执行，通常用于初始化或 Resize 时立即布局
 	 * @param force 是否绕过弹簧效果强制更新位置
 	 */
-	async calcLayout(sync = false, force = false): Promise<void> {
+	calcLayout(sync = false, force = false): void {
+		performance.mark("amll-calcLayout-start");
 		const interlude = computeCurrentInterlude({
 			currentTime: this.timelineState.currentTime,
 			scrollToIndex: this.timelineState.scrollToIndex,
@@ -578,16 +593,13 @@ export abstract class LyricPlayerBase
 		}
 		// 避免一开始就让所有歌词行挤在一起
 		const LINE_HEIGHT_FALLBACK = this.size[1] / 5;
-		const scrollOffset = this.currentLyricLineObjects
-			.slice(0, targetAlignIndex)
-			.reduce(
-				(acc, el) =>
-					acc +
-					(el.getLine().isBG && this.timelineState.isPlaying
-						? 0
-						: (this.lyricLinesSize.get(el)?.[1] ?? LINE_HEIGHT_FALLBACK)),
-				0,
-			);
+		const scrollOffset = computeScrollOffset({
+			currentLyricLineObjects: this.currentLyricLineObjects,
+			lyricLinesSize: this.lyricLinesSize,
+			fallbackHeight: LINE_HEIGHT_FALLBACK,
+			targetAlignIndex,
+			isPlaying: this.timelineState.isPlaying,
+		});
 		this.scrollState.scrollBoundary.minOffset = -scrollOffset;
 		curPos -= scrollOffset;
 		curPos += this.size[1] * this.layoutState.alignPosition;
@@ -624,8 +636,14 @@ export abstract class LyricPlayerBase
 		let baseDelay = sync ? 0 : 0.05;
 		let setDots = false;
 		this.currentLyricLineObjects.forEach((lineObj, i) => {
-			const hasBuffered = this.timelineState.bufferedLines.has(i);
 			const line = lineObj.getLine();
+			const isActiveLine = computeIsLyricLineActive({
+				line,
+				lineIndex: i,
+				bufferedLines: this.timelineState.bufferedLines,
+				lyricLineKeyMap: this.lyricLineKeyMap,
+				lyricLinesIndicies: this.lyricLinesIndicies,
+			});
 
 			const shouldShowDots = interlude && i === interlude.anchorLineIndex + 1;
 
@@ -656,7 +674,7 @@ export abstract class LyricPlayerBase
 				lineIndex: i,
 				scrollToIndex: this.timelineState.scrollToIndex,
 				latestIndex,
-				hasBuffered,
+				isActiveLine,
 				hidePassedLines: this.hidePassedLines,
 				isPlaying: this.timelineState.isPlaying,
 				isNonDynamic: this.isNonDynamic,
@@ -677,16 +695,27 @@ export abstract class LyricPlayerBase
 				presentation.renderMode,
 			);
 
+			if (presentation.isActive) {
+				lineObj.enable();
+			} else {
+				lineObj.disable();
+			}
+
 			if (
-				line.isBG &&
-				(presentation.isActive || !this.timelineState.isPlaying)
+				computeShouldOccupyHeight({
+					line,
+					lyricLineKeyMap: this.lyricLineKeyMap,
+					lyricLinesIndicies: this.lyricLinesIndicies,
+					bufferedLines: this.timelineState.bufferedLines,
+					isPresentationActive: presentation.isActive,
+					isPlaying: this.timelineState.isPlaying,
+				})
 			) {
 				curPos += this.lyricLinesSize.get(lineObj)?.[1] ?? LINE_HEIGHT_FALLBACK;
-			} else if (!line.isBG) {
-				curPos += this.lyricLinesSize.get(lineObj)?.[1] ?? LINE_HEIGHT_FALLBACK;
 			}
+
 			if (curPos >= 0 && !this.timelineState.isSeeking) {
-				if (!line.isBG) delay += baseDelay;
+				if (!line.parentLyricLineKey) delay += baseDelay;
 
 				if (i >= this.timelineState.scrollToIndex) baseDelay /= 1.05;
 			}
@@ -706,6 +735,13 @@ export abstract class LyricPlayerBase
 		});
 
 		this.bottomLine.setTransform(0, curPos, finalBottomBlur, force, delay);
+
+		performance.mark("amll-calcLayout-end");
+		performance.measure(
+			"amll-calcLayout",
+			"amll-calcLayout-start",
+			"amll-calcLayout-end",
+		);
 	}
 
 	/**
@@ -745,7 +781,7 @@ export abstract class LyricPlayerBase
 			...params,
 		};
 		for (const lineObj of this.currentLyricLineObjects) {
-			if (lineObj.getLine().isBG) {
+			if (lineObj.getLine().parentLyricLineKey) {
 				lineObj.lineTransforms.scale.updateParams(this.scaleForBGSpringParams);
 			} else {
 				lineObj.lineTransforms.scale.updateParams(this.scaleSpringParams);

@@ -33,19 +33,19 @@
 	}
 
 	&:has(> *):hover {
-		background-color: var(--amll-lp-hover-bg-color, #fff1);
-		/* box-shadow: 0 0 0 4px var(--amll-lp-hover-bg-color, #fff1); */
+		background-color: var(--amll-lp-hover-child-color, #fff1);
+		/* box-shadow: 0 0 0 4px var(--amll-lp-hover-sub-color, #fff1); */
 	}
 
 	&:has(> *):active {
-		background-color: var(--amll-lp-hover-bg-color, #ffffff05);
-		/* box-shadow: 0 0 0 var(--amll-lp-hover-bg-color, #fff1); */
+		background-color: var(--amll-lp-hover-child-color, #ffffff05);
+		/* box-shadow: 0 0 0 var(--amll-lp-hover-sub-color, #fff1); */
 	}
 }
 
-.lyricBgLine {
+.lyricChildLine {
 	opacity: 0.0001;
-	font-size: max(calc(1em * var(--amll-lp-bg-line-scale, 0.7)), 10px);
+	font-size: max(calc(1em * var(--amll-lp-child-line-scale, 0.7)), 10px);
 	transition:
 		opacity 0.25s,
 		scale 0.5s,
@@ -54,7 +54,10 @@
 		box-shadow 0.25s;
 	/* 因为字体大小缩小了，故内边距要和主行字体大小统一，行边距计算公式为 100% / font-size 转 em 单位 */
 	padding: 1vh
-		calc(var(--amll-lp-line-padding-x, 1em) / var(--amll-lp-bg-line-scale, 0.7));
+		calc(
+			var(--amll-lp-line-padding-x, 1em) /
+			var(--amll-lp-child-line-scale, 0.7)
+		);
 
 	.lyricMainLine {
 		padding: 1.2em 1em;
@@ -86,7 +89,7 @@
 		}
 	}
 
-	&:not(:global(.playing)) > .lyricBgLine {
+	&:not(:global(.playing)) > .lyricChildLine {
 		opacity: 0.4;
 	}
 }

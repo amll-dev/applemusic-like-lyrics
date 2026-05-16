@@ -6,6 +6,7 @@ import {
 	MusicIcon,
 	RefreshCwIcon,
 	TextAlignStartIcon,
+	FileJsonIcon,
 } from "lucide-vue-next";
 import { computed } from "vue";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { extractCoverBlob } from "@/lib/extract-cover";
 import { usePlayerStore } from "@/stores/player";
+import TextArea from "./ui/textarea/TextArea.vue";
 
 const player = usePlayerStore();
 
@@ -129,6 +131,16 @@ async function openLocalMusicFile(file: File): Promise<void> {
 			<p v-if="player.background.error" class="text-xs text-destructive">
 				{{ player.background.error }}
 			</p>
+		</section>
+
+		<Separator />
+
+		<section class="space-y-2.5">
+			<h3 class="text-sm font-bold flex items-center gap-1">
+				<FileJsonIcon :size="16" />
+				LyricLine 数组 JSON
+			</h3>
+			<TextArea id="lyriclines-json" placeholder="LyricLine 数组 JSON" />
 		</section>
 	</div>
 </template>

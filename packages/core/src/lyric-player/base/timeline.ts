@@ -70,22 +70,8 @@ export function computePlayerTimeState(
 			removedHotIds.add(lastHotId);
 			continue;
 		}
-		if (line.isBG) continue;
-		const nextLine = processedLines[lastHotId + 1];
-		if (nextLine?.isBG) {
-			const nextMainLine = processedLines[lastHotId + 2];
-			const startTime = Math.min(line.startTime, nextLine.startTime);
-			const endTime = Math.min(
-				Math.max(line.endTime, nextMainLine?.startTime ?? Number.MAX_VALUE),
-				Math.max(line.endTime, nextLine.endTime),
-			);
-			if (time < startTime || endTime <= time) {
-				nextHotLines.delete(lastHotId);
-				removedHotIds.add(lastHotId);
-				nextHotLines.delete(lastHotId + 1);
-				removedHotIds.add(lastHotId + 1);
-			}
-		} else if (time < line.startTime || line.endTime <= time) {
+		if (line.parentLyricLineKey) continue;
+		if (time < line.startTime || line.endTime <= time) {
 			nextHotLines.delete(lastHotId);
 			removedHotIds.add(lastHotId);
 		}
@@ -93,7 +79,7 @@ export function computePlayerTimeState(
 
 	for (let id = 0; id < processedLines.length; id++) {
 		const line = processedLines[id];
-		if (!line || line.isBG) continue;
+		if (!line || line.parentLyricLineKey) continue;
 		if (
 			line.startTime <= time &&
 			line.endTime > time &&
@@ -101,10 +87,6 @@ export function computePlayerTimeState(
 		) {
 			nextHotLines.add(id);
 			addedIds.add(id);
-			if (processedLines[id + 1]?.isBG) {
-				nextHotLines.add(id + 1);
-				addedIds.add(id + 1);
-			}
 		}
 	}
 
@@ -165,10 +147,6 @@ export interface CommitPlayerTimeStateResult {
 	shouldLayout: boolean;
 	/** 提交后是否需要重置用户滚动状态 */
 	shouldResetScroll: boolean;
-	/** 需要启用的歌词行索引列表 */
-	linesToEnable: number[];
-	/** 需要禁用的歌词行索引列表 */
-	linesToDisable: number[];
 }
 
 /**
@@ -251,7 +229,5 @@ export function commitPlayerTimeState(
 	return {
 		shouldLayout,
 		shouldResetScroll,
-		linesToEnable,
-		linesToDisable: [...linesToDisable],
 	};
 }

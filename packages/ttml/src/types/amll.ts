@@ -27,10 +27,17 @@ export interface LyricWordBase {
 	word: string;
 }
 
+/** 歌词行的唯一键值，对于子行歌词相关功能来说需要提供以正确查询父歌词行 */
+export type AmllLyricLineKey = string | number;
+
 /**
  * 一行歌词，存储多个单词
  */
 export interface AmllLyricLine {
+	/**
+	 * 这个歌词行的唯一键值，对于子行歌词相关功能来说需要提供以正确查询父歌词行
+	 */
+	key: AmllLyricLineKey;
 	/**
 	 * 该行的所有单词
 	 */
@@ -44,9 +51,11 @@ export interface AmllLyricLine {
 	 */
 	romanLyric: string;
 	/**
-	 * 该行是否为背景歌词行
+	 * 该歌词行的父级歌词行键值
+	 * 在 AMLL 中，如果这个歌词存在一个父级歌词，则这个歌词就会成为子歌词（又称背景歌词）
+	 * 且在排版的时候，会根据开始时间早于或晚于父级歌词来考虑将其排序到主歌词行的前面或者后面
 	 */
-	isBG: boolean;
+	parentLyricLineKey?: AmllLyricLineKey;
 	/**
 	 * 该行是否为对唱歌词行（即歌词行靠右对齐）
 	 */

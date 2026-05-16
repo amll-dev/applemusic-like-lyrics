@@ -9,6 +9,7 @@ import { chunkAndSplitLyricWords } from "#utils/lyric-split-words.ts";
 import { createMatrix4, matrix4ToCSS, scaleMatrix4 } from "#utils/matrix.ts";
 import type { DomLyricPlayer } from ".";
 import { clamp, clamp01, clampPositive } from "#utils/clamp.ts";
+import { uid } from "uid";
 
 interface RealWord extends LyricWord {
 	mainElement: HTMLSpanElement;
@@ -98,12 +99,13 @@ export class LyricLineEl extends LyricLineBase {
 	constructor(
 		private lyricPlayer: DomLyricPlayer,
 		private lyricLine: LyricLine = {
+			key: uid(),
 			words: [],
 			translatedLyric: "",
 			romanLyric: "",
 			startTime: 0,
 			endTime: 0,
-			isBG: false,
+			parentLyricLineKey: undefined,
 			isDuet: false,
 		},
 	) {
@@ -111,8 +113,8 @@ export class LyricLineEl extends LyricLineBase {
 		this._prevParentEl = lyricPlayer.getElement();
 		lyricPlayer.resizeObserver.observe(this.element);
 		this.element.setAttribute("class", styles.lyricLine);
-		if (this.lyricLine.isBG) {
-			this.element.classList.add(styles.lyricBgLine);
+		if (this.lyricLine.parentLyricLineKey !== undefined) {
+			this.element.classList.add(styles.lyricChildLine);
 		}
 		if (this.lyricLine.isDuet) {
 			this.element.classList.add(styles.lyricDuetLine);
@@ -595,7 +597,7 @@ export class LyricLineEl extends LyricLineBase {
 		const delay = word.startTime - this.lyricLine.startTime;
 		const duration = Math.max(1000, word.endTime - word.startTime);
 		let up = 0.05;
-		if (this.lyricLine.isBG) {
+		if (this.lyricLine.parentLyricLineKey) {
 			up *= 2;
 		}
 		const a = wordEl.animate(
@@ -705,7 +707,7 @@ export class LyricLineEl extends LyricLineBase {
 					const x = (j + 1) / ANIMATION_FRAME_QUANTITY;
 					let y = Math.sin(x * Math.PI);
 					// y = x < 0.5 ? y : Math.max(y, 1.0);
-					if (this.lyricLine.isBG) {
+					if (this.lyricLine.parentLyricLineKey) {
 						y *= 2;
 					}
 

@@ -60,15 +60,15 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "catalog:",
+		"@tsdown/css": "catalog:",
 		"@types/deep-freeze": "^0.1.5",
 		"@types/stats.js": "^0.17.3",
 		"@types/ungap__structured-clone": "^1.2.0",
 		"lil-gui": "^0.21.0",
 		"stats.js": "^0.17.0",
+		"tsdown": "catalog:",
 		"typedoc": "catalog:",
-		"typedoc-plugin-markdown": "catalog:",
-		"@tsdown/css": "catalog:",
-		"tsdown": "catalog:"
+		"typedoc-plugin-markdown": "catalog:"
 	},
 	"peerDependencies": {
 		"@pixi/app": "*",
@@ -83,6 +83,7 @@
 		"@ungap/structured-clone": "catalog:",
 		"bezier-easing": "^3.0.0",
 		"deep-freeze": "^0.0.1",
-		"gl-matrix": "4.0.0-beta.2"
+		"gl-matrix": "4.0.0-beta.2",
+		"uid": "^2.0.2"
 	}
 }

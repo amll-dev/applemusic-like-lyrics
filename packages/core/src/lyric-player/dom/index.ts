@@ -6,8 +6,8 @@
 
 import type { LyricLine } from "#interfaces";
 import "#styles/index.css";
-import type { LyricLineBase } from "#lyric/base/line.ts";
 import { LyricPlayerBase } from "#lyric/base/index.ts";
+import type { LyricLineBase } from "#lyric/base/line.ts";
 import styles from "#styles/lyric-player.module.css";
 import { LyricLineEl, type RawLyricLineMouseEvent } from "./lyric-line.ts";
 
@@ -54,7 +54,7 @@ export class DomLyricPlayer extends LyricPlayerBase {
 	readonly innerSize: [number, number] = [0, 0];
 	private readonly onLineClickedHandler = (e: RawLyricLineMouseEvent) => {
 		const evt = new LyricLineMouseEvent(
-			this.lyricLinesIndexes.get(e.line) ?? -1,
+			this.displayLyricLinesIndicies.get(e.line) ?? -1,
 			e.line,
 			e,
 		);
@@ -104,7 +104,7 @@ export class DomLyricPlayer extends LyricPlayerBase {
 	}
 
 	/**
-	 * 设置当前播放歌词，要注意传入后这个数组内的信息不得修改，否则会发生错误
+	 * 设置当前播放歌词，传入的歌词数组结构会被结构化克隆，并对其实行有关的歌词后处理操作
 	 * @param lines 歌词数组
 	 * @param initialTime 初始时间，默认为 0
 	 */
@@ -131,7 +131,8 @@ export class DomLyricPlayer extends LyricPlayerBase {
 			lineEl.addMouseEventListener("click", this.onLineClickedHandler);
 			lineEl.addMouseEventListener("contextmenu", this.onLineClickedHandler);
 			// 不立即挂载到 DOM，进入视图（含 overscan）后在 LyricLineEl 内部挂载
-			this.lyricLinesIndexes.set(lineEl, i);
+			this.displayLyricLinesIndicies.set(lineEl, i);
+			this.lyricLinesIndicies.set(line, i);
 			// 仍需建立元素到行对象的映射，供 ResizeObserver 使用
 			this.lyricLineElementMap.set(lineEl.getElement(), lineEl);
 			return lineEl;

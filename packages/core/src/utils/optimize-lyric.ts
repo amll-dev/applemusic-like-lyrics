@@ -50,15 +50,17 @@ function resetLineTimestamps(lines: LyricLine[]) {
  */
 function convertExcessiveBackgroundLines(lines: LyricLine[]) {
 	let consecutiveBgCount = 0;
+	let lastMainLyric: LyricLine | undefined;
 
 	for (const line of lines) {
-		if (line.isBG) {
+		if (line.parentLyricLineKey) {
 			consecutiveBgCount++;
-			if (consecutiveBgCount > 1) {
-				line.isBG = false;
+			if (consecutiveBgCount > 1 && lastMainLyric) {
+				line.parentLyricLineKey = lastMainLyric.key;
 			}
 		} else {
 			consecutiveBgCount = 0;
+			lastMainLyric = line;
 		}
 	}
 }
@@ -71,10 +73,10 @@ function convertExcessiveBackgroundLines(lines: LyricLine[]) {
 function syncMainAndBackgroundLines(lines: LyricLine[]) {
 	for (let i = lines.length - 1; i >= 0; i--) {
 		const line = lines[i];
-		if (line.isBG) continue;
+		if (line.parentLyricLineKey) continue;
 
 		const nextLine = lines[i + 1];
-		if (nextLine?.isBG) {
+		if (nextLine?.parentLyricLineKey) {
 			const allWords = [...line.words, ...nextLine.words].filter(
 				(w) => w.word.trim().length > 0,
 			);
@@ -107,10 +109,13 @@ function syncMainAndBackgroundLines(lines: LyricLine[]) {
 function cleanUnintentionalOverlaps(lines: LyricLine[]) {
 	for (let i = 0; i < lines.length - 1; i++) {
 		const line = lines[i];
-		if (line.isBG) continue;
+		if (line.parentLyricLineKey) continue;
 
 		let nextMainIndex = i + 1;
-		while (nextMainIndex < lines.length && lines[nextMainIndex].isBG) {
+		while (
+			nextMainIndex < lines.length &&
+			lines[nextMainIndex].parentLyricLineKey
+		) {
 			nextMainIndex++;
 		}
 
@@ -130,7 +135,7 @@ function cleanUnintentionalOverlaps(lines: LyricLine[]) {
 					line.endTime = nextLine.startTime;
 
 					const attachedBgLine = lines[i + 1];
-					if (attachedBgLine?.isBG) {
+					if (attachedBgLine?.parentLyricLineKey) {
 						attachedBgLine.endTime = nextLine.startTime;
 					}
 				}
@@ -155,7 +160,7 @@ function tryAdvanceStartTime(lines: LyricLine[]) {
 
 	for (let i = 0; i < lines.length; i++) {
 		const line = lines[i];
-		if (line.isBG) continue;
+		if (line.parentLyricLineKey) continue;
 
 		const originalStartTime = line.startTime;
 		const originalEndTime = line.endTime;
@@ -187,7 +192,7 @@ function tryAdvanceStartTime(lines: LyricLine[]) {
 		}
 
 		const nextLine = lines[i + 1];
-		if (nextLine?.isBG) {
+		if (nextLine?.parentLyricLineKey) {
 			nextLine.startTime = line.startTime;
 		}
 

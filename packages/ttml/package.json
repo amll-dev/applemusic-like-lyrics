@@ -54,5 +54,8 @@
 		"tsdown": "catalog:",
 		"typedoc": "catalog:",
 		"vitest": "catalog:"
+	},
+	"dependencies": {
+		"uid": "^2.0.2"
 	}
 }

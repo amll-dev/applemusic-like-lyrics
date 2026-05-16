@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import amllLogoSvg from "@/assets/amll-logo.svg";
 import {
 	Sidebar,
 	SidebarContent,
@@ -11,6 +10,7 @@ import AudioPlayer from "./AudioController.vue";
 import BackgroundController from "./BackgroundController.vue";
 import LyricController from "./LyricController.vue";
 import SourceController from "./SourceController.vue";
+import amllLogoSvg from "@/assets/amll-logo.svg";
 
 const props = withDefaults(defineProps<SidebarProps>(), {});
 const coreVersion = __AMLL_CORE_VERSION__;
@@ -23,7 +23,7 @@ const coreVersion = __AMLL_CORE_VERSION__;
 				<div
 					class="flex aspect-square size-8 items-center justify-center rounded-md bg-primary text-sidebar-primary-foreground overflow-hidden"
 				>
-					<img :src="amllLogoSvg">
+					<img :src="amllLogoSvg" class="rounded-lg">
 				</div>
 				<div class="flex flex-col gap-1 leading-none">
 					<span class="font-medium"> AMLL Playground </span>

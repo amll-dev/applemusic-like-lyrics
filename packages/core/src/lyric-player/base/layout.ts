@@ -1,7 +1,8 @@
-import type { LyricLine } from "#interfaces";
+import type { LyricLine, LyricLineKey } from "#interfaces";
 import { clamp } from "#utils/clamp.ts";
 import type { SpringParams } from "#utils/spring.ts";
 import { type LayoutAlignAnchor, LyricLineRenderMode } from "./consts.ts";
+import type { LyricLineBase } from "./line.ts";
 import type { PlayerTimelineState } from "./timeline.ts";
 
 /**
@@ -186,6 +187,42 @@ export function computeLinePosYSpringParams(
 	};
 }
 
+export interface ComputeIsLyricLineActiveInput {
+	line: LyricLine;
+	lineIndex: number;
+	lyricLineKeyMap: Map<LyricLineKey, LyricLine>;
+	lyricLinesIndicies: WeakMap<LyricLine, number>;
+	bufferedLines: Set<number>;
+}
+
+/**
+ * 计算当前歌词行是否应被视为活跃可显示的行
+ */
+export function computeIsLyricLineActive(
+	input: ComputeIsLyricLineActiveInput,
+): boolean {
+	const {
+		line,
+		lineIndex,
+		bufferedLines,
+		lyricLineKeyMap: lyrlcLineKeyMap,
+		lyricLinesIndicies,
+	} = input;
+
+	// 如果是主行，那么只要它在缓冲区内就算活跃
+	if (line.parentLyricLineKey === undefined)
+		return bufferedLines.has(lineIndex);
+
+	// 如果是子行，那么只有在它的父行在缓冲区内时才算活跃
+	const parentLine = lyrlcLineKeyMap.get(line.parentLyricLineKey);
+	if (!parentLine) return false;
+
+	const parentIndex = lyricLinesIndicies.get(parentLine);
+	if (parentIndex === undefined) return false;
+
+	return bufferedLines.has(parentIndex);
+}
+
 /**
  * {@link computeLinePresentation} 的参数类型。
  *
@@ -201,8 +238,8 @@ export interface ComputeLinePresentationInput {
 	scrollToIndex: number;
 	/** 当前缓冲区（{@link PlayerTimelineState.bufferedLines}）中最靠后的歌词行索引 */
 	latestIndex: number;
-	/** 当前歌词行是否在缓冲集合内 */
-	hasBuffered: boolean;
+	/** 当前歌词行是否为活跃可显示行 */
+	isActiveLine: boolean;
 	/** 是否启用隐藏已播放行 */
 	hidePassedLines: boolean;
 	/** 是否处于播放状态 */
@@ -249,7 +286,7 @@ export function computeLinePresentation(
 		lineIndex,
 		scrollToIndex,
 		latestIndex,
-		hasBuffered,
+		isActiveLine,
 		hidePassedLines,
 		isPlaying,
 		isNonDynamic,
@@ -261,7 +298,7 @@ export function computeLinePresentation(
 	} = input;
 
 	const isActive =
-		hasBuffered || (lineIndex >= scrollToIndex && lineIndex < latestIndex);
+		isActiveLine || (lineIndex >= scrollToIndex && lineIndex < latestIndex);
 	const blurLevel = computeLineBlur({
 		enableBlur,
 		isUserScrolling,
@@ -280,12 +317,12 @@ export function computeLinePresentation(
 		) {
 			// 为了避免浏览器优化，这里使用了一个极小但不为零的值（几乎不可见）
 			targetOpacity = 1e-4;
-		} else if (hasBuffered) {
+		} else if (isActiveLine) {
 			targetOpacity = 0.85;
 		} else {
 			targetOpacity = isNonDynamic ? 0.2 : 1;
 		}
-	} else if (hasBuffered) {
+	} else if (isActiveLine) {
 		targetOpacity = 0.85;
 	} else {
 		targetOpacity = isNonDynamic ? 0.2 : 1;
@@ -294,7 +331,7 @@ export function computeLinePresentation(
 	const SCALE_ASPECT = enableScale ? 97 : 100;
 	let targetScale = 100;
 	if (!isActive && isPlaying) {
-		targetScale = line.isBG ? 75 : SCALE_ASPECT;
+		targetScale = line.parentLyricLineKey ? 75 : SCALE_ASPECT;
 	}
 
 	return {
@@ -356,4 +393,80 @@ export function computeLineBlur(input: ComputeLineBlurInput): number {
 	}
 
 	return isCompact ? blurLevel * 0.8 : blurLevel;
+}
+
+export interface ComputeScrollOffsetInput {
+	currentLyricLineObjects: LyricLineBase[];
+	lyricLinesSize: WeakMap<LyricLineBase, [number, number]>;
+	fallbackHeight: number;
+	targetAlignIndex: number;
+	isPlaying: boolean;
+}
+
+/**
+ * 计算当前歌词行下的滚动偏移量，以实现目标行的对齐。
+ *
+ * 通过累加目标行之前所有歌词行的高度，得到一个滚动偏移值，
+ * 使得目标行能够对齐到播放器的指定位置。
+ * 在播放状态下会跳过子行（例如对唱歌词的第二行），以保持主行对齐。
+ */
+export function computeScrollOffset(input: ComputeScrollOffsetInput): number {
+	const {
+		currentLyricLineObjects,
+		lyricLinesSize,
+		fallbackHeight,
+		isPlaying,
+		targetAlignIndex,
+	} = input;
+
+	let result = 0;
+
+	for (const line of currentLyricLineObjects.slice(0, targetAlignIndex)) {
+		const isSubLine = line.getLine().parentLyricLineKey !== undefined;
+		if (isSubLine && isPlaying) {
+			continue;
+		}
+		const lineHeight = lyricLinesSize.get(line)?.[1] ?? fallbackHeight;
+		result += lineHeight;
+	}
+
+	return result;
+}
+
+export interface ComputeShouldOccupyHeightInput {
+	line: LyricLine;
+	lyricLineKeyMap: Map<LyricLineKey, LyricLine>;
+	lyricLinesIndicies: WeakMap<LyricLine, number>;
+	bufferedLines: Set<number>;
+	isPresentationActive: boolean;
+	isPlaying: boolean;
+}
+
+/**
+ * 计算当前歌词是否需要占用高度空间，以排列歌词行，并步进 calcLayout 中的 curPos
+ */
+export function computeShouldOccupyHeight(
+	input: ComputeShouldOccupyHeightInput,
+): boolean {
+	const {
+		line,
+		lyricLineKeyMap: lyrlcLineKeyMap,
+		lyricLinesIndicies,
+		bufferedLines,
+		isPlaying,
+	} = input;
+
+	if (line.parentLyricLineKey === undefined) return true;
+
+	// 又或者当前播放器暂停的时候也会呈现
+	if (!isPlaying) return true;
+
+	// 如果是子行，那么只有在它的父行正在展示时呈现
+	const parentLine = lyrlcLineKeyMap.get(line.parentLyricLineKey);
+	if (!parentLine) return true;
+
+	const parentIndex = lyricLinesIndicies.get(parentLine);
+	if (parentIndex === undefined) return true;
+
+	return bufferedLines.has(parentIndex);
 }
