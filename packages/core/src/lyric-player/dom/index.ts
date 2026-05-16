@@ -6,8 +6,8 @@
 
 import type { LyricLine } from "#interfaces";
 import "#styles/index.css";
-import type { LyricLineBase } from "#lyric/base/line.ts";
 import { LyricPlayerBase } from "#lyric/base/index.ts";
+import type { LyricLineBase } from "#lyric/base/line.ts";
 import styles from "#styles/lyric-player.module.css";
 import { LyricLineEl, type RawLyricLineMouseEvent } from "./lyric-line.ts";
 

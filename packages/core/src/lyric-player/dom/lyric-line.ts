@@ -93,7 +93,7 @@ export class LyricLineEl extends LyricLineBase {
 	/**
 	 * 用于平衡换行、尽量减少各行长度差异的类
 	 */
-	private balancer?: LineBalancer;
+	private balancer: LineBalancer;
 
 	constructor(
 		private lyricPlayer: DomLyricPlayer,
@@ -127,9 +127,7 @@ export class LyricLineEl extends LyricLineBase {
 		main.setAttribute("class", styles.lyricMainLine);
 		trans.setAttribute("class", styles.lyricSubLine);
 		roman.setAttribute("class", styles.lyricSubLine);
-		if (LyricLineBase.wordSegmenter) {
-			this.balancer = new LineBalancer(main);
-		}
+		this.balancer = new LineBalancer(main);
 		// 延迟构建具体行内容，进入可视区（含 overscan）时再构建
 		this.rebuildStyle();
 	}
@@ -462,22 +460,13 @@ export class LyricLineEl extends LyricLineBase {
 			mainWordEl.classList.add(styles.emphasize);
 			const trimmedWord = displayWord.trim();
 
-			if (LyricLineBase.graphemeSegmenter) {
-				for (const { segment } of LyricLineBase.graphemeSegmenter.segment(
-					trimmedWord,
-				)) {
-					const charEl = document.createElement("span");
-					charEl.innerText = segment;
-					subElements.push(charEl);
-					wordContainer.appendChild(charEl);
-				}
-			} else {
-				for (const segment of Array.from(trimmedWord)) {
-					const charEl = document.createElement("span");
-					charEl.innerText = segment;
-					subElements.push(charEl);
-					wordContainer.appendChild(charEl);
-				}
+			for (const { segment } of LyricLineBase.graphemeSegmenter.segment(
+				trimmedWord,
+			)) {
+				const charEl = document.createElement("span");
+				charEl.innerText = segment;
+				subElements.push(charEl);
+				wordContainer.appendChild(charEl);
 			}
 		} else {
 			if (hasRomanLine) {
@@ -754,13 +743,11 @@ export class LyricLineEl extends LyricLineBase {
 				word.padding = 0;
 			}
 		}
-		if (this.balancer && LyricLineBase.wordSegmenter) {
-			this.balancer.balanceLineBreaks(
-				this.lyricPlayer._getIsNonDynamic(),
-				this.splittedWords.length > 0,
-				LyricLineBase.wordSegmenter,
-			);
-		}
+		this.balancer.balanceLineBreaks(
+			this.lyricPlayer._getIsNonDynamic(),
+			this.splittedWords.length > 0,
+			LyricLineBase.wordSegmenter,
+		);
 		if (this.lyricPlayer.supportMaskImage) {
 			this.generateWebAnimationBasedMaskImage();
 		} else {
