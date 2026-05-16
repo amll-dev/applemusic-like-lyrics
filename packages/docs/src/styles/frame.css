@@ -1,5 +1,6 @@
-:root {
+* {
 	scrollbar-color: var(--amll-muted-border) transparent;
+	scrollbar-width: thin;
 }
 
 body {
