@@ -670,6 +670,9 @@ importers:
       '@biomejs/biome':
         specifier: 'catalog:'
         version: 2.4.15
+      '@types/node':
+        specifier: ^25.5.2
+        version: 25.7.0
       '@xmldom/xmldom':
         specifier: ^0.9.10
         version: 0.9.10
@@ -10641,7 +10644,7 @@ snapshots:
 
   '@types/sax@1.2.7':
     dependencies:
-      '@types/node': 25.6.2
+      '@types/node': 25.7.0
 
   '@types/stats.js@0.17.4': {}
 

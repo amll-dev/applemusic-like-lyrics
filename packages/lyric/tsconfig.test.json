@@ -1,0 +1,9 @@
+{
+	"extends": "../../tsconfig.base.json",
+	"include": ["test/**/*.ts", "tests/**/*.ts"],
+	"compilerOptions": {
+		"types": ["node", "vitest"],
+		"isolatedDeclarations": false,
+		"declaration": false
+	}
+}
