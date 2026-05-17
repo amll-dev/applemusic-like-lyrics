@@ -35,7 +35,7 @@ AMLL is distributed as npm packages and provides tools across rendering componen
   - [@applemusic-like-lyrics/ws-protocol](https://www.npmjs.com/package/@applemusic-like-lyrics/ws-protocol)
     Lyrics player protocol library for syncing playback progress and playback information
 
-AMLL is **open-sourced under [GNU General Public License v3.0 only](https://spdx.org/licenses/GPL-3.0.html)**, with the repository hosted on [GitHub](https://github.com/amll-dev/applemusic-like-lyrics). You can integrate it into your projects under the license terms.
+AMLL is **open-sourced under [AGPL v3.0 only](https://spdx.org/licenses/AGPL-3.0-only.html)**, with the repository hosted on [GitHub](https://github.com/amll-dev/applemusic-like-lyrics). You can integrate it into your projects under the license terms.
 
 Thanks to the maturity of frontend technologies, web rendering now has strong consistency across browsers, desktop, and mobile platforms. If you are building a music player, karaoke app, or related product with frontend technologies, AMLL is a strong option.
 
