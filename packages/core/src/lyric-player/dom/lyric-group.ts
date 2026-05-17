@@ -16,6 +16,7 @@ export class LyricLineGroup extends LyricLineGroupBase<LyricLineEl> {
 		this.element = document.createElement("div");
 		this.element.className = styles.lyricLineWrapper;
 		this.element.appendChild(mainLine.getElement());
+		this.posY.setPosition(window.innerHeight * 2);
 
 		lyricPlayer.resizeObserver.observe(this.element);
 	}
