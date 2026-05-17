@@ -102,9 +102,11 @@ export abstract class LyricLineGroupBase<
 	abstract get isInSight(): boolean;
 
 	update(delta: number): void {
-		this.posY.update(delta);
-		this.bgSlideY.update(delta);
-		this.renderStyles();
+		if (this.lyricPlayer.getEnableSpring()) {
+			this.posY.update(delta);
+			this.bgSlideY.update(delta);
+			this.renderStyles();
+		}
 
 		this.mainLine.update(delta);
 		this.bgLine?.update(delta);
