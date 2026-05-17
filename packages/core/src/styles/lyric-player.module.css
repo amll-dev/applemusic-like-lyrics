@@ -1,48 +1,38 @@
 .lyricLineWrapper {
 	position: absolute;
-	left: 0;
 	top: 0;
-	width: 100%;
+	left: 0;
 	display: flex;
 	flex-direction: column;
 	align-items: flex-start;
+	width: 100%;
 
 	will-change: transform, opacity, filter;
-
 	transition:
 		opacity 0.4s ease,
 		filter 0.4s ease;
 }
 
-:global(.amll-lyric-player).hasDuetLine .lyricLineWrapper:has(.lyricDuetLine) {
-	align-items: flex-end;
-}
-
-:global(.amll-lyric-player).hasDuetLine
-	.lyricLineWrapper:has(.lyricDuetLine)
-	.bgWrapper {
-	transform-origin: calc(100% - var(--lyric-line-padding-x)) top;
-}
-
 .lyricLine {
 	position: relative;
-	backface-visibility: hidden;
-	transform-origin: left;
+	box-sizing: border-box;
 	width: var(--amll-lp-width, 100%);
 	min-width: var(--amll-lp-width, 100%);
 	max-width: var(--amll-lp-width, 100%);
 	height: fit-content;
 	padding: 0.5em 1em;
+	padding-left: 1em;
+	padding-right: 1em;
+	border-radius: 0.25em;
+
 	contain: content;
+	backface-visibility: hidden;
+	transform-origin: left;
 	will-change: transform;
+
 	transition:
 		background-color 0.25s,
 		box-shadow 0.25s;
-	box-sizing: border-box;
-	border-radius: 0.25em;
-
-	padding-left: 1em;
-	padding-right: 1em;
 
 	@media screen and (max-width: 500px) {
 		padding-left: 20px;
@@ -69,9 +59,9 @@
 }
 
 .lyricMainLine {
-	transition: opacity 0.3s 0.1s;
 	margin: -1em;
 	padding: 1em;
+	transition: opacity 0.3s 0.1s;
 
 	& span {
 		display: inline-block;
@@ -80,18 +70,18 @@
 	}
 
 	.romanWord {
-		font-size: 0.5em;
-		line-height: 1em;
 		display: flex;
 		padding-inline-end: 0.3em;
+		font-size: 0.5em;
+		line-height: 1em;
 	}
 
 	.rubyWord {
-		font-size: 0.5em;
-		line-height: 1em;
 		display: flex;
 		justify-content: center;
 		min-height: 1em;
+		font-size: 0.5em;
+		line-height: 1em;
 	}
 
 	.wordWithRuby {
@@ -109,22 +99,22 @@
 
 	& > span,
 	span.emphasizeWrapper {
-		white-space: pre-wrap;
 		display: inline-block;
-		padding: 1em;
 		margin: -1em;
-		will-change: transform;
+		padding: 1em;
+		white-space: pre-wrap;
 		vertical-align: bottom;
+		will-change: transform;
 
 		&.emphasize,
 		span.emphasize {
-			padding: 1em;
 			margin: -1em;
+			padding: 1em;
 			backface-visibility: hidden;
 
 			& > span {
-				padding: 1em;
 				margin: -1em;
+				padding: 1em;
 				will-change: transform;
 				backface-visibility: hidden;
 			}
@@ -134,45 +124,80 @@
 
 .lyricBgLine {
 	opacity: 0.4;
+	/* 因为字体大小缩小了，故内边距要和主行字体大小统一，行边距计算公式为 100% / font-size 转 em 单位 */
+	padding: 1vh
+		calc(var(--amll-lp-line-padding-x, 1em) / var(--amll-lp-bg-line-scale, 0.7));
 	font-size: max(calc(1em * var(--amll-lp-bg-line-scale, 0.7)), 10px);
 	transition:
 		background-color 0.25s,
 		box-shadow 0.25s;
-	/* 因为字体大小缩小了，故内边距要和主行字体大小统一，行边距计算公式为 100% / font-size 转 em 单位 */
-	padding: 1vh
-		calc(var(--amll-lp-line-padding-x, 1em) / var(--amll-lp-bg-line-scale, 0.7));
 
 	.lyricMainLine {
 		padding: 1.2em 1em;
 	}
 
 	&.active {
+		opacity: 0.4;
 		transition:
 			background-color 0.25s,
 			box-shadow 0.25s;
-		opacity: 0.4;
+	}
+}
+
+.lyricSubLine {
+	opacity: 0.3;
+	font-size: max(0.5em, 10px);
+	line-height: 1.5em;
+	transition: opacity 0.2s 0.25s;
+
+	@supports (mix-blend-mode: plus-lighter) {
+		opacity: 0.3;
+	}
+}
+
+.bottomLine {
+	padding-top: 0;
+	padding-bottom: 0;
+	line-height: 1.8em;
+	cursor: default;
+
+	&:empty {
+		display: none;
+		height: 0;
+		margin: 0;
+		padding: 0;
 	}
 }
 
 .bgWrapper {
-	width: 100%;
-	display: flex;
-	flex-direction: column;
-	align-items: inherit;
-	z-index: -1;
 	position: absolute;
 	top: 100%;
 	left: 0;
-	transform-origin: var(--lyric-line-padding-x) top;
+	z-index: -1;
+	display: flex;
+	flex-direction: column;
+	align-items: inherit;
+	width: 100%;
+
 	visibility: visible;
 	pointer-events: auto;
 	opacity: 0;
+	transform-origin: var(--lyric-line-padding-x) top;
 	transition: opacity 0.3s ease;
+}
+
+.bgWrapperTop {
+	position: relative;
+	top: auto;
+	bottom: auto;
+	margin-top: -999px;
+	transform-origin: var(--lyric-line-padding-x) bottom;
 }
 
 .bgWrapperActive {
 	position: relative;
 	top: auto;
+	bottom: auto;
 	opacity: 1;
 }
 
@@ -181,55 +206,37 @@
 	pointer-events: none;
 }
 
-.bgWrapperTop {
-	position: relative;
-	top: auto;
-	bottom: auto;
-	transform-origin: var(--lyric-line-padding-x) bottom;
+.interludeDots {
+	position: absolute;
+	left: 0;
+	display: flex;
+	gap: 0.25em;
+	width: fit-content;
+	height: clamp(0.5em, 1vh, 3em);
+	padding: 2.5% 0.75em;
 
-	margin-top: -999px;
-}
+	opacity: 0;
+	transform-origin: center;
+	transition: opacity 0.25s;
 
-.bgWrapperActive {
-	position: relative;
-	top: auto;
-	bottom: auto;
-	opacity: 1;
-}
-
-:global(.amll-lyric-player) {
-	&:hover .lyricLine,
-	&:hover .lyricLineWrapper {
-		/* biome-ignore lint/complexity/noImportantStyles: 覆盖内联样式 */
-		filter: unset !important;
+	&.enabled {
+		opacity: 1;
 	}
 
-	--lyric-line-padding-x: 1em;
-
-	@media screen and (max-width: 500px) {
-		--lyric-line-padding-x: 20px;
+	& > * {
+		display: inline-block;
+		width: clamp(0.5em, 1vh, 3em);
+		height: clamp(0.5em, 1vh, 3em);
+		margin-right: 4px;
+		border-radius: 50%;
+		background-color: var(--amll-lp-color, white);
+		aspect-ratio: 1 / 1;
 	}
 
-	&.hasDuetLine {
-		.lyricLine:not(.lyricDuetLine) {
-			padding-right: 15%;
-		}
-
-		.lyricDuetLine {
-			padding-left: 15%;
-		}
+	&.duet {
+		right: 0;
+		transform-origin: center;
 	}
-
-	&:not(:global(.playing)) > .lyricBgLine {
-		opacity: 0.4;
-	}
-}
-
-.lyricSubLine {
-	font-size: max(0.5em, 10px);
-	line-height: 1.5em;
-	transition: opacity 0.2s 0.25s;
-	opacity: 0.3;
 }
 
 .disableSpring > * {
@@ -240,59 +247,43 @@
 		box-shadow 0.25s;
 }
 
-.interludeDots {
-	height: clamp(0.5em, 1vh, 3em);
-	transition: opacity 0.25s;
-	transform-origin: center;
-	width: fit-content;
-	padding: 2.5% 0.75em;
-	position: absolute;
-	display: flex;
-	gap: 0.25em;
-	left: 0;
-	opacity: 0;
-
-	&.enabled {
-		opacity: 1;
-	}
-
-	& > * {
-		width: clamp(0.5em, 1vh, 3em);
-		height: clamp(0.5em, 1vh, 3em);
-		display: inline-block;
-		border-radius: 50%;
-		aspect-ratio: 1 / 1;
-		background-color: var(--amll-lp-color, white);
-		margin-right: 4px;
-	}
-
-	&.duet {
-		right: 0;
-		transform-origin: center;
-	}
-}
-
-@supports (mix-blend-mode: plus-lighter) {
-	.lyricSubLine {
-		opacity: 0.3;
-	}
-}
-
 .tmpDisableTransition {
 	/* biome-ignore lint/complexity/noImportantStyles: 覆盖内联样式 */
 	transition: none !important;
 }
 
-.bottomLine {
-	padding-top: 0;
-	padding-bottom: 0;
-	cursor: default;
-	line-height: 1.8em;
-}
+:global(.amll-lyric-player) {
+	--lyric-line-padding-x: 1em;
 
-.bottomLine:empty {
-	display: none;
-	padding: 0;
-	margin: 0;
-	height: 0;
+	@media screen and (max-width: 500px) {
+		--lyric-line-padding-x: 20px;
+	}
+
+	&:hover .lyricLine,
+	&:hover .lyricLineWrapper {
+		/* biome-ignore lint/complexity/noImportantStyles: 覆盖内联样式 */
+		filter: unset !important;
+	}
+
+	&.hasDuetLine {
+		.lyricLine:not(.lyricDuetLine) {
+			padding-right: 15%;
+		}
+
+		.lyricDuetLine {
+			padding-left: 15%;
+		}
+
+		.lyricLineWrapper:has(.lyricDuetLine) {
+			align-items: flex-end;
+
+			.bgWrapper {
+				transform-origin: calc(100% - var(--lyric-line-padding-x)) top;
+			}
+
+			.bgWrapperTop {
+				transform-origin: calc(100% - var(--lyric-line-padding-x)) bottom;
+			}
+		}
+	}
 }
