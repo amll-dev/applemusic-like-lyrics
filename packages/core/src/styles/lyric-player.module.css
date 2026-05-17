@@ -287,4 +287,11 @@
 			}
 		}
 	}
+
+	&:not(.playing) .bgWrapper {
+		position: relative;
+		top: auto;
+		bottom: auto;
+		opacity: 1;
+	}
 }

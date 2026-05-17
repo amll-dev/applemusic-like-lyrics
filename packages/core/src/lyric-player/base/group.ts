@@ -64,14 +64,17 @@ export abstract class LyricLineGroupBase<
 
 		const enableSpring = this.lyricPlayer.getEnableSpring();
 		const hiddenSlideY = this.isBgFirst ? 80 : -80;
+		const isPlaying = this.lyricPlayer.getIsPlaying();
+
+		const targetBgSlideY = isActive || !isPlaying ? 0 : hiddenSlideY;
 
 		if (force || !enableSpring) {
 			this.posY.setPosition(top);
-			this.bgSlideY.setPosition(isActive ? 0 : hiddenSlideY);
+			this.bgSlideY.setPosition(targetBgSlideY);
 			this.renderStyles();
 		} else {
 			this.posY.setTargetPosition(top, delay);
-			this.bgSlideY.setTargetPosition(isActive ? 0 : hiddenSlideY, delay);
+			this.bgSlideY.setTargetPosition(targetBgSlideY, delay);
 		}
 	}
 
