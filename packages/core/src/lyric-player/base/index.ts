@@ -97,6 +97,9 @@ export abstract class LyricPlayerBase
 	protected isPageVisible = true;
 	protected optimizeOptions: OptimizeLyricOptions = {};
 
+	/** 是否强制让背景人声行始终后置（即始终在主歌词下方显示，不前置背景人声） */
+	protected alwaysPostpositionBackground = false;
+
 	protected posXSpringParams: Partial<SpringParams> = {
 		mass: 1,
 		damping: 10,
@@ -812,6 +815,29 @@ export abstract class LyricPlayerBase
 	 */
 	getCurrentTime(): number {
 		return this.timelineState.currentTime;
+	}
+
+	/**
+	 * 设置是否让背景人声行始终后置显示
+	 *
+	 * 默认情况下，如果背景歌词开始时间早于主歌词，会在主歌词上方展示；
+	 * 如果设置为 `true`，则无论时间顺序如何，背景歌词都会始终在主歌词下方展示
+	 * @param enable 是否启用始终后置
+	 */
+	setAlwaysPostpositionBackground(enable: boolean): void {
+		if (this.alwaysPostpositionBackground === enable) {
+			return;
+		}
+
+		this.alwaysPostpositionBackground = enable;
+
+		this.rebuildLyricLines();
+		this.calcLayout();
+	}
+
+	/** 获取当前是否设置了让背景人声行始终后置显示 */
+	getAlwaysPostpositionBackground(): boolean {
+		return this.alwaysPostpositionBackground;
 	}
 
 	getElement(): HTMLElement {

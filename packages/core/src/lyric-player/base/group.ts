@@ -7,6 +7,7 @@ export interface LyricPlayerFlags {
 	getEnableSpring(): boolean;
 	getEnableScale(): boolean;
 	getIsPlaying(): boolean;
+	getAlwaysPostpositionBackground(): boolean;
 }
 
 export abstract class LyricLineGroupBase<
@@ -63,7 +64,11 @@ export abstract class LyricLineGroupBase<
 		this.setLineTransformations(force, delay);
 
 		const enableSpring = this.lyricPlayer.getEnableSpring();
-		const hiddenSlideY = this.isBgFirst ? 80 : -80;
+		const alwaysPostposition =
+			this.lyricPlayer.getAlwaysPostpositionBackground();
+		const shouldBgFirst = alwaysPostposition ? false : this.isBgFirst;
+		const hiddenSlideY = shouldBgFirst ? 80 : -80;
+
 		const isPlaying = this.lyricPlayer.getIsPlaying();
 
 		const targetBgSlideY = isActive || !isPlaying ? 0 : hiddenSlideY;
