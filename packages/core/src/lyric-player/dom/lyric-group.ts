@@ -37,7 +37,22 @@ export class LyricLineGroup extends LyricLineGroupBase<LyricLineEl> {
 
 	show(): void {
 		if (!this.element.parentElement) {
-			this.lyricPlayer.getElement().appendChild(this.element);
+			const playerEl = this.lyricPlayer.getElement();
+			const groups = this.lyricPlayer.currentLyricGroups;
+			const myIndex = groups.indexOf(this);
+
+			let referenceNode: HTMLElement | null = null;
+			if (myIndex !== -1) {
+				for (let i = myIndex + 1; i < groups.length; i++) {
+					if (groups[i].element.parentElement === playerEl) {
+						referenceNode = groups[i].element;
+						break;
+					}
+				}
+			}
+
+			playerEl.insertBefore(this.element, referenceNode);
+
 			this.lyricPlayer.resizeObserver.observe(this.element);
 		}
 
@@ -49,6 +64,9 @@ export class LyricLineGroup extends LyricLineGroupBase<LyricLineEl> {
 		if (this.element.parentElement) {
 			this.lyricPlayer.resizeObserver.unobserve(this.element);
 			this.element.remove();
+
+			this.mainLine.teardownContent();
+			this.bgLine?.teardownContent();
 		}
 	}
 

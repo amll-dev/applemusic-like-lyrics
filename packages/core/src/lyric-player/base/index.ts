@@ -91,7 +91,7 @@ export abstract class LyricPlayerBase
 		isScrolled: false,
 		isUserScrolling: false,
 	};
-	protected currentLyricGroups: LyricLineGroupBase[] = [];
+	public currentLyricGroups: LyricLineGroupBase[] = [];
 	lyricGroupSize: WeakMap<LyricLineGroupBase, [number, number]> = new WeakMap();
 	readonly size: [number, number] = [0, 0];
 	protected isPageVisible = true;

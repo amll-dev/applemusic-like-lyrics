@@ -157,6 +157,7 @@ export class DomLyricPlayer extends LyricPlayerBase {
 		this.setLinePosXSpringParams({});
 		this.setLinePosYSpringParams({});
 		this.setLineScaleSpringParams({});
+		this.setCurrentTime(initialTime, true);
 		this.calcLayout(true);
 		this.update(0);
 	}

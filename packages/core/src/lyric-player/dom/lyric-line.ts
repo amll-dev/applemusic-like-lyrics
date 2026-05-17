@@ -1098,6 +1098,13 @@ export class LyricLineEl extends LyricLineBase {
 		return `[位移: ${this.top}; 缩放: ${this.scale}; 延时: ${this.delay}]`;
 	}
 
+	teardownContent(): void {
+		if (this.built) {
+			this.disposeElements();
+			this.built = false;
+		}
+	}
+
 	private disposeElements() {
 		this.balancer?.reset();
 		for (const realWord of this.splittedWords) {
