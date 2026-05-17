@@ -63,6 +63,13 @@ export class LyricLineGroup extends LyricLineGroupBase<LyricLineEl> {
 	}
 
 	addBgLine(bgLine: LyricLineEl): void {
+		if (this.bgLine) {
+			this.bgLine.dispose();
+		}
+		if (this.bgWrapper) {
+			this.bgWrapper.remove();
+		}
+
 		this.bgLine = bgLine;
 
 		// 需要对比第一个词的开始时间而不是行起始时间，因为行的起始时间已经被
