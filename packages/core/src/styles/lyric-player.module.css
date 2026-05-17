@@ -239,7 +239,8 @@
 	}
 }
 
-.disableSpring > * {
+.disableSpring > *,
+.disableSpring .lyricLine {
 	transition:
 		filter 0.25s,
 		transform 0.5s,
