@@ -664,12 +664,9 @@ export abstract class LyricPlayerBase
 				curPos,
 				force,
 				delay,
-				this.getEnableSpring(),
 				presentation.isActive,
 				presentation.targetOpacity,
 				presentation.blurLevel,
-				this.enableScale,
-				this.timelineState.isPlaying,
 			);
 
 			curPos += this.lyricGroupSize.get(group)?.[1] ?? LINE_HEIGHT_FALLBACK;

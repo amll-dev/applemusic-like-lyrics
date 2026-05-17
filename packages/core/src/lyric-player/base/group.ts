@@ -3,10 +3,18 @@ import { Spring } from "#utils/spring.ts";
 import { LyricLineRenderMode } from "./consts.ts";
 import type { LyricLineBase } from "./line.ts";
 
+export interface LyricPlayerFlags {
+	getEnableSpring(): boolean;
+	getEnableScale(): boolean;
+	getIsPlaying(): boolean;
+}
+
 export abstract class LyricLineGroupBase<
 	T extends LyricLineBase = LyricLineBase,
 > implements Disposable
 {
+	protected abstract readonly lyricPlayer: LyricPlayerFlags;
+
 	public posY: Spring = new Spring(0);
 	public bgSlideY: Spring = new Spring(-80);
 	public top = 0;
@@ -42,12 +50,9 @@ export abstract class LyricLineGroupBase<
 		top: number,
 		force: boolean,
 		delay: number,
-		enableSpring: boolean,
 		isActive: boolean,
 		opacity: number,
 		blur: number,
-		enableScale: boolean,
-		isPlaying: boolean,
 	): void {
 		this.top = top;
 		this.delay = delay;
@@ -55,8 +60,9 @@ export abstract class LyricLineGroupBase<
 		this.opacity = opacity;
 		this.blur = blur;
 
-		this.setLineTransformations(force, delay, enableScale, isPlaying);
+		this.setLineTransformations(force, delay);
 
+		const enableSpring = this.lyricPlayer.getEnableSpring();
 		const hiddenSlideY = this.isBgFirst ? 80 : -80;
 
 		if (force || !enableSpring) {
@@ -69,12 +75,10 @@ export abstract class LyricLineGroupBase<
 		}
 	}
 
-	private setLineTransformations(
-		force: boolean,
-		delay: number,
-		enableScale: boolean,
-		isPlaying: boolean,
-	) {
+	private setLineTransformations(force: boolean, delay: number) {
+		const enableScale = this.lyricPlayer.getEnableScale();
+		const isPlaying = this.lyricPlayer.getIsPlaying();
+
 		const renderMode = this.isActive
 			? LyricLineRenderMode.GRADIENT
 			: LyricLineRenderMode.SOLID;
