@@ -196,22 +196,67 @@ export function toAmllLyrics(
 }
 
 function alignRomanization(amllWords: AmllLyricWord[], romanWords: Syllable[]) {
-	let i = 0;
-	let j = 0;
-	const TIME_TOLERANCE_MS = 30;
+	let romanSearchStartIndex = 0;
 
-	while (i < amllWords.length && j < romanWords.length) {
+	/** 交并比阈值，至少有 10% 的面积重合 */
+	const MIN_IOU_THRESHOLD = 0.1;
+
+	/** 快速通道，优先匹配时间戳完全相同的主歌词和音译音节，同时避免浮点数误差 */
+	const FAST_TRACK_TOLERANCE_MS = 2;
+
+	for (let i = 0; i < amllWords.length; i++) {
 		const main = amllWords[i];
-		const sub = romanWords[j];
+		const mainEndTime = main.endTime;
 
-		if (Math.abs(main.startTime - sub.startTime) < TIME_TOLERANCE_MS) {
-			main.romanWord = sub.text;
-			i++;
+		let maxIou = 0;
+		let bestMatchIndex = -1;
+		let isFastTrackMatched = false;
+
+		let j = romanSearchStartIndex;
+		while (j < romanWords.length) {
+			const sub = romanWords[j];
+
+			if (Math.abs(main.startTime - sub.startTime) <= FAST_TRACK_TOLERANCE_MS) {
+				main.romanWord = sub.text;
+				romanSearchStartIndex = j + 1;
+				isFastTrackMatched = true;
+				break;
+			}
+
+			const subEndTime = sub.endTime;
+
+			// 交集
+			const overlapStart = Math.max(main.startTime, sub.startTime);
+			const overlapEnd = Math.min(mainEndTime, subEndTime);
+			const intersection = Math.max(0, overlapEnd - overlapStart);
+
+			if (intersection > 0) {
+				// 并集
+				const unionStart = Math.min(main.startTime, sub.startTime);
+				const unionEnd = Math.max(mainEndTime, subEndTime);
+				const unionDuration = Math.max(1, unionEnd - unionStart);
+
+				const iou = intersection / unionDuration;
+
+				if (iou > maxIou) {
+					maxIou = iou;
+					bestMatchIndex = j;
+				}
+			}
+
+			if (sub.startTime >= mainEndTime) {
+				break;
+			}
 			j++;
-		} else if (sub.startTime < main.startTime) {
-			j++;
-		} else {
-			i++;
+		}
+
+		if (
+			!isFastTrackMatched &&
+			bestMatchIndex !== -1 &&
+			maxIou >= MIN_IOU_THRESHOLD
+		) {
+			main.romanWord = romanWords[bestMatchIndex].text;
+			romanSearchStartIndex = bestMatchIndex + 1;
 		}
 	}
 }

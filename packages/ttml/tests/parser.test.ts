@@ -531,6 +531,47 @@ describe("toAmllLyrics Conversion", () => {
 		]);
 	});
 
+	it("does not align romanization to nearby punctuation with different end time", () => {
+		const xml = `
+			<tt xmlns="http://www.w3.org/ns/ttml"
+				xmlns:itunes="http://music.apple.com/lyric-ttml-internal"
+				xmlns:ttm="http://www.w3.org/ns/ttml#metadata">
+				<head>
+					<iTunesMetadata xmlns="http://music.apple.com/lyric-ttml-internal">
+						<transliterations>
+							<transliteration xml:lang="ja-Latn">
+								<text for="L26">
+									<span begin="2:00.250" end="2:00.690" xmlns="http://www.w3.org/ns/ttml">ko</span>
+									<span begin="2:00.695" end="2:00.870" xmlns="http://www.w3.org/ns/ttml">u</span>
+									<span begin="2:01.070" end="2:01.470" xmlns="http://www.w3.org/ns/ttml">ki</span>
+								</text>
+							</transliteration>
+						</transliterations>
+					</iTunesMetadata>
+				</head>
+				<body>
+					<div>
+						<p begin="1:57.890" end="2:03.860" itunes:key="L26" ttm:agent="v1">
+							<span begin="2:00.250" end="2:00.690">処</span>
+							<span begin="2:00.690" end="2:00.695">、</span>
+							<span begin="2:00.695" end="2:00.870">浮</span>
+							<span begin="2:01.070" end="2:01.470">き</span>
+						</p>
+					</div>
+				</body>
+			</tt>
+		`;
+		const customParser = new TTMLParser({ domParser: new DOMParser() });
+		const lines = toAmllLyrics(customParser.parse(xml)).lines;
+
+		expect(lines[0].words).toMatchObject([
+			{ word: "処", romanWord: "ko" },
+			{ word: "、", romanWord: "" },
+			{ word: "浮", romanWord: "u" },
+			{ word: "き", romanWord: "ki" },
+		]);
+	});
+
 	it("handles duet flags", () => {
 		expect(amllLines[0].isDuet).toBe(false);
 		expect(amllLines[1].isDuet).toBe(true);
