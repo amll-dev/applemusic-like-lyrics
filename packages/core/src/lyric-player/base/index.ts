@@ -599,7 +599,9 @@ export abstract class LyricPlayerBase
 
 		const targetLineHeight = curGroup
 			? (this.lyricGroupSize.get(curGroup)?.[1] ?? LINE_HEIGHT_FALLBACK)
-			: 0;
+			: isBottomFocused
+				? this.bottomLine.lineSize[1]
+				: 0;
 
 		if (targetLineHeight > 0) {
 			switch (this.layoutState.alignAnchor) {
