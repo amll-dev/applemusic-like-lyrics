@@ -108,7 +108,6 @@ export class LyricLineEl extends LyricLineBase {
 		},
 	) {
 		super();
-		lyricPlayer.resizeObserver.observe(this.element);
 		this.element.setAttribute("class", styles.lyricLine);
 		if (this.lyricLine.isBG) {
 			this.element.classList.add(styles.lyricBgLine);
