@@ -203,8 +203,12 @@ function alignRomanization(amllWords: AmllLyricWord[], romanWords: Syllable[]) {
 	while (i < amllWords.length && j < romanWords.length) {
 		const main = amllWords[i];
 		const sub = romanWords[j];
+		const startMatches =
+			Math.abs(main.startTime - sub.startTime) <= TIME_TOLERANCE_MS;
+		const endMatches =
+			Math.abs(main.endTime - sub.endTime) <= TIME_TOLERANCE_MS;
 
-		if (Math.abs(main.startTime - sub.startTime) < TIME_TOLERANCE_MS) {
+		if (startMatches && endMatches) {
 			main.romanWord = sub.text;
 			i++;
 			j++;
