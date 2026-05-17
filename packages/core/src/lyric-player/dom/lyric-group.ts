@@ -1,5 +1,6 @@
 import { LyricLineGroupBase } from "#lyric/base/group.ts";
 import styles from "#styles/lyric-player.module.css";
+import { clamp01 } from "#utils/clamp.ts";
 import type { DomLyricPlayer } from "./index.ts";
 import type { LyricLineEl } from "./lyric-line.ts";
 
@@ -137,7 +138,7 @@ export class LyricLineGroup extends LyricLineGroupBase<LyricLineEl> {
 
 			const slideY = this.bgSlideY.getCurrentPosition();
 			const slideYStr = slideY.toFixed(1);
-			const activeProgress = 1 - Math.abs(slideY) / 80;
+			const activeProgress = clamp01(1 - Math.abs(slideY) / 80);
 
 			const scaleStr = (0.8 + activeProgress * 0.2).toFixed(3);
 			this.bgWrapper.style.transform = `translateY(${slideYStr}%) scale(${scaleStr})`;
