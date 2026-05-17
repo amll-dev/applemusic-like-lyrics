@@ -36,11 +36,11 @@ export interface ComputePlayerTimeStateInput {
 export interface ComputePlayerTimeStateResult {
 	/** 计算后的新热组集合 */
 	nextHotGroups: Set<number>;
-	/** 需要新加入热行集合的行索引 */
+	/** 需要新加入热组集合的组索引 */
 	addedIds: Set<number>;
-	/** 需要从热行集合中移除的行索引 */
+	/** 需要从热组集合中移除的组索引 */
 	removedHotIds: Set<number>;
-	/** 需要从缓冲行集合中移除的行索引 */
+	/** 需要从缓冲组集合中移除的组索引 */
 	removedBufferedIds: Set<number>;
 }
 

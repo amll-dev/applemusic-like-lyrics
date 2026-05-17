@@ -2,6 +2,7 @@ import { clamp } from "#utils/clamp.ts";
 import type { SpringParams } from "#utils/spring.ts";
 import type { LayoutAlignAnchor } from "./consts.ts";
 import type { LyricLineGroupBase } from "./group.ts";
+import type { PlayerTimelineState } from "./timeline.ts";
 
 /**
  * 播放器布局状态。
@@ -192,7 +193,7 @@ export interface ComputeGroupPresentationInput {
 	groupIndex: number;
 	/** 当前目标对齐行索引 */
 	scrollToIndex: number;
-	/** 当前缓冲区（{@link PlayerTimelineState.bufferedLines}）中最靠后的歌词行索引 */
+	/** 当前缓冲区（{@link PlayerTimelineState.bufferedGroups}）中最靠后的歌词行索引 */
 	latestIndex: number;
 	/** 当前歌词行是否在缓冲集合内 */
 	hasBuffered: boolean;
@@ -212,7 +213,7 @@ export interface ComputeGroupPresentationInput {
 	interlude?: PlayerInterlude;
 }
 
-/** {@link ComputeGroupPresentation} 的结果类型 */
+/** {@link computeGroupPresentation} 的结果类型 */
 export interface ComputeGroupPresentationResult {
 	/** 当前歌词行是否应视为活跃行 */
 	isActive: boolean;
@@ -226,7 +227,7 @@ export interface ComputeGroupPresentationResult {
  * 计算一组歌词在当前布局中的视觉呈现参数。
  *
  * 根据播放状态、缓冲状态、布局模式与间奏信息，
- * 生成一行歌词最终应使用的 opacity、scale、blur 和 render mode。
+ * 生成一组歌词最终应使用的活跃状态、不透明度与模糊值。
  */
 export function computeGroupPresentation(
 	input: ComputeGroupPresentationInput,
