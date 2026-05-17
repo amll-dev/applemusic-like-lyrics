@@ -89,7 +89,7 @@ export function parseLrcA2(lrc: string): LyricLine[] {
  * @param lines 歌词数组
  * @returns LRC A2 格式的字符串
  */
-export function stringifylrcA2(lines: LyricLine[]): string {
+export function stringifyLrcA2(lines: LyricLine[]): string {
 	return lines
 		.map((line) => {
 			const normalizedLineStartTime = normalizeTimestamp(line.startTime);
