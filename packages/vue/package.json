@@ -8,7 +8,7 @@
 		"type": "git"
 	},
 	"type": "module",
-	"license": "GPL-3.0",
+	"license": "AGPL-3.0-only",
 	"nx": {
 		"tags": [
 			"library"
