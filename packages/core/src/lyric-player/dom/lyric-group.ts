@@ -74,9 +74,13 @@ export class LyricLineGroup extends LyricLineGroupBase<LyricLineEl> {
 
 		// 需要对比第一个词的开始时间而不是行起始时间，因为行的起始时间已经被
 		// `syncMainAndBackgroundLines` 同步过了
-		this.isBgFirst =
-			bgLine.getLine().words[0].startTime <
-			this.mainLine.getLine().words[0].startTime;
+		const bgStartTime =
+			bgLine.getLine().words[0]?.startTime ?? bgLine.getLine().startTime;
+		const mainStartTime =
+			this.mainLine.getLine().words[0]?.startTime ??
+			this.mainLine.getLine().startTime;
+
+		this.isBgFirst = bgStartTime < mainStartTime;
 
 		if (this.mainLine.getLine().isDuet) {
 			bgLine.getElement().classList.add(styles.lyricDuetLine);
