@@ -10,12 +10,17 @@ import { LyricPlayerBase } from "#lyric/base/index.ts";
 import type { LyricLineBase } from "#lyric/base/line.ts";
 import styles from "#styles/lyric-player.module.css";
 import { LyricLineGroup } from "./lyric-group.ts";
-import { LyricLineEl, type RawLyricLineMouseEvent } from "./lyric-line.ts";
+import { LyricLineEl } from "./lyric-line.ts";
 
 /**
- * 歌词行鼠标相关事件，可以获取到歌词行的索引和歌词行元素
+ * 歌词行鼠标相关事件，可以获取到歌词行的索引、主歌词行以及背景歌词行（如果有）元素
  */
 export class LyricLineMouseEvent extends MouseEvent {
+	/**
+	 * 自定义标志位，用于记录外部是否调用了 `stopPropagation`
+	 */
+	public isPropagationStopped = false;
+
 	constructor(
 		/**
 		 * 歌词行索引
@@ -25,9 +30,23 @@ export class LyricLineMouseEvent extends MouseEvent {
 		 * 歌词行元素
 		 */
 		public readonly line: LyricLineBase,
+		/**
+		 * 背景人声歌词行元素 (如果存在)
+		 */
+		public readonly bgLine: LyricLineBase | undefined,
 		event: MouseEvent,
 	) {
 		super(`line-${event.type}`, event);
+	}
+
+	override stopPropagation(): void {
+		this.isPropagationStopped = true;
+		super.stopPropagation();
+	}
+
+	override stopImmediatePropagation(): void {
+		this.isPropagationStopped = true;
+		super.stopImmediatePropagation();
 	}
 }
 
@@ -39,6 +58,7 @@ export type LyricLineMouseEventListener = (evt: LyricLineMouseEvent) => void;
  * 尽可能贴切 Apple Music for iPad 的歌词效果设计，且做了力所能及的优化措施
  */
 export class DomLyricPlayer extends LyricPlayerBase {
+	private abortController = new AbortController();
 	override currentLyricGroups: LyricLineGroup[] = [];
 
 	override onResize(): void {
@@ -53,18 +73,34 @@ export class DomLyricPlayer extends LyricPlayerBase {
 	);
 	readonly supportMaskImage: boolean = CSS.supports("mask-image", "none");
 	readonly innerSize: [number, number] = [0, 0];
-	private readonly onLineClickedHandler = (e: RawLyricLineMouseEvent) => {
-		const evt = new LyricLineMouseEvent(
-			this.lyricLinesIndexes.get(e.line) ?? -1,
-			e.line,
-			e,
-		);
-		if (!this.dispatchEvent(evt)) {
+
+	private readonly onMouseEventHandler = (e: MouseEvent) => {
+		const target = e.target;
+		if (!(target instanceof Element)) return;
+
+		const groupEl = target.closest(`.${styles.lyricLineWrapper}`);
+		if (!groupEl) return;
+
+		const group = this.lyricGroupElementMap.get(groupEl);
+		if (!group) return;
+
+		const mainLine = group.mainLine;
+		const bgLine = group.bgLine;
+		const lineIndex = this.lyricLinesIndexes.get(mainLine) ?? -1;
+
+		const evt = new LyricLineMouseEvent(lineIndex, mainLine, bgLine, e);
+		const isDispatched = this.dispatchEvent(evt);
+
+		if (!isDispatched || evt.defaultPrevented) {
 			e.preventDefault();
+		}
+
+		if (evt.isPropagationStopped) {
 			e.stopPropagation();
 			e.stopImmediatePropagation();
 		}
 	};
+
 	/**
 	 * 是否为非逐词歌词
 	 * @internal
@@ -85,6 +121,13 @@ export class DomLyricPlayer extends LyricPlayerBase {
 		if (this.disableSpring) {
 			this.element.classList.add(styles.disableSpring);
 		}
+
+		this.element.addEventListener("click", this.onMouseEventHandler, {
+			signal: this.abortController.signal,
+		});
+		this.element.addEventListener("contextmenu", this.onMouseEventHandler, {
+			signal: this.abortController.signal,
+		});
 	}
 
 	private rebuildStyle() {
@@ -122,14 +165,6 @@ export class DomLyricPlayer extends LyricPlayerBase {
 		}
 
 		for (const group of this.currentLyricGroups) {
-			const linesToDispose = [group.mainLine, group.bgLine].filter(
-				(line) => !!line,
-			);
-
-			for (const line of linesToDispose) {
-				line.removeMouseEventListener("click", this.onLineClickedHandler);
-				line.removeMouseEventListener("contextmenu", this.onLineClickedHandler);
-			}
 			group.dispose();
 		}
 		this.currentLyricGroups = [];
@@ -139,9 +174,6 @@ export class DomLyricPlayer extends LyricPlayerBase {
 		for (let i = 0; i < this.processedLines.length; i++) {
 			const line = this.processedLines[i];
 			const lineEl = new LyricLineEl(this, line);
-
-			lineEl.addMouseEventListener("click", this.onLineClickedHandler);
-			lineEl.addMouseEventListener("contextmenu", this.onLineClickedHandler);
 
 			this.lyricLinesIndexes.set(lineEl, i);
 
@@ -200,6 +232,7 @@ export class DomLyricPlayer extends LyricPlayerBase {
 
 	override dispose(): void {
 		super.dispose();
+		this.abortController.abort();
 		this.element.remove();
 		for (const group of this.currentLyricGroups) {
 			group.dispose();
