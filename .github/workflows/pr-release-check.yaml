@@ -92,6 +92,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Linting
+        run: pnpm lint
+
       - name: Build publishable libraries
         run: pnpm run ci:build:libs
         env:
