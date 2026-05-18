@@ -4,9 +4,10 @@
  *
  * @author SteveXMH
  */
+
+import { MeshGradientRenderer } from "@applemusic-like-lyrics/core";
 import GUI from "lil-gui";
 import Stats from "stats.js";
-import { MeshGradientRenderer } from "@applemusic-like-lyrics/core";
 
 const debugValues = {
 	image: new URL(location.href).searchParams.get("image") || "",
@@ -15,7 +16,7 @@ const debugValues = {
 	wireFrame: false,
 };
 
-const canvas = document.getElementById("bg")! as HTMLCanvasElement;
+const canvas = document.getElementById("bg") as HTMLCanvasElement;
 const mgRenderer = new MeshGradientRenderer(canvas);
 mgRenderer.setManualControl(true);
 mgRenderer.setRenderScale(1);
@@ -114,9 +115,7 @@ function setActiveDragger(x: number, y: number) {
 
 window.addEventListener("resize", updateControlPointDraggers);
 
-const resultTextArea = document.getElementById(
-	"result",
-)! as HTMLTextAreaElement;
+const resultTextArea = document.getElementById("result") as HTMLTextAreaElement;
 resultTextArea.value = "// 控制点的设置代码将会在这里显示";
 function updateResult() {
 	const result = [
@@ -407,6 +406,25 @@ gui
 	.name("线框模式")
 	.onChange((v: boolean) => mgRenderer.setWireFrame(v));
 
+/** @internal */
+export interface ControlPointConf {
+	cx: number;
+	cy: number;
+	x: number;
+	y: number;
+	ur: number;
+	vr: number;
+	up: number;
+	vp: number;
+}
+
+/** @internal */
+export interface ControlPointPreset {
+	width: number;
+	height: number;
+	conf: ControlPointConf[];
+}
+
 const actions = {
 	copyCode: () => {
 		navigator.clipboard.writeText(resultTextArea.value).then(() => {
@@ -416,10 +434,15 @@ const actions = {
 	loadCode: () => {
 		try {
 			const code = resultTextArea.value;
-			let loadedPreset: any = null;
-			const preset = (width: number, height: number, conf: any[]) => {
-				loadedPreset = { width, height, conf };
+
+			const preset = (
+				width: number,
+				height: number,
+				conf: ControlPointConf[],
+			): ControlPointPreset => {
+				return { width, height, conf };
 			};
+
 			const p = (
 				cx: number,
 				cy: number,
@@ -429,17 +452,16 @@ const actions = {
 				vr = 0,
 				up = 1,
 				vp = 1,
-			) => ({ cx, cy, x, y, ur, vr, up, vp });
+			): ControlPointConf => ({ cx, cy, x, y, ur, vr, up, vp });
 
 			// Remove trailing comma if exists
 			const cleanCode = code.trim().replace(/,$/, "");
 
 			const fn = new Function("preset", "p", `return ${cleanCode}`);
-			fn(preset, p);
+			const loadedPreset = fn(preset, p) as ControlPointPreset | undefined;
 
 			if (loadedPreset) {
 				debugValues.controlPointSize = loadedPreset.width;
-				debugValues.controlPointSize = loadedPreset.height;
 				gui.controllersRecursive().forEach((c) => {
 					c.updateDisplay();
 				});

@@ -51,7 +51,9 @@ export const VerticalLayout: React.FC<
 			if (!targetCover || !rootEl) return;
 			const immerseCover = immerseCoverRef.current;
 			while (getComputedStyle(rootEl).display === "contents") {
-				rootEl = rootEl.parentElement!;
+				const parentEl = rootEl.parentElement;
+				if (!parentEl) return;
+				rootEl = parentEl;
 			}
 			const rootB = rootEl.getBoundingClientRect();
 			const targetCoverB = targetCover.getBoundingClientRect();
