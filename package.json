@@ -5,10 +5,10 @@
 	"type": "module",
 	"devDependencies": {
 		"@biomejs/biome": "catalog:",
-		"@nx/js": "^22.6.4",
-		"@typescript/native-preview": "^7.0.0-dev.20260421.2",
+		"@nx/js": "^22.7.2",
+		"@typescript/native-preview": "7.0.0-dev.20260516.1",
 		"npm-run-all2": "^8.0.4",
-		"nx": "^22.6.0",
+		"nx": "^22.7.2",
 		"swc-node": "^1.0.0",
 		"tsdown": "catalog:"
 	},

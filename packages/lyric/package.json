@@ -57,7 +57,7 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "catalog:",
-		"@types/node": "^25.5.2",
+		"@types/node": "^25.8.0",
 		"@types/pako": "^2.0.4",
 		"tsdown": "catalog:",
 		"vitest": "catalog:"
