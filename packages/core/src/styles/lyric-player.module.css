@@ -6,11 +6,25 @@
 	flex-direction: column;
 	align-items: flex-start;
 	width: 100%;
+	box-sizing: border-box;
+	padding: 0.4em var(--lyric-line-padding-x);
+	border-radius: 0.25em;
+
+	gap: 0.3em;
 
 	will-change: transform, opacity, filter;
 	transition:
 		opacity 0.4s ease,
-		filter 0.4s ease;
+		filter 0.4s ease,
+		background-color 0.25s ease;
+
+	&:hover {
+		background-color: var(--amll-lp-hover-bg-color, #fff1);
+	}
+
+	&:active {
+		background-color: var(--amll-lp-hover-bg-color, #ffffff05);
+	}
 }
 
 .lyricLine {
@@ -20,37 +34,16 @@
 	min-width: var(--amll-lp-width, 100%);
 	max-width: var(--amll-lp-width, 100%);
 	height: fit-content;
-	padding: 0.5em 1em;
-	padding-left: 1em;
-	padding-right: 1em;
-	border-radius: 0.25em;
+
+	padding: 0.2em;
+	margin: -0.2em;
 
 	contain: content;
 	backface-visibility: hidden;
 	transform-origin: left;
 	will-change: transform;
 
-	transition:
-		background-color 0.25s,
-		box-shadow 0.25s;
-
-	@media screen and (max-width: 500px) {
-		padding-left: 20px;
-		padding-right: 20px;
-	}
-
-	&.dirty {
-		opacity: 0;
-		visibility: hidden;
-	}
-
-	&:has(> *):hover {
-		background-color: var(--amll-lp-hover-bg-color, #fff1);
-	}
-
-	&:has(> *):active {
-		background-color: var(--amll-lp-hover-bg-color, #ffffff05);
-	}
+	transition: box-shadow 0.25s;
 }
 
 .lyricDuetLine {
@@ -124,9 +117,6 @@
 
 .lyricBgLine {
 	opacity: 0.4;
-	/* 因为字体大小缩小了，故内边距要和主行字体大小统一，行边距计算公式为 100% / font-size 转 em 单位 */
-	padding: 1vh
-		calc(var(--amll-lp-line-padding-x, 1em) / var(--amll-lp-bg-line-scale, 0.7));
 	font-size: max(calc(1em * var(--amll-lp-bg-line-scale, 0.7)), 10px);
 	transition:
 		background-color 0.25s,
@@ -172,22 +162,24 @@
 .bgWrapper {
 	position: absolute;
 	top: 100%;
-	left: 0;
+	left: var(--lyric-line-padding-x);
 	z-index: -1;
 	display: flex;
 	flex-direction: column;
 	align-items: inherit;
-	width: 100%;
+	width: calc(100% - var(--lyric-line-padding-x) * 2);
 
 	visibility: visible;
 	pointer-events: auto;
 	opacity: 0;
-	transform-origin: var(--lyric-line-padding-x) top;
+	transform-origin: left top;
 	transition: opacity 0.3s ease;
 }
 
 .bgWrapperTop {
 	position: relative;
+	left: 0;
+	width: 100%;
 	top: auto;
 	bottom: auto;
 	margin-top: -999px;
@@ -196,6 +188,8 @@
 
 .bgWrapperActive {
 	position: relative;
+	left: 0;
+	width: 100%;
 	top: auto;
 	bottom: auto;
 	opacity: 1;
@@ -266,6 +260,15 @@
 		filter: unset !important;
 	}
 
+	&:not(.playing) .bgWrapper {
+		position: relative;
+		top: auto;
+		bottom: auto;
+		opacity: 1;
+		left: 0;
+		width: 100%;
+	}
+
 	&.hasDuetLine {
 		.lyricLine:not(.lyricDuetLine) {
 			padding-right: 15%;
@@ -279,19 +282,12 @@
 			align-items: flex-end;
 
 			.bgWrapper {
-				transform-origin: calc(100% - var(--lyric-line-padding-x)) top;
+				transform-origin: right top;
 			}
 
 			.bgWrapperTop {
-				transform-origin: calc(100% - var(--lyric-line-padding-x)) bottom;
+				transform-origin: right bottom;
 			}
 		}
-	}
-
-	&:not(.playing) .bgWrapper {
-		position: relative;
-		top: auto;
-		bottom: auto;
-		opacity: 1;
 	}
 }

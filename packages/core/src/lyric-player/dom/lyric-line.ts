@@ -53,26 +53,6 @@ function generateFadeGradient(
 	];
 }
 
-export class RawLyricLineMouseEvent extends MouseEvent {
-	constructor(
-		public readonly line: LyricLineBase,
-		event: MouseEvent,
-	) {
-		super(event.type, event);
-	}
-}
-
-type MouseEventMap = {
-	[evt in keyof HTMLElementEventMap]: HTMLElementEventMap[evt] extends MouseEvent
-		? evt
-		: never;
-};
-type MouseEventTypes = MouseEventMap[keyof MouseEventMap];
-type MouseEventListener = (
-	this: LyricLineEl,
-	ev: RawLyricLineMouseEvent,
-) => void;
-
 export class LyricLineEl extends LyricLineBase {
 	private element: HTMLElement = document.createElement("div");
 	private splittedWords: RealWord[] = [];
@@ -129,47 +109,6 @@ export class LyricLineEl extends LyricLineBase {
 		}
 		// 延迟构建具体行内容，进入可视区（含 overscan）时再构建
 		this.rebuildStyle();
-	}
-	private listenersMap = new Map<string, Set<MouseEventListener>>();
-	private readonly onMouseEvent = (e: MouseEvent) => {
-		const wrapped = new RawLyricLineMouseEvent(this, e);
-		for (const listener of this.listenersMap.get(e.type) ?? []) {
-			listener.call(this, wrapped);
-		}
-		if (!this.dispatchEvent(wrapped) || wrapped.defaultPrevented) {
-			e.preventDefault();
-			e.stopPropagation();
-			e.stopImmediatePropagation();
-		}
-	};
-
-	addMouseEventListener(
-		type: MouseEventTypes,
-		callback: MouseEventListener | null,
-		options?: boolean | AddEventListenerOptions | undefined,
-	): void {
-		if (callback) {
-			const listeners = this.listenersMap.get(type) ?? new Set();
-			if (listeners.size === 0)
-				this.element.addEventListener(type, this.onMouseEvent, options);
-			listeners.add(callback);
-			this.listenersMap.set(type, listeners);
-		}
-	}
-
-	removeMouseEventListener(
-		type: MouseEventTypes,
-		callback: MouseEventListener | null,
-		options?: boolean | EventListenerOptions | undefined,
-	): void {
-		if (callback) {
-			const listeners = this.listenersMap.get(type);
-			if (listeners) {
-				listeners.delete(callback);
-				if (listeners.size === 0)
-					this.element.removeEventListener(type, this.onMouseEvent, options);
-			}
-		}
 	}
 
 	areWordsOnSameLine(word1: RealWord, word2: RealWord): boolean {
