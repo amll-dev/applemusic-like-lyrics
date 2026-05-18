@@ -3,7 +3,9 @@
 	overflow: hidden;
 
 	@media screen and (max-height: 1000px) {
-		padding: 0vh 0 !important;
+		&.horizontalControls {
+			padding: 0vh 0;
+		}
 	}
 
 	@media screen and (min-height: 1000px) {
@@ -116,8 +118,8 @@
 }
 
 .bigControls > button {
-	height: 10vh !important;
-	width: 10vh !important;
+	height: 10vh;
+	width: 10vh;
 
 	&:nth-child(2) > svg {
 		scale: 1.75;
@@ -174,7 +176,7 @@
 		opacity 0.3s 0.3s var(--info-timing-func-out);
 	transform: translateY(0);
 	opacity: 1;
-	font-size: clamp(1em, 2vh, 1.25em) !important;
+	font-size: clamp(1em, 2vh, 1.25em);
 }
 
 .smallMusicInfo.hideLyric {
