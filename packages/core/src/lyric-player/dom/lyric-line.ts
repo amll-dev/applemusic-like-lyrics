@@ -361,7 +361,7 @@ export class LyricLineEl extends LyricLineBase {
 		const roman = this.element.children[2] as HTMLDivElement;
 		// 非动态歌词，直接渲染整行与副行
 		if (this.lyricPlayer._getIsNonDynamic()) {
-			main.innerText = this.lyricLine.words
+			main.textContent = this.lyricLine.words
 				.map((w) => this.lyricPlayer.processObsceneWord(w))
 				.join("");
 			this.setSubLinesText(trans, roman);
@@ -386,8 +386,8 @@ export class LyricLineEl extends LyricLineBase {
 
 	/** 设置翻译与音译行文本 */
 	private setSubLinesText(trans: HTMLDivElement, roman: HTMLDivElement) {
-		trans.innerText = this.lyricLine.translatedLyric;
-		roman.innerText = this.lyricLine.romanLyric;
+		trans.textContent = this.lyricLine.translatedLyric;
+		roman.textContent = this.lyricLine.romanLyric;
 	}
 
 	private getRubyCharCount(word: LyricWord) {
@@ -421,7 +421,7 @@ export class LyricLineEl extends LyricLineBase {
 			const rubySegments = this.getRubySegments(word);
 			for (const ruby of rubySegments) {
 				const rubyPartEl = document.createElement("span");
-				rubyPartEl.innerText = ruby.word;
+				rubyPartEl.textContent = ruby.word;
 				rubyPartEl.dataset.startTime = String(ruby.startTime);
 				rubyPartEl.dataset.endTime = String(ruby.endTime);
 				rubyWordEl.appendChild(rubyPartEl);
@@ -444,14 +444,14 @@ export class LyricLineEl extends LyricLineBase {
 					trimmedWord,
 				)) {
 					const charEl = document.createElement("span");
-					charEl.innerText = segment;
+					charEl.textContent = segment;
 					subElements.push(charEl);
 					wordContainer.appendChild(charEl);
 				}
 			} else {
 				for (const segment of Array.from(trimmedWord)) {
 					const charEl = document.createElement("span");
-					charEl.innerText = segment;
+					charEl.textContent = segment;
 					subElements.push(charEl);
 					wordContainer.appendChild(charEl);
 				}
@@ -459,16 +459,16 @@ export class LyricLineEl extends LyricLineBase {
 		} else {
 			if (hasRomanLine) {
 				const wordEl = document.createElement("div");
-				wordEl.innerText = displayWord.trim();
+				wordEl.textContent = displayWord.trim();
 				wordContainer.appendChild(wordEl);
 			} else if (romanWord.length === 0) {
-				wordContainer.innerText = displayWord.trim();
+				wordContainer.textContent = displayWord.trim();
 			}
 		}
 
 		if (hasRomanLine) {
 			const romanWordEl = document.createElement("div");
-			romanWordEl.innerText = romanWord.length > 0 ? romanWord : "\u00A0";
+			romanWordEl.textContent = romanWord.length > 0 ? romanWord : "\u00A0";
 			romanWordEl.classList.add(styles.romanWord);
 			wordContainer.appendChild(romanWordEl);
 		}
@@ -665,7 +665,7 @@ export class LyricLineEl extends LyricLineBase {
 			const glow = el.animate(frames, {
 				duration: animateDu,
 				delay: Number.isFinite(wordDe) ? wordDe : 0,
-				id: `emphasize-word-${el.innerText}-${i}`,
+				id: `emphasize-word-${el.textContent}-${i}`,
 				iterations: 1,
 				composite: "replace",
 				fill: "both",
@@ -1093,6 +1093,7 @@ export class LyricLineEl extends LyricLineBase {
 		this.applyAlphaToDom(delta);
 	}
 
+	/** @internal */
 	_getDebugTargetPos(): string {
 		return `[位移: ${this.top}; 缩放: ${this.scale}; 延时: ${this.delay}]`;
 	}

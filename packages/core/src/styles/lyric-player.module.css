@@ -25,10 +25,12 @@
 	padding-right: 1em;
 	border-radius: 0.25em;
 
-	contain: content;
+	contain: layout style paint;
+	content-visibility: auto;
+	contain-intrinsic-size: auto 40px;
 	backface-visibility: hidden;
 	transform-origin: left;
-	will-change: transform;
+	will-change: transform, filter, opacity;
 
 	transition:
 		background-color 0.25s,
@@ -62,6 +64,7 @@
 	margin: -1em;
 	padding: 1em;
 	transition: opacity 0.3s 0.1s;
+	contain: layout style;
 
 	& span {
 		display: inline-block;
@@ -104,7 +107,8 @@
 		padding: 1em;
 		white-space: pre-wrap;
 		vertical-align: bottom;
-		will-change: transform;
+		will-change: transform, text-shadow;
+		contain: layout style;
 
 		&.emphasize,
 		span.emphasize {
@@ -115,7 +119,7 @@
 			& > span {
 				margin: -1em;
 				padding: 1em;
-				will-change: transform;
+				will-change: transform, text-shadow;
 				backface-visibility: hidden;
 			}
 		}
