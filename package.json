@@ -18,7 +18,8 @@
 		"test:libs": "nx run-many --target=test --projects=ttml,lyric",
 		"ci:test:libs": "pnpm run test:libs",
 		"format": "biome format . --write",
-		"lint": "biome lint . --error-on-warnings",
+		"lint": "biome lint . --fix",
+		"ci:lint": "biome lint . --error-on-warnings",
 		"release:plan:check": "nx release plan:check"
 	},
 	"packageManager": "pnpm@11.1.0"
