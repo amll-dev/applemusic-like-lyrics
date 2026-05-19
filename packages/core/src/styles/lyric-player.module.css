@@ -183,7 +183,7 @@
 	top: auto;
 	bottom: auto;
 	margin-top: -999px;
-	transform-origin: var(--lyric-line-padding-x) bottom;
+	transform-origin: left bottom;
 }
 
 .bgWrapperActive {
