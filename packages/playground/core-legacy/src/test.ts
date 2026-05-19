@@ -32,7 +32,7 @@ export interface SpringParams {
 	soft: boolean; // = false
 }
 
-(window as any).lyrics = lyrics;
+window.lyrics = lyrics;
 
 const audio = document.createElement("audio");
 audio.volume = 0.5;
@@ -336,10 +336,11 @@ declare global {
 		globalBackground:
 			| BackgroundRender<PixiRenderer>
 			| BackgroundRender<MeshGradientRenderer>;
+		lyrics: typeof lyrics;
 	}
 }
 
-(window as any).globalLyricPlayer = lyricPlayer;
+window.globalLyricPlayer = lyricPlayer;
 
 const waitFrame = (): Promise<number> =>
 	new Promise((resolve) => requestAnimationFrame(resolve));

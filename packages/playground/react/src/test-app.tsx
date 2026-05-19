@@ -93,11 +93,11 @@ export const App: FC = () => {
 				audioRef.current?.removeEventListener("play", onPlay);
 			};
 		}
+		return;
 	}, []);
 	useEffect(() => {
-		// 调试用途，暴露到 Window
 		if (lyricPlayerRef.current) {
-			// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+			// biome-ignore lint/suspicious/noExplicitAny: 调试用途，暴露到 Window
 			(window as any).lyricPlayer = lyricPlayerRef.current;
 		}
 	}, []);
@@ -158,7 +158,6 @@ export const App: FC = () => {
 				<button type="button" onClick={onClickOpenTTMLLyric}>
 					加载歌词
 				</button>
-				{/* biome-ignore lint/a11y/useMediaCaption: <explanation> */}
 				<audio controls ref={audioRef} src={audioUrl} preload="auto" />
 			</div>
 		</>

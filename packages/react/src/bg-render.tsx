@@ -200,7 +200,7 @@ export const BackgroundRender: ForwardRefExoticComponent<
 			ref,
 			() => ({
 				wrapperEl: wrapperRef.current,
-				bgRender: coreBGRenderRef.current!,
+				bgRender: coreBGRenderRef.current as AbstractBaseRenderer,
 			}),
 			[wrapperRef.current, coreBGRenderRef.current],
 		);

@@ -173,7 +173,8 @@ export default defineConfig({
 				},
 			],
 			editLink: {
-				baseUrl: "https://github.com/amll-dev/applemusic-like-lyrics/blob/main/packages/docs/",
+				baseUrl:
+					"https://github.com/amll-dev/applemusic-like-lyrics/blob/main/packages/docs/",
 			},
 		}),
 	],

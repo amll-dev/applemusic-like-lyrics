@@ -29,25 +29,25 @@
 
 	transition: background-color 0.3s;
 
+	& > * {
+		transition: transform 0.5s;
+		transform-origin: center;
+	}
+
 	&:hover {
 		background-color: #fff2;
+	}
+
+	&.animate > * {
+		animation: pressed-animation 0.7s;
+		animation-composition: accumulate;
 	}
 
 	&:active {
 		background-color: #fff2;
 
 		* {
-			animation-name: none !important;
+			animation-name: none;
 		}
-	}
-
-	& > * {
-		transition: transform 0.5s;
-		transform-origin: center;
-	}
-
-	&.animate > * {
-		animation: pressed-animation 0.7s;
-		animation-composition: accumulate;
 	}
 }

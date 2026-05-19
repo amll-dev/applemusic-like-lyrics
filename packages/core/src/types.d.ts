@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/correctness/noUnusedVariables: used */
 declare module "*.glsl" {
 	const content: string;
 	export default content;
@@ -23,7 +24,6 @@ interface ImportMetaEnv {
 	readonly PROD: boolean;
 }
 
-// biome-ignore lint/correctness/noUnusedVariables: used
 interface ImportMeta {
 	readonly env: ImportMetaEnv;
 }

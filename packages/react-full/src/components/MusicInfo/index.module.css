@@ -21,7 +21,7 @@
 	font-weight: 500;
 	letter-spacing: 0.4px;
 	opacity: 0.9;
-	mix-blend-mode: normal !important;
+	mix-blend-mode: normal;
 }
 
 .artists,

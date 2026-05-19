@@ -37,7 +37,7 @@ export function parseLyl(lyl: string): LyricLine[] {
 		const backgroundMatch = text.match(bgRegex);
 		const isBG = Boolean(backgroundMatch);
 		const textContent = (backgroundMatch ? backgroundMatch[1] : text).trim();
-		if(!textContent) continue;
+		if (!textContent) continue;
 
 		lyricLines.push(
 			createLine({

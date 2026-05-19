@@ -3,7 +3,7 @@
 	padding: 0;
 	position: relative;
 	border: none;
-	background: #ffffff15 !important;
+	background: #ffffff15;
 	width: 3.5vh;
 	margin-left: 16px;
 	border-radius: 50%;
@@ -11,7 +11,6 @@
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	padding: 0;
 
 	& svg {
 		width: 72%;
