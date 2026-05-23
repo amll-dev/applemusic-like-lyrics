@@ -29,11 +29,24 @@
 
 </div>
 
+***
+
+> [!TIP]
+>
+> ### 开发者招募：
+> 我们正在招募长期维护开发者！  
+> 更多信息请到 [公告帖](https://github.com/amll-dev/amll-ttml-db/discussions/8127) 查看。  
+> 感谢各位投稿者对本项目的支持！
+
+***
+
 > [!Warning]
-> 致 AMLL Player 的开发/使用者：  
-> AMLL Player 已迁移至 [独立仓库](https://github.com/amll-dev/amll-player/blob/main/README-CN.md)
+> ### AMLL Player 迁移提示：
+> 致 AMLL Player 的开发/使用者，AMLL Player 已迁移至 [独立仓库](https://github.com/amll-dev/amll-player/blob/main/README-CN.md)
 > 
 > 仓库链接已更新为 https://github.com/amll-dev/amll-player
+
+***
 
 ## AMLL 生态及源码结构
 
