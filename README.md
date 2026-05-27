@@ -22,7 +22,7 @@ Although the goal of this project is not to imitate it completely, it will polis
 /
 [AMLL Editor - Next-Gen TTML Syllable Lyric Editor](https://github.com/amll-dev/amll-editor)
 
-[AMLL Player - Loacal Music Player](https://github.com/amll-dev/amll-player)
+[AMLL Player - Local Music Player](https://github.com/amll-dev/amll-player)
 /
 [AMLL Page - Web Music Player](https://github.com/amll-dev/amll-page)
 
