@@ -13,7 +13,10 @@ import type { SpringParams } from "#utils/spring.ts";
 import { InterludeDots } from "../dom/interlude-dots.ts";
 import { BottomLineEl } from "./bottom-line.ts";
 import { LayoutAlignAnchor, MaskObsceneWordsMode } from "./consts.ts";
-import type { LyricLineGroupBase } from "./group.ts";
+import {
+	setGroupShouldKeepMounted,
+	type LyricLineGroupBase,
+} from "./group.ts";
 import {
 	computeCurrentInterlude,
 	computeGroupPresentation,
@@ -625,6 +628,7 @@ export abstract class LyricPlayerBase
 		let setDots = false;
 
 		this.currentLyricGroups.forEach((group, i) => {
+			const hasHot = this.timelineState.hotGroups.has(i);
 			const hasBuffered = this.timelineState.bufferedGroups.has(i);
 
 			const shouldShowDots = interlude && i === interlude.anchorLineIndex + 1;
@@ -655,6 +659,7 @@ export abstract class LyricPlayerBase
 				groupIndex: i,
 				scrollToIndex: this.timelineState.scrollToIndex,
 				latestIndex,
+				hasHot,
 				hasBuffered,
 				hidePassedLines: this.hidePassedLines,
 				isPlaying: this.timelineState.isPlaying,
@@ -665,6 +670,7 @@ export abstract class LyricPlayerBase
 				interlude,
 			});
 
+			setGroupShouldKeepMounted(group, presentation.shouldKeepMounted);
 			group.setTransform(
 				curPos,
 				force,

@@ -140,3 +140,16 @@ export abstract class LyricLineGroupBase<
 		this.bgLine?.dispose();
 	}
 }
+
+const groupShouldKeepMounted = new WeakMap<LyricLineGroupBase, boolean>();
+
+export function setGroupShouldKeepMounted(
+	group: LyricLineGroupBase,
+	shouldKeepMounted: boolean,
+): void {
+	groupShouldKeepMounted.set(group, shouldKeepMounted);
+}
+
+export function getGroupShouldKeepMounted(group: LyricLineGroupBase): boolean {
+	return groupShouldKeepMounted.get(group) ?? false;
+}

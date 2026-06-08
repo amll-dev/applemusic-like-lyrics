@@ -195,6 +195,8 @@ export interface ComputeGroupPresentationInput {
 	scrollToIndex: number;
 	/** 当前缓冲区（{@link PlayerTimelineState.bufferedGroups}）中最靠后的歌词行索引 */
 	latestIndex: number;
+	/** 当前歌词组是否仍处于热组中 */
+	hasHot: boolean;
 	/** 当前歌词行是否在缓冲集合内 */
 	hasBuffered: boolean;
 	/** 是否启用隐藏已播放行 */
@@ -217,6 +219,8 @@ export interface ComputeGroupPresentationInput {
 export interface ComputeGroupPresentationResult {
 	/** 当前歌词行是否应视为活跃行 */
 	isActive: boolean;
+	/** 当前歌词行是否应保持挂载以完成入场或退场动画 */
+	shouldKeepMounted: boolean;
 	/** 当前歌词行的目标不透明度 */
 	targetOpacity: number;
 	/** 当前歌词行的目标模糊值 */
@@ -236,6 +240,7 @@ export function computeGroupPresentation(
 		groupIndex,
 		scrollToIndex,
 		latestIndex,
+		hasHot,
 		hasBuffered,
 		hidePassedLines,
 		isPlaying,
@@ -247,7 +252,7 @@ export function computeGroupPresentation(
 	} = input;
 
 	const isActive =
-		hasBuffered || (groupIndex >= scrollToIndex && groupIndex < latestIndex);
+		hasHot || (groupIndex >= scrollToIndex && groupIndex < latestIndex);
 
 	const blurLevel = computeLineBlur({
 		enableBlur,
@@ -279,7 +284,12 @@ export function computeGroupPresentation(
 		targetOpacity = isNonDynamic ? 0.2 : 1;
 	}
 
-	return { isActive, targetOpacity, blurLevel };
+	return {
+		isActive,
+		shouldKeepMounted: hasBuffered,
+		targetOpacity,
+		blurLevel,
+	};
 }
 
 /** {@link computeLineBlur} 的参数类型 */

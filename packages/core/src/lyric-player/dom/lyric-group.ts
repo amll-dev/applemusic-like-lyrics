@@ -1,4 +1,7 @@
-import { LyricLineGroupBase } from "#lyric/base/group.ts";
+import {
+	getGroupShouldKeepMounted,
+	LyricLineGroupBase,
+} from "#lyric/base/group.ts";
 import styles from "#styles/lyric-player.module.css";
 import { clamp01 } from "#utils/clamp.ts";
 import type { DomLyricPlayer } from "./index.ts";
@@ -72,7 +75,7 @@ export class LyricLineGroup extends LyricLineGroupBase<LyricLineEl> {
 	}
 
 	override update(delta: number): void {
-		if (this.isInSight) {
+		if (this.isInSight || getGroupShouldKeepMounted(this)) {
 			this.show();
 		} else {
 			this.hide();
