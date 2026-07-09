@@ -995,7 +995,7 @@ export class MeshGradientRenderer extends BaseRenderer {
 
 			this.mainProgram.use();
 			gl.activeTexture(gl.TEXTURE0);
-			this.mainProgram.setUniform1f("u_time", tickTime / 10000);
+			const uTime = tickTime / 10000;
 			this.mainProgram.setUniform1f(
 				"u_aspect",
 				this.manualControl ? 1 : this.canvas.width / this.canvas.height,
@@ -1003,6 +1003,9 @@ export class MeshGradientRenderer extends BaseRenderer {
 			this.mainProgram.setUniform1i("u_texture", 0);
 			this.mainProgram.setUniform1f("u_volume", this.volume);
 			this.mainProgram.setUniform1f("u_alpha", 1.0);
+			const angle = (uTime + this.volume) * 2.0;
+			this.mainProgram.setUniform1f("u_sinAngle", Math.sin(angle));
+			this.mainProgram.setUniform1f("u_cosAngle", Math.cos(angle));
 
 			state.texture.bind();
 			state.mesh.bind();
