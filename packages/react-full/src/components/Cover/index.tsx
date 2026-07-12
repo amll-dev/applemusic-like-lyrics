@@ -80,6 +80,9 @@ export const Cover: ForwardRefExoticComponent<
 			return;
 		}, []);
 
+		const isRemoteUrl =
+			coverUrl?.startsWith("http://") || coverUrl?.startsWith("https://");
+
 		return (
 			<div
 				className={clsNames}
@@ -111,7 +114,7 @@ export const Cover: ForwardRefExoticComponent<
 							loop
 							muted
 							playsInline
-							crossOrigin="anonymous"
+							crossOrigin={isRemoteUrl ? "anonymous" : undefined}
 							ref={videoRef}
 						/>
 					) : (
