@@ -2,10 +2,6 @@ import type { LyricLine } from "@applemusic-like-lyrics/core";
 import { atom, type PrimitiveAtom, type WritableAtom } from "jotai";
 import { atomWithStorage, type RESET } from "jotai/utils";
 
-export type SongData =
-	| { type: "local"; filePath: string; origOrder: number }
-	| { type: "custom"; id: string; songJsonData: string; origOrder: number };
-
 /**
  * 一位艺术家的信息
  */
