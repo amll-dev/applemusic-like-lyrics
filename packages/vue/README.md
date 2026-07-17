@@ -34,9 +34,7 @@ yarn add @applemusic-like-lyrics/vue # using yarn
 
 ## Usage Summary
 
-Since Vue components are not convenient for generating API documentation, please refer to the type definition files to determine usage.
-
-(Or refer to the React binding, as both have identical properties and reference methods)
+For detailed API documentation, please refer to [AMLL Docs](https://amll.dev/en/reference/vue.html).
 
 A test program can be found in [../playground/vue/src/test.ts](../playground/vue/src/test.ts).
 

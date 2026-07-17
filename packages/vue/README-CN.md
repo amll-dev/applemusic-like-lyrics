@@ -34,9 +34,7 @@ yarn add @applemusic-like-lyrics/vue # 使用 yarn
 
 ## 使用方式摘要
 
-由于 Vue 组件不方便生成 API 文档，所以还请自行查阅类型定义文件确定用法。
-
-（或者参考 React 绑定，二者属性和引用方式完全一致）
+详细的 API 文档请参考 [AMLL Docs](https://amll.dev/reference/vue.html)。
 
 一个测试用途的程序可以在 [../playground/vue/src/test.ts](../playground/vue/src/test.ts) 里找到。
 

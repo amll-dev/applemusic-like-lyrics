@@ -37,9 +37,8 @@ yarn add @applemusic-like-lyrics/core # 使用 yarn
 
 ## 使用方式摘要
 
-详细的 API 文档请参考 [./docs/modules.md](./docs/modules.md)
+详细的 API 文档请参考 [AMLL Docs](https://amll.dev/reference/core.html)。
 
-一个测试用途的程序可以在 [../playground/core/src/test.ts](../playground/core/src/test.ts) 里找到。
 
 ```typescript
 import { LyricPlayer } from "@applemusic-like-lyrics/core";

@@ -34,7 +34,7 @@ yarn add @applemusic-like-lyrics/react # using yarn
 
 ## Usage Summary
 
-For detailed API documentation, please refer to [./docs/modules.md](./docs/modules.md)
+For detailed API documentation, please refer to [AMLL Docs](https://amll.dev/en/reference/react.html).
 
 A test program can be found in [../playground/react/src/test.tsx](../playground/react/src/test.tsx).
 

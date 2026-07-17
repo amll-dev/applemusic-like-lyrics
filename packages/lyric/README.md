@@ -4,7 +4,7 @@ English / [简体中文](./README-CN.md)
 
 This is a refactored version of the original lyrics pack. Docs not finished yet.
 
-Below is the original docs.
+Below is the original docs. See also: [AMLL Docs](https://amll.dev/en/reference/lyric.html).
 
 ---
 

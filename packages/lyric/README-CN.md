@@ -4,7 +4,7 @@
 
 此为基于 TypeScript 的重构版本 Lyrics 包，文档未完成。
 
-以下是原文档：
+以下是原文档： 另可参阅：[AMLL Docs](https://amll.dev/reference/lyric.html)
 
 ---
 

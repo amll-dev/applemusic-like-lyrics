@@ -34,7 +34,7 @@ yarn add @applemusic-like-lyrics/react # 使用 yarn
 
 ## 使用方式摘要
 
-详细的 API 文档请参考 [./docs/modules.md](./docs/modules.md)
+详细的 API 文档请参考 [AMLL Docs](https://amll.dev/reference/react.html)。
 
 一个测试用途的程序可以在 [../playground/react/src/test.tsx](../playground/react/src/test.tsx) 里找到。
 
