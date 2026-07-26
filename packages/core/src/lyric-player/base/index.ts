@@ -20,15 +20,9 @@ import {
 	type PlayerScrollState,
 	resetPlayerScrollState,
 } from "./scroll.ts";
-import {
-	commitPlayerTimeState,
-	computePlayerTimeState,
-	type PlayerTimelineState,
-} from "./timeline.ts";
 
 export type { LyricLineBase } from "./line.ts";
 export type { PlayerScrollState } from "./scroll.ts";
-export type { PlayerTimelineState } from "./timeline.ts";
 
 /**
  * 播放器布局状态。
@@ -70,6 +64,32 @@ export interface PlayerInterlude {
 }
 
 /**
+ * 播放时间线状态。
+ *
+ * 描述播放器在时间轴上的当前位置，当前处于激活状态的歌词组信息
+ */
+export interface PlayerTimelineState {
+	/** 当前播放时间，单位为毫秒 */
+	currentTime: number;
+	/** 上一次提交到时间线状态的播放时间，单位为毫秒 */
+	lastCurrentTime: number;
+	/** 热行：当前时间 {@link currentTime} 正在命中的组（含主行+可能的背景行） */
+	hotGroups: Set<number>;
+	/** 缓冲组：UI 上还保持激活表现的组索引，通常包含热组，和刚结束仍在过渡中的组 */
+	bufferedGroups: Set<number>;
+	/** 当前应滚动对齐到的歌词组索引 */
+	scrollToIndex: number;
+	/** 是否正在拖拽进度条。若是，更新时丢弃缓冲行，并根据当前时间直接计算热行 */
+	isSeeking: boolean;
+	/** 是否处于播放状态 */
+	isPlaying: boolean;
+	/** 是否已经完成至少一次初始布局 */
+	initialLayoutFinished: boolean;
+	/** 当前是否处于间奏期间 */
+	activeInterlude?: PlayerInterlude;
+}
+
+/**
  * 歌词播放器的基类，已经包含了有关歌词操作和排版的功能，
  * 子类需要为其实现对应的显示展示操作
  */
@@ -90,7 +110,16 @@ export abstract class LyricPlayerBase
 		isSeeking: false,
 		isPlaying: true,
 		initialLayoutFinished: false,
+		activeInterlude: undefined,
 	};
+
+	private tempAddedIds: number[] = [];
+	private tempRemovedHotIds: number[] = [];
+	private tempRemovedBufferedIds: number[] = [];
+
+	private hasBottomContent = false;
+	private bottomLineObserver: MutationObserver;
+
 	/** @internal */
 	lyricGroupElementMap: WeakMap<Element, LyricLineGroupBase> = new WeakMap();
 	protected currentLyricLines: LyricLine[] = [];
@@ -224,6 +253,16 @@ export abstract class LyricPlayerBase
 		this.element.appendChild(this.interludeDots.getElement());
 		this.element.appendChild(this.bottomLine.getElement());
 		this.interludeDots.setTransform(0, 200);
+
+		this.bottomLineObserver = new MutationObserver(() => {
+			const bottomEl = this.bottomLine.getElement();
+			this.hasBottomContent = bottomEl.innerHTML.trim().length > 0;
+		});
+		this.bottomLineObserver.observe(this.bottomLine.getElement(), {
+			childList: true,
+			characterData: true,
+			subtree: true,
+		});
 
 		window.addEventListener("pageshow", this.onPageShow);
 		window.addEventListener("pagehide", this.onPageHide);
@@ -506,7 +545,10 @@ export abstract class LyricPlayerBase
 	 * 内部会根据调用间隔和播放进度自动决定如何滚动和显示歌词，所以这个的调用频率越快越准确越好。
 	 * 调用完成后，应每帧调用 {@link update} 方法来执行歌词动画效果。**此函数本身不会触发动画效果**。
 	 *
+	 * 当 `isSeek` 为 `true` 时，将触发重新排版，代价较高，因此请只在真正跳转时设为 `true`
+	 *
 	 * @param time 当前播放进度，单位为毫秒
+	 * @param isSeek 是否为用户手动跳转进度
 	 */
 	setCurrentTime(time: number, isSeek = false): void {
 		// 歌词行为如下：
@@ -518,46 +560,108 @@ export abstract class LyricPlayerBase
 
 		const { timelineState } = this;
 		timelineState.isSeeking = Boolean(isSeek);
+
 		timelineState.currentTime = time;
 
-		if (!timelineState.initialLayoutFinished && !timelineState.isSeeking)
+		if (!timelineState.initialLayoutFinished && !timelineState.isSeeking) {
 			return;
+		}
 
-		const stateResult = computePlayerTimeState({
-			time,
-			currentGroups: this.currentLyricGroups,
-			timelineState,
-		});
+		let shouldLayout = false;
+		let shouldResetScroll = false;
 
-		const bottomEl = this.bottomLine.getElement();
-		const hasBottomContent = bottomEl.innerHTML.trim().length > 0;
-		const commitResult = commitPlayerTimeState({
-			timelineState: timelineState,
-			time,
-			currentGroups: this.currentLyricGroups,
-			hasBottomContent,
-			stateResult,
-		});
+		if (timelineState.isSeeking) {
+			const result = this.syncForSeek(time);
+			shouldLayout = result.shouldLayout;
+			shouldResetScroll = result.shouldResetScroll;
+		} else {
+			const result = this.syncForPlayback(time);
+			shouldLayout = result.shouldLayout;
+			shouldResetScroll = result.shouldResetScroll;
+		}
 
-		for (const id of commitResult.groupsToDisable)
-			this.currentLyricGroups[id]?.disable();
-
-		for (const id of commitResult.groupsToEnable)
-			this.currentLyricGroups[id]?.enable();
-
-		if (commitResult.shouldResetScroll) this.resetScroll();
-		if (commitResult.shouldLayout) this.calcLayout();
+		if (shouldResetScroll) this.resetScroll();
+		if (shouldLayout) this.calcLayout();
 	}
 
 	/**
-	 * 根据当前时间与当前目标行，计算当前是否处于某个可展示的间奏区间。
+	 * 处理 Seek 时的时间线推倒
 	 *
-	 * 仅识别时间轴上的间奏空档，不涉及具体 DOM 元素的创建与摆放。
-	 * 若当前不应展示间奏动画，则返回 `undefined`。
+	 * 将会丢弃历史缓冲行，直接根据当前时间重新计算热行
 	 */
-	private getCurrentInterlude(): PlayerInterlude | undefined {
-		const currentTime = this.timelineState.currentTime + 20;
-		const currentIndex = this.timelineState.scrollToIndex;
+	private syncForSeek(time: number): {
+		shouldLayout: boolean;
+		shouldResetScroll: boolean;
+	} {
+		const { timelineState, currentLyricGroups } = this;
+
+		this.tempRemovedHotIds.length = 0;
+		for (const id of timelineState.hotGroups) {
+			this.tempRemovedHotIds.push(id);
+		}
+		this.tempRemovedBufferedIds.length = 0;
+		for (const id of timelineState.bufferedGroups) {
+			if (!timelineState.hotGroups.has(id)) {
+				this.tempRemovedBufferedIds.push(id);
+			}
+		}
+
+		timelineState.hotGroups.clear();
+		timelineState.bufferedGroups.clear();
+
+		// TODO: 二分查找优化性能
+		for (let id = 0; id < currentLyricGroups.length; id++) {
+			const group = currentLyricGroups[id];
+			if (group && group.startTime <= time && group.endTime > time) {
+				timelineState.hotGroups.add(id);
+				timelineState.bufferedGroups.add(id);
+			}
+		}
+
+		if (timelineState.bufferedGroups.size > 0) {
+			timelineState.scrollToIndex = Math.min(...timelineState.bufferedGroups);
+		} else {
+			let foundIndex = -1;
+			for (let i = 0; i < currentLyricGroups.length; i++) {
+				if (currentLyricGroups[i]?.startTime >= time) {
+					foundIndex = i;
+					break;
+				}
+			}
+			timelineState.scrollToIndex =
+				foundIndex === -1 ? currentLyricGroups.length : foundIndex;
+		}
+
+		// 就地启用/停用对应歌词行
+		for (const id of this.tempRemovedHotIds) {
+			if (!timelineState.bufferedGroups.has(id))
+				currentLyricGroups[id]?.disable();
+		}
+		for (const id of this.tempRemovedBufferedIds) {
+			if (!timelineState.bufferedGroups.has(id))
+				currentLyricGroups[id]?.disable();
+		}
+		for (const id of timelineState.hotGroups) {
+			currentLyricGroups[id]?.enable();
+		}
+
+		// 重新计算间奏信息
+		this.updateInterludeState(time, timelineState.scrollToIndex);
+
+		timelineState.lastCurrentTime = time;
+
+		// Seek 需要重排与重置滚动
+		return { shouldLayout: true, shouldResetScroll: true };
+	}
+
+	/**
+	 * 根据当前时间与给定的基准行，计算间奏区间状态
+	 */
+	private updateInterludeState(
+		currentTime: number,
+		currentIndex: number,
+	): void {
+		const time = currentTime + 20;
 		const groups = this.currentLyricGroups;
 
 		const checkGap = (k: number): PlayerInterlude | undefined => {
@@ -571,9 +675,9 @@ export abstract class LyricPlayerBase
 
 			if (gapEnd - gapStart < 4000) return undefined;
 
-			if (gapEnd > currentTime && gapStart < currentTime) {
+			if (gapEnd > time && gapStart < time) {
 				return {
-					startTime: Math.max(gapStart, currentTime),
+					startTime: Math.max(gapStart, time),
 					endTime: gapEnd,
 					anchorLineIndex: k,
 					isNextDuet: nextGroup.mainLine.getLine().isDuet,
@@ -582,11 +686,116 @@ export abstract class LyricPlayerBase
 			return undefined;
 		};
 
-		return (
+		this.timelineState.activeInterlude =
 			checkGap(currentIndex - 1) ||
 			checkGap(currentIndex) ||
-			checkGap(currentIndex + 1)
-		);
+			checkGap(currentIndex + 1);
+	}
+
+	/**
+	 * 处理正常播放时的时间线推导
+	 */
+	private syncForPlayback(time: number): {
+		shouldLayout: boolean;
+		shouldResetScroll: boolean;
+	} {
+		const { timelineState, currentLyricGroups } = this;
+		let shouldLayout = false;
+
+		this.tempAddedIds.length = 0;
+		this.tempRemovedHotIds.length = 0;
+		this.tempRemovedBufferedIds.length = 0;
+
+		// 检索已经过期的热行
+		for (const lastHotId of timelineState.hotGroups) {
+			const group = currentLyricGroups[lastHotId];
+			if (!group || time < group.startTime || group.endTime <= time) {
+				timelineState.hotGroups.delete(lastHotId);
+				this.tempRemovedHotIds.push(lastHotId);
+			}
+		}
+
+		// TODO: 用滑动窗口和二分查找优化性能
+		for (let id = 0; id < currentLyricGroups.length; id++) {
+			const group = currentLyricGroups[id];
+			if (
+				group &&
+				group.startTime <= time &&
+				group.endTime > time &&
+				!timelineState.hotGroups.has(id)
+			) {
+				timelineState.hotGroups.add(id);
+				this.tempAddedIds.push(id);
+			}
+		}
+
+		// 检索应该被移除的缓冲行
+		for (const id of timelineState.bufferedGroups) {
+			if (!timelineState.hotGroups.has(id)) {
+				this.tempRemovedBufferedIds.push(id);
+			}
+		}
+
+		if (this.tempAddedIds.length > 0) {
+			for (const id of this.tempAddedIds) {
+				timelineState.bufferedGroups.add(id);
+				currentLyricGroups[id]?.enable();
+			}
+			for (const id of this.tempRemovedBufferedIds) {
+				timelineState.bufferedGroups.delete(id);
+				currentLyricGroups[id]?.disable();
+			}
+			if (timelineState.bufferedGroups.size > 0) {
+				timelineState.scrollToIndex = Math.min(...timelineState.bufferedGroups);
+			}
+			shouldLayout = true;
+		} else if (
+			this.tempRemovedBufferedIds.length > 0 &&
+			this.tempRemovedBufferedIds.length === timelineState.bufferedGroups.size
+		) {
+			for (const id of timelineState.bufferedGroups) {
+				if (timelineState.hotGroups.has(id)) continue;
+				timelineState.bufferedGroups.delete(id);
+				currentLyricGroups[id]?.disable();
+			}
+			shouldLayout = true;
+		}
+
+		// 整首歌播放完毕后聚焦到底栏
+		if (
+			timelineState.bufferedGroups.size === 0 &&
+			currentLyricGroups.length > 0
+		) {
+			const lastGroup = currentLyricGroups[currentLyricGroups.length - 1];
+			if (time >= lastGroup.endTime) {
+				const targetIndex = this.hasBottomContent
+					? currentLyricGroups.length
+					: currentLyricGroups.length - 1;
+				if (timelineState.scrollToIndex !== targetIndex) {
+					timelineState.scrollToIndex = targetIndex;
+					shouldLayout = true;
+				}
+			}
+		}
+
+		// 更新间奏状态
+		const prevInterlude = timelineState.activeInterlude;
+		this.updateInterludeState(time, timelineState.scrollToIndex);
+		const currInterlude = timelineState.activeInterlude;
+
+		if (
+			(!prevInterlude && currInterlude) ||
+			(prevInterlude && !currInterlude) ||
+			(prevInterlude &&
+				currInterlude &&
+				prevInterlude.anchorLineIndex !== currInterlude.anchorLineIndex)
+		) {
+			shouldLayout = true;
+		}
+
+		timelineState.lastCurrentTime = time;
+
+		return { shouldLayout, shouldResetScroll: false };
 	}
 
 	/**
@@ -644,8 +853,6 @@ export abstract class LyricPlayerBase
 	 *
 	 * 函数有一个 `force` 参数，用于指定是否强制修改布局，也就是不经过动画直接调整元素位置和大小。
 	 *
-	 * 此函数还有一个 `reflow` 参数，用于指定是否需要重新计算布局
-	 *
 	 * 因为计算布局必定会导致浏览器重排布局，所以会大幅度影响流畅度和性能，故请只在以下情况下将其​设置为 true：
 	 *
 	 * 1. 歌词页面大小发生改变时（这个组件会自行处理）
@@ -656,7 +863,7 @@ export abstract class LyricPlayerBase
 	 * @param force 是否绕过弹簧效果强制更新位置
 	 */
 	async calcLayout(sync = false, force = false): Promise<void> {
-		const interlude = this.getCurrentInterlude();
+		const interlude = this.timelineState.activeInterlude;
 		const isInterludeActive = !!interlude;
 
 		if (
@@ -989,6 +1196,7 @@ export abstract class LyricPlayerBase
 	}
 	dispose(): void {
 		this.element.remove();
+		this.bottomLineObserver.disconnect();
 		window.removeEventListener("pageshow", this.onPageShow);
 		window.removeEventListener("pagehide", this.onPageHide);
 	}
