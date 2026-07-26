@@ -38,6 +38,8 @@ interface PlayerLayoutState {
 	alignPosition: number;
 	/** 视口上下额外保留的预渲染距离，单位为像素 */
 	overscanPx: number;
+	/** 上一轮布局时的 seeking 状态 */
+	lastIsSeeking: boolean;
 }
 
 /**
@@ -152,6 +154,7 @@ export abstract class LyricPlayerBase
 		alignAnchor: LayoutAlignAnchor.Center,
 		alignPosition: 0.35,
 		overscanPx: 300,
+		lastIsSeeking: false,
 	};
 	protected interludeDots: InterludeDots = new InterludeDots();
 	protected bottomLine: BottomLineEl = new BottomLineEl(this);
@@ -1067,12 +1070,15 @@ export abstract class LyricPlayerBase
 	async calcLayout(sync = false, force = false): Promise<void> {
 		const interlude = this.timelineState.activeInterlude;
 		const isInterludeActive = !!interlude;
+		const currentIsSeeking = this.timelineState.isSeeking;
 
 		if (
 			this.layoutState.targetAlignIndex !== this.timelineState.scrollToIndex ||
-			this.layoutState.lastInterludeState !== isInterludeActive
+			this.layoutState.lastInterludeState !== isInterludeActive ||
+			this.layoutState.lastIsSeeking !== currentIsSeeking
 		) {
 			this.layoutState.lastInterludeState = isInterludeActive;
+			this.layoutState.lastIsSeeking = currentIsSeeking;
 			this.updateSpringParams(isInterludeActive);
 		}
 
