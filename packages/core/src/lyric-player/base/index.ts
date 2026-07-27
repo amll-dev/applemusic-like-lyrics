@@ -83,6 +83,12 @@ interface PlayerTimelineState {
 	initialLayoutFinished: boolean;
 	/** 当前是否处于间奏期间 */
 	activeInterlude?: PlayerInterlude;
+	/**
+	 * 滑动窗口游标，指向当前或下一个即将进入 active 状态的歌词组索引
+	 *
+	 * 在正常播放时，只需要从该游标处向后遍历以避免全量遍历
+	 */
+	playbackCursor: number;
 }
 
 /**
@@ -130,6 +136,7 @@ export abstract class LyricPlayerBase
 		isPlaying: true,
 		initialLayoutFinished: false,
 		activeInterlude: undefined,
+		playbackCursor: 0,
 	};
 
 	private tempAddedIds: number[] = [];
@@ -764,7 +771,10 @@ export abstract class LyricPlayerBase
 		time = Math.round(time);
 
 		const { timelineState } = this;
-		timelineState.isSeeking = Boolean(isSeek);
+
+		// 时间回退也视为发生了 Seek
+		const isTimeRetreating = time < timelineState.lastCurrentTime;
+		timelineState.isSeeking = Boolean(isSeek) || isTimeRetreating;
 
 		timelineState.currentTime = time;
 
@@ -814,27 +824,50 @@ export abstract class LyricPlayerBase
 		timelineState.hotGroups.clear();
 		timelineState.bufferedGroups.clear();
 
-		// TODO: 二分查找优化性能
-		for (let id = 0; id < currentLyricGroups.length; id++) {
-			const group = currentLyricGroups[id];
+		let left = 0;
+		let right = currentLyricGroups.length - 1;
+		let firstGreaterOrEqual = currentLyricGroups.length;
+
+		while (left <= right) {
+			const mid = (left + right) >> 1;
+			if (currentLyricGroups[mid].startTime >= time) {
+				firstGreaterOrEqual = mid;
+				right = mid - 1;
+			} else {
+				left = mid + 1;
+			}
+		}
+
+		let minHotIndex = Number.POSITIVE_INFINITY;
+
+		// 从基准点向回扫描热行
+		// 因为歌词按 startTime 排序，热行的 startTime 必 <= time
+		// 所以只可能存在于 firstGreaterOrEqual 及其之前的索引中
+		const startIndex = Math.min(
+			firstGreaterOrEqual,
+			currentLyricGroups.length - 1,
+		);
+		for (let i = startIndex; i >= 0; i--) {
+			const group = currentLyricGroups[i];
 			if (group && group.startTime <= time && group.endTime > time) {
-				timelineState.hotGroups.add(id);
-				timelineState.bufferedGroups.add(id);
+				timelineState.hotGroups.add(i);
+				timelineState.bufferedGroups.add(i);
+				if (i < minHotIndex) {
+					minHotIndex = i;
+				}
 			}
 		}
 
 		if (timelineState.bufferedGroups.size > 0) {
-			timelineState.scrollToIndex = Math.min(...timelineState.bufferedGroups);
+			timelineState.scrollToIndex = minHotIndex;
 		} else {
-			let foundIndex = -1;
-			for (let i = 0; i < currentLyricGroups.length; i++) {
-				if (currentLyricGroups[i]?.startTime >= time) {
-					foundIndex = i;
-					break;
-				}
-			}
-			timelineState.scrollToIndex =
-				foundIndex === -1 ? currentLyricGroups.length : foundIndex;
+			timelineState.scrollToIndex = firstGreaterOrEqual;
+		}
+
+		if (timelineState.hotGroups.size > 0) {
+			timelineState.playbackCursor = minHotIndex;
+		} else {
+			timelineState.playbackCursor = timelineState.scrollToIndex;
 		}
 
 		// 就地启用/停用对应歌词行
@@ -920,18 +953,37 @@ export abstract class LyricPlayerBase
 			}
 		}
 
-		// TODO: 用滑动窗口和二分查找优化性能
-		for (let id = 0; id < currentLyricGroups.length; id++) {
-			const group = currentLyricGroups[id];
+		let cursor = timelineState.playbackCursor;
+		cursor = clamp(cursor, 0, currentLyricGroups.length);
+
+		while (cursor < currentLyricGroups.length) {
+			const group = currentLyricGroups[cursor];
+			if (!group) break;
+
+			if (group.startTime > time) {
+				break;
+			}
+
 			if (
-				group &&
 				group.startTime <= time &&
 				group.endTime > time &&
-				!timelineState.hotGroups.has(id)
+				!timelineState.hotGroups.has(cursor)
 			) {
-				timelineState.hotGroups.add(id);
-				this.tempAddedIds.push(id);
+				timelineState.hotGroups.add(cursor);
+				this.tempAddedIds.push(cursor);
 			}
+
+			cursor++;
+		}
+
+		if (timelineState.hotGroups.size > 0) {
+			let minHotIndex = Number.POSITIVE_INFINITY;
+			for (const id of timelineState.hotGroups) {
+				if (id < minHotIndex) {
+					minHotIndex = id;
+				}
+			}
+			timelineState.playbackCursor = Math.max(0, minHotIndex);
 		}
 
 		// 检索应该被移除的缓冲行
@@ -1175,41 +1227,53 @@ export abstract class LyricPlayerBase
 				(i >= this.timelineState.scrollToIndex && i < latestIndex);
 
 			let blurLevel = 0;
-			if (this.enableBlur && !this.scrollState.isUserScrolling && !isActive) {
-				blurLevel = 1;
-				if (i < this.timelineState.scrollToIndex) {
-					blurLevel += Math.abs(this.timelineState.scrollToIndex - i) + 1;
-				} else {
-					blurLevel += Math.abs(
-						i - Math.max(this.timelineState.scrollToIndex, latestIndex),
-					);
-				}
-				if (window.innerWidth <= 1024) {
-					blurLevel *= 0.8;
-				}
-			}
+			let targetOpacity = 1;
 
-			let targetOpacity: number;
+			const overscan = this.layoutState.overscanPx;
+			const safeBuffer = LINE_HEIGHT_FALLBACK * 2;
 
-			if (this.hidePassedLines) {
-				if (
-					i <
-						(interlude
-							? interlude.anchorLineIndex + 1
-							: this.timelineState.scrollToIndex) &&
-					this.timelineState.isPlaying
-				) {
-					// 为了避免浏览器优化，这里使用了一个极小但不为零的值（几乎不可见）
-					targetOpacity = 1e-4;
+			const isOutOfRenderRange =
+				curPos < -(overscan + safeBuffer) ||
+				curPos > this.size[1] + overscan + safeBuffer;
+
+			if (isOutOfRenderRange) {
+				blurLevel = this.enableBlur ? 5 : 0;
+				targetOpacity = 0;
+			} else {
+				if (this.enableBlur && !this.scrollState.isUserScrolling && !isActive) {
+					blurLevel = 1;
+					if (i < this.timelineState.scrollToIndex) {
+						blurLevel += Math.abs(this.timelineState.scrollToIndex - i) + 1;
+					} else {
+						blurLevel += Math.abs(
+							i - Math.max(this.timelineState.scrollToIndex, latestIndex),
+						);
+					}
+					if (window.innerWidth <= 1024) {
+						blurLevel *= 0.8;
+					}
+				}
+
+				if (this.hidePassedLines) {
+					if (
+						i <
+							(interlude
+								? interlude.anchorLineIndex + 1
+								: this.timelineState.scrollToIndex) &&
+						this.timelineState.isPlaying
+					) {
+						// 为了避免浏览器优化，这里使用了一个极小但不为零的值（几乎不可见）
+						targetOpacity = 1e-4;
+					} else if (hasBuffered) {
+						targetOpacity = 0.85;
+					} else {
+						targetOpacity = this.isNonDynamic ? 0.2 : 1;
+					}
 				} else if (hasBuffered) {
 					targetOpacity = 0.85;
 				} else {
 					targetOpacity = this.isNonDynamic ? 0.2 : 1;
 				}
-			} else if (hasBuffered) {
-				targetOpacity = 0.85;
-			} else {
-				targetOpacity = this.isNonDynamic ? 0.2 : 1;
 			}
 
 			group.setTransform(

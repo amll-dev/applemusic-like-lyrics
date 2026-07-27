@@ -64,11 +64,7 @@ export class LyricLineEl extends LyricLineBase {
 
 	private renderMode: LyricLineRenderMode = LyricLineRenderMode.SOLID;
 
-	private currentBrightAlpha = 1.0;
-	private currentDarkAlpha = 0.2;
-
-	private targetBrightAlpha = 1.0;
-	private targetDarkAlpha = 0.2;
+	private lastScaleNum = -1;
 
 	/**
 	 * 用于平衡换行、尽量减少各行长度差异的类
@@ -176,7 +172,7 @@ export class LyricLineEl extends LyricLineBase {
 	disable(): void {
 		this.isEnabled = false;
 		this.element.classList.remove(styles.active);
-		this.renderMode = LyricLineRenderMode.SOLID;
+		this.setRenderMode(LyricLineRenderMode.SOLID);
 
 		const main = this.element.children[0] as HTMLDivElement;
 
@@ -269,7 +265,7 @@ export class LyricLineEl extends LyricLineBase {
 		return this.lyricLine;
 	}
 	// private _hide = true;
-	private lastStyle = "";
+
 	show(): void {
 		if (!this.built) {
 			this.rebuildElement();
@@ -278,18 +274,13 @@ export class LyricLineEl extends LyricLineBase {
 		}
 	}
 
-	private rebuildStyle() {
-		let style = "";
-		style += `transform: scale(${(this.lineTransforms.scale.getCurrentPosition() / 100).toFixed(4)});`;
+	private rebuildStyle(): void {
+		const style = this.element.style;
+		const currentScale = this.lineTransforms.scale.getCurrentPosition() / 100;
 
-		if (!this.lyricPlayer.getEnableSpring()) {
-			style += `transition-delay:${this.delay}ms;`;
-		}
-
-		style += `filter:blur(${Math.min(5, this.blur)}px);`;
-		if (style !== this.lastStyle) {
-			this.lastStyle = style;
-			this.element.setAttribute("style", style);
+		if (Math.abs(currentScale - this.lastScaleNum) >= 0.0001) {
+			this.lastScaleNum = currentScale;
+			style.transform = `scale(${currentScale.toFixed(3)})`;
 		}
 	}
 
@@ -918,57 +909,12 @@ export class LyricLineEl extends LyricLineBase {
 		return this.element;
 	}
 
-	private updateMaskAlphaTargets(scale: number) {
-		const factor = clamp01((scale - 0.97) / 0.03);
-		const dynamicDarkAlpha = factor * 0.2 + 0.2;
-		const dynamicBrightAlpha = factor * 0.8 + 0.2;
-
-		if (this.renderMode === LyricLineRenderMode.SOLID) {
-			this.targetBrightAlpha = dynamicDarkAlpha;
-			this.targetDarkAlpha = dynamicDarkAlpha;
-		} else {
-			this.targetBrightAlpha = dynamicBrightAlpha;
-			this.targetDarkAlpha = dynamicDarkAlpha;
-		}
-	}
-
-	private applyAlphaToDom(delta: number) {
-		const dt = delta || 0.016;
-		const ATTACK_SPEED = 50.0;
-		const RELEASE_SPEED = 7.0;
-		const getFactor = (speed: number) => 1 - Math.exp(-speed * dt);
-
-		// 根据即将变亮还是变暗选择速度
-		// 如果即将变亮，让速度非常快，以免播放到第一个字的时候透明度还在慢慢增加导致看不清
-		const isBrightening = this.targetBrightAlpha > this.currentBrightAlpha;
-		const brightSpeed = isBrightening ? ATTACK_SPEED : RELEASE_SPEED;
-		const brightFactor = getFactor(brightSpeed);
-
-		if (Math.abs(this.targetBrightAlpha - this.currentBrightAlpha) < 0.001) {
-			this.currentBrightAlpha = this.targetBrightAlpha;
-		} else {
-			this.currentBrightAlpha +=
-				(this.targetBrightAlpha - this.currentBrightAlpha) * brightFactor;
-		}
-
-		const isDarkening = this.targetDarkAlpha > this.currentDarkAlpha;
-		const darkSpeed = isDarkening ? ATTACK_SPEED : RELEASE_SPEED;
-		const darkFactor = getFactor(darkSpeed);
-
-		if (Math.abs(this.targetDarkAlpha - this.currentDarkAlpha) < 0.001) {
-			this.currentDarkAlpha = this.targetDarkAlpha;
-		} else {
-			this.currentDarkAlpha +=
-				(this.targetDarkAlpha - this.currentDarkAlpha) * darkFactor;
-		}
-
-		this.element.style.setProperty(
-			"--bright-mask-alpha",
-			this.currentBrightAlpha.toFixed(3),
-		);
-		this.element.style.setProperty(
-			"--dark-mask-alpha",
-			this.currentDarkAlpha.toFixed(3),
+	private setRenderMode(mode: LyricLineRenderMode): void {
+		if (this.renderMode === mode) return;
+		this.renderMode = mode;
+		this.element.classList.toggle(
+			styles.gradientMask,
+			mode === LyricLineRenderMode.GRADIENT,
 		);
 	}
 
@@ -982,54 +928,30 @@ export class LyricLineEl extends LyricLineBase {
 	): void {
 		super.setTransform(scale, opacity, blur, force, delay);
 
-		this.renderMode = mode;
-		const enableSpring = this.lyricPlayer.getEnableSpring();
-
+		this.setRenderMode(mode);
 		this.top = 0;
 		this.scale = scale;
 		this.delay = (delay * 1000) | 0;
 
-		const main = this.element.children[0] as HTMLDivElement;
-		main.style.opacity = `${opacity}`;
+		const enableSpring = this.lyricPlayer.getEnableSpring();
 
 		if (force || !enableSpring) {
-			this.blur = Math.min(32, blur);
 			this.lineTransforms.scale.setPosition(scale);
-
-			this.rebuildStyle();
-
-			const currentScale = this.lineTransforms.scale.getCurrentPosition();
-			this.updateMaskAlphaTargets(currentScale / 100);
-			this.currentBrightAlpha = this.targetBrightAlpha;
-			this.currentDarkAlpha = this.targetDarkAlpha;
-			this.element.style.setProperty(
-				"--bright-mask-alpha",
-				String(this.currentBrightAlpha),
-			);
-			this.element.style.setProperty(
-				"--dark-mask-alpha",
-				String(this.currentDarkAlpha),
-			);
 		} else {
 			this.lineTransforms.scale.setTargetPosition(scale);
-			if (this.blur !== Math.min(5, blur)) {
-				this.blur = Math.min(5, blur);
-				this.element.style.filter = `blur(${blur.toFixed(3)}px)`;
-			}
 		}
+
+		this.rebuildStyle();
 	}
 
 	update(delta = 0): void {
 		if (!this.lyricPlayer.getEnableSpring()) return;
 
 		this.lineTransforms.scale.update(delta);
+
+		if (this.lineTransforms.scale.arrived()) return;
+
 		this.rebuildStyle();
-
-		if (!this.built) return;
-
-		const currentScale = this.lineTransforms.scale.getCurrentPosition() / 100;
-		this.updateMaskAlphaTargets(currentScale);
-		this.applyAlphaToDom(delta);
 	}
 
 	/** @internal */

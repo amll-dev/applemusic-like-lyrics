@@ -13,7 +13,6 @@ export class BottomLineEl implements HasElement, Disposable {
 	private element: HTMLElement = document.createElement("div");
 	private left = 0;
 	private top = 0;
-	private delay = 0;
 	// 由 LyricPlayer 来设置
 	lineSize: [number, number] = [0, 0];
 	readonly lineTransforms: LineTransforms = {
@@ -22,6 +21,10 @@ export class BottomLineEl implements HasElement, Disposable {
 	};
 	private isFocused = false;
 	private blur = 0;
+
+	private lastTransformStyle = "";
+	private lastFilterStyle = "";
+
 	constructor(private lyricPlayer: LyricPlayerBase) {
 		this.element.setAttribute(
 			"class",
@@ -37,7 +40,6 @@ export class BottomLineEl implements HasElement, Disposable {
 		]);
 		return size;
 	}
-	private lastStyle = "";
 	show(): void {
 		this.rebuildStyle();
 	}
@@ -55,23 +57,25 @@ export class BottomLineEl implements HasElement, Disposable {
 		}
 	}
 	private rebuildStyle() {
-		let style = `transform:translate(${this.lineTransforms.posX
-			.getCurrentPosition()
-			.toFixed(2)}px,${this.lineTransforms.posY
-			.getCurrentPosition()
-			.toFixed(2)}px);`;
+		const style = this.element.style;
 
-		if (!this.lyricPlayer.getEnableSpring() && this.isInSight) {
-			style += `transition-delay:${this.delay}ms;`;
+		const posX = this.lineTransforms.posX.getCurrentPosition().toFixed(2);
+		const posY = this.lineTransforms.posY.getCurrentPosition().toFixed(2);
+		const transformStr = `translate(${posX}px, ${posY}px)`;
+
+		if (this.lastTransformStyle !== transformStr) {
+			this.lastTransformStyle = transformStr;
+			style.transform = transformStr;
 		}
 
-		style += `filter:blur(${Math.min(5, this.blur)}px);`;
-
-		if (style !== this.lastStyle) {
-			this.lastStyle = style;
-			this.element.setAttribute("style", style);
+		const blurVal = Math.min(5, this.blur);
+		const filterStr = blurVal > 0.01 ? `blur(${blurVal.toFixed(2)}px)` : "none";
+		if (this.lastFilterStyle !== filterStr) {
+			this.lastFilterStyle = filterStr;
+			style.filter = filterStr;
 		}
 	}
+
 	getElement(): HTMLElement {
 		return this.element;
 	}
@@ -84,7 +88,6 @@ export class BottomLineEl implements HasElement, Disposable {
 	): void {
 		this.left = left;
 		this.top = top;
-		this.delay = (delay * 1000) | 0;
 
 		if (force || !this.lyricPlayer.getEnableSpring()) {
 			this.blur = Math.min(32, blur);

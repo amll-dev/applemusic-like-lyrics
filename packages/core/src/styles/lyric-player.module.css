@@ -1,3 +1,15 @@
+@property --bright-mask-alpha {
+	syntax: "<number>";
+	inherits: true;
+	initial-value: 1;
+}
+
+@property --dark-mask-alpha {
+	syntax: "<number>";
+	inherits: true;
+	initial-value: 0.2;
+}
+
 .lyricLineWrapper {
 	position: absolute;
 	top: 0;
@@ -12,7 +24,7 @@
 
 	gap: 0.3em;
 
-	will-change: transform, opacity, filter;
+	will-change: transform;
 	transition:
 		opacity 0.4s ease,
 		filter 0.4s ease,
@@ -43,9 +55,21 @@
 	contain-intrinsic-size: auto 40px;
 	backface-visibility: hidden;
 	transform-origin: left;
-	will-change: transform, filter, opacity;
 
-	transition: box-shadow 0.25s;
+	--mask-alpha-duration: 0.45s;
+	--bright-mask-alpha: 0.2;
+	--dark-mask-alpha: 0.2;
+
+	transition:
+		box-shadow 0.25s,
+		--bright-mask-alpha var(--mask-alpha-duration) ease-out,
+		--dark-mask-alpha var(--mask-alpha-duration) ease-out;
+
+	&.gradientMask {
+		--mask-alpha-duration: 0.3s;
+		--bright-mask-alpha: 1;
+		--dark-mask-alpha: 0.4;
+	}
 }
 
 .lyricDuetLine {
@@ -100,7 +124,6 @@
 		padding: 1em;
 		white-space: pre-wrap;
 		vertical-align: bottom;
-		will-change: transform, text-shadow;
 		contain: layout style;
 
 		&.emphasize,
@@ -112,7 +135,6 @@
 			& > span {
 				margin: -1em;
 				padding: 1em;
-				will-change: transform, text-shadow;
 				backface-visibility: hidden;
 			}
 		}
@@ -124,7 +146,9 @@
 	font-size: max(calc(1em * var(--amll-lp-bg-line-scale, 0.7)), 10px);
 	transition:
 		background-color 0.25s,
-		box-shadow 0.25s;
+		box-shadow 0.25s,
+		--bright-mask-alpha var(--mask-alpha-duration) ease-out,
+		--dark-mask-alpha var(--mask-alpha-duration) ease-out;
 
 	.lyricMainLine {
 		padding: 1.2em 1em;
@@ -134,7 +158,9 @@
 		opacity: 0.4;
 		transition:
 			background-color 0.25s,
-			box-shadow 0.25s;
+			box-shadow 0.25s,
+			--bright-mask-alpha var(--mask-alpha-duration) ease-out,
+			--dark-mask-alpha var(--mask-alpha-duration) ease-out;
 	}
 }
 
@@ -282,7 +308,7 @@
 			padding-left: 15%;
 		}
 
-		.lyricLineWrapper:has(.lyricDuetLine) {
+		.isDuetWrapper {
 			align-items: flex-end;
 
 			.bgWrapper {

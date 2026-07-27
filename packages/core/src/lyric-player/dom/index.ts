@@ -186,6 +186,8 @@ export class DomLyricPlayer extends LyricPlayerBase {
 			}
 		}
 
+		// 对歌词组进行排序以便之后 syncForPlayback 可以用高性能的滑动窗口查找而不会导致时间乱序而跳过歌词行
+		this.currentLyricGroups.sort((a, b) => a.startTime - b.startTime);
 		this.setLinePosXSpringParams({});
 		this.setLinePosYSpringParams({});
 		this.setLineScaleSpringParams({});

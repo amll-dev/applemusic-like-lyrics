@@ -9,6 +9,13 @@ export class LyricLineGroup extends LyricLineGroupBase<LyricLineEl> {
 	public bgWrapper?: HTMLElement;
 	private lastIsActive?: boolean;
 
+	private lastBgHeight = 0;
+	private lastBgIsHidden?: boolean;
+	private lastYNum = -9999;
+	private lastOpacityNum = -1;
+	private lastBlurNum = -1;
+	private lastBgSlideYNum = -9999;
+
 	constructor(
 		public lyricPlayer: DomLyricPlayer,
 		mainLine: LyricLineEl,
@@ -16,6 +23,11 @@ export class LyricLineGroup extends LyricLineGroupBase<LyricLineEl> {
 		super(mainLine);
 		this.element = document.createElement("div");
 		this.element.className = styles.lyricLineWrapper;
+
+		if (mainLine.getLine().isDuet) {
+			this.element.classList.add(styles.isDuetWrapper);
+		}
+
 		this.element.appendChild(mainLine.getElement());
 		this.posY.setPosition(window.innerHeight * 2);
 
@@ -27,7 +39,7 @@ export class LyricLineGroup extends LyricLineGroupBase<LyricLineEl> {
 
 		let h = this.lyricPlayer.lyricGroupSize?.get(this)?.[1];
 		if (h === undefined || h === 0) {
-			h = this.element.clientHeight || 0;
+			h = this.lyricPlayer.size[1] / 5;
 		}
 
 		const pb = this.lyricPlayer.size[1];
@@ -72,13 +84,24 @@ export class LyricLineGroup extends LyricLineGroupBase<LyricLineEl> {
 	}
 
 	override update(delta: number): void {
-		if (this.isInSight) {
+		const inSight = this.isInSight;
+		if (inSight) {
 			this.show();
+			super.update(delta);
 		} else {
 			this.hide();
+			if (this.lyricPlayer.getEnableSpring()) {
+				this.posY.update(delta);
+				this.bgSlideY.update(delta);
+			}
 		}
+	}
 
-		super.update(delta);
+	override onLineSizeChange(size: [number, number]): void {
+		super.onLineSizeChange(size);
+		if (this.bgWrapper) {
+			this.lastBgHeight = this.bgWrapper.clientHeight || 0;
+		}
 	}
 
 	addBgLine(bgLine: LyricLineEl): void {
@@ -103,6 +126,7 @@ export class LyricLineGroup extends LyricLineGroupBase<LyricLineEl> {
 
 		if (this.mainLine.getLine().isDuet) {
 			bgLine.getElement().classList.add(styles.lyricDuetLine);
+			this.element.classList.add(styles.isDuetWrapper);
 		}
 
 		this.bgWrapper = document.createElement("div");
@@ -121,17 +145,28 @@ export class LyricLineGroup extends LyricLineGroupBase<LyricLineEl> {
 		} else {
 			this.element.appendChild(this.bgWrapper);
 		}
+
+		this.lastBgHeight = this.bgWrapper.clientHeight || 0;
 	}
 
 	protected renderStyles(): void {
-		const y = this.posY.getCurrentPosition().toFixed(1);
+		const style = this.element.style;
 
-		this.element.style.transform = `translateY(${y}px)`;
-		this.element.style.opacity = this.opacity.toString();
-		this.element.style.filter = `blur(${Math.min(5, this.blur)}px)`;
+		const currentY = this.posY.getCurrentPosition();
+		if (Math.abs(currentY - this.lastYNum) >= 0.001) {
+			this.lastYNum = currentY;
+			style.transform = `translateY(${currentY.toFixed(1)}px)`;
+		}
 
-		if (!this.lyricPlayer.getEnableSpring()) {
-			this.element.style.transitionDelay = `${this.delay}ms`;
+		if (Math.abs(this.opacity - this.lastOpacityNum) >= 0.05) {
+			this.lastOpacityNum = this.opacity;
+			style.opacity = String(this.opacity);
+		}
+
+		const blurVal = Math.min(5, this.blur);
+		if (Math.abs(blurVal - this.lastBlurNum) >= 0.05) {
+			this.lastBlurNum = blurVal;
+			style.filter = blurVal > 0.01 ? `blur(${blurVal.toFixed(2)}px)` : "none";
 		}
 
 		if (this.bgWrapper) {
@@ -140,28 +175,33 @@ export class LyricLineGroup extends LyricLineGroupBase<LyricLineEl> {
 				this.bgWrapper.classList.toggle(styles.bgWrapperActive, this.isActive);
 			}
 
+			const bgStyle = this.bgWrapper.style;
 			const slideY = this.bgSlideY.getCurrentPosition();
-			const slideYStr = slideY.toFixed(1);
-			const activeProgress = clamp01(1 - Math.abs(slideY) / 80);
 
-			const scaleStr = (0.8 + activeProgress * 0.2).toFixed(3);
-			this.bgWrapper.style.transform = `translateY(${slideYStr}%) scale(${scaleStr})`;
+			if (Math.abs(slideY - this.lastBgSlideYNum) >= 0.001) {
+				this.lastBgSlideYNum = slideY;
+				const activeProgress = clamp01(1 - Math.abs(slideY) / 80);
+				const scaleStr = (0.8 + activeProgress * 0.2).toFixed(3);
+				const alwaysPostposition =
+					this.lyricPlayer.getAlwaysPostpositionBackground();
+				const shouldBgFirst = !alwaysPostposition && this.isBgFirst;
 
-			const alwaysPostposition =
-				this.lyricPlayer.getAlwaysPostpositionBackground();
-			const shouldBgFirst = !alwaysPostposition && this.isBgFirst;
+				let finalTranslateYPx = (slideY / 100) * this.lastBgHeight;
+				if (shouldBgFirst) {
+					finalTranslateYPx += -this.lastBgHeight * (1 - activeProgress);
+				}
 
-			if (shouldBgFirst) {
-				const bgHeight = this.bgWrapper.clientHeight || 0;
-				const currentMarginTop = -bgHeight * (1 - activeProgress);
-				this.bgWrapper.style.marginTop = `${currentMarginTop.toFixed(1)}px`;
-			} else {
-				this.bgWrapper.style.marginTop = "";
+				bgStyle.transform = `translateY(${finalTranslateYPx.toFixed(1)}px) scale(${scaleStr})`;
+
+				const targetHiddenY = shouldBgFirst ? 80 : -80;
+				const isHidden =
+					Math.abs(slideY - targetHiddenY) < 0.1 && !this.isActive;
+
+				if (this.lastBgIsHidden !== isHidden) {
+					this.lastBgIsHidden = isHidden;
+					this.bgWrapper.classList.toggle(styles.bgWrapperHidden, isHidden);
+				}
 			}
-
-			const targetHiddenYStr = shouldBgFirst ? "80.0" : "-80.0";
-			const isHidden = slideYStr === targetHiddenYStr && !this.isActive;
-			this.bgWrapper.classList.toggle(styles.bgWrapperHidden, isHidden);
 		}
 	}
 
