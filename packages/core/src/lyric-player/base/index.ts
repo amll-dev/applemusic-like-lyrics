@@ -984,6 +984,9 @@ export abstract class LyricPlayerBase
 				}
 			}
 			timelineState.playbackCursor = Math.max(0, minHotIndex);
+		} else {
+			// No active lines; advance cursor to avoid rescanning the same prefix every frame.
+			timelineState.playbackCursor = cursor;
 		}
 
 		// 检索应该被移除的缓冲行
