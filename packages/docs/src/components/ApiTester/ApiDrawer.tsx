@@ -414,419 +414,407 @@ export function ApiDrawer() {
 
 	return (
 		<div className={`amll-api-drawer ${open ? "open" : ""}`}>
-				<div className="drawer-resize-handle" onMouseDown={handleMouseDown} />
-				<div className="drawer-header">
-					<h3>{t("apiTester.onlineTest")}</h3>
-					<button
-						className="close-btn"
-						onClick={() => isDrawerOpen.set(false)}
-						title={t("apiTester.close")}
-					>
-						<X size={20} strokeWidth={2.5} />
-					</button>
-				</div>
+			<div className="drawer-resize-handle" onMouseDown={handleMouseDown} />
+			<div className="drawer-header">
+				<h3>{t("apiTester.onlineTest")}</h3>
+				<button
+					className="close-btn"
+					onClick={() => isDrawerOpen.set(false)}
+					title={t("apiTester.close")}
+				>
+					<X size={20} strokeWidth={2.5} />
+				</button>
+			</div>
 
-				{endpoint ? (
-					<div className="drawer-content">
-						<div className="address-bar-container">
-							<div className="address-bar">
-								<span className={`method ${endpoint.method.toLowerCase()}`}>
-									{endpoint.method}
-								</span>
-								<input
-									type="text"
-									className="url-input"
-									value={requestUrl}
-									onChange={(e) => setRequestUrl(e.target.value)}
-									placeholder="https://api.amll.dev/..."
-								/>
-							</div>
-							<button
-								className={`send-btn ${res.loading ? "cancel-mode" : ""}`}
-								onClick={res.loading ? handleCancel : handleSend}
-							>
-								{res.loading ? (
-									<>
-										<Loader2 size={13} className="send-spinner spin" />
-										{t("apiTester.cancel")}
-									</>
-								) : (
-									t("apiTester.send")
-								)}
-							</button>
+			{endpoint ? (
+				<div className="drawer-content">
+					<div className="address-bar-container">
+						<div className="address-bar">
+							<span className={`method ${endpoint.method.toLowerCase()}`}>
+								{endpoint.method}
+							</span>
+							<input
+								type="text"
+								className="url-input"
+								value={requestUrl}
+								onChange={(e) => setRequestUrl(e.target.value)}
+								placeholder="https://api.amll.dev/..."
+							/>
 						</div>
+						<button
+							className={`send-btn ${res.loading ? "cancel-mode" : ""}`}
+							onClick={res.loading ? handleCancel : handleSend}
+						>
+							{res.loading ? (
+								<>
+									<Loader2 size={13} className="send-spinner spin" />
+									{t("apiTester.cancel")}
+								</>
+							) : (
+								t("apiTester.send")
+							)}
+						</button>
+					</div>
 
-						{endpoint.authRequired && (
-							<div className="params-section">
-								<h4>{t("apiTester.authParams")}</h4>
-								<div className="params-table">
-									<div className="params-table-row auth-row">
-										<div className="col-chk">
-											<Key size={14} className="auth-param-icon" />
-										</div>
-										<div className="col-key">
-											<input
-												type="text"
-												value={t("apiTester.bearerToken")}
-												disabled
-												readOnly
-												className="path-key-input"
-											/>
-										</div>
-										<div className="col-val">
-											<input
-												type="password"
-												value={token}
-												onChange={(e) => bearerToken.set(e.target.value)}
-												placeholder="4653679905858000d..."
-											/>
-										</div>
-										<div className="col-action">
-											<Tooltip
-												content={t("apiTester.bearerTokenDesc")}
-												required={true}
-												placement="left"
+					{endpoint.authRequired && (
+						<div className="params-section">
+							<h4>{t("apiTester.authParams")}</h4>
+							<div className="params-table">
+								<div className="params-table-row auth-row">
+									<div className="col-chk">
+										<Key size={14} className="auth-param-icon" />
+									</div>
+									<div className="col-key">
+										<input
+											type="text"
+											value={t("apiTester.bearerToken")}
+											disabled
+											readOnly
+											className="path-key-input"
+										/>
+									</div>
+									<div className="col-val">
+										<input
+											type="password"
+											value={token}
+											onChange={(e) => bearerToken.set(e.target.value)}
+											placeholder="4653679905858000d..."
+										/>
+									</div>
+									<div className="col-action">
+										<Tooltip
+											content={t("apiTester.bearerTokenDesc")}
+											required={true}
+											placement="left"
+										>
+											<button
+												type="button"
+												className="row-info-btn is-required"
 											>
-												<button
-													type="button"
-													className="row-info-btn is-required"
-												>
-													<Info size={15} />
-												</button>
-											</Tooltip>
-										</div>
+												<Info size={15} />
+											</button>
+										</Tooltip>
 									</div>
 								</div>
 							</div>
-						)}
+						</div>
+					)}
 
-						{endpoint.pathParams && endpoint.pathParams.length > 0 && (
-							<div className="params-section">
-								<h4>{t("apiTester.pathParams")}</h4>
-								<div className="params-table">
-									{endpoint.pathParams.map((p) => {
-										const paramKey = `apiParams.${endpoint.id}.${p.name}`;
-										const translatedDesc = t(paramKey);
-										const description =
-											(translatedDesc !== paramKey ? translatedDesc : "") ||
-											p.placeholder ||
-											"";
-										return (
-											<div className="params-table-row path-row" key={p.name}>
-												<div className="col-chk">
-													<Braces size={14} className="path-param-icon" />
-												</div>
-												<div className="col-key">
-													<input
-														type="text"
-														value={p.name}
-														disabled
-														readOnly
-														className="path-key-input"
-													/>
-												</div>
-												<div className="col-val">
-													<input
-														type="text"
-														value={pathParamsState[p.name] ?? ""}
-														onChange={(e) =>
-															updatePathParam(p.name, e.target.value)
-														}
-														placeholder={p.placeholder || t("apiTester.value")}
-													/>
-												</div>
-												<div className="col-action">
-													<Tooltip
-														content={description}
-														required={p.required}
-														placement="left"
-													>
-														<button
-															type="button"
-															className={`row-info-btn ${p.required ? "is-required" : ""}`}
-														>
-															<Info size={15} />
-														</button>
-													</Tooltip>
-												</div>
-											</div>
-										);
-									})}
-								</div>
-							</div>
-						)}
-
+					{endpoint.pathParams && endpoint.pathParams.length > 0 && (
 						<div className="params-section">
-							<h4>{t("apiTester.queryParams")}</h4>
+							<h4>{t("apiTester.pathParams")}</h4>
 							<div className="params-table">
-								{params.map((p, index) => {
-									const isLastEmptyRow = index === params.length - 1;
-									const paramDef = endpoint.params?.find(
-										(def) => def.name === p.key,
-									);
-									const isRequired = paramDef?.required ?? false;
-									const paramKey = `apiParams.${endpoint.id}.${p.key}`;
-									const translatedDesc = p.key ? t(paramKey) : "";
-									const paramDescription =
-										translatedDesc !== paramKey ? translatedDesc : "";
-									const infoDescription = !isLastEmptyRow
-										? paramDescription ||
-											(p.key ? t("apiTester.customParam") : "")
-										: "";
-
-									const valuePlaceholder = isLastEmptyRow
-										? ""
-										: paramDef?.placeholder || t("apiTester.value");
-
+								{endpoint.pathParams.map((p) => {
+									const paramKey = `apiParams.${endpoint.id}.${p.name}`;
+									const translatedDesc = t(paramKey);
+									const description =
+										(translatedDesc !== paramKey ? translatedDesc : "") ||
+										p.placeholder ||
+										"";
 									return (
-										<div className="params-table-row" key={p.id}>
+										<div className="params-table-row path-row" key={p.name}>
 											<div className="col-chk">
-												{!isLastEmptyRow && (
-													<button
-														className={`icon-checkbox ${p.enabled ? "checked" : ""}`}
-														onClick={() =>
-															updateParam(p.id, "enabled", !p.enabled)
-														}
-														title={
-															p.enabled
-																? t("apiTester.disableParam")
-																: t("apiTester.enableParam")
-														}
-													>
-														{p.enabled ? (
-															<CheckCircle2 size={16} />
-														) : (
-															<Circle size={16} />
-														)}
-													</button>
-												)}
+												<Braces size={14} className="path-param-icon" />
 											</div>
 											<div className="col-key">
 												<input
 													type="text"
-													value={p.key}
-													onChange={(e) =>
-														updateParam(p.id, "key", e.target.value)
-													}
-													placeholder={
-														isLastEmptyRow
-															? t("apiTester.addParam")
-															: t("apiTester.key")
-													}
+													value={p.name}
+													disabled
+													readOnly
+													className="path-key-input"
 												/>
 											</div>
 											<div className="col-val">
 												<input
 													type="text"
-													value={p.value}
+													value={pathParamsState[p.name] ?? ""}
 													onChange={(e) =>
-														updateParam(p.id, "value", e.target.value)
+														updatePathParam(p.name, e.target.value)
 													}
-													placeholder={valuePlaceholder}
+													placeholder={p.placeholder || t("apiTester.value")}
 												/>
 											</div>
-											<div className="col-del">
-												{!isLastEmptyRow && (
-													<div className="row-actions-group">
-														{infoDescription && (
-															<Tooltip
-																content={infoDescription}
-																required={paramDef ? isRequired : false}
-																placement="left"
-															>
-																<button
-																	type="button"
-																	className={`row-info-btn ${isRequired ? "is-required" : ""}`}
-																>
-																	<Info size={15} />
-																</button>
-															</Tooltip>
-														)}
-														<button
-															type="button"
-															className="row-del-btn"
-															onClick={() => removeParam(p.id)}
-															title={t("apiTester.delete")}
-														>
-															<Trash2 size={16} />
-														</button>
-													</div>
-												)}
+											<div className="col-action">
+												<Tooltip
+													content={description}
+													required={p.required}
+													placement="left"
+												>
+													<button
+														type="button"
+														className={`row-info-btn ${p.required ? "is-required" : ""}`}
+													>
+														<Info size={15} />
+													</button>
+												</Tooltip>
 											</div>
 										</div>
 									);
 								})}
 							</div>
 						</div>
+					)}
 
-						<div className="response-section">
-							<div className="response-header-bar">
-								<div className="response-tabs">
-									<button
-										className={`tab-btn ${activeTab === "body" ? "active" : ""}`}
-										onClick={() => setActiveTab("body")}
-									>
-										body
-									</button>
-									<button
-										className={`tab-btn ${activeTab === "headers" ? "active" : ""}`}
-										onClick={() => setActiveTab("headers")}
-									>
-										headers
-									</button>
-								</div>
-								{res.status !== null && (
-									<div className="response-metrics">
-										<span className={`status s-${res.status}`}>
-											{res.status}
-										</span>
-										<span className="dot-divider">·</span>
-										<span className="metric-item">{formatTime(res.time)}</span>
-										<span className="dot-divider">·</span>
-										<span className="metric-item">{formatBytes(res.size)}</span>
-									</div>
-								)}
-							</div>
-							{(() => {
-								const isUnsent =
-									res.status === null &&
-									!res.loading &&
-									!res.data &&
-									!res.error;
-								const showPlaceholder = res.loading || isUnsent;
-								const showBodyEditor = !showPlaceholder && activeTab === "body";
-								const showHeadersTable =
-									!showPlaceholder && activeTab === "headers";
+					<div className="params-section">
+						<h4>{t("apiTester.queryParams")}</h4>
+						<div className="params-table">
+							{params.map((p, index) => {
+								const isLastEmptyRow = index === params.length - 1;
+								const paramDef = endpoint.params?.find(
+									(def) => def.name === p.key,
+								);
+								const isRequired = paramDef?.required ?? false;
+								const paramKey = `apiParams.${endpoint.id}.${p.key}`;
+								const translatedDesc = p.key ? t(paramKey) : "";
+								const paramDescription =
+									translatedDesc !== paramKey ? translatedDesc : "";
+								const infoDescription = !isLastEmptyRow
+									? paramDescription ||
+										(p.key ? t("apiTester.customParam") : "")
+									: "";
+
+								const valuePlaceholder = isLastEmptyRow
+									? ""
+									: paramDef?.placeholder || t("apiTester.value");
 
 								return (
-									<div className="response-content-wrapper">
-										{showPlaceholder && (
-											<div
-												className={`response-status-placeholder ${
-													res.loading ? "loading" : "idle"
-												}`}
-											>
-												{res.loading ? (
-													<Loader2
-														size={24}
-														className="placeholder-icon spin"
-													/>
-												) : (
-													<Send size={22} className="placeholder-icon" />
-												)}
-												<div className="placeholder-title">
-													{res.loading
-														? t("apiTester.waitingResponse")
-														: t("apiTester.sendToDebug")}
-												</div>
-												{res.loading && (
-													<div className="placeholder-subtitle">
-														{formatElapsedTime(elapsedTime)}
-													</div>
-												)}
-											</div>
-										)}
-										{(() => {
-											const contentValue = res.data ?? res.error ?? "";
-											const isJsonContent = (() => {
-												if (!contentValue.trim()) return false;
-												try {
-													JSON.parse(contentValue);
-													return true;
-												} catch {
-													return false;
-												}
-											})();
-
-											return (
-												<div
-													className="response-editor-wrapper"
-													style={{ display: showBodyEditor ? "block" : "none" }}
-												>
-													<Editor
-														height="280px"
-														defaultLanguage="json"
-														language={isJsonContent ? "json" : "plaintext"}
-														theme={
-															isDark ? "amll-theme-dark" : "amll-theme-light"
-														}
-														beforeMount={(monaco) => {
-															setMonacoRef(monaco);
-															updateMonacoThemes(monaco, isDark);
-														}}
-														value={contentValue}
-														onChange={(value) => {
-															responseState.set({
-																...res,
-																data: value ?? "",
-															});
-														}}
-														options={{
-															minimap: { enabled: false },
-															scrollBeyondLastLine: false,
-															fontSize: 12,
-															fontFamily:
-																'var(--sl-font-mono), ui-monospace, "JetBrains Mono", Menlo, Monaco, Consolas, monospace',
-															wordWrap: "on",
-															automaticLayout: true,
-															tabSize: 2,
-															lineNumbersMinChars: 3,
-															folding: true,
-														}}
-													/>
-												</div>
-											);
-										})()}
-
-										<div
-											className="response-headers-wrapper"
-											style={{ display: showHeadersTable ? "block" : "none" }}
-										>
-											{(() => {
-												let headerPairs: [string, string][] = [];
-												if (res.headers) {
-													try {
-														headerPairs = Object.entries(
-															JSON.parse(res.headers),
-														);
-													} catch {
-														headerPairs = [];
+									<div className="params-table-row" key={p.id}>
+										<div className="col-chk">
+											{!isLastEmptyRow && (
+												<button
+													className={`icon-checkbox ${p.enabled ? "checked" : ""}`}
+													onClick={() =>
+														updateParam(p.id, "enabled", !p.enabled)
 													}
+													title={
+														p.enabled
+															? t("apiTester.disableParam")
+															: t("apiTester.enableParam")
+													}
+												>
+													{p.enabled ? (
+														<CheckCircle2 size={16} />
+													) : (
+														<Circle size={16} />
+													)}
+												</button>
+											)}
+										</div>
+										<div className="col-key">
+											<input
+												type="text"
+												value={p.key}
+												onChange={(e) =>
+													updateParam(p.id, "key", e.target.value)
 												}
-												return headerPairs.length > 0 ? (
-													<table className="headers-table">
-														<thead>
-															<tr>
-																<th>Key</th>
-																<th>Value</th>
-															</tr>
-														</thead>
-														<tbody>
-															{headerPairs.map(([key, val]) => (
-																<tr key={key}>
-																	<td className="header-key">{key}</td>
-																	<td className="header-val">{val}</td>
-																</tr>
-															))}
-														</tbody>
-													</table>
-												) : (
-													<div className="headers-empty">
-														{t("apiTester.noHeaders")}
-													</div>
-												);
-											})()}
+												placeholder={
+													isLastEmptyRow
+														? t("apiTester.addParam")
+														: t("apiTester.key")
+												}
+											/>
+										</div>
+										<div className="col-val">
+											<input
+												type="text"
+												value={p.value}
+												onChange={(e) =>
+													updateParam(p.id, "value", e.target.value)
+												}
+												placeholder={valuePlaceholder}
+											/>
+										</div>
+										<div className="col-del">
+											{!isLastEmptyRow && (
+												<div className="row-actions-group">
+													{infoDescription && (
+														<Tooltip
+															content={infoDescription}
+															required={paramDef ? isRequired : false}
+															placement="left"
+														>
+															<button
+																type="button"
+																className={`row-info-btn ${isRequired ? "is-required" : ""}`}
+															>
+																<Info size={15} />
+															</button>
+														</Tooltip>
+													)}
+													<button
+														type="button"
+														className="row-del-btn"
+														onClick={() => removeParam(p.id)}
+														title={t("apiTester.delete")}
+													>
+														<Trash2 size={16} />
+													</button>
+												</div>
+											)}
 										</div>
 									</div>
 								);
-							})()}
+							})}
 						</div>
 					</div>
-				) : (
-					<div className="drawer-content empty">
-						{t("apiTester.sendToDebug")}
+
+					<div className="response-section">
+						<div className="response-header-bar">
+							<div className="response-tabs">
+								<button
+									className={`tab-btn ${activeTab === "body" ? "active" : ""}`}
+									onClick={() => setActiveTab("body")}
+								>
+									body
+								</button>
+								<button
+									className={`tab-btn ${activeTab === "headers" ? "active" : ""}`}
+									onClick={() => setActiveTab("headers")}
+								>
+									headers
+								</button>
+							</div>
+							{res.status !== null && (
+								<div className="response-metrics">
+									<span className={`status s-${res.status}`}>{res.status}</span>
+									<span className="dot-divider">·</span>
+									<span className="metric-item">{formatTime(res.time)}</span>
+									<span className="dot-divider">·</span>
+									<span className="metric-item">{formatBytes(res.size)}</span>
+								</div>
+							)}
+						</div>
+						{(() => {
+							const isUnsent =
+								res.status === null && !res.loading && !res.data && !res.error;
+							const showPlaceholder = res.loading || isUnsent;
+							const showBodyEditor = !showPlaceholder && activeTab === "body";
+							const showHeadersTable =
+								!showPlaceholder && activeTab === "headers";
+
+							return (
+								<div className="response-content-wrapper">
+									{showPlaceholder && (
+										<div
+											className={`response-status-placeholder ${
+												res.loading ? "loading" : "idle"
+											}`}
+										>
+											{res.loading ? (
+												<Loader2 size={24} className="placeholder-icon spin" />
+											) : (
+												<Send size={22} className="placeholder-icon" />
+											)}
+											<div className="placeholder-title">
+												{res.loading
+													? t("apiTester.waitingResponse")
+													: t("apiTester.sendToDebug")}
+											</div>
+											{res.loading && (
+												<div className="placeholder-subtitle">
+													{formatElapsedTime(elapsedTime)}
+												</div>
+											)}
+										</div>
+									)}
+									{(() => {
+										const contentValue = res.data ?? res.error ?? "";
+										const isJsonContent = (() => {
+											if (!contentValue.trim()) return false;
+											try {
+												JSON.parse(contentValue);
+												return true;
+											} catch {
+												return false;
+											}
+										})();
+
+										return (
+											<div
+												className="response-editor-wrapper"
+												style={{ display: showBodyEditor ? "block" : "none" }}
+											>
+												<Editor
+													height="280px"
+													defaultLanguage="json"
+													language={isJsonContent ? "json" : "plaintext"}
+													theme={
+														isDark ? "amll-theme-dark" : "amll-theme-light"
+													}
+													beforeMount={(monaco) => {
+														setMonacoRef(monaco);
+														updateMonacoThemes(monaco, isDark);
+													}}
+													value={contentValue}
+													onChange={(value) => {
+														responseState.set({
+															...res,
+															data: value ?? "",
+														});
+													}}
+													options={{
+														minimap: { enabled: false },
+														scrollBeyondLastLine: false,
+														fontSize: 12,
+														fontFamily:
+															'var(--sl-font-mono), ui-monospace, "JetBrains Mono", Menlo, Monaco, Consolas, monospace',
+														wordWrap: "on",
+														automaticLayout: true,
+														tabSize: 2,
+														lineNumbersMinChars: 3,
+														folding: true,
+													}}
+												/>
+											</div>
+										);
+									})()}
+
+									<div
+										className="response-headers-wrapper"
+										style={{ display: showHeadersTable ? "block" : "none" }}
+									>
+										{(() => {
+											let headerPairs: [string, string][] = [];
+											if (res.headers) {
+												try {
+													headerPairs = Object.entries(JSON.parse(res.headers));
+												} catch {
+													headerPairs = [];
+												}
+											}
+											return headerPairs.length > 0 ? (
+												<table className="headers-table">
+													<thead>
+														<tr>
+															<th>Key</th>
+															<th>Value</th>
+														</tr>
+													</thead>
+													<tbody>
+														{headerPairs.map(([key, val]) => (
+															<tr key={key}>
+																<td className="header-key">{key}</td>
+																<td className="header-val">{val}</td>
+															</tr>
+														))}
+													</tbody>
+												</table>
+											) : (
+												<div className="headers-empty">
+													{t("apiTester.noHeaders")}
+												</div>
+											);
+										})()}
+									</div>
+								</div>
+							);
+						})()}
 					</div>
-				)}
-			</div>
+				</div>
+			) : (
+				<div className="drawer-content empty">{t("apiTester.sendToDebug")}</div>
+			)}
+		</div>
 	);
 }

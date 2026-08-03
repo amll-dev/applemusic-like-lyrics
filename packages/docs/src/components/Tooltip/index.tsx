@@ -25,10 +25,15 @@ export function Tooltip({
 			className="amll-tooltip-wrapper"
 			onMouseEnter={() => setVisible(true)}
 			onMouseLeave={() => setVisible(false)}
+			onFocus={() => setVisible(true)}
+			onBlur={() => setVisible(false)}
 		>
 			{children}
 			{visible && (
-				<div className={`amll-tooltip-bubble placement-${placement}`}>
+				<div
+					className={`amll-tooltip-bubble placement-${placement}`}
+					role="tooltip"
+				>
 					{required !== undefined && (
 						<span
 							className={`tooltip-badge ${required ? "required" : "optional"}`}
