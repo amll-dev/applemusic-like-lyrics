@@ -15,7 +15,7 @@ import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { API_BASE_URL } from "#core/configs/index.ts";
 import { useHydratedTranslation } from "#core/i18n.ts";
-import { ToastContainer, toast } from "../Toast";
+import { toast } from "../Toast";
 import { Tooltip } from "../Tooltip";
 
 if (typeof window !== "undefined") {
@@ -413,9 +413,7 @@ export function ApiDrawer() {
 	};
 
 	return (
-		<>
-			<ToastContainer />
-			<div className={`amll-api-drawer ${open ? "open" : ""}`}>
+		<div className={`amll-api-drawer ${open ? "open" : ""}`}>
 				<div className="drawer-resize-handle" onMouseDown={handleMouseDown} />
 				<div className="drawer-header">
 					<h3>{t("apiTester.onlineTest")}</h3>
@@ -830,6 +828,5 @@ export function ApiDrawer() {
 					</div>
 				)}
 			</div>
-		</>
 	);
 }
