@@ -189,7 +189,12 @@ export const isDrawerDragging = atom<boolean>(false);
 function getInitialWidth() {
 	if (typeof window !== "undefined") {
 		const w = localStorage.getItem("amll_api_drawer_width");
-		return w ? parseInt(w, 10) : 400; // 默认宽度 400px
+		if (w) {
+			const parsed = parseInt(w, 10);
+			if (!Number.isNaN(parsed) && parsed >= 320 && parsed <= 1200) {
+				return parsed;
+			}
+		}
 	}
 	return 400;
 }
@@ -206,10 +211,12 @@ if (typeof window !== "undefined") {
 	);
 
 	drawerWidth.listen((val) => {
-		localStorage.setItem("amll_api_drawer_width", val.toString());
-		document.documentElement.style.setProperty(
-			"--api-drawer-width",
-			`${val}px`,
-		);
+		if (typeof val === "number" && !Number.isNaN(val)) {
+			localStorage.setItem("amll_api_drawer_width", val.toString());
+			document.documentElement.style.setProperty(
+				"--api-drawer-width",
+				`${val}px`,
+			);
+		}
 	});
 }
