@@ -1,0 +1,241 @@
+---
+title: AMLL TTML API Overview
+description: Base information, data models, and global response specifications for AMLL lyric services HTTP API
+---
+
+import { LinkCard } from "@astrojs/starlight/components";
+
+Official API for the AMLL TTML word-by-word lyric database, providing API support for better lyric presentation in AMLL.
+
+## Basic Information
+
+- **Base URL**: `https://api.amll.dev`
+- **Protocol**: HTTPS
+- **Content Type**: `application/json`
+- **CORS**: All endpoints allow cross-origin requests (`Access-Control-Allow-Origin: *`)
+
+## API Endpoints Overview
+
+The following table summarizes all endpoint paths, HTTP methods, and modules provided by the AMLL HTTP API:
+
+| Endpoint                                       | HTTP Method | Request Path          | Auth Required | Description                                                         |
+| ---------------------------------------------- | ----------- | --------------------- | ------------- | ------------------------------------------------------------------- |
+| [Search Lyrics](native#search-lyrics)          | `GET`       | `/v1/lyrics/search`   | No            | Search lyrics by song name, artist, album, or lyric text            |
+| [Get Lyric](native#get-lyric)                  | `GET`       | `/v1/lyrics/get`      | No            | Get full TTML lyrics by ID, filename, or platform IDs               |
+| [LrcLib Search](lrclib#search-lyrics)          | `GET`       | `/v1/lrclib/search`   | No            | LrcLib protocol compatible lyric search endpoint                    |
+| [LrcLib Exact Match](lrclib#exact-match)       | `GET`       | `/v1/lrclib/get`      | No            | LrcLib protocol compatible exact match and lyric retrieval endpoint |
+| [LrcLib Get by ID](lrclib#get-lyric-by-id)     | `GET`       | `/v1/lrclib/get/{id}` | No            | LrcLib protocol compatible get lyric by ID endpoint                 |
+| [Trigger Sync](system#trigger-database-sync)   | `POST`      | `/v1/webhook/sync`    | **Yes**       | Trigger server to pull and update lyrics from remote repository     |
+| [Get System Status](system#get-runtime-status) | `GET`       | `/v1/status`          | No            | Get running status and metadata of the API service                  |
+
+## Rate Limits
+
+The AMLL TTML API limits request frequencies per IP address:
+
+- **Target**: Calculated based on client IP address making the requests
+- **Rate Limit**: Average processing rate of **50 requests per second** per IP
+- **Exceeded Response**: Returns HTTP status code `429` (`Too Many Requests`) when instantaneous concurrency or sustained request frequency exceeds limits
+
+Clients are recommended to implement debouncing, throttling, or exponential backoff retry mechanisms for API requests.
+
+## Client Caching Strategy Suggestions
+
+Lyric content retrieved for a specific **Lyric ID** (a 53-bit integer ID generated from the filename) or **Lyric Filename (`filename`)** **is permanently fixed and immutable**.
+
+Therefore, after successfully retrieving lyrics via `id` or `filename` for the first time, clients are recommended to cache them long-term and hit the local cache during subsequent playback.
+
+:::note
+Requests matched through fuzzy search (e.g., song title, artist name) or platform IDs (e.g., `ncmMusicId`) may return new lyrics as the database updates. Short cache expiration times are recommended for these dynamic retrieval endpoints.
+:::
+
+## OpenAPI Specification
+
+We provide a standard OpenAPI specification file that you can download and import into Postman, Apifox, or code generators for testing and client generation:
+
+<LinkCard 
+  title="Download openapi.yaml" 
+  description="Get the OpenAPI specification file" 
+  href="/api/ttml/openapi.yaml" 
+  target="_blank" 
+/>
+
+---
+
+## Response Structure Overview
+
+The AMLL TTML API uses three response structures:
+
+1. **Native API Wrapped Response `ApiResponse<T>`** (used for [/native](native) endpoints):
+   Wrapped uniformly in an `ApiResponse<T>` structure. Successful responses fix `status` to `200`, with `data` containing business data. Failed requests return an `ErrorResponse` model.
+2. **LrcLib Compatible Response** (used for [/lrclib](lrclib) endpoints):
+   To ensure compatibility with LrcLib clients and plugins, responses directly return song objects or arrays of song objects without extra wrapper layers.
+3. **Management & Status Response** (used for [/system](system) endpoints):
+   Returns operation status or a JSON object containing system runtime information.
+
+---
+
+## Native API Wrapper Model `ApiResponse<T>`
+
+Native endpoints use the `ApiResponse<T>` generic interface to wrap data on successful requests:
+
+```typescript
+export interface ApiResponse<T> {
+  /** Response status code, fixed to 200 on success */
+  status: 200;
+  /** Detailed business response payload */
+  data: T;
+}
+```
+
+- `status`: Response status code, fixed to `200`
+- `data`: Generic business data payload. E.g., in the [Search Endpoint](native#search-lyrics), `T` is `{ items: SongItem[] }`; in the [Get Lyric Endpoint](native#get-lyric), `T` is [SongItem](#song-metadata--lyric-model-songitem)
+
+---
+
+## Song Metadata & Lyric Model `SongItem`
+
+The core resource model in the API representing complete metadata and lyric information for a song, used in native search and get lyric endpoints:
+
+```typescript
+export interface SongItem {
+  /** 53-bit integer ID generated from lyric filename */
+  id: number;
+  /** Lyric filename */
+  filename: string;
+  /** List of song titles */
+  musicNames: string[];
+  /** List of artist names */
+  artistNames: string[];
+  /** List of album titles */
+  albumNames: string[];
+  /** List of Netease Cloud Music IDs */
+  ncmMusicIds: string[];
+  /** List of QQ Music IDs */
+  qqMusicIds: string[];
+  /** List of Apple Music IDs */
+  appleMusicIds: string[];
+  /** List of Spotify IDs */
+  spotifyIds: string[];
+  /** List of ISRC codes */
+  isrcs: string[];
+  /** List of TTML lyric contributor GitHub IDs */
+  authorIds: string[];
+  /** List of TTML lyric contributor GitHub usernames */
+  authorUsernames: string[];
+  /** 
+   * TTML lyric content string
+   *
+   * Note: undefined in search results
+   */
+  lyrics?: string;
+  /** Lyric format identifier */
+  format: "ttml";
+  /**
+   * Search match context
+   * 
+   * Only present when search query matches lyric text in search endpoint
+   */
+  matchContext?: {
+    snippet: string;
+  };
+}
+```
+
+<details>
+  <summary>Example Response</summary>
+
+  ```json
+  {
+    "status": 200,
+    "data": {
+      "id": 269710089745311,
+      "filename": "1768754400682-250306205-r6IrpmBd.ttml",
+      "musicNames": [
+        "ME!",
+        "ME! (feat. Brendon Urie of Panic! At The Disco)"
+      ],
+      "artistNames": [
+        "Brendon Urie",
+        "Taylor Swift"
+      ],
+      "albumNames": [
+        "Lover"
+      ],
+      "ncmMusicIds": [
+        "1361348080",
+        "1382781549"
+      ],
+      "qqMusicIds": [
+        "0032UZe62rZk9K"
+      ],
+      "appleMusicIds": [
+        "1468058706"
+      ],
+      "spotifyIds": [
+        "2Rk4JlNc2TPmZe2af99d45"
+      ],
+      "isrcs": [
+        "USUG11901494"
+      ],
+      "authorIds": [
+        "108002475",
+        "132769718",
+        "207428447",
+        "250306205",
+        "34237075",
+        "50747104"
+      ],
+      "authorUsernames": [
+        "SteamFinder",
+        "Xionghaizi001",
+        "Y-CIAO",
+        "apoint123",
+        "kid1412520",
+        "kid141252010"
+      ],
+      "lyrics": "<omitted>",
+      "format": "ttml"
+    }
+  }
+  ```
+</details>
+
+---
+
+## Error Response Model `ErrorResponse`
+
+Error response model returned on request failures:
+
+```typescript
+export interface ErrorResponse {
+  /** HTTP status code */
+  status: number;
+  /** Short error title (e.g. "Bad Request", "Unauthorized", "Not Found") */
+  error: string;
+  /** Detailed error message */
+  message: string;
+}
+```
+
+<details>
+  <summary>Example Response</summary>
+
+  ```json
+  {
+    "status": 401,
+    "error": "Unauthorized",
+    "message": "Invalid or missing authorization token."
+  }
+  ```
+</details>
+
+### Global Error Codes
+
+| Status Code | Business Scenario                                                                | Recommendation                                                            |
+| ----------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| `400`       | Parameter validation failed (missing valid parameters, unsupported format, etc.) | Check request parameters                                                  |
+| `401`       | Authentication failed (for endpoints requiring Secret)                           | Check if request header includes a valid token                            |
+| `404`       | Lyric not found or route does not exist                                          | Check if provided ID or search query is correct                           |
+| `429`       | Request rate limit exceeded                                                      | Lower request frequency, use client-side debouncing/throttling or retries |
+| `500`       | Internal server error                                                            | Internal server issue, try again later or open an Issue to report         |
+| `502`       | Gateway error                                                                    | Data source unstable, please try again later                              |

@@ -1,0 +1,718 @@
+openapi: 3.2.0
+info:
+  title: AMLL TTML API
+  version: 1.0.0
+  description: |
+    官方 AMLL TTML 逐词歌词库 HTTP API 规范。
+
+    **基础信息**
+    * **基础地址**: `https://api.amll.dev`
+    * **协议**: HTTPS
+    * **内容类型**: `application/json`
+    * **CORS**: 允许跨域 (`Access-Control-Allow-Origin: *`)
+
+    **请求速率限制**
+    * **限制目标**：针对发起请求的客户端 IP 地址进行计算
+    * **限制速率**：单 IP 平均处理速率为 **每秒 50 次请求**
+    * **超额响应**：当瞬间并发或持续请求频率超出许可上限时，将返回状态码 HTTP `429` (`Too Many Requests`)
+
+    **客户端缓存策略建议**
+    * 针对特定 **歌词 ID**（由文件名生成的 53 位整数 ID）或 **歌词文件名 (`filename`)** 所检索并获取到的歌词内容**是永久固定不变的**
+    * 因此，客户端在首次成功通过 `id` 或 `filename` 获取歌词后，建议将其长期缓存，后续播放时优先命中本地缓存
+    * 通过模糊搜索（如歌曲名、歌手名）或平台 ID（如 `ncmMusicId`）进行匹配的请求，可能会随着词库更新而返回新歌词，建议对这类动态检索接口配置较短的缓存过期时间
+
+servers:
+  - url: https://api.amll.dev
+    description: API 根域名
+
+paths:
+  /v1/lyrics/get:
+    get:
+      summary: 获取歌词
+      description: |
+        通过唯一 ID、文件名或第三方平台 ID 获取一首歌曲的元数据及其完整的 TTML 歌词。
+
+        **参数优先级**：`id` > `filename` > 平台 IDs
+        * `id` 为最高优先级，传入时忽略其他所有参数。
+        * `filename` 为次高优先级，传入时将忽略其他平台 ID 参数，直接按文件名精确匹配。
+        * 如果仅提供多个不同平台的参数，将使用交集 (AND) 进行匹配，并只返回最新的一条记录。
+      parameters:
+        - name: id
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int64
+            minimum: 0
+            maximum: 9007199254740991
+          description: 由文件名生成的 53 位整数 ID，精确匹配。最高优先级。
+        - name: filename
+          in: query
+          required: false
+          schema:
+            type: string
+          description: 歌词文件名，精确匹配。必须以 `.ttml` 结尾。传入时忽略其他 ID 参数。
+        - name: ncmMusicId
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+          description: 网易云音乐 ID 列表
+        - name: qqMusicId
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+          description: QQ 音乐 ID 列表
+        - name: appleMusicId
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+          description: Apple Music ID 列表
+        - name: spotifyId
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+          description: Spotify ID 列表
+        - name: isrc
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+          description: ISRC 编码列表
+        - name: format
+          in: query
+          required: false
+          schema:
+            type: string
+            default: ttml
+            enum:
+              - ttml
+          description: 保留字段，默认为 ttml。当前仅支持 ttml。
+      responses:
+        "200":
+          description: 成功返回歌曲元数据和完整 TTML 歌词
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetResponse"
+        "400":
+          description: 参数验证失败（未传入任何有效 ID 参数或不支持的 format 值）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: 未匹配到任何歌词
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: 请求频率过高，触发 API 限流保护
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "502":
+          description: 网关错误（数据源不稳定或索引更新失败）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/lyrics/search:
+    get:
+      summary: 搜索歌词
+      description: |
+        在词库中搜索符合条件的歌词。为了保证接口性能，搜索结果中不包含完整歌词。
+
+        * 至少需要提供一个有效搜索参数。
+        * 如果同时传入 `q` 和其他参数，忽略 `q` 并优先使用其他限定参数。
+        * 多个非 `q` 参数之间为 AND 交集匹配。
+      parameters:
+        # 全局搜索
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+          description: 模糊搜索歌曲名、歌手名、专辑名和歌词正文
+        # 曲名匹配
+        - name: musicName
+          in: query
+          required: false
+          schema:
+            type: string
+          description: 限定匹配曲名（模糊包含）
+        # 歌手匹配
+        - name: artistName
+          in: query
+          required: false
+          schema:
+            type: string
+          description: 限定匹配歌手名（模糊包含）
+        # 专辑匹配
+        - name: albumName
+          in: query
+          required: false
+          schema:
+            type: string
+          description: 限定匹配专辑名（模糊包含）
+        # 歌词正文匹配
+        - name: lyricText
+          in: query
+          required: false
+          schema:
+            type: string
+          description: 限定匹配歌词正文
+        # 歌词作者 GitHub ID 匹配
+        - name: authorId
+          in: query
+          required: false
+          schema:
+            type: string
+          description: 歌词作者 GitHub ID（严格全等）
+        # 歌词作者 GitHub 用户名匹配
+        - name: authorUsername
+          in: query
+          required: false
+          schema:
+            type: string
+          description: 歌词作者 GitHub 用户名（严格全等）
+      responses:
+        "200":
+          description: 成功（最多返回前 50 条记录，无匹配时返回空列表）
+          content:
+            application/json:
+              schema:
+                type: array
+                maxItems: 50
+                items:
+                  $ref: "#/components/schemas/SearchResponse"
+        "400":
+          description: 参数验证失败（未传入任何有效请求参数）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: 请求频率过高，触发 API 限流保护
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "502":
+          description: 网关错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/lrclib/search:
+    get:
+      summary: LrcLib 兼容搜索
+      description: 在词库中模糊搜索，为兼容 LrcLib 协议的客户端提供支持。响应列表中最多返回前 50 条记录。
+      parameters:
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+          description: 模糊搜索歌曲名、歌手名、专辑名和歌词正文
+        - name: track_name
+          in: query
+          required: false
+          schema:
+            type: string
+          description: 歌曲名
+        - name: artist_name
+          in: query
+          required: false
+          schema:
+            type: string
+          description: 歌手名
+        - name: album_name
+          in: query
+          required: false
+          schema:
+            type: string
+          description: 专辑名
+      responses:
+        "200":
+          description: 成功返回匹配到的 LrcLib 格式歌曲列表（最多 50 条）
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LrclibSongItem"
+        "400":
+          description: 缺少有效的搜索参数
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: 请求频率过高，触发 API 限流保护
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/lrclib/get:
+    get:
+      summary: LrcLib 兼容模糊匹配
+      description: 模糊匹配一首歌曲，并返回包含解析后 LRC 歌词与纯文本歌词的结果。
+      parameters:
+        - name: track_name
+          in: query
+          required: true
+          schema:
+            type: string
+          description: 歌曲名
+        - name: artist_name
+          in: query
+          required: true
+          schema:
+            type: string
+          description: 歌手名
+        - name: album_name
+          in: query
+          required: false
+          schema:
+            type: string
+          description: 专辑名
+      responses:
+        "200":
+          description: 成功返回包含 LRC 歌词的歌曲对象
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LrclibSongItem"
+        "400":
+          description: 缺失必填的 track_name 或 artist_name
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: 未找到匹配的歌曲
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: 请求频率过高，触发 API 限流保护
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/lrclib/get/{id}:
+    get:
+      summary: LrcLib 按 ID 获取歌词
+      description: 通过搜索接口返回的 `id` 获取对应的 LrcLib 格式完整歌词。
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 歌词 53 位整数 ID
+      responses:
+        "200":
+          description: 成功返回完整歌词数据
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LrclibSongItem"
+        "400":
+          description: ID 格式错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: 找不到指定 ID 的歌词
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: 请求频率过高，触发 API 限流保护
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/webhook/sync:
+    post:
+      summary: 触发词库同步
+      description: 触发服务器从远程 GitHub 歌词库拉取并更新歌词数据。需要在请求头携带有效的 Bearer Token
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: 成功触发同步任务
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebhookSyncResponse"
+        "401":
+          description: 鉴权失败（未提供凭证或凭证无效）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: 请求频率过高，触发 API 限流保护
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: 服务器内部错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/status:
+    get:
+      summary: 获取运行状态
+      description: 获取当前 API 服务的可用状态、版本号、Git 提交 Hash、构建时间及在线运行等元数据
+      responses:
+        "200":
+          description: 成功返回服务状态与构建指标
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatusResponse"
+        "429":
+          description: 请求频率过高，触发 API 限流保护
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/version:
+    get:
+      summary: 获取运行状态 (别名)
+      description: /v1/status 接口的兼容别名。
+      responses:
+        "200":
+          description: 成功返回服务状态与构建指标
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatusResponse"
+        "429":
+          description: 请求频率过高，触发 API 限流保护
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: Secret Token
+
+  schemas:
+    MatchContext:
+      type: object
+      properties:
+        snippet:
+          type: string
+          description: 检索命中歌词正文的高亮片段
+          example: "I'm the only one of me\n<mark>Baby that's the fun of me</mark>\nEeh-eeh-eeh"
+
+    SongItem:
+      type: object
+      required:
+        - id
+        - filename
+        - musicNames
+        - artistNames
+        - albumNames
+        - ncmMusicIds
+        - qqMusicIds
+        - appleMusicIds
+        - spotifyIds
+        - isrcs
+        - authorIds
+        - authorUsernames
+      properties:
+        id:
+          type: integer
+          format: int64
+          minimum: 0
+          maximum: 9007199254740991
+          description: 由文件名生成的 53 位整数 ID
+          example: 269710089745311
+        filename:
+          type: string
+          description: 歌词文件名
+          example: "1768754400682-250306205-r6IrpmBd.ttml"
+        musicNames:
+          type: array
+          items:
+            type: string
+          description: 歌曲名列表
+          example: ["ME!", "ME! (feat. Brendon Urie of Panic! At The Disco)"]
+        artistNames:
+          type: array
+          items:
+            type: string
+          description: 歌手名列表
+          example: ["Brendon Urie", "Taylor Swift"]
+        albumNames:
+          type: array
+          items:
+            type: string
+          description: 专辑名列表
+          example: ["Lover"]
+        ncmMusicIds:
+          type: array
+          items:
+            type: string
+          description: 网易云音乐平台 ID 列表
+          example: ["1361348080", "1382781549"]
+        qqMusicIds:
+          type: array
+          items:
+            type: string
+          description: QQ 音乐平台 ID 列表
+          example: ["0032UZe62rZk9K"]
+        appleMusicIds:
+          type: array
+          items:
+            type: string
+          description: Apple Music 平台 ID 列表
+          example: ["1468058706"]
+        spotifyIds:
+          type: array
+          items:
+            type: string
+          description: Spotify 平台 ID 列表
+          example: ["2Rk4JlNc2TPmZe2af99d45"]
+        isrcs:
+          type: array
+          items:
+            type: string
+          description: ISRC 国际标准音像制品编码列表
+          example: ["USUG11901494"]
+        authorIds:
+          type: array
+          items:
+            type: string
+          description: TTML 歌词贡献者的 GitHub ID 列表
+          example: ["108002475", "250306205"]
+        authorUsernames:
+          type: array
+          items:
+            type: string
+          description: TTML 歌词贡献者的 GitHub 用户名列表
+          example: ["SteamFinder", "apoint123"]
+        lyrics:
+          type: string
+          nullable: true
+          description: TTML 格式的歌词内容。仅在获取接口中返回，搜索接口中固定为 null
+          example: "<已省略>"
+        format:
+          type: string
+          nullable: true
+          description: 歌词格式标识。仅在获取接口中返回，固定为 ttml
+          example: "ttml"
+        matchContext:
+          $ref: "#/components/schemas/MatchContext"
+          nullable: true
+          description: 正文搜索命中时返回的上下文片段
+
+    LrclibSongItem:
+      type: object
+      required:
+        - id
+        - name
+        - trackName
+        - artistName
+        - albumName
+        - duration
+        - instrumental
+      properties:
+        id:
+          type: integer
+          format: int64
+          minimum: 0
+          maximum: 9007199254740991
+          description: 由文件名生成的 53 位整数 ID
+          example: 269710089745311
+        name:
+          type: string
+          description: 歌曲名
+          example: "ME!"
+        trackName:
+          type: string
+          description: 歌曲名
+          example: "ME!"
+        artistName:
+          type: string
+          description: 歌手名
+          example: "Taylor Swift"
+        albumName:
+          type: string
+          description: 专辑名
+          example: "Lover"
+        duration:
+          type: number
+          format: float
+          description: 歌曲时长（单位：秒，由歌词最大结束时间戳计算）
+          example: 185.8
+        instrumental:
+          type: boolean
+          description: 是否为纯音乐 (固定为 false)
+          example: false
+        plainLyrics:
+          type: string
+          nullable: true
+          description: 纯文本歌词
+          example: "...I never wanna see you walk away\n(And there's a lot of lame guys out there)\n'Cause one of these things is not like the others..."
+        syncedLyrics:
+          type: string
+          nullable: true
+          description: LRC 格式歌词
+          example: "...[01:14.66]I never wanna see you walk away\n[01:17.29](And there's a lot of lame guys out there)\n[01:19.26]'Cause one of these things is not like the others..."
+
+    GetResponse:
+      type: object
+      required:
+        - status
+        - data
+      properties:
+        status:
+          type: integer
+          example: 200
+        data:
+          $ref: "#/components/schemas/SongItem"
+
+    SearchResponse:
+      type: object
+      required:
+        - status
+        - data
+      properties:
+        status:
+          type: integer
+          example: 200
+        data:
+          type: object
+          required:
+            - items
+          properties:
+            items:
+              type: array
+              maxItems: 50
+              items:
+                $ref: "#/components/schemas/SongItem"
+
+    WebhookSyncResponse:
+      type: object
+      required:
+        - status
+        - message
+      properties:
+        status:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: "Sync triggered"
+
+    BuildInfo:
+      type: object
+      required:
+        - commit
+        - commitDate
+        - buildTime
+        - rustcVersion
+      properties:
+        commit:
+          type: string
+          example: "c37f005"
+        commitDate:
+          type: string
+          example: "2026-07-30 23:34:58 +0800"
+        buildTime:
+          type: string
+          example: "1785425992 UTC"
+        rustcVersion:
+          type: string
+          example: "rustc 1.97.1 (8bab26f4f 2026-07-14)"
+
+    RuntimeStatus:
+      type: object
+      required:
+        - uptimeSeconds
+        - lyricCount
+      properties:
+        uptimeSeconds:
+          type: integer
+          example: 60
+        lyricCount:
+          type: integer
+          example: 3130
+
+    StatusResponse:
+      type: object
+      required:
+        - status
+        - version
+        - build
+        - runtime
+      properties:
+        status:
+          type: string
+          example: "ok"
+        version:
+          type: string
+          example: "0.1.0"
+        build:
+          $ref: "#/components/schemas/BuildInfo"
+        runtime:
+          $ref: "#/components/schemas/RuntimeStatus"
+
+    ErrorResponse:
+      type: object
+      required:
+        - status
+        - error
+        - message
+      properties:
+        status:
+          type: integer
+          description: HTTP 状态码
+          example: 400
+        error:
+          type: string
+          description: 错误类型
+          example: "Bad Request"
+        message:
+          type: string
+          description: 详细的错误原因说明
+          example: "Missing valid search parameters."

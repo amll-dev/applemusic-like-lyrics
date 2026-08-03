@@ -1,0 +1,241 @@
+---
+title: AMLL TTML API 概览
+description: AMLL 歌词服务的 HTTP API 基础信息、数据模型与全局响应规范
+---
+
+import { LinkCard } from "@astrojs/starlight/components";
+
+官方 AMLL TTML 逐词歌词库的 API，为 AMLL 更佳的歌词表现提供 API 支持
+
+## 基础信息
+
+- **基础地址**: `https://api.amll.dev`
+- **协议**: HTTPS
+- **内容类型**: `application/json`
+- **CORS**: 所有接口均允许跨域 (`Access-Control-Allow-Origin: *`)
+
+## API 端点总览
+
+下表汇总了 AMLL HTTP API 提供的所有接口端点、请求方法及所属模块
+
+| 端点名称                                     | HTTP 方法 | 请求路径              | 需要鉴权 | 接口说明                                    |
+| -------------------------------------------- | --------- | --------------------- | -------- | ------------------------------------------- |
+| [搜索歌词](native#搜索歌词)                  | `GET`     | `/v1/lyrics/search`   | 否       | 在词库中根据曲名、歌手或正文搜索歌词        |
+| [获取歌词](native#获取歌词)                  | `GET`     | `/v1/lyrics/get`      | 否       | 通过 ID、文件名或平台 ID 获取完整 TTML 歌词 |
+| [LrcLib 搜索](lrclib#搜索歌词)               | `GET`     | `/v1/lrclib/search`   | 否       | 兼容 LrcLib 协议的歌词搜索接口              |
+| [LrcLib 精确匹配](lrclib#精确匹配)           | `GET`     | `/v1/lrclib/get`      | 否       | 兼容 LrcLib 协议的精确匹配与歌词获取接口    |
+| [LrcLib 按 ID 获取](lrclib#根据-id-获取歌词) | `GET`     | `/v1/lrclib/get/{id}` | 否       | 兼容 LrcLib 协议的按 ID 获取歌词接口        |
+| [触发词库同步](system#触发词库同步)          | `POST`    | `/v1/webhook/sync`    | **是**   | 触发服务器从远程歌词库拉取并更新歌词        |
+| [获取运行状态](system#获取运行状态)          | `GET`     | `/v1/status`          | 否       | 获取当前 API 服务的运行状态与元数据         |
+
+## 请求速率限制
+
+AMLL TTML API 对单个 IP 的请求频率进行了限制
+
+- **限制目标**：针对发起请求的客户端 IP 地址进行计算
+- **限制速率**：单 IP 平均处理速率为 **每秒 50 次请求**
+- **超额响应**：当瞬间并发或持续请求频率超出许可上限时，将返回状态码 HTTP `429` (`Too Many Requests`)
+
+建议客户端针对 API 请求做防抖、节流处理或使用指数退避机制重试
+
+## 客户端缓存策略建议
+
+针对特定 **歌词 ID**（由文件名生成的 53 位整数 ID）或 **歌词文件名 (`filename`)** 所检索并获取到的歌词内容**是永久固定不变的**
+
+因此，客户端在首次成功通过 `id` 或 `filename` 获取歌词后，建议将其长期缓存，后续播放时优先命中本地缓存
+
+:::note
+通过模糊搜索（如歌曲名、歌手名）或平台 ID（如 `ncmMusicId`）进行匹配的请求，可能会随着词库更新而返回新歌词，建议对这类动态检索接口配置较短的缓存过期时间
+:::
+
+## OpenAPI 规范
+
+我们提供了标准的 OpenAPI 规范文件，你可以将其下载并导入到 Postman、Apifox 或代码生成器中进行调试
+
+<LinkCard 
+  title="下载 openapi.yaml" 
+  description="获取 OpenAPI 规范文件" 
+  href="/api/ttml/openapi.yaml" 
+  target="_blank" 
+/>
+
+---
+
+## 响应结构概述
+
+AMLL TTML API 有以下三种响应结构
+
+1. **原生 API 包装响应 `ApiResponse<T>`**（适用于 [/native](native) 接口）：
+   统一采用 `ApiResponse<T>` 结构包装。正常响应时 `status` 固定为 `200`，`data` 泛型包含具体的业务数据主体；请求失败时返回 `ErrorResponse` 模型
+2. **LrcLib 兼容响应**（适用于 [/lrclib](lrclib) 接口）：
+   为兼容 LrcLib 客户端与插件协议，响应直接返回歌曲对象或歌曲对象数组，不增加额外的数据包装
+3. **管理与状态响应**（适用于 [/system](system) 接口）：
+   返回操作结果状态或包含系统运行信息的 JSON 对象
+
+---
+
+## 原生 API 包装模型 `ApiResponse<T>`
+
+原生接口在请求成功时，均统一使用 `ApiResponse<T>` 泛型接口包装数据
+
+```typescript
+export interface ApiResponse<T> {
+  /** 响应状态码，成功时固定为 200 */
+  status: 200;
+  /** 具体的业务响应数据 */
+  data: T;
+}
+```
+
+- `status`: 响应状态码，固定为 `200`
+- `data`: 泛型业务数据载荷。例如在 [搜索接口](native#搜索歌词) 中 `T` 为 `{ items: SongItem[] }`；在 [获取歌词接口](native#获取歌词) 中 `T` 为 [SongItem](#歌曲元数据与歌词模型-songitem)
+
+---
+
+## 歌曲元数据与歌词模型 `SongItem`
+
+API 中最核心的资源模型，表示一首歌的完整元数据及歌词信息，适用于原生的搜索和获取歌词接口
+
+```typescript
+export interface SongItem {
+  /** 由歌词文件名生成的 53 位整数 ID */
+  id: number;
+  /** 歌词文件名 */
+  filename: string;
+  /** 歌曲名列表 */
+  musicNames: string[];
+  /** 歌手名列表 */
+  artistNames: string[];
+  /** 专辑名列表 */
+  albumNames: string[];
+  /** 网易云音乐平台 ID 列表 */
+  ncmMusicIds: string[];
+  /** QQ 音乐平台 ID 列表 */
+  qqMusicIds: string[];
+  /** Apple Music 平台 ID 列表 */
+  appleMusicIds: string[];
+  /** Spotify 平台 ID 列表 */
+  spotifyIds: string[];
+  /** ISRC 编码列表 */
+  isrcs: string[];
+  /** TTML 歌词贡献者的 GitHub ID 列表 */
+  authorIds: string[];
+  /** TTML 歌词贡献者的 GitHub 用户名列表 */
+  authorUsernames: string[];
+  /** 
+   * TTML 格式的歌词内容
+   *
+   * 注意在搜索接口中为 undefined
+   */
+  lyrics?: string;
+  /** 歌词格式标识 */
+  format: "ttml";
+  /**
+   * 正文搜索命中上下文 
+   * 
+   * 只有在搜索接口中关键字命中歌词正文时存在
+   */
+  matchContext?: {
+    snippet: string;
+  };
+}
+```
+
+<details>
+  <summary>示例响应</summary>
+
+  ```json
+  {
+    "status": 200,
+    "data": {
+      "id": 269710089745311,
+      "filename": "1768754400682-250306205-r6IrpmBd.ttml",
+      "musicNames": [
+        "ME!",
+        "ME! (feat. Brendon Urie of Panic! At The Disco)"
+      ],
+      "artistNames": [
+        "Brendon Urie",
+        "Taylor Swift"
+      ],
+      "albumNames": [
+        "Lover"
+      ],
+      "ncmMusicIds": [
+        "1361348080",
+        "1382781549"
+      ],
+      "qqMusicIds": [
+        "0032UZe62rZk9K"
+      ],
+      "appleMusicIds": [
+        "1468058706"
+      ],
+      "spotifyIds": [
+        "2Rk4JlNc2TPmZe2af99d45"
+      ],
+      "isrcs": [
+        "USUG11901494"
+      ],
+      "authorIds": [
+        "108002475",
+        "132769718",
+        "207428447",
+        "250306205",
+        "34237075",
+        "50747104"
+      ],
+      "authorUsernames": [
+        "SteamFinder",
+        "Xionghaizi001",
+        "Y-CIAO",
+        "apoint123",
+        "kid1412520",
+        "kid141252010"
+      ],
+      "lyrics": "<已省略>",
+      "format": "ttml"
+    }
+  }
+  ```
+</details>
+
+---
+
+## 错误响应模型 `ErrorResponse`
+
+请求失败时返回的错误响应
+
+```typescript
+export interface ErrorResponse {
+  /** HTTP 状态码 */
+  status: number;
+  /** 错误简述 (如 "Bad Request", "Unauthorized", "Not Found") */
+  error: string;
+  /** 详细的错误原因说明 */
+  message: string;
+}
+```
+
+<details>
+  <summary>示例响应</summary>
+
+  ```json
+  {
+    "status": 401,
+    "error": "Unauthorized",
+    "message": "Invalid or missing authorization token."
+  }
+  ```
+</details>
+
+### 全局错误码
+
+| 状态码 | 业务场景                                           | 处理建议                                                              |
+| ------ | -------------------------------------------------- | --------------------------------------------------------------------- |
+| `400`  | 参数验证失败（未传入有效参数、不支持的 format 等） | 检查请求参数是否正确                                                  |
+| `401`  | 鉴权失败（用于需要 Secret 的接口）                 | 检查请求头是否包含有效的凭证                                          |
+| `404`  | 找不到对应的歌词或路由不存在                       | 检查传入的 ID 或搜索条件是否正确                                      |
+| `429`  | 请求频率过高，触发了 API 限流保护                  | 降低请求频率，建议使用客户端防抖/节流或退避重试                       |
+| `500`  | 内部服务器错误                                     | 我们内部的问题，你可以稍后再试，或者打开一个 Issue 来向我们报告此问题 |
+| `502`  | 网关错误                                           | 数据源不稳定，建议稍后重试                                            |

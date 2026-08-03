@@ -73,6 +73,33 @@ const referenceSidebar = [
 		collapsed: true,
 		items: [{ autogenerate: { directory: "reference/ttml", collapsed: true } }],
 	},
+	{
+		label: "HTTP API",
+		translations: { en: "HTTP API" },
+		collapsed: true,
+		items: [
+			{
+				label: "概览",
+				translations: { en: "Overview" },
+				slug: "reference/http-api/overview",
+			},
+			{
+				label: "原生接口",
+				translations: { en: "Native Endpoints" },
+				slug: "reference/http-api/native",
+			},
+			{
+				label: "LrcLib 接口",
+				translations: { en: "LrcLib Endpoints" },
+				slug: "reference/http-api/lrclib",
+			},
+			{
+				label: "管理接口",
+				translations: { en: "System Endpoints" },
+				slug: "reference/http-api/system",
+			},
+		],
+	},
 ];
 
 const contributeSidebar = [
@@ -114,6 +141,9 @@ export default defineConfig({
 				"./src/styles/frame.css",
 				"./src/styles/content.css",
 			],
+			components: {
+				PageFrame: "./src/components/Overrides/PageFrame.astro",
+			},
 			expressiveCode: {
 				themes: ["github-dark", "github-light"],
 				useStarlightDarkModeSwitch: true,
@@ -178,4 +208,17 @@ export default defineConfig({
 			},
 		}),
 	],
+	vite: {
+		build: {
+			rollupOptions: {
+				output: {
+					manualChunks(id) {
+						if (id.includes("monaco-editor")) {
+							return "monaco-editor";
+						}
+					},
+				},
+			},
+		},
+	},
 });

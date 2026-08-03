@@ -1,0 +1,42 @@
+---
+import DefaultPageFrame from "@astrojs/starlight/components/PageFrame.astro";
+import { ApiDrawerManager } from "./ApiDrawerManager";
+---
+
+<DefaultPageFrame {...Astro.props}>
+	<slot name="header" slot="header" />
+	<slot name="sidebar" slot="sidebar" />
+	<slot />
+</DefaultPageFrame>
+
+<ApiDrawerManager client:load />
+
+<style is:global>
+body.amll-api-drawer-open .right-sidebar-panel {
+	display: none;
+}
+
+@media (min-width: 72rem) {
+	body.amll-api-drawer-open .lg\:sl-flex {
+		--sl-sidebar-width: calc(
+			var(--api-drawer-width, 400px) +
+			clamp(10px, 3vw, 30px) +
+			20px
+		);
+		transition: padding-right 0.3s ease;
+	}
+}
+
+.main-pane,
+.right-sidebar-container {
+	transition: width 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+body.amll-api-drawer-dragging .main-pane {
+	transition: none;
+}
+
+body.amll-api-drawer-dragging .right-sidebar-container {
+	transition: none;
+}
+</style>

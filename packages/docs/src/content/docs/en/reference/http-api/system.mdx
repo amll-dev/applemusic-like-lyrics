@@ -1,0 +1,117 @@
+---
+title: System Endpoints
+description: Management and status endpoints for the API server
+---
+
+import { ApiTrigger } from "#components/ApiTester/ApiTrigger";
+
+Management and status endpoints for the API server.
+
+## Trigger Database Sync
+
+Trigger server to pull and update lyric data from the GitHub lyric repository.
+
+:::note[Authentication Required]
+Calling this endpoint requires a valid Bearer Token in request headers.
+:::
+
+<ApiTrigger actionId="syncWebhook" client:load />
+
+### Response Schema
+
+```typescript
+// Successful Response (HTTP 200)
+interface SyncWebhookSuccessResponse {
+  /** Response status code */
+  status: 200;
+  /** Execution result message */
+  message: string;
+}
+
+// Authentication Failure Response (HTTP 401)
+type SyncWebhookErrorResponse = ErrorResponse;
+```
+
+**Description:**
+- Returns standard [ErrorResponse](overview#error-response-model-errorresponse) on authentication failure or missing credentials.
+
+<details>
+  <summary>Example Response</summary>
+
+  On successful sync:
+  ```json
+  {
+    "message": "Sync triggered",
+    "status": 200
+  }
+  ```
+
+  When valid Bearer Token is missing:
+  ```json
+  {
+    "status": 401,
+    "error": "Unauthorized",
+    "message": "Invalid or missing authorization token."
+  }
+  ```
+</details>
+
+---
+
+## Get Runtime Status
+
+Get current API service runtime status, version, Git commit hash, build time, cached entries, and runtime metrics.
+
+<ApiTrigger actionId="getStatus" client:load />
+
+### Response Schema
+
+Returns `200` status code on success with the following structure:
+
+```typescript
+interface StatusResponse {
+  /** Service health status */
+  status: "ok";
+  /** API service semantic version */
+  version: string;
+  /** Build environment and Git metadata object */
+  build: {
+    /** Short Git commit hash */
+    commit: string;
+    /** Code commit date */
+    commitDate: string;
+    /** Build timestamp */
+    buildTime: string;
+    /** Rust compiler version information */
+    rustcVersion: string;
+  };
+  /** Runtime metrics object */
+  runtime: {
+    /** Service uptime in seconds */
+    uptimeSeconds: number;
+    /** Total count of indexed and cached lyric entries */
+    lyricCount: number;
+  };
+}
+```
+
+<details>
+  <summary>Example Response</summary>
+
+  ```json
+  {
+    "status": "ok",
+    "version": "0.1.0",
+    "build": {
+      "commit": "c37f005",
+      "commitDate": "2026-07-30 23:34:58 +0800",
+      "buildTime": "1785425992 UTC",
+      "rustcVersion": "rustc 1.97.1 (8bab26f4f 2026-07-14)"
+    },
+    "runtime": {
+      "uptimeSeconds": 217961,
+      "lyricCount": 3157
+    }
+  }
+  ```
+</details>

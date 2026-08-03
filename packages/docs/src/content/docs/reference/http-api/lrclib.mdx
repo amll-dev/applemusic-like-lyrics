@@ -1,0 +1,191 @@
+---
+title: LrcLib 接口
+description: 兼容 LrcLib 协议的获取与搜索接口
+---
+
+import { ApiTrigger } from "#components/ApiTester/ApiTrigger";
+
+为了方便使用 [LrcLib 协议](https://lrclib.net/docs) 的播放器或插件直接接入 AMLL 词库所提供的兼容接口
+
+## LrcLib 响应模型 `LrclibSongItem`
+
+兼容 LrcLib 格式的歌词响应结构
+
+```typescript
+export interface LrclibSongItem {
+  /** 歌词唯一 ID */
+  id: number;
+  /** 歌曲名称 */
+  name: string;
+  /** 歌曲名称 */
+  trackName: string;
+  /** 歌手名称 */
+  artistName: string;
+  /** 专辑名称 */
+  albumName: string;
+  /**
+   * 歌词中出现的最高时间戳（秒）
+   *
+   * 注意非音频文件真实时长
+   */
+  duration: number;
+  /** 是否为纯音乐 */
+  instrumental: false;
+  /** 纯文本歌词 */
+  plainLyrics: string;
+  /** LRC 歌词 */
+  syncedLyrics: string;
+}
+```
+
+- `instrumental`: 是否为纯音乐。**固定返回 `false`**
+- 歌曲名称、歌手名称和专辑名称只会取第一个值返回
+
+---
+
+## 搜索歌词
+
+在词库中模糊搜索，响应列表中最多返回前 50 条记录
+
+<ApiTrigger actionId="lrclibSearch" client:load />
+
+### 请求参数
+
+至少需要提供 `track_name` / `q` / `artist_name` / `album_name` 之一
+
+| 参数名        | 类型     | 必填 | 说明               |
+| ------------- | -------- | ---- | ------------------ |
+| `q`           | `string` | 否   | 全局通用搜索关键词 |
+| `track_name`  | `string` | 否   | 歌曲名             |
+| `artist_name` | `string` | 否   | 歌手名             |
+| `album_name`  | `string` | 否   | 专辑名             |
+
+### 响应 Schema
+
+请求成功时返回 `200` 状态码及如下结构
+
+```typescript
+type LrcLibSearchResponse = LrclibSongItem[];
+```
+
+- 元素类型为 [LrclibSongItem 模型](#lrclib-响应模型-lrclibsongitem)，包含了搜索匹配到的歌曲列表，最多返回 50 条
+
+<details>
+  <summary>示例响应</summary>
+
+  ```json
+  [
+    {
+      "id": 269710089745311,
+      "name": "ME!",
+      "trackName": "ME!",
+      "artistName": "Brendon Urie",
+      "albumName": "Lover",
+      "duration": 185.8,
+      "instrumental": false,
+      "plainLyrics": "I promise that you'll never find another like me\nI know that I'm a handful, baby, uh...",
+      "syncedLyrics": "[00:00.11] I promise that you'll never find another like me\n[00:03.47] I know that I'm a handful, baby, uh..."
+    },
+    {
+      "id": 7807416901227298,
+      "name": "ME! (feat. Brendon Urie of Panic! At The Disco)",
+      "trackName": "ME! (feat. Brendon Urie of Panic! At The Disco)",
+      "artistName": "Taylor Swift",
+      "albumName": "Lover",
+      "duration": 185.83,
+      "instrumental": false,
+      "plainLyrics": "I promise that you'll never find another like me\nI know that I'm a handful, baby, uh...",
+      "syncedLyrics": "[00:00.13] I promise that you'll never find another like me\n[00:03.46] I know that I'm a handful, baby, uh..."
+    }
+  ]
+  ```
+</details>
+
+
+---
+
+## 模糊匹配
+
+模糊匹配一首歌曲，并直接返回包含 LRC 歌词与纯文本歌词的结果
+
+<ApiTrigger actionId="lrclibGet" client:load />
+
+### 请求参数
+
+必须提供 `track_name` 与 `artist_name`
+
+| 参数名        | 类型     | 必填   | 说明   |
+| ------------- | -------- | ------ | ------ |
+| `track_name`  | `string` | **是** | 歌曲名 |
+| `artist_name` | `string` | **是** | 歌手名 |
+| `album_name`  | `string` | 否     | 专辑名 |
+
+### 响应 Schema
+
+请求成功时返回 `200` 状态码及如下结构
+
+```typescript
+type LrcLibGetResponse = LrclibSongItem;
+```
+
+- 响应类型为单个 [LrclibSongItem 模型](#lrclib-响应模型-lrclibsongitem) 对象
+
+<details>
+  <summary>示例响应</summary>
+
+  ```json
+  {
+    "id": 269710089745311,
+    "name": "ME!",
+    "trackName": "ME!",
+    "artistName": "Brendon Urie",
+    "albumName": "Lover",
+    "duration": 185.8,
+    "instrumental": false,
+    "plainLyrics": "I promise that you'll never find another like me\nI know that I'm a handful, baby, uh...",
+    "syncedLyrics": "[00:00.11] I promise that you'll never find another like me\n[00:03.47] I know that I'm a handful, baby, uh..."
+  }
+  ```
+</details>
+
+---
+
+## 根据 ID 获取歌词
+
+通过搜索接口返回的 `id` 获取完整歌词
+
+<ApiTrigger actionId="lrclibGetById" client:load />
+
+### 路径参数
+
+| 参数名 | 类型     | 必填   | 说明                      |
+| ------ | -------- | ------ | ------------------------- |
+| `id`   | `number` | **是** | 从 search 接口获取到的 ID |
+
+### 响应 Schema
+
+请求成功时返回 `200` 状态码及如下定义：
+
+```typescript
+type LrcLibGetByIdResponse = LrclibSongItem;
+```
+
+- 响应类型为指定 ID 的 [LrclibSongItem 模型](#lrclib-响应模型-lrclibsongitem) 对象
+
+<details>
+  <summary>示例响应</summary>
+
+  ```json
+  {
+    "id": 269710089745311,
+    "name": "ME!",
+    "trackName": "ME!",
+    "artistName": "Brendon Urie",
+    "albumName": "Lover",
+    "duration": 185.8,
+    "instrumental": false,
+    "plainLyrics": "I promise that you'll never find another like me\nI know that I'm a handful, baby, uh...",
+    "syncedLyrics": "[00:00.11] I promise that you'll never find another like me\n[00:03.47] I know that I'm a handful, baby, uh..."
+  }
+  ```
+</details>

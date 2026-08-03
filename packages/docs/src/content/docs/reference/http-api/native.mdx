@@ -1,0 +1,231 @@
+---
+title: 原生接口
+description: AMLL 原生的搜索与获取歌词接口
+---
+
+import { ApiTrigger } from "#components/ApiTester/ApiTrigger";
+
+AMLL 词库的原生接口，提供最完整的匹配与搜索能力
+
+## 搜索歌词
+
+在词库中搜索符合条件的歌词
+
+<ApiTrigger actionId="searchLyrics" client:load />
+
+### 请求参数
+
+至少需要提供以下任意一个参数。可以组合多个参数以提高精确度
+- 如果同时传入 `q` 和其他参数，**则忽略 `q`**，优先使用其他参数
+- 多个非 `q` 参数之间为 **AND 交集关系**
+- 空字符串参数视为未传入
+- 建议使用 `musicName`、`artistName` 和 `albumName` 而不是 `q` 来提高搜索精确度
+
+| 参数名           | 类型     | 匹配逻辑 | 说明                                     |
+| ---------------- | -------- | -------- | ---------------------------------------- |
+| `q`              | `string` | 模糊包含 | 模糊搜索歌曲名、歌手名、专辑名和歌词正文 |
+| `musicName`      | `string` | 模糊包含 | 限定匹配曲名                             |
+| `artistName`     | `string` | 模糊包含 | 限定匹配歌手名                           |
+| `albumName`      | `string` | 模糊包含 | 限定匹配专辑名                           |
+| `lyricText`      | `string` | 全文检索 | 限定匹配歌词正文，不区分大小写           |
+| `authorId`       | `string` | 严格全等 | TTML 贡献者的 GitHub ID                  |
+| `authorUsername` | `string` | 严格全等 | TTML 贡献者的 GitHub 用户名              |
+
+### 响应行为
+1. 结果按匹配相关性降序排序，相关性相同时按时间戳降序排序
+2. 最多返回前 50 条记录
+
+### 响应 Schema
+
+请求成功时返回 `200` 状态码及如下结构
+
+```typescript
+type SearchLyricsResponse = ApiResponse<{
+  items: SongItem[];
+}>;
+```
+
+**字段说明：**
+- `ApiResponse<T>`: 全局泛型响应包装结构，详见 [ApiResponse 包装模型](overview#原生-api-包装模型-apiresponset)
+- `items`: 搜索到的歌曲列表，元素类型为 [SongItem 模型](overview#歌曲元数据与歌词模型-songitem)
+  - 搜索结果中每项的 `lyrics` 固定为 `undefined`
+  - 仅在歌词正文包含搜索词时，`matchContext` 存在且包含 `snippet` 高亮代码片段
+
+<details>
+  <summary>示例响应</summary>
+
+  ```json
+  {
+    "status": 200,
+    "data": {
+      "items": [
+        {
+          "id": 8713122671638320,
+          "filename": "1702791169000-50747104-65652a93.ttml",
+          "musicNames": [
+            "ME! (feat. Brendon Urie of Panic! At The Disco)"
+          ],
+          "artistNames": [
+            "Taylor Swift",
+            "Brendon Urie"
+          ],
+          "albumNames": [
+            "ME! (feat. Brendon Urie of Panic! At The Disco)"
+          ],
+          "ncmMusicIds": [
+            "1361348080"
+          ],
+          "qqMusicIds": [],
+          "appleMusicIds": [],
+          "spotifyIds": [],
+          "isrcs": [],
+          "authorIds": [
+            "50747104"
+          ],
+          "authorUsernames": [
+            "Xionghaizi001"
+          ],
+          "matchContext": {
+            "snippet": "I never want to see you walk away\n<mark>'Cause one of these things is not like the others</mark>\nLiving in winter I am your summer"
+          }
+        },
+        {
+          "id": 8489623513658892,
+          "filename": "1689481280000-132769718-1028454c.ttml",
+          "musicNames": [
+            "ME! (feat. Brendon Urie of Panic! At The Disco)"
+          ],
+          "artistNames": [
+            "Taylor Swift",
+            "Brendon Urie"
+          ],
+          "albumNames": [
+            "ME! (feat. Brendon Urie of Panic! At The Disco)"
+          ],
+          "ncmMusicIds": [
+            "1361348080"
+          ],
+          "qqMusicIds": [],
+          "appleMusicIds": [],
+          "spotifyIds": [],
+          "isrcs": [],
+          "authorIds": [
+            "132769718"
+          ],
+          "authorUsernames": [
+            "Y-CIAO"
+          ],
+          "matchContext": {
+            "snippet": "And there's a lot of lame guys out there\n<mark>'Cause one of these things is not like the others</mark>\nLiving in winter I am your summer"
+          }
+        }
+      ]
+    }
+  }
+  ```
+
+</details>
+
+---
+
+## 获取歌词
+
+通过 ID 获取一首歌曲的元数据及其完整的 TTML 歌词
+
+<ApiTrigger actionId="getLyric" client:load />
+
+### 请求参数
+
+至少需要提供以下任意一个参数
+
+**参数优先级：**
+1. **`id` 为最高优先级**，传入时忽略其他所有参数
+2. **`filename` 为次高优先级**，传入时忽略平台 ID 参数
+3. 如果仅提供多个**不同平台的 ID**，将使用**交集**进行匹配，且只返回匹配结果中最新的一条。如果需要获取旧歌词，请使用 `id` 或 `filename` 精确匹配
+
+:::tip[缓存]
+对于给定的特定 `id` 或 `filename`，其对应的歌词内容**是永久固定不变的**。建议客户端成功获取后进行长期缓存，详见 [客户端缓存策略建议](overview#客户端缓存策略建议-caching-strategy)
+:::
+
+| 参数名         | 类型       | 必填 | 说明                                          |
+| -------------- | ---------- | ---- | --------------------------------------------- |
+| `id`           | `number`   | 否   | 由文件名生成的 53 位整数 ID，精确匹配         |
+| `filename`     | `string`   | 否   | 歌词文件名，精确匹配。必须以 `.ttml` 结尾     |
+| `ncmMusicId`   | `string[]` | 否   | 网易云音乐 ID                                 |
+| `qqMusicId`    | `string[]` | 否   | QQ 音乐 ID                                    |
+| `appleMusicId` | `string[]` | 否   | Apple Music ID                                |
+| `spotifyId`    | `string[]` | 否   | Spotify ID                                    |
+| `isrc`         | `string[]` | 否   | ISRC 编码                                     |
+| `format`       | `string`   | 否   | 保留字段，默认为 `ttml`。传入其他值将返回 400 |
+
+### 响应 Schema
+
+请求成功时返回 `200` 状态码及如下结构
+
+```typescript
+type GetLyricResponse = ApiResponse<SongItem>;
+```
+
+**关联模型说明：**
+- `ApiResponse<T>`: 全局泛型响应包装结构，详见 [ApiResponse 包装模型](overview#原生-api-包装模型-apiresponset)
+- `data`: 歌曲及完整歌词元数据，类型为 [SongItem 模型](overview#歌曲元数据与歌词模型-songitem)，包含完整的 `lyrics` TTML 字符串
+
+<details>
+  <summary>示例响应</summary>
+
+  ```json
+  {
+    "status": 200,
+    "data": {
+      "id": 269710089745311,
+      "filename": "1768754400682-250306205-r6IrpmBd.ttml",
+      "musicNames": [
+        "ME!",
+        "ME! (feat. Brendon Urie of Panic! At The Disco)"
+      ],
+      "artistNames": [
+        "Brendon Urie",
+        "Taylor Swift"
+      ],
+      "albumNames": [
+        "Lover"
+      ],
+      "ncmMusicIds": [
+        "1361348080",
+        "1382781549"
+      ],
+      "qqMusicIds": [
+        "0032UZe62rZk9K"
+      ],
+      "appleMusicIds": [
+        "1468058706"
+      ],
+      "spotifyIds": [
+        "2Rk4JlNc2TPmZe2af99d45"
+      ],
+      "isrcs": [
+        "USUG11901494"
+      ],
+      "authorIds": [
+        "108002475",
+        "132769718",
+        "207428447",
+        "250306205",
+        "34237075",
+        "50747104"
+      ],
+      "authorUsernames": [
+        "SteamFinder",
+        "Xionghaizi001",
+        "Y-CIAO",
+        "apoint123",
+        "kid1412520",
+        "kid141252010"
+      ],
+      "lyrics": "<已省略>",
+      "format": "ttml"
+    }
+  }
+  ```
+
+</details>

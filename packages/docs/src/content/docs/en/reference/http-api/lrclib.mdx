@@ -1,0 +1,190 @@
+---
+title: LrcLib Endpoints
+description: Get and search endpoints compatible with the LrcLib protocol
+---
+
+import { ApiTrigger } from "#components/ApiTester/ApiTrigger";
+
+Compatible endpoints provided for audio players or plugins implementing the [LrcLib Protocol](https://lrclib.net/docs) to connect directly to the AMLL lyric database.
+
+## LrcLib Response Model `LrclibSongItem`
+
+Lyric response structure compatible with LrcLib format:
+
+```typescript
+export interface LrclibSongItem {
+  /** Unique lyric ID */
+  id: number;
+  /** Song title */
+  name: string;
+  /** Song title */
+  trackName: string;
+  /** Artist name */
+  artistName: string;
+  /** Album name */
+  albumName: string;
+  /**
+   * Highest timestamp appearing in lyrics (seconds)
+   *
+   * Note: Not the exact audio file duration
+   */
+  duration: number;
+  /** Whether the track is instrumental */
+  instrumental: false;
+  /** Plain text lyrics */
+  plainLyrics: string;
+  /** Synced LRC lyrics */
+  syncedLyrics: string;
+}
+```
+
+- `instrumental`: Whether the track is instrumental. **Fixed to `false`**
+- Song title, artist name, and album name pick the first element from arrays.
+
+---
+
+## Search Lyrics
+
+Fuzzy search in database, returning up to 50 items in response array.
+
+<ApiTrigger actionId="lrclibSearch" client:load />
+
+### Query Parameters
+
+At least one of `track_name`, `q`, `artist_name`, or `album_name` must be provided.
+
+| Parameter     | Type     | Required | Description           |
+| ------------- | -------- | -------- | --------------------- |
+| `q`           | `string` | No       | Global search keyword |
+| `track_name`  | `string` | No       | Track name            |
+| `artist_name` | `string` | No       | Artist name           |
+| `album_name`  | `string` | No       | Album title           |
+
+### Response Schema
+
+Returns `200` status code on success with the following structure:
+
+```typescript
+type LrcLibSearchResponse = LrclibSongItem[];
+```
+
+- Element type is [LrclibSongItem Model](#lrclib-response-model-lrclibsongitem), returning up to 50 items.
+
+<details>
+  <summary>Example Response</summary>
+
+  ```json
+  [
+    {
+      "id": 269710089745311,
+      "name": "ME!",
+      "trackName": "ME!",
+      "artistName": "Brendon Urie",
+      "albumName": "Lover",
+      "duration": 185.8,
+      "instrumental": false,
+      "plainLyrics": "I promise that you'll never find another like me\nI know that I'm a handful, baby, uh...",
+      "syncedLyrics": "[00:00.11] I promise that you'll never find another like me\n[00:03.47] I know that I'm a handful, baby, uh..."
+    },
+    {
+      "id": 7807416901227298,
+      "name": "ME! (feat. Brendon Urie of Panic! At The Disco)",
+      "trackName": "ME! (feat. Brendon Urie of Panic! At The Disco)",
+      "artistName": "Taylor Swift",
+      "albumName": "Lover",
+      "duration": 185.83,
+      "instrumental": false,
+      "plainLyrics": "I promise that you'll never find another like me\nI know that I'm a handful, baby, uh...",
+      "syncedLyrics": "[00:00.13] I promise that you'll never find another like me\n[00:03.46] I know that I'm a handful, baby, uh..."
+    }
+  ]
+  ```
+</details>
+
+---
+
+## Fuzzy Match
+
+Fuzzy match a song and return LRC and plain text lyrics directly.
+
+<ApiTrigger actionId="lrclibGet" client:load />
+
+### Query Parameters
+
+Both `track_name` and `artist_name` must be provided.
+
+| Parameter     | Type     | Required | Description |
+| ------------- | -------- | -------- | ----------- |
+| `track_name`  | `string` | **Yes**  | Track name  |
+| `artist_name` | `string` | **Yes**  | Artist name |
+| `album_name`  | `string` | No       | Album title |
+
+### Response Schema
+
+Returns `200` status code on success with the following structure:
+
+```typescript
+type LrcLibGetResponse = LrclibSongItem;
+```
+
+- Response type is a single [LrclibSongItem Model](#lrclib-response-model-lrclibsongitem) object.
+
+<details>
+  <summary>Example Response</summary>
+
+  ```json
+  {
+    "id": 269710089745311,
+    "name": "ME!",
+    "trackName": "ME!",
+    "artistName": "Brendon Urie",
+    "albumName": "Lover",
+    "duration": 185.8,
+    "instrumental": false,
+    "plainLyrics": "I promise that you'll never find another like me\nI know that I'm a handful, baby, uh...",
+    "syncedLyrics": "[00:00.11] I promise that you'll never find another like me\n[00:03.47] I know that I'm a handful, baby, uh..."
+  }
+  ```
+</details>
+
+---
+
+## Get Lyric by ID
+
+Get full lyrics using the `id` returned from search endpoints.
+
+<ApiTrigger actionId="lrclibGetById" client:load />
+
+### Path Parameters
+
+| Parameter | Type     | Required | Description                      |
+| --------- | -------- | -------- | -------------------------------- |
+| `id`      | `number` | **Yes**  | ID obtained from search endpoint |
+
+### Response Schema
+
+Returns `200` status code on success with the following structure:
+
+```typescript
+type LrcLibGetByIdResponse = LrclibSongItem;
+```
+
+- Response type is a [LrclibSongItem Model](#lrclib-response-model-lrclibsongitem) object for the specified ID.
+
+<details>
+  <summary>Example Response</summary>
+
+  ```json
+  {
+    "id": 269710089745311,
+    "name": "ME!",
+    "trackName": "ME!",
+    "artistName": "Brendon Urie",
+    "albumName": "Lover",
+    "duration": 185.8,
+    "instrumental": false,
+    "plainLyrics": "I promise that you'll never find another like me\nI know that I'm a handful, baby, uh...",
+    "syncedLyrics": "[00:00.11] I promise that you'll never find another like me\n[00:03.47] I know that I'm a handful, baby, uh..."
+  }
+  ```
+</details>

@@ -1,0 +1,117 @@
+---
+title: 管理接口
+description: 管理 API 服务器用的接口
+---
+
+import { ApiTrigger } from "#components/ApiTester/ApiTrigger";
+
+管理 API 服务器用的接口
+
+## 触发词库同步
+
+让服务器从 GitHub 歌词库拉取并更新歌词数据
+
+:::note[需要鉴权]
+调用此接口需要在请求头携带正确的 Bearer Token
+:::
+
+<ApiTrigger actionId="syncWebhook" client:load />
+
+### 响应 Schema
+
+```typescript
+// 成功响应 (HTTP 200)
+interface SyncWebhookSuccessResponse {
+  /** 响应状态码 */
+  status: 200;
+  /** 执行结果说明信息 */
+  message: string;
+}
+
+// 鉴权失败响应 (HTTP 401)
+type SyncWebhookErrorResponse = ErrorResponse;
+```
+
+**说明：**
+- 鉴权失败或缺少凭证时，返回通用 [ErrorResponse](overview#错误响应模型-errorresponse)
+
+<details>
+  <summary>示例响应</summary>
+
+  当同步成功时：
+  ```json
+  {
+    "message": "Sync triggered",
+    "status": 200
+  }
+  ```
+
+  当未附带正确的 Bearer Token 时：
+  ```json
+  {
+    "status": 401,
+    "error": "Unauthorized",
+    "message": "Invalid or missing authorization token."
+  }
+  ```
+</details>
+
+---
+
+## 获取运行状态
+
+获取当前 API 服务的运行状态、版本号、Git 提交 Hash、构建时间及运行时的缓存条目等元数据
+
+<ApiTrigger actionId="getStatus" client:load />
+
+### 响应 Schema
+
+请求成功时返回 `200` 状态码及如下结构
+
+```typescript
+interface StatusResponse {
+  /** 服务可用性状态 */
+  status: "ok";
+  /** API 服务语义化版本号 */
+  version: string;
+  /** 构建环境及 Git 元数据对象 */
+  build: {
+    /** Git 提交 Hash (短 Hash) */
+    commit: string;
+    /** 代码提交时间 */
+    commitDate: string;
+    /** 服务构建打包时间 */
+    buildTime: string;
+    /** Rust 编译器版本信息 */
+    rustcVersion: string;
+  };
+  /** 运行期指标统计对象 */
+  runtime: {
+    /** 服务在线运行时间（单位：秒） */
+    uptimeSeconds: number;
+    /** 索引与缓存中的歌词条目总数 */
+    lyricCount: number;
+  };
+}
+```
+
+<details>
+  <summary>示例响应</summary>
+
+  ```json
+  {
+    "status": "ok",
+    "version": "0.1.0",
+    "build": {
+      "commit": "c37f005",
+      "commitDate": "2026-07-30 23:34:58 +0800",
+      "buildTime": "1785425992 UTC",
+      "rustcVersion": "rustc 1.97.1 (8bab26f4f 2026-07-14)"
+    },
+    "runtime": {
+      "uptimeSeconds": 217961,
+      "lyricCount": 3157
+    }
+  }
+  ```
+</details>

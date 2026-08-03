@@ -24,10 +24,11 @@ catalog:
   react-dom: ^19.2.4
   sharp: ^0.34.5
   tsdown: ^0.22.0
-  typedoc: ^0.28.18
-  typedoc-plugin-markdown: ^4.11.0
+  typedoc: ^0.28.20
+  typedoc-plugin-markdown: ^4.12.0
   vite: ^8.0.13
   vitest: ^4.1.6
 
 patchedDependencies:
   "@astrojs/starlight": patches/@astrojs__starlight.patch
+  monaco-editor@0.56.0: patches/monaco-editor@0.56.0.patch

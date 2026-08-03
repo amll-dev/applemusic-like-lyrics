@@ -1,0 +1,231 @@
+---
+title: Native Endpoints
+description: AMLL native search and get lyric endpoints
+---
+
+import { ApiTrigger } from "#components/ApiTester/ApiTrigger";
+
+Native endpoints for the AMLL lyric database, providing full search and matching capabilities.
+
+## Search Lyrics
+
+Search lyrics matching specified conditions in the database.
+
+<ApiTrigger actionId="searchLyrics" client:load />
+
+### Query Parameters
+
+At least one of the following parameters must be provided. Multiple parameters can be combined to increase precision:
+- If `q` is passed along with other parameters, **`q` will be ignored** in favor of specific field parameters.
+- Multiple non-`q` parameters use **AND (intersection)** logic.
+- Empty string parameters are treated as not provided.
+- `musicName`, `artistName`, and `albumName` are recommended over `q` for higher precision.
+
+| Parameter        | Type     | Match Logic      | Description                                                |
+| ---------------- | -------- | ---------------- | ---------------------------------------------------------- |
+| `q`              | `string` | Fuzzy contains   | Search across song titles, artists, albums, and lyric text |
+| `musicName`      | `string` | Fuzzy contains   | Match song title                                           |
+| `artistName`     | `string` | Fuzzy contains   | Match artist name                                          |
+| `albumName`      | `string` | Fuzzy contains   | Match album title                                          |
+| `lyricText`      | `string` | Full-text search | Case-insensitive match on lyric text                       |
+| `authorId`       | `string` | Exact match      | TTML contributor GitHub ID                                 |
+| `authorUsername` | `string` | Exact match      | TTML contributor GitHub username                           |
+
+### Response Behavior
+1. Results are sorted by relevance in descending order, then by timestamp descending when relevance is tied.
+2. Returns a maximum of 50 items.
+
+### Response Schema
+
+Returns `200` status code on success with the following structure:
+
+```typescript
+type SearchLyricsResponse = ApiResponse<{
+  items: SongItem[];
+}>;
+```
+
+**Field Descriptions:**
+- `ApiResponse<T>`: Global generic response wrapper, see [ApiResponse Wrapper Model](overview#native-api-wrapper-model-apiresponset)
+- `items`: List of matched songs, element type is [SongItem Model](overview#song-metadata--lyric-model-songitem)
+  - `lyrics` is fixed to `undefined` for each item in search results.
+  - `matchContext` is present with highlighted `snippet` only when the query matches lyric text.
+
+<details>
+  <summary>Example Response</summary>
+
+  ```json
+  {
+    "status": 200,
+    "data": {
+      "items": [
+        {
+          "id": 8713122671638320,
+          "filename": "1702791169000-50747104-65652a93.ttml",
+          "musicNames": [
+            "ME! (feat. Brendon Urie of Panic! At The Disco)"
+          ],
+          "artistNames": [
+            "Taylor Swift",
+            "Brendon Urie"
+          ],
+          "albumNames": [
+            "ME! (feat. Brendon Urie of Panic! At The Disco)"
+          ],
+          "ncmMusicIds": [
+            "1361348080"
+          ],
+          "qqMusicIds": [],
+          "appleMusicIds": [],
+          "spotifyIds": [],
+          "isrcs": [],
+          "authorIds": [
+            "50747104"
+          ],
+          "authorUsernames": [
+            "Xionghaizi001"
+          ],
+          "matchContext": {
+            "snippet": "I never want to see you walk away\n<mark>'Cause one of these things is not like the others</mark>\nLiving in winter I am your summer"
+          }
+        },
+        {
+          "id": 8489623513658892,
+          "filename": "1689481280000-132769718-1028454c.ttml",
+          "musicNames": [
+            "ME! (feat. Brendon Urie of Panic! At The Disco)"
+          ],
+          "artistNames": [
+            "Taylor Swift",
+            "Brendon Urie"
+          ],
+          "albumNames": [
+            "ME! (feat. Brendon Urie of Panic! At The Disco)"
+          ],
+          "ncmMusicIds": [
+            "1361348080"
+          ],
+          "qqMusicIds": [],
+          "appleMusicIds": [],
+          "spotifyIds": [],
+          "isrcs": [],
+          "authorIds": [
+            "132769718"
+          ],
+          "authorUsernames": [
+            "Y-CIAO"
+          ],
+          "matchContext": {
+            "snippet": "And there's a lot of lame guys out there\n<mark>'Cause one of these things is not like the others</mark>\nLiving in winter I am your summer"
+          }
+        }
+      ]
+    }
+  }
+  ```
+
+</details>
+
+---
+
+## Get Lyric
+
+Get song metadata and full TTML lyrics by ID or parameters.
+
+<ApiTrigger actionId="getLyric" client:load />
+
+### Query Parameters
+
+At least one of the following parameters must be provided.
+
+**Parameter Priority:**
+1. **`id` has the highest priority**: other parameters are ignored when present.
+2. **`filename` has second highest priority**: platform ID parameters are ignored when present.
+3. If only platform IDs from **multiple platforms** are provided, an **intersection** match will be performed, returning only the single newest matching result. To get older versions, use `id` or `filename`.
+
+:::tip[Caching]
+Lyric content for a specific `id` or `filename` **is permanently fixed and immutable**. Clients are strongly encouraged to cache responses long-term after retrieval. See [Client Caching Strategy Suggestions](overview#client-caching-strategy-suggestions).
+:::
+
+| Parameter      | Type       | Required | Description                                                 |
+| -------------- | ---------- | -------- | ----------------------------------------------------------- |
+| `id`           | `number`   | No       | 53-bit integer ID generated from filename, exact match      |
+| `filename`     | `string`   | No       | Lyric filename, exact match. Must end with `.ttml`          |
+| `ncmMusicId`   | `string[]` | No       | Netease Cloud Music ID                                      |
+| `qqMusicId`    | `string[]` | No       | QQ Music ID                                                 |
+| `appleMusicId` | `string[]` | No       | Apple Music ID                                              |
+| `spotifyId`    | `string[]` | No       | Spotify ID                                                  |
+| `isrc`         | `string[]` | No       | ISRC code                                                   |
+| `format`       | `string`   | No       | Reserved field, defaults to `ttml`. Other values return 400 |
+
+### Response Schema
+
+Returns `200` status code on success with the following structure:
+
+```typescript
+type GetLyricResponse = ApiResponse<SongItem>;
+```
+
+**Related Model Description:**
+- `ApiResponse<T>`: Generic response wrapper, see [ApiResponse Wrapper Model](overview#native-api-wrapper-model-apiresponset)
+- `data`: Song metadata and complete lyric object of type [SongItem Model](overview#song-metadata--lyric-model-songitem), containing full `lyrics` TTML string
+
+<details>
+  <summary>Example Response</summary>
+
+  ```json
+  {
+    "status": 200,
+    "data": {
+      "id": 269710089745311,
+      "filename": "1768754400682-250306205-r6IrpmBd.ttml",
+      "musicNames": [
+        "ME!",
+        "ME! (feat. Brendon Urie of Panic! At The Disco)"
+      ],
+      "artistNames": [
+        "Brendon Urie",
+        "Taylor Swift"
+      ],
+      "albumNames": [
+        "Lover"
+      ],
+      "ncmMusicIds": [
+        "1361348080",
+        "1382781549"
+      ],
+      "qqMusicIds": [
+        "0032UZe62rZk9K"
+      ],
+      "appleMusicIds": [
+        "1468058706"
+      ],
+      "spotifyIds": [
+        "2Rk4JlNc2TPmZe2af99d45"
+      ],
+      "isrcs": [
+        "USUG11901494"
+      ],
+      "authorIds": [
+        "108002475",
+        "132769718",
+        "207428447",
+        "250306205",
+        "34237075",
+        "50747104"
+      ],
+      "authorUsernames": [
+        "SteamFinder",
+        "Xionghaizi001",
+        "Y-CIAO",
+        "apoint123",
+        "kid1412520",
+        "kid141252010"
+      ],
+      "lyrics": "<omitted>",
+      "format": "ttml"
+    }
+  }
+  ```
+
+</details>
