@@ -343,11 +343,14 @@ export class LyricLineEl extends LyricLineBase {
 		const subElements: HTMLSpanElement[] = [];
 		const romanWord = word.romanWord?.trim() ?? "";
 		const wordContainer = hasRubyLine
-			? document.createElement("div")
+			? document.createElement("span")
 			: mainWordEl;
+		const wordTextContainer = hasRubyLine
+			? document.createElement("span")
+			: wordContainer;
 
 		if (hasRubyLine) {
-			const rubyWordEl = document.createElement("div");
+			const rubyWordEl = document.createElement("span");
 			const rubySegments = this.getRubySegments(word);
 			for (const ruby of rubySegments) {
 				const rubyPartEl = document.createElement("span");
@@ -359,6 +362,8 @@ export class LyricLineEl extends LyricLineBase {
 			rubyWordEl.classList.add(styles.rubyWord);
 			mainWordEl.classList.add(styles.wordWithRuby);
 			wordContainer.classList.add(styles.wordBody);
+			wordTextContainer.classList.add(styles.rubyBaseWord);
+			wordContainer.appendChild(wordTextContainer);
 			mainWordEl.appendChild(rubyWordEl);
 			mainWordEl.appendChild(wordContainer);
 		}
@@ -376,23 +381,23 @@ export class LyricLineEl extends LyricLineBase {
 					const charEl = document.createElement("span");
 					charEl.textContent = segment;
 					subElements.push(charEl);
-					wordContainer.appendChild(charEl);
+					wordTextContainer.appendChild(charEl);
 				}
 			} else {
 				for (const segment of Array.from(trimmedWord)) {
 					const charEl = document.createElement("span");
 					charEl.textContent = segment;
 					subElements.push(charEl);
-					wordContainer.appendChild(charEl);
+					wordTextContainer.appendChild(charEl);
 				}
 			}
 		} else {
 			if (hasRomanLine) {
 				const wordEl = document.createElement("div");
 				wordEl.textContent = displayWord.trim();
-				wordContainer.appendChild(wordEl);
+				wordTextContainer.appendChild(wordEl);
 			} else if (romanWord.length === 0) {
-				wordContainer.textContent = displayWord.trim();
+				wordTextContainer.textContent = displayWord.trim();
 			}
 		}
 

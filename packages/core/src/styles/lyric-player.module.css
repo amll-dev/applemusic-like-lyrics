@@ -113,8 +113,15 @@
 
 	.wordBody {
 		display: flex;
-		flex-direction: row;
+		flex-direction: column;
 		align-items: center;
+	}
+
+	.rubyBaseWord {
+		display: inline-flex;
+		flex-wrap: nowrap;
+		white-space: nowrap;
+		justify-content: center;
 	}
 
 	& > span,
