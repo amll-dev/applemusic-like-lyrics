@@ -703,6 +703,7 @@ components:
       properties:
         status:
           type: integer
+          enum: [400, 401, 404, 405, 429, 500, 502]
           description: HTTP 状态码
           example: 400
         error:
