@@ -1,3 +1,5 @@
+@import "monaco-editor/min/vs/editor/editor.main.css";
+
 .amll-api-card {
 	display: flex;
 	align-items: center;
@@ -102,8 +104,8 @@
 	width: var(--api-drawer-width, 400px);
 	max-width: calc(100vw - clamp(20px, 6vw, 60px));
 	background: color-mix(in srgb, var(--sl-color-bg) 85%, transparent);
-	backdrop-filter: blur(20px) saturate(150%);
 	-webkit-backdrop-filter: blur(20px) saturate(150%);
+	backdrop-filter: blur(20px) saturate(150%);
 	border: 1px solid var(--amll-muted-border);
 	border-radius: var(--amll-radius);
 	box-shadow: none;
@@ -150,8 +152,8 @@
 	background: transparent;
 	position: sticky;
 	top: 0;
-	backdrop-filter: blur(10px);
 	-webkit-backdrop-filter: blur(10px);
+	backdrop-filter: blur(10px);
 	z-index: 10;
 }
 
@@ -508,8 +510,8 @@
 	gap: 6px;
 	padding: 5px 9px;
 	background: var(--amll-tooltip-bg);
-	backdrop-filter: blur(14px);
 	-webkit-backdrop-filter: blur(14px);
+	backdrop-filter: blur(14px);
 	border: 1px solid var(--amll-tooltip-border);
 	border-radius: 6px;
 	box-shadow: var(--amll-tooltip-shadow);
@@ -742,8 +744,8 @@
 	position: sticky;
 	top: 0;
 	background: color-mix(in srgb, var(--sl-color-bg) 85%, transparent);
-	backdrop-filter: blur(8px);
 	-webkit-backdrop-filter: blur(8px);
+	backdrop-filter: blur(8px);
 	padding: 0.6rem 0.8rem;
 	font-weight: 700;
 	color: var(--sl-color-text-accent);
@@ -842,8 +844,8 @@
 	border: 1px solid var(--amll-muted-border);
 	border-radius: 0.5rem;
 	box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
-	backdrop-filter: blur(12px);
 	-webkit-backdrop-filter: blur(12px);
+	backdrop-filter: blur(12px);
 	padding: 4px;
 	overflow: hidden;
 }
@@ -892,8 +894,8 @@ html body .Toastify__toast {
 	font-size: var(--sl-text-xs);
 	border: 1px solid var(--amll-muted-border);
 	box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
-	backdrop-filter: blur(16px);
 	-webkit-backdrop-filter: blur(16px);
+	backdrop-filter: blur(16px);
 }
 
 html body .Toastify__toast-theme--dark {

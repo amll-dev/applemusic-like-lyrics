@@ -19,6 +19,7 @@ body {
 
 header.header,
 #starlight__mobile-toc {
+	-webkit-backdrop-filter: blur(18px) saturate(150%);
 	backdrop-filter: blur(18px) saturate(150%);
 }
 

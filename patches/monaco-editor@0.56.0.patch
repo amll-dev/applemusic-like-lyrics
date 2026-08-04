@@ -1,12 +1,13 @@
 diff --git a/package.json b/package.json
-index d6741bfa2327ba28d178e8064512af29c4e0c49b..ad8179d9b3ce58649b7d2f00e20aec60daa3fe47 100644
+index d6741bfa2327ba28d178e8064512af29c4e0c49b..65cf3266e00738072dfb72b78b8badf50e6cef48 100644
 --- a/package.json
 +++ b/package.json
-@@ -42,6 +42,7 @@
+@@ -42,6 +42,8 @@
        "import": "./esm/vs/index.js",
        "require": "./min/vs/index.js"
      },
 +    "./esm/*": "./esm/*",
++    "./min/*": "./min/*",
      "./*.js": "./esm/vs/*.js",
      "./*": "./esm/vs/*.js"
    },

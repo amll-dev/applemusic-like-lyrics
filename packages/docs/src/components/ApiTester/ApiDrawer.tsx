@@ -11,6 +11,8 @@ import {
 	Trash2,
 	X,
 } from "lucide-react";
+import editorWorker from "monaco-editor/esm/vs/editor/editor.worker?worker";
+import jsonWorker from "monaco-editor/esm/vs/language/json/json.worker?worker";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { API_BASE_URL } from "#core/configs/index.ts";
@@ -19,6 +21,15 @@ import { toast } from "../Toast";
 import { Tooltip } from "../Tooltip";
 
 if (typeof window !== "undefined") {
+	self.MonacoEnvironment = {
+		getWorker(_WorkerId, label) {
+			if (label === "json") {
+				return new jsonWorker();
+			}
+			return new editorWorker();
+		},
+	};
+
 	Promise.all([
 		import("monaco-editor/esm/vs/editor/editor.api.js"),
 		import(
@@ -362,10 +373,13 @@ export function ApiDrawer() {
 			const rawText = await response.text();
 			let dataFormatted = rawText;
 			const contentLength = response.headers.get("content-length");
-			const parsedContentLength = contentLength ? parseInt(contentLength, 10) : NaN;
-			const dataSize = !Number.isNaN(parsedContentLength) && parsedContentLength >= 0
-				? parsedContentLength
-				: new TextEncoder().encode(rawText).byteLength;
+			const parsedContentLength = contentLength
+				? parseInt(contentLength, 10)
+				: NaN;
+			const dataSize =
+				!Number.isNaN(parsedContentLength) && parsedContentLength >= 0
+					? parsedContentLength
+					: new TextEncoder().encode(rawText).byteLength;
 
 			if (rawText.trim()) {
 				try {
