@@ -66,7 +66,7 @@ AMLL TTML API 对单个 IP 的请求频率进行了限制
 AMLL TTML API 有以下三种响应结构
 
 1. **原生 API 包装响应 `ApiResponse<T>`**（适用于 [/native](native) 接口）：
-   统一采用 `ApiResponse<T>` 结构包装。正常响应时 `status` 固定为 `200`，`data` 泛型包含具体的业务数据主体；请求失败时返回 `ErrorResponse` 模型
+   统一采用 `ApiResponse<T>` 可辨识联合类型包装。请求成功时返回 `SuccessResponse<T>` 模型（`status: 200`）；请求失败时返回 `ErrorResponse` 模型
 2. **LrcLib 兼容响应**（适用于 [/lrclib](lrclib) 接口）：
    为兼容 LrcLib 客户端与插件协议，响应直接返回歌曲对象或歌曲对象数组，不增加额外的数据包装
 3. **管理与状态响应**（适用于 [/system](system) 接口）：
@@ -74,21 +74,34 @@ AMLL TTML API 有以下三种响应结构
 
 ---
 
-## 原生 API 包装模型 `ApiResponse<T>`
+## 原生 API 响应模型 `ApiResponse<T>`
 
-原生接口在请求成功时，均统一使用 `ApiResponse<T>` 泛型接口包装数据
+原生接口统一使用 `ApiResponse<T>` 泛型可辨识联合类型包装响应数据
 
 ```typescript
-export interface ApiResponse<T> {
+/** 成功响应模型 */
+export interface SuccessResponse<T> {
   /** 响应状态码，成功时固定为 200 */
   status: 200;
   /** 具体的业务响应数据 */
   data: T;
 }
+
+/** 错误响应模型 */
+export interface ErrorResponse {
+  /** HTTP 状态码 */
+  status: 400 | 401 | 404 | 405 | 429 | 500 | 502;
+  /** 错误简述 (如 "Bad Request", "Unauthorized", "Not Found") */
+  error: string;
+  /** 详细的错误原因说明 */
+  message: string;
+}
+
+/** 原生 API 响应类型 */
+export type ApiResponse<T> = SuccessResponse<T> | ErrorResponse;
 ```
 
-- `status`: 响应状态码，固定为 `200`
-- `data`: 泛型业务数据载荷。例如在 [搜索接口](native#搜索歌词) 中 `T` 为 `{ items: SongItem[] }`；在 [获取歌词接口](native#获取歌词) 中 `T` 为 [SongItem](#歌曲元数据与歌词模型-songitem)
+- `SuccessResponse<T>`: 成功响应模型，`data` 为泛型业务载荷。例如在 [搜索接口](native#搜索歌词) 中 `T` 为 `{ items: SongItem[] }`；在 [获取歌词接口](native#获取歌词) 中 `T` 为 [SongItem](#歌曲元数据与歌词模型-songitem)
 
 ---
 
@@ -202,40 +215,14 @@ export interface SongItem {
 
 ---
 
-## 错误响应模型 `ErrorResponse`
-
-请求失败时返回的错误响应
-
-```typescript
-export interface ErrorResponse {
-  /** HTTP 状态码 */
-  status: number;
-  /** 错误简述 (如 "Bad Request", "Unauthorized", "Not Found") */
-  error: string;
-  /** 详细的错误原因说明 */
-  message: string;
-}
-```
-
-<details>
-  <summary>示例响应</summary>
-
-  ```json
-  {
-    "status": 401,
-    "error": "Unauthorized",
-    "message": "Invalid or missing authorization token."
-  }
-  ```
-</details>
-
-### 全局错误码
+## 全局错误码
 
 | 状态码 | 业务场景                                           | 处理建议                                                              |
 | ------ | -------------------------------------------------- | --------------------------------------------------------------------- |
 | `400`  | 参数验证失败（未传入有效参数、不支持的 format 等） | 检查请求参数是否正确                                                  |
 | `401`  | 鉴权失败（用于需要 Secret 的接口）                 | 检查请求头是否包含有效的凭证                                          |
 | `404`  | 找不到对应的歌词或路由不存在                       | 检查传入的 ID 或搜索条件是否正确                                      |
+| `405`  | 请求方法不支持                                     | 检查 HTTP 请求方法是否与接口定义一致                                  |
 | `429`  | 请求频率过高，触发了 API 限流保护                  | 降低请求频率，建议使用客户端防抖/节流或退避重试                       |
 | `500`  | 内部服务器错误                                     | 我们内部的问题，你可以稍后再试，或者打开一个 Issue 来向我们报告此问题 |
 | `502`  | 网关错误                                           | 数据源不稳定，建议稍后重试                                            |

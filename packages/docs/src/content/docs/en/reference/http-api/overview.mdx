@@ -66,7 +66,7 @@ We provide a standard OpenAPI specification file that you can download and impor
 The AMLL TTML API uses three response structures:
 
 1. **Native API Wrapped Response `ApiResponse<T>`** (used for [/native](native) endpoints):
-   Wrapped uniformly in an `ApiResponse<T>` structure. Successful responses fix `status` to `200`, with `data` containing business data. Failed requests return an `ErrorResponse` model.
+   Wrapped in an `ApiResponse<T>` discriminated union. Returns `SuccessResponse<T>` (`status: 200`) on success, and `ErrorResponse` on failure.
 2. **LrcLib Compatible Response** (used for [/lrclib](lrclib) endpoints):
    To ensure compatibility with LrcLib clients and plugins, responses directly return song objects or arrays of song objects without extra wrapper layers.
 3. **Management & Status Response** (used for [/system](system) endpoints):
@@ -74,21 +74,34 @@ The AMLL TTML API uses three response structures:
 
 ---
 
-## Native API Wrapper Model `ApiResponse<T>`
+## Native API Response Model `ApiResponse<T>`
 
-Native endpoints use the `ApiResponse<T>` generic interface to wrap data on successful requests:
+Native endpoints use the generic `ApiResponse<T>` discriminated union type to wrap response data:
 
 ```typescript
-export interface ApiResponse<T> {
+/** Successful Response Model */
+export interface SuccessResponse<T> {
   /** Response status code, fixed to 200 on success */
   status: 200;
   /** Detailed business response payload */
   data: T;
 }
+
+/** Error Response Model */
+export interface ErrorResponse {
+  /** HTTP status code */
+  status: 400 | 401 | 404 | 405 | 429 | 500 | 502;
+  /** Short error title (e.g. "Bad Request", "Unauthorized", "Not Found") */
+  error: string;
+  /** Detailed error message */
+  message: string;
+}
+
+/** Native API Response Type */
+export type ApiResponse<T> = SuccessResponse<T> | ErrorResponse;
 ```
 
-- `status`: Response status code, fixed to `200`
-- `data`: Generic business data payload. E.g., in the [Search Endpoint](native#search-lyrics), `T` is `{ items: SongItem[] }`; in the [Get Lyric Endpoint](native#get-lyric), `T` is [SongItem](#song-metadata--lyric-model-songitem)
+- `SuccessResponse<T>`: Successful response model, `data` contains generic business data payload. E.g., in the [Search Endpoint](native#search-lyrics), `T` is `{ items: SongItem[] }`; in the [Get Lyric Endpoint](native#get-lyric), `T` is [SongItem](#song-metadata--lyric-model-songitem)
 
 ---
 
@@ -202,40 +215,14 @@ export interface SongItem {
 
 ---
 
-## Error Response Model `ErrorResponse`
-
-Error response model returned on request failures:
-
-```typescript
-export interface ErrorResponse {
-  /** HTTP status code */
-  status: number;
-  /** Short error title (e.g. "Bad Request", "Unauthorized", "Not Found") */
-  error: string;
-  /** Detailed error message */
-  message: string;
-}
-```
-
-<details>
-  <summary>Example Response</summary>
-
-  ```json
-  {
-    "status": 401,
-    "error": "Unauthorized",
-    "message": "Invalid or missing authorization token."
-  }
-  ```
-</details>
-
-### Global Error Codes
+## Global Error Codes
 
 | Status Code | Business Scenario                                                                | Recommendation                                                            |
 | ----------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
 | `400`       | Parameter validation failed (missing valid parameters, unsupported format, etc.) | Check request parameters                                                  |
 | `401`       | Authentication failed (for endpoints requiring Secret)                           | Check if request header includes a valid token                            |
 | `404`       | Lyric not found or route does not exist                                          | Check if provided ID or search query is correct                           |
+| `405`       | Request method not allowed                                                       | Check if the HTTP request method matches the endpoint definition          |
 | `429`       | Request rate limit exceeded                                                      | Lower request frequency, use client-side debouncing/throttling or retries |
 | `500`       | Internal server error                                                            | Internal server issue, try again later or open an Issue to report         |
 | `502`       | Gateway error                                                                    | Data source unstable, please try again later                              |

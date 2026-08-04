@@ -46,7 +46,7 @@ type SearchLyricsResponse = ApiResponse<{
 ```
 
 **Field Descriptions:**
-- `ApiResponse<T>`: Global generic response wrapper, see [ApiResponse Wrapper Model](overview#native-api-wrapper-model-apiresponset)
+- `ApiResponse<T>`: Global generic response wrapper, see [ApiResponse Model](overview#native-api-response-model-apiresponset)
 - `items`: List of matched songs, element type is [SongItem Model](overview#song-metadata--lyric-model-songitem)
   - `lyrics` is fixed to `undefined` for each item in search results.
   - `matchContext` is present with highlighted `snippet` only when the query matches lyric text.
@@ -167,7 +167,7 @@ type GetLyricResponse = ApiResponse<SongItem>;
 ```
 
 **Related Model Description:**
-- `ApiResponse<T>`: Generic response wrapper, see [ApiResponse Wrapper Model](overview#native-api-wrapper-model-apiresponset)
+- `ApiResponse<T>`: Generic response wrapper, see [ApiResponse Model](overview#native-api-response-model-apiresponset)
 - `data`: Song metadata and complete lyric object of type [SongItem Model](overview#song-metadata--lyric-model-songitem), containing full `lyrics` TTML string
 
 <details>

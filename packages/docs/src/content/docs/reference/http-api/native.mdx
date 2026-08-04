@@ -46,7 +46,7 @@ type SearchLyricsResponse = ApiResponse<{
 ```
 
 **字段说明：**
-- `ApiResponse<T>`: 全局泛型响应包装结构，详见 [ApiResponse 包装模型](overview#原生-api-包装模型-apiresponset)
+- `ApiResponse<T>`: 全局泛型响应包装结构，详见 [ApiResponse 模型](overview#原生-api-响应模型-apiresponset)
 - `items`: 搜索到的歌曲列表，元素类型为 [SongItem 模型](overview#歌曲元数据与歌词模型-songitem)
   - 搜索结果中每项的 `lyrics` 固定为 `undefined`
   - 仅在歌词正文包含搜索词时，`matchContext` 存在且包含 `snippet` 高亮代码片段
@@ -167,7 +167,7 @@ type GetLyricResponse = ApiResponse<SongItem>;
 ```
 
 **关联模型说明：**
-- `ApiResponse<T>`: 全局泛型响应包装结构，详见 [ApiResponse 包装模型](overview#原生-api-包装模型-apiresponset)
+- `ApiResponse<T>`: 全局泛型响应包装结构，详见 [ApiResponse 模型](overview#原生-api-响应模型-apiresponset)
 - `data`: 歌曲及完整歌词元数据，类型为 [SongItem 模型](overview#歌曲元数据与歌词模型-songitem)，包含完整的 `lyrics` TTML 字符串
 
 <details>
