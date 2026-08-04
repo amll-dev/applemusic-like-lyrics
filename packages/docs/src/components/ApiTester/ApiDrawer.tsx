@@ -361,13 +361,16 @@ export function ApiDrawer() {
 
 			const rawText = await response.text();
 			let dataFormatted = rawText;
-			let dataSize = new TextEncoder().encode(rawText).byteLength;
+			const contentLength = response.headers.get("content-length");
+			const parsedContentLength = contentLength ? parseInt(contentLength, 10) : NaN;
+			const dataSize = !Number.isNaN(parsedContentLength) && parsedContentLength >= 0
+				? parsedContentLength
+				: new TextEncoder().encode(rawText).byteLength;
 
 			if (rawText.trim()) {
 				try {
 					const json = JSON.parse(rawText);
 					dataFormatted = JSON.stringify(json, null, 2);
-					dataSize = new TextEncoder().encode(dataFormatted).byteLength;
 				} catch {
 					dataFormatted = rawText;
 				}
