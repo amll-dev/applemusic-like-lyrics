@@ -17,6 +17,7 @@ import {
 	type LyricDataConfig,
 	LyricDataManager,
 } from "./lyric-data-manager.ts";
+import { type ScrollInputType, ScrollInteractionEngine } from "./scroll.ts";
 import { getPosYSpringPolicy } from "./spring";
 
 export type { LyricLineBase } from "./line.ts";
@@ -101,21 +102,11 @@ interface PlayerTimelineState {
  * 这部分状态描述用户手势/滚轮滚动产生的临时偏移，以及当前允许滚动的范围。
  */
 interface PlayerScrollState {
-	/** 允许的滚动偏移范围 */
-	scrollBoundary: {
-		/** 允许的最小偏移量 */
-		minOffset: number;
-		/** 允许的最大偏移量 */
-		maxOffset: number;
-	};
 	/** 当前用户滚动带来的额外偏移量 */
 	scrollOffset: number;
-	/** 是否允许用户通过手势或滚轮滚动歌词视图 */
-	allowScroll: boolean;
 	/** 是否处于用户滚动过，尚未回归自动对齐的状态 */
-	isScrolled: boolean;
-	/** 是否正在进行滚动交互或惯性滚动 */
-	isUserScrolling: boolean;
+	isAutoAlignSuspended: boolean;
+	isTouchScrolled: boolean;
 }
 
 /**
@@ -180,29 +171,12 @@ export abstract class LyricPlayerBase
 	protected enableBlur = true;
 	protected enableScale = true;
 	protected hidePassedLines = false;
+
+	protected scrollEngine: ScrollInteractionEngine;
 	protected scrollState: PlayerScrollState = {
-		scrollBoundary: { minOffset: 0, maxOffset: 0 },
 		scrollOffset: 0,
-		allowScroll: true,
-		isScrolled: false,
-		isUserScrolling: false,
-	};
-
-	/** 5秒后恢复自动滚动对齐的定时器 */
-	private _scrolledHandler: ReturnType<typeof setTimeout> | undefined;
-
-	/** 惯性滚动动画帧的 ID */
-	private _inertiaRafId: number = 0;
-
-	/** 触摸和手势滚动的瞬时计算状态 */
-	private _touchGestureState = {
-		startScrollY: 0,
-		startTouchPosY: 0,
-		startTouchStartX: 0,
-		startTouchStartY: 0,
-		lastMoveY: 0,
-		startScrollTime: 0,
-		scrollSpeed: 0,
+		isAutoAlignSuspended: false,
+		isTouchScrolled: false,
 	};
 
 	public currentLyricGroups: LyricLineGroupBase[] = [];
@@ -319,195 +293,26 @@ export abstract class LyricPlayerBase
 		window.addEventListener("pageshow", this.onPageShow);
 		window.addEventListener("pagehide", this.onPageHide);
 
-		this.element.addEventListener("touchstart", this.onTouchStart, {
-			passive: false,
-		});
-		this.element.addEventListener("touchmove", this.onTouchMove, {
-			passive: false,
-		});
-		this.element.addEventListener("touchend", this.onTouchEnd, {
-			passive: false,
-		});
-		this.element.addEventListener("wheel", this.onWheel, {
-			passive: false,
+		this.scrollEngine = new ScrollInteractionEngine(this.element, {
+			onScrollUpdate: (offset: number, isContinuous: boolean) => {
+				this.scrollState.scrollOffset = offset;
+				this.calcLayout(true, isContinuous);
+			},
+			onInteractionStart: (type: ScrollInputType) => {
+				this.scrollState.isAutoAlignSuspended = true;
+				this.scrollState.isTouchScrolled = type === "touch";
+				this.calcLayout(true, false);
+			},
+			onInteractionEnd: () => {},
+			onAutoAlignResume: () => {
+				this.scrollState.isAutoAlignSuspended = false;
+				this.scrollState.isTouchScrolled = false;
+				this.scrollState.scrollOffset = 0;
+				this.scrollEngine.resetScroll(0);
+				this.calcLayout(false, false);
+			},
 		});
 	}
-
-	/**
-	 * 检查是否允许滚动，并重置 {@link _scrolledHandler}
-	 * @returns 是否允许本次滚动
-	 */
-	private checkAndBeginUserScroll(): boolean {
-		if (!this.scrollState.allowScroll) {
-			return false;
-		}
-
-		this.scrollState.isScrolled = true;
-		clearTimeout(this._scrolledHandler);
-
-		this._scrolledHandler = setTimeout(() => {
-			this.scrollState.isScrolled = false;
-			this.scrollState.scrollOffset = 0;
-		}, 5000);
-
-		return true;
-	}
-
-	/**
-	 * 结束一次滚动交互或惯性滚动
-	 */
-	private endUserScroll(): void {
-		this.scrollState.isUserScrolling = false;
-	}
-
-	/**
-	 * 将滚动偏移量限制在当前允许的边界内
-	 */
-	private clampScrollOffset(): void {
-		this.scrollState.scrollOffset = clamp(
-			this.scrollState.scrollOffset,
-			this.scrollState.scrollBoundary.minOffset,
-			this.scrollState.scrollBoundary.maxOffset,
-		);
-	}
-
-	/**
-	 * 触摸开始事件处理器
-	 */
-	private onTouchStart = (evt: TouchEvent) => {
-		// 打断未结束的惯性滚动动画
-		if (this._inertiaRafId) {
-			cancelAnimationFrame(this._inertiaRafId);
-			this._inertiaRafId = 0;
-		}
-
-		if (!this.checkAndBeginUserScroll()) return;
-
-		this.scrollState.isUserScrolling = true;
-		evt.preventDefault();
-
-		const touch = evt.touches[0];
-		const state = this._touchGestureState;
-
-		state.startScrollY = this.scrollState.scrollOffset;
-		state.startTouchPosY = touch.screenY;
-		state.lastMoveY = touch.screenY;
-		state.startTouchStartX = touch.screenX;
-		state.startTouchStartY = touch.screenY;
-		state.startScrollTime = Date.now();
-		state.scrollSpeed = 0;
-
-		this.calcLayout(true, true);
-	};
-
-	/**
-	 * 触摸滑动事件处理器
-	 */
-	private onTouchMove = (evt: TouchEvent) => {
-		if (!this.checkAndBeginUserScroll()) return;
-		evt.preventDefault();
-
-		const currentY = evt.touches[0].screenY;
-		const state = this._touchGestureState;
-
-		const deltaY = currentY - state.startTouchPosY;
-		this.scrollState.scrollOffset = state.startScrollY - deltaY;
-		this.clampScrollOffset();
-
-		const now = Date.now();
-		const dt = now - state.startScrollTime;
-		if (dt > 0) {
-			state.scrollSpeed = (currentY - state.lastMoveY) / dt;
-		}
-		state.lastMoveY = currentY;
-		state.startScrollTime = now;
-
-		this.calcLayout(true, true);
-	};
-
-	/**
-	 * 触摸结束事件处理器
-	 */
-	private onTouchEnd = (evt: TouchEvent) => {
-		if (!this.checkAndBeginUserScroll()) {
-			this.scrollState.isUserScrolling = false;
-			return;
-		}
-		evt.preventDefault();
-
-		const touch = evt.changedTouches[0];
-		const state = this._touchGestureState;
-
-		const moveX = Math.abs(touch.screenX - state.startTouchStartX);
-		const moveY = Math.abs(touch.screenY - state.startTouchStartY);
-
-		if (moveX < 10 && moveY < 10) {
-			const target = document.elementFromPoint(touch.clientX, touch.clientY);
-			if (target instanceof HTMLElement && this.element.contains(target)) {
-				target.click();
-			}
-			this.endUserScroll();
-			return;
-		}
-
-		state.startTouchPosY = 0;
-
-		if (Math.abs(state.scrollSpeed) < 0.1) {
-			state.scrollSpeed = 0;
-		}
-
-		let lastFrameTime = performance.now();
-
-		const onScrollFrame = (time: number) => {
-			if (!this.scrollState.allowScroll) {
-				this._inertiaRafId = 0;
-				this.endUserScroll();
-				return;
-			}
-
-			const dt = time - lastFrameTime;
-			lastFrameTime = time;
-
-			if (dt <= 0 || dt > 100) {
-				this._inertiaRafId = requestAnimationFrame(onScrollFrame);
-				return;
-			}
-
-			if (Math.abs(state.scrollSpeed) > 0.05) {
-				this.scrollState.scrollOffset -= state.scrollSpeed * dt;
-				this.clampScrollOffset();
-
-				const frictionFactor = 0.95 ** (dt / 16);
-				state.scrollSpeed *= frictionFactor;
-
-				this.calcLayout(true, true);
-				this._inertiaRafId = requestAnimationFrame(onScrollFrame);
-			} else {
-				this._inertiaRafId = 0;
-				this.endUserScroll();
-			}
-		};
-
-		this._inertiaRafId = requestAnimationFrame(onScrollFrame);
-	};
-
-	/**
-	 * 鼠标滚轮事件处理器
-	 */
-	private onWheel = (evt: WheelEvent) => {
-		if (!this.checkAndBeginUserScroll()) return;
-		evt.preventDefault();
-
-		if (evt.deltaMode === WheelEvent.DOM_DELTA_PIXEL) {
-			this.scrollState.scrollOffset += evt.deltaY;
-			this.clampScrollOffset();
-			this.calcLayout(true, false);
-		} else {
-			this.scrollState.scrollOffset += evt.deltaY * 50;
-			this.clampScrollOffset();
-			this.calcLayout(false, false);
-		}
-	};
 
 	/**
 	 * 设置文字动画的渐变宽度，单位以歌词行的主文字字体大小的倍数为单位，默认为 0.5，即一个全角字符的一半宽度
@@ -1134,7 +939,6 @@ export abstract class LyricPlayerBase
 			this.updateSpringParams(isInterludeActive);
 		}
 
-		let curPos = -this.scrollState.scrollOffset;
 		const targetAlignIndex = this.timelineState.scrollToIndex;
 		let isNextDuet = false;
 
@@ -1149,13 +953,10 @@ export abstract class LyricPlayerBase
 		const totalInterludeHeight =
 			this.layoutState.interludeDotsSize[1] + dotMargin * 2;
 
-		if (interlude && interlude.anchorLineIndex !== -1) {
-			curPos -= totalInterludeHeight;
-		}
-
 		// 避免一开始就让所有歌词行挤在一起
 		const LINE_HEIGHT_FALLBACK = this.size[1] / 5;
-		const scrollOffset = this.currentLyricGroups
+
+		const scrollOffsetToTarget = this.currentLyricGroups
 			.slice(0, targetAlignIndex)
 			.reduce(
 				(acc, group) =>
@@ -1163,34 +964,67 @@ export abstract class LyricPlayerBase
 				0,
 			);
 
-		this.scrollState.scrollBoundary.minOffset = -scrollOffset;
-		curPos -= scrollOffset;
-		curPos += this.size[1] * this.layoutState.alignPosition;
+		const totalGroupsHeight = this.currentLyricGroups.reduce(
+			(acc, group) =>
+				acc + (this.lyricGroupSize.get(group)?.[1] ?? LINE_HEIGHT_FALLBACK),
+			0,
+		);
 
 		const curGroup = this.currentLyricGroups[targetAlignIndex];
-		this.layoutState.targetAlignIndex = targetAlignIndex;
-
 		const isBottomFocused = targetAlignIndex === this.currentLyricGroups.length;
-		this.bottomLine.setFocused(isBottomFocused);
-
 		const targetLineHeight = curGroup
 			? (this.lyricGroupSize.get(curGroup)?.[1] ?? LINE_HEIGHT_FALLBACK)
 			: isBottomFocused
 				? this.bottomLine.lineSize[1]
 				: 0;
 
+		let anchorOffset = 0;
 		if (targetLineHeight > 0) {
 			switch (this.layoutState.alignAnchor) {
 				case LayoutAlignAnchor.Bottom:
-					curPos -= targetLineHeight;
+					anchorOffset = targetLineHeight;
 					break;
 				case LayoutAlignAnchor.Center:
-					curPos -= targetLineHeight / 2;
+					anchorOffset = targetLineHeight / 2;
 					break;
 				case LayoutAlignAnchor.Top:
+					anchorOffset = 0;
 					break;
 			}
 		}
+
+		const minOffset = Math.min(0, -scrollOffsetToTarget);
+
+		let basePosWithoutScroll =
+			-scrollOffsetToTarget +
+			this.size[1] * this.layoutState.alignPosition -
+			anchorOffset;
+
+		if (interlude && interlude.anchorLineIndex !== -1) {
+			basePosWithoutScroll -= totalInterludeHeight;
+		}
+
+		const rawMaxOffset =
+			basePosWithoutScroll + totalGroupsHeight - this.size[1] / 2;
+		const maxOffset = Math.max(0, rawMaxOffset);
+
+		this.scrollState.scrollOffset = this.scrollEngine.updateBoundary(
+			minOffset,
+			maxOffset,
+		);
+
+		let curPos = -this.scrollState.scrollOffset;
+
+		if (interlude && interlude.anchorLineIndex !== -1) {
+			curPos -= totalInterludeHeight;
+		}
+
+		curPos -= scrollOffsetToTarget;
+		curPos += this.size[1] * this.layoutState.alignPosition;
+		curPos -= anchorOffset;
+
+		this.layoutState.targetAlignIndex = targetAlignIndex;
+		this.bottomLine.setFocused(isBottomFocused);
 
 		const latestIndex = Math.max(...this.timelineState.bufferedGroups);
 		let delay = 0;
@@ -1240,7 +1074,7 @@ export abstract class LyricPlayerBase
 				blurLevel = this.enableBlur ? 5 : 0;
 				targetOpacity = 0;
 			} else {
-				if (this.enableBlur && !this.scrollState.isUserScrolling && !isActive) {
+				if (this.enableBlur && !this.scrollState.isTouchScrolled && !isActive) {
 					blurLevel = 1;
 					if (i < this.timelineState.scrollToIndex) {
 						blurLevel += Math.abs(this.timelineState.scrollToIndex - i) + 1;
@@ -1293,15 +1127,12 @@ export abstract class LyricPlayerBase
 			}
 		});
 
-		this.scrollState.scrollBoundary.maxOffset =
-			curPos + this.scrollState.scrollOffset - this.size[1] / 2;
-
 		const bottomIndex = this.currentLyricGroups.length;
 
 		let finalBottomBlur = 0;
 		if (
 			this.enableBlur &&
-			!this.scrollState.isUserScrolling &&
+			!this.scrollState.isAutoAlignSuspended &&
 			!isBottomFocused
 		) {
 			finalBottomBlur = 1;
@@ -1413,21 +1244,15 @@ export abstract class LyricPlayerBase
 		return this.bottomLine.getElement();
 	}
 	/**
-	 * 重置用户滚动状态
+	 * 重置用户滚动状态并恢复自动对齐
 	 *
-	 * 请在用户完成滚动点击跳转歌词时调用本事件再调用 `calcLayout` 以正确滚动到目标位置
+	 * 一个典型的使用场景是在用户滚动完毕、但歌词未自动归位时立刻归位
 	 */
 	resetScroll(): void {
-		if (this._inertiaRafId) {
-			cancelAnimationFrame(this._inertiaRafId);
-			this._inertiaRafId = 0;
-		}
-
-		clearTimeout(this._scrolledHandler);
-
-		this.scrollState.isScrolled = false;
+		this.scrollEngine.resetScroll(0);
+		this.scrollState.isAutoAlignSuspended = false;
+		this.scrollState.isTouchScrolled = false;
 		this.scrollState.scrollOffset = 0;
-		this.scrollState.isUserScrolling = false;
 	}
 	/**
 	 * 获取当前播放的、未经过优化和掩码处理的歌词数组
@@ -1475,18 +1300,7 @@ export abstract class LyricPlayerBase
 		return this.element;
 	}
 	dispose(): void {
-		this.element.removeEventListener("touchstart", this.onTouchStart);
-		this.element.removeEventListener("touchmove", this.onTouchMove);
-		this.element.removeEventListener("touchend", this.onTouchEnd);
-		this.element.removeEventListener("wheel", this.onWheel);
-
-		if (this._inertiaRafId) {
-			cancelAnimationFrame(this._inertiaRafId);
-			this._inertiaRafId = 0;
-		}
-
-		clearTimeout(this._scrolledHandler);
-
+		this.scrollEngine.dispose();
 		this.element.remove();
 		this.bottomLineObserver.disconnect();
 		window.removeEventListener("pageshow", this.onPageShow);

@@ -287,6 +287,8 @@
 :global(.amll-lyric-player) {
 	--lyric-line-padding-x: 1em;
 
+	touch-action: pan-x;
+
 	@media screen and (max-width: 500px) {
 		--lyric-line-padding-x: 20px;
 	}
