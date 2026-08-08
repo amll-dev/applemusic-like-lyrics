@@ -100,7 +100,11 @@ export class LyricLineGroup extends LyricLineGroupBase<LyricLineEl> {
 	override onLineSizeChange(size: [number, number]): void {
 		super.onLineSizeChange(size);
 		if (this.bgWrapper) {
-			this.lastBgHeight = this.bgWrapper.clientHeight || 0;
+			const newBgHeight = this.bgWrapper.clientHeight || 0;
+			if (this.lastBgHeight !== newBgHeight) {
+				this.lastBgHeight = newBgHeight;
+				this.lastBgSlideYNum = -9999;
+			}
 		}
 	}
 
@@ -176,8 +180,13 @@ export class LyricLineGroup extends LyricLineGroupBase<LyricLineEl> {
 			}
 
 			const bgStyle = this.bgWrapper.style;
-			const slideY = this.bgSlideY.getCurrentPosition();
+			const currentBgHeight = this.bgWrapper.clientHeight || 0;
+			if (currentBgHeight > 0 && this.lastBgHeight !== currentBgHeight) {
+				this.lastBgHeight = currentBgHeight;
+				this.lastBgSlideYNum = -9999;
+			}
 
+			const slideY = this.bgSlideY.getCurrentPosition();
 			if (Math.abs(slideY - this.lastBgSlideYNum) >= 0.001) {
 				this.lastBgSlideYNum = slideY;
 				const activeProgress = clamp01(1 - Math.abs(slideY) / 80);
@@ -186,12 +195,15 @@ export class LyricLineGroup extends LyricLineGroupBase<LyricLineEl> {
 					this.lyricPlayer.getAlwaysPostpositionBackground();
 				const shouldBgFirst = !alwaysPostposition && this.isBgFirst;
 
-				let finalTranslateYPx = (slideY / 100) * this.lastBgHeight;
+				const translateYPx = (slideY / 100) * this.lastBgHeight;
 				if (shouldBgFirst) {
-					finalTranslateYPx += -this.lastBgHeight * (1 - activeProgress);
+					const currentMarginTop = -this.lastBgHeight * (1 - activeProgress);
+					bgStyle.marginTop = `${currentMarginTop.toFixed(1)}px`;
+				} else {
+					bgStyle.marginTop = "";
 				}
 
-				bgStyle.transform = `translateY(${finalTranslateYPx.toFixed(1)}px) scale(${scaleStr})`;
+				bgStyle.transform = `translateY(${translateYPx.toFixed(1)}px) scale(${scaleStr})`;
 
 				const targetHiddenY = shouldBgFirst ? 80 : -80;
 				const isHidden =
