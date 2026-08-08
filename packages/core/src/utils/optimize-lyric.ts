@@ -218,6 +218,22 @@ function tryAdvanceStartTime(lines: LyricLine[]) {
 }
 
 /**
+ * 浅比对两个 OptimizeLyricOptions 的属性值是否完全一致
+ */
+export function areOptimizeOptionsEqual(
+	a: OptimizeLyricOptions = {},
+	b: OptimizeLyricOptions = {},
+): boolean {
+	const keysA = Object.keys(a) as (keyof OptimizeLyricOptions)[];
+	const keysB = Object.keys(b) as (keyof OptimizeLyricOptions)[];
+	if (keysA.length !== keysB.length) return false;
+	for (const key of keysA) {
+		if (a[key] !== b[key]) return false;
+	}
+	return true;
+}
+
+/**
  * 优化歌词行的展示效果
  *
  * 注意会直接原地修改入参，确保你已经提前深克隆了歌词行数组

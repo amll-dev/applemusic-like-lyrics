@@ -32,7 +32,17 @@ player.setCurrentTime(currentTime, true);
 player.update(0);
 ```
 
-在设置歌词时会执行歌词优化处理，因此这部分选项如需调整，应在 `setLyricLines` 之前调用 `setOptimizeOptions`。在 `setLyricLines` 之后修改不会自动重新处理已有歌词，需要重新设置歌词。
+设置或修改歌词优化选项会重新处理歌词并自动重建视图。你可以在 `setLyricLines` 之前调用 `setOptimizeOptions`，也可以在已有歌词时随时调用它。
+
+如果需要同时修改歌词优化选项、不雅用语掩码模式等多个配置，推荐使用 `updateLyricProcessConfig` 方法进行批量更新，以避免多次触发视图重建：
+
+```ts
+player.updateLyricProcessConfig({
+	optimizeOptions: { normalizeSpaces: true },
+	maskMode: "full-mask",
+	maskChar: "*",
+});
+```
 
 另外需要注意其中 `currentTime` 的单位是毫秒，且应为整数。`audio.currentTime` 单位为秒，所以要乘以 `1000`。
 

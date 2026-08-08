@@ -291,9 +291,7 @@ export class LyricLineEl extends LyricLineBase {
 		const roman = this.element.children[2] as HTMLDivElement;
 		// 非动态歌词，直接渲染整行与副行
 		if (this.lyricPlayer._getIsNonDynamic()) {
-			main.textContent = this.lyricLine.words
-				.map((w) => this.lyricPlayer.processObsceneWord(w))
-				.join("");
+			main.textContent = this.lyricLine.words.map((w) => w.word).join("");
 			this.setSubLinesText(trans, roman);
 			return;
 		}
@@ -368,7 +366,7 @@ export class LyricLineEl extends LyricLineBase {
 			mainWordEl.appendChild(wordContainer);
 		}
 
-		const displayWord = this.lyricPlayer.processObsceneWord(word);
+		const displayWord = word.word;
 
 		if (shouldEmphasize) {
 			mainWordEl.classList.add(styles.emphasize);

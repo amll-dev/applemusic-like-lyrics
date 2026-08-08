@@ -4,7 +4,6 @@
  * @author SteveXMH
  */
 
-import type { LyricLine } from "#interfaces";
 import "#styles/index.css";
 import { LyricPlayerBase } from "#lyric/base/index.ts";
 import type { LyricLineBase } from "#lyric/base/line.ts";
@@ -149,12 +148,17 @@ export class DomLyricPlayer extends LyricPlayerBase {
 	}
 
 	/**
-	 * 设置当前播放歌词，要注意传入后这个数组内的信息不得修改，否则会发生错误
-	 * @param lines 歌词数组
-	 * @param initialTime 初始时间，默认为 0
+	 * 重新构建歌词行和时间状态
+	 *
+	 * 一般用于在调用 {@link setLyricProcessConfig} 更新配置后手动刷新视图，
+	 * 或在外部样式/DOM 结构发生改变后重置歌词视图
+	 *
+	 * @param initialTime 重建后对齐的初始时间（毫秒），默认使用当前播放进度
 	 */
-	override setLyricLines(lines: LyricLine[], initialTime = 0): void {
-		super.setLyricLines(lines, initialTime);
+	public override rebuildLyricView(
+		initialTime: number = this.getCurrentTime(),
+	): void {
+		super.rebuildLyricView(initialTime);
 		if (this.hasDuetLine) {
 			this.element.classList.add(styles.hasDuetLine);
 		} else {
@@ -163,11 +167,6 @@ export class DomLyricPlayer extends LyricPlayerBase {
 		if (!this.supportMaskImage) {
 			this.element.style.setProperty("--amll-player-time", `${initialTime}`);
 		}
-
-		for (const group of this.currentLyricGroups) {
-			group.dispose();
-		}
-		this.currentLyricGroups = [];
 
 		let currentGroup: LyricLineGroup | null = null;
 

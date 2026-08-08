@@ -1,23 +1,26 @@
-import structuredClone from "@ungap/structured-clone";
 import type {
 	Disposable,
 	HasElement,
 	LyricLine,
-	LyricWord,
 	OptimizeLyricOptions,
 } from "#interfaces";
 import styles from "#styles/lyric-player.module.css";
 import { clamp, clampPositive } from "#utils/clamp.ts";
-import { optimizeLyricLines } from "#utils/optimize-lyric.ts";
+import { areOptimizeOptionsEqual } from "#utils/optimize-lyric.ts";
 import type { SpringParams } from "#utils/spring.ts";
 import { InterludeDots } from "../dom/interlude-dots.ts";
 import { BottomLineEl } from "./bottom-line.ts";
-import { LayoutAlignAnchor, MaskObsceneWordsMode } from "./consts.ts";
+import { LayoutAlignAnchor, type MaskObsceneWordsMode } from "./consts.ts";
 import type { LyricLineGroupBase } from "./group.ts";
 import type { LyricLineBase } from "./line.ts";
+import {
+	type LyricDataConfig,
+	LyricDataManager,
+} from "./lyric-data-manager.ts";
 import { getPosYSpringPolicy } from "./spring";
 
 export type { LyricLineBase } from "./line.ts";
+export type { LyricDataConfig } from "./lyric-data-manager.ts";
 
 /**
  * 播放器布局状态。
@@ -149,12 +152,20 @@ export abstract class LyricPlayerBase
 
 	/** @internal */
 	lyricGroupElementMap: WeakMap<Element, LyricLineGroupBase> = new WeakMap();
-	protected currentLyricLines: LyricLine[] = [];
-	protected processedLines: LyricLine[] = [];
 	protected lyricLinesIndexes: WeakMap<LyricLineBase, number> = new WeakMap();
-	protected isNonDynamic = false;
-	protected hasDuetLine = false;
 	protected disableSpring = false;
+
+	protected dataManager: LyricDataManager = new LyricDataManager();
+	protected get processedLines(): ReadonlyArray<LyricLine> {
+		return this.dataManager.getProcessedLines();
+	}
+	protected get isNonDynamic(): boolean {
+		return this.dataManager.getIsNonDynamic();
+	}
+	protected get hasDuetLine(): boolean {
+		return this.dataManager.getHasDuetLine();
+	}
+
 	protected layoutState: PlayerLayoutState = {
 		interludeDotsSize: [0, 0],
 		targetAlignIndex: 0,
@@ -168,9 +179,6 @@ export abstract class LyricPlayerBase
 	protected bottomLine: BottomLineEl = new BottomLineEl(this);
 	protected enableBlur = true;
 	protected enableScale = true;
-	protected maskObsceneWords: MaskObsceneWordsMode =
-		MaskObsceneWordsMode.Disabled;
-	protected maskObsceneWordChar = "*";
 	protected hidePassedLines = false;
 	protected scrollState: PlayerScrollState = {
 		scrollBoundary: { minOffset: 0, maxOffset: 0 },
@@ -201,7 +209,6 @@ export abstract class LyricPlayerBase
 	lyricGroupSize: WeakMap<LyricLineGroupBase, [number, number]> = new WeakMap();
 	readonly size: [number, number] = [0, 0];
 	protected isPageVisible = true;
-	protected optimizeOptions: OptimizeLyricOptions = {};
 
 	/** 是否强制让背景人声行始终后置（即始终在主歌词下方显示，不前置背景人声） */
 	protected alwaysPostpositionBackground = false;
@@ -567,29 +574,91 @@ export abstract class LyricPlayerBase
 	}
 
 	/**
+	 * 批量更新歌词处理配置，包括优化和掩码设置
+	 *
+	 * @remarks
+	 * 此方法不会自动重建歌词行和刷新视图，
+	 * 适用于在渲染前预设配置、批量初始化，或需要手动控制 DOM 刷新时机的场景
+	 * @param config 需要更新的配置集合
+	 * @see {@link LyricDataConfig}
+	 */
+	setLyricProcessConfig(config: LyricDataConfig): void {
+		this.dataManager.setConfig(config);
+	}
+
+	/**
+	 * 批量更新歌词处理配置，包括优化和掩码设置
+	 *
+	 * 可以调用此方法以避免多次单独设置处理配置导致的多次刷新开销
+	 * @remarks 在设置完成后会自动重建歌词行和刷新视图
+	 * @param config 需要更新的配置集合
+	 * @see {@link LyricDataConfig}
+	 */
+	updateLyricProcessConfig(config: LyricDataConfig): void {
+		const currentOptimize = this.dataManager.getOptimizeOptions();
+		const currentMaskMode = this.dataManager.getMaskMode();
+		const currentMaskChar = this.dataManager.getMaskChar();
+
+		const newOptimize =
+			config.optimizeOptions !== undefined
+				? config.optimizeOptions
+				: currentOptimize;
+		const newMaskMode =
+			config.maskMode !== undefined ? config.maskMode : currentMaskMode;
+		const newMaskChar =
+			config.maskChar !== undefined ? config.maskChar : currentMaskChar;
+
+		if (
+			newMaskMode === currentMaskMode &&
+			newMaskChar === currentMaskChar &&
+			areOptimizeOptionsEqual(newOptimize, currentOptimize)
+		) {
+			return;
+		}
+
+		this.dataManager.setConfig({
+			optimizeOptions: newOptimize,
+			maskMode: newMaskMode,
+			maskChar: newMaskChar,
+		});
+
+		if (this.dataManager.getRawLines().length > 0) {
+			this.rebuildLyricView(this.getCurrentTime());
+			this.calcLayout();
+		}
+	}
+
+	/**
 	 * 设置歌词中不雅用语的掩码模式
+	 * @remarks 在设置完成后会自动重建歌词行和刷新视图
 	 * @param mode 掩码模式
 	 * @see {@link MaskObsceneWordsMode}
 	 */
 	setMaskObsceneWords(mode: MaskObsceneWordsMode): void {
-		if (this.maskObsceneWords === mode) return;
-		this.maskObsceneWords = mode;
-		this.rebuildLyricLines();
-		this.calcLayout();
+		this.updateLyricProcessConfig({ maskMode: mode });
 	}
 
 	/**
 	 * 设置不雅用语掩码使用的字符，默认为 `*`
+	 * @remarks 在设置完成后会自动重建歌词行和刷新视图
 	 * @param char 单个字符，用于替换不雅用语中的字符
 	 */
 	setMaskObsceneWordChar(char: string): void {
 		const c = char.charAt(0) || "*";
-		if (this.maskObsceneWordChar === c) return;
-		this.maskObsceneWordChar = c;
-		if (this.maskObsceneWords !== MaskObsceneWordsMode.Disabled) {
-			this.rebuildLyricLines();
-			this.calcLayout();
-		}
+		this.updateLyricProcessConfig({ maskChar: c });
+	}
+
+	/**
+	 * 设置歌词的优化配置项，这些配置项默认全部开启
+	 * @remarks 在设置完成后会自动重建歌词行和刷新视图
+	 * @param options 优化配置选项
+	 * @see {@link OptimizeLyricOptions}
+	 */
+	setOptimizeOptions(options: OptimizeLyricOptions): void {
+		const currentOpts = this.dataManager.getOptimizeOptions();
+		this.updateLyricProcessConfig({
+			optimizeOptions: { ...currentOpts, ...options },
+		});
 	}
 
 	rebuildLyricLines(): void {
@@ -597,46 +666,7 @@ export abstract class LyricPlayerBase
 			group.rebuildAllLines();
 		}
 	}
-	/**
-	 * 根据当前配置处理不雅用语单词
-	 * @param word 单词对象
-	 * @internal
-	 */
-	processObsceneWord(word: LyricWord): string {
-		const text = word.word;
 
-		if (
-			!word.obscene ||
-			this.maskObsceneWords === MaskObsceneWordsMode.Disabled
-		) {
-			return text;
-		}
-
-		const maskChar = this.maskObsceneWordChar;
-
-		if (this.maskObsceneWords === MaskObsceneWordsMode.FullMask) {
-			return text.replace(/\S/g, maskChar);
-		}
-
-		if (this.maskObsceneWords === MaskObsceneWordsMode.PartialMask) {
-			const trimmed = text.trim();
-
-			if (trimmed.length <= 2) {
-				return text.replace(/\S/g, maskChar);
-			}
-
-			const startPos = text.indexOf(trimmed);
-			const endPos = startPos + trimmed.length - 1;
-
-			return (
-				text.slice(0, startPos + 1) +
-				text.slice(startPos + 1, endPos).replace(/\S/g, maskChar) +
-				text.slice(endPos)
-			);
-		}
-
-		return text;
-	}
 	/**
 	 * 设置目标歌词行的对齐方式，默认为 `center`
 	 *
@@ -692,17 +722,6 @@ export abstract class LyricPlayerBase
 	}
 
 	/**
-	 * 设置歌词的优化配置项，这些配置项默认全部开启
-	 *
-	 * 注意，如果在 `setLyricLines` 之后修改此配置，需要重新调用 `setLyricLines()` 才能对当前歌词生效
-	 * @param options 优化配置选项
-	 * @see {@link OptimizeLyricOptions}
-	 */
-	setOptimizeOptions(options: OptimizeLyricOptions): void {
-		this.optimizeOptions = { ...this.optimizeOptions, ...options };
-	}
-
-	/**
 	 * 设置当前播放歌词，要注意传入后这个数组内的信息不得修改，否则会发生错误
 	 * @param lines 歌词数组
 	 * @param initialTime 初始时间，默认为 0
@@ -712,36 +731,8 @@ export abstract class LyricPlayerBase
 			console.log("设置歌词行", lines, initialTime);
 		}
 
-		this.timelineState.initialLayoutFinished = true;
-		this.timelineState.lastCurrentTime = initialTime;
-		this.timelineState.currentTime = initialTime;
-
-		this.currentLyricLines = structuredClone(lines);
-		this.processedLines = structuredClone(this.currentLyricLines);
-		optimizeLyricLines(this.processedLines, this.optimizeOptions);
-
-		this.isNonDynamic = true;
-		for (const line of this.processedLines) {
-			if (line.words.length > 1) {
-				this.isNonDynamic = false;
-				break;
-			}
-		}
-
-		this.hasDuetLine = this.processedLines.some((line) => line.isDuet);
-
-		for (const group of this.currentLyricGroups) {
-			group.dispose();
-		}
-		this.currentLyricGroups = [];
-
-		this.interludeDots.setInterlude(undefined);
-		this.timelineState.hotGroups.clear();
-		this.timelineState.bufferedGroups.clear();
-
-		if (import.meta.env.DEV) {
-			console.log("歌词处理完成", this);
-		}
+		this.dataManager.setOriginalLines(lines);
+		this.rebuildLyricView(initialTime);
 	}
 
 	/**
@@ -798,6 +789,33 @@ export abstract class LyricPlayerBase
 
 		if (shouldResetScroll) this.resetScroll();
 		if (shouldLayout) this.calcLayout();
+	}
+
+	/**
+	 * 重新构建歌词行和时间状态
+	 *
+	 * 一般用于在调用 {@link setLyricProcessConfig} 更新配置后手动刷新视图，
+	 * 或在外部样式/DOM 结构发生改变后重置歌词视图
+	 *
+	 * @param initialTime 重建后对齐的初始时间（毫秒），默认使用当前播放进度
+	 */
+	public rebuildLyricView(initialTime: number = this.getCurrentTime()): void {
+		this.timelineState.initialLayoutFinished = true;
+		this.timelineState.lastCurrentTime = initialTime;
+		this.timelineState.currentTime = initialTime;
+
+		for (const group of this.currentLyricGroups) {
+			group.dispose();
+		}
+		this.currentLyricGroups = [];
+
+		this.interludeDots.setInterlude(undefined);
+		this.timelineState.hotGroups.clear();
+		this.timelineState.bufferedGroups.clear();
+
+		if (import.meta.env.DEV) {
+			console.log("歌词视图重建完成", this);
+		}
 	}
 
 	/**
@@ -1412,13 +1430,13 @@ export abstract class LyricPlayerBase
 		this.scrollState.isUserScrolling = false;
 	}
 	/**
-	 * 获取当前歌词数组
+	 * 获取当前播放的、未经过优化和掩码处理的歌词数组
 	 *
 	 * 一般和最后调用 `setLyricLines` 给予的参数一样
 	 * @returns 当前歌词数组
 	 */
-	getLyricLines(): LyricLine[] {
-		return this.currentLyricLines;
+	getLyricLines(): ReadonlyArray<LyricLine> {
+		return this.dataManager.getRawLines();
 	}
 	/**
 	 * 获取当前歌词的播放位置

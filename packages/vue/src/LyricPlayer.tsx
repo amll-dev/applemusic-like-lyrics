@@ -107,6 +107,13 @@ const lyricPlayerProps = {
 		default: MaskObsceneWordsMode.Disabled,
 	},
 	/**
+	 * 设置不雅用语掩码使用的字符，默认为 `*`
+	 */
+	maskObsceneWordChar: {
+		type: String,
+		default: "*",
+	},
+	/**
 	 * 设置歌词优化选项
 	 */
 	optimizeOptions: {
@@ -219,6 +226,7 @@ export const LyricPlayer = defineComponent({
 	setup(props, { expose, emit, attrs, slots }) {
 		const wrapperRef = useTemplateRef<HTMLDivElement>("wrapper-ref");
 		const playerRef = ref<CoreLyricPlayer>();
+		let prevLyricLines: LyricLine[] | undefined;
 
 		const lineClickHandler = (e: Event) =>
 			emit("lineClick", e as LyricLineMouseEvent);
@@ -269,6 +277,42 @@ export const LyricPlayer = defineComponent({
 			}
 		});
 
+		watch(
+			[
+				playerRef,
+				() => props.lyricLines,
+				() => props.optimizeOptions,
+				() => props.maskObsceneWordsMode,
+				() => props.maskObsceneWordChar,
+			],
+			([player, lyricLines]) => {
+				if (!player) return;
+
+				const isLyricLinesChanged = lyricLines !== prevLyricLines;
+				prevLyricLines = lyricLines;
+
+				if (isLyricLinesChanged) {
+					player.setLyricProcessConfig({
+						optimizeOptions: props.optimizeOptions,
+						maskMode: props.maskObsceneWordsMode,
+						maskChar: props.maskObsceneWordChar,
+					});
+					player.setLyricLines(lyricLines ?? []);
+
+					if (props.currentTime !== undefined) {
+						player.setCurrentTime(props.currentTime, true);
+					}
+				} else {
+					player.updateLyricProcessConfig({
+						optimizeOptions: props.optimizeOptions,
+						maskMode: props.maskObsceneWordsMode,
+						maskChar: props.maskObsceneWordChar,
+					});
+				}
+			},
+			{ immediate: true },
+		);
+
 		watchEffect(() => {
 			if (props.playing !== undefined) {
 				if (props.playing) {
@@ -287,12 +331,6 @@ export const LyricPlayer = defineComponent({
 		watchEffect(() => {
 			if (props.hidePassedLines !== undefined)
 				playerRef.value?.setHidePassedLines(props.hidePassedLines);
-		});
-
-		watchEffect(() => {
-			if (props.maskObsceneWordsMode !== undefined)
-				playerRef.value?.setMaskObsceneWords(props.maskObsceneWordsMode);
-			else playerRef.value?.setMaskObsceneWords(MaskObsceneWordsMode.Disabled);
 		});
 
 		watchEffect(() => {
@@ -317,28 +355,6 @@ export const LyricPlayer = defineComponent({
 				playerRef.value?.setEnableScale(props.enableScale);
 			else playerRef.value?.setEnableScale(true);
 		});
-
-		watch(
-			[playerRef, () => props.lyricLines, () => props.optimizeOptions],
-			([player, lyricLines, optimizeOptions]) => {
-				if (!player) return;
-
-				if (optimizeOptions !== undefined) {
-					player.setOptimizeOptions(optimizeOptions);
-				}
-
-				if (lyricLines !== undefined) {
-					player.setLyricLines(lyricLines);
-				} else {
-					player.setLyricLines([]);
-				}
-
-				if (props.currentTime !== undefined) {
-					player.setCurrentTime(props.currentTime, true);
-				}
-			},
-			{ immediate: true },
-		);
 
 		watchEffect(() => {
 			if (props.currentTime !== undefined)

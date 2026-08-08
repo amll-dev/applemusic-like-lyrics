@@ -32,7 +32,17 @@ player.setCurrentTime(currentTime, true);
 player.update(0);
 ```
 
-Lyric optimization runs when lyrics are set, so if you need to change these options, call `setOptimizeOptions` before `setLyricLines`. Changes after `setLyricLines` do not automatically reprocess existing lyrics; set the lyrics again to apply them.
+Setting or changing lyric optimization options reprocesses the lyrics and automatically rebuilds the view. You can call `setOptimizeOptions` before `setLyricLines`, or call it at any time with existing lyrics.
+
+If you need to update multiple settings at once (such as optimization options and obscene word mask settings), it is recommended to use the `updateLyricProcessConfig` method to batch update and avoid triggering multiple view rebuilds:
+
+```ts
+player.updateLyricProcessConfig({
+	optimizeOptions: { normalizeSpaces: true },
+	maskMode: "full-mask",
+	maskChar: "*",
+});
+```
 
 Also note that `currentTime` is in milliseconds and should be an integer. `audio.currentTime` is in seconds, so multiply it by `1000`.
 
@@ -62,10 +72,10 @@ During playback, you need to update the lyric component's time progress. **All t
 
 Two time values are easy to confuse:
 
-| Time Type         | Accepted By                                | Meaning                         |
-| ----------------- | ------------------------------------------ | ------------------------------- |
-| Current progress  | `setCurrentTime(time)` / `currentTime` prop | Song playback progress          |
-| Frame delta       | `update(delta)`                            | Time elapsed since the previous frame |
+| Time Type        | Accepted By                                 | Meaning                               |
+| ---------------- | ------------------------------------------- | ------------------------------------- |
+| Current progress | `setCurrentTime(time)` / `currentTime` prop | Song playback progress                |
+| Frame delta      | `update(delta)`                             | Time elapsed since the previous frame |
 
 In vanilla usage, `setCurrentTime` updates the lyric timeline, and `update` advances animation. **They are not the same value**.
 
@@ -153,11 +163,11 @@ The React and Vue bindings create and destroy the underlying Core component. The
 
 You still need to provide these states:
 
-| State              | React / Vue Input | Description                                      |
-| ------------------ | ----------------- | ------------------------------------------------ |
-| Lyric data         | `lyricLines`      | Parsed `LyricLine[]`                             |
-| Current progress   | `currentTime`     | Synced from audio with `requestAnimationFrame` during playback |
-| Playback state     | `playing`         | Pauses or resumes the lyric component's internal presentation |
+| State            | React / Vue Input | Description                                                    |
+| ---------------- | ----------------- | -------------------------------------------------------------- |
+| Lyric data       | `lyricLines`      | Parsed `LyricLine[]`                                           |
+| Current progress | `currentTime`     | Synced from audio with `requestAnimationFrame` during playback |
+| Playback state   | `playing`         | Pauses or resumes the lyric component's internal presentation  |
 
 The React binding additionally provides an `isSeeking` prop, which you can pass during seeking:
 

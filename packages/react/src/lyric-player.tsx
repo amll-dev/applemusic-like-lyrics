@@ -206,6 +206,7 @@ export const LyricPlayer: ForwardRefExoticComponent<
 		const [corePlayer, setCorePlayer] = useState<LyricPlayerBase>();
 		const wrapperRef = useRef<HTMLDivElement>(null);
 		const currentTimeRef = useRef(currentTime);
+		const prevLyricLinesRef = useRef(lyricLines);
 
 		useLayoutEffect(() => {
 			const newPlayer = new (lyricPlayer ?? DefaultLyricPlayer)();
@@ -218,23 +219,39 @@ export const LyricPlayer: ForwardRefExoticComponent<
 		}, [lyricPlayer]);
 
 		useLayoutEffect(() => {
-			if (optimizeOptions !== undefined) {
-				corePlayer?.setOptimizeOptions(optimizeOptions);
-			}
+			if (!corePlayer) return;
 
-			if (lyricLines !== undefined) {
-				corePlayer?.setLyricLines(lyricLines, currentTimeRef.current);
+			corePlayer.setLyricProcessConfig({
+				optimizeOptions,
+				maskMode: maskObsceneWordsMode ?? MaskObsceneWordsMode.Disabled,
+				maskChar: maskObsceneWordChar ?? "*",
+			});
 
-				if (currentTimeRef.current !== undefined) {
-					corePlayer?.setCurrentTime(currentTimeRef.current, true);
+			const lyricLinesChanged = prevLyricLinesRef.current !== lyricLines;
+			prevLyricLinesRef.current = lyricLines;
+
+			if (lyricLinesChanged || corePlayer.getLyricLines().length === 0) {
+				if (lyricLines !== undefined) {
+					corePlayer.setLyricLines(lyricLines, currentTimeRef.current);
+					if (currentTimeRef.current !== undefined) {
+						corePlayer.setCurrentTime(currentTimeRef.current, true);
+					}
+					corePlayer.update();
+				} else {
+					corePlayer.setLyricLines([]);
+					corePlayer.update();
 				}
-
-				corePlayer?.update();
 			} else {
-				corePlayer?.setLyricLines([]);
-				corePlayer?.update();
+				corePlayer.rebuildLyricView(currentTimeRef.current);
+				corePlayer.calcLayout();
 			}
-		}, [corePlayer, lyricLines, optimizeOptions]);
+		}, [
+			corePlayer,
+			lyricLines,
+			optimizeOptions,
+			maskObsceneWordsMode,
+			maskObsceneWordChar,
+		]);
 
 		useEffect(() => {
 			if (!disabled) {
@@ -328,20 +345,6 @@ export const LyricPlayer: ForwardRefExoticComponent<
 			if (lineScaleSpringParams !== undefined)
 				corePlayer?.setLineScaleSpringParams(lineScaleSpringParams);
 		}, [corePlayer, lineScaleSpringParams]);
-
-		useEffect(() => {
-			if (maskObsceneWordsMode !== undefined) {
-				corePlayer?.setMaskObsceneWords(maskObsceneWordsMode);
-			} else {
-				corePlayer?.setMaskObsceneWords(MaskObsceneWordsMode.Disabled);
-			}
-		}, [corePlayer, maskObsceneWordsMode]);
-
-		useEffect(() => {
-			if (maskObsceneWordChar !== undefined) {
-				corePlayer?.setMaskObsceneWordChar(maskObsceneWordChar);
-			}
-		}, [corePlayer, maskObsceneWordChar]);
 
 		useEffect(() => {
 			if (onLyricLineClick) {
