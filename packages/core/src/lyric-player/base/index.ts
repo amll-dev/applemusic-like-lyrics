@@ -15,6 +15,7 @@ import { BottomLineEl } from "./bottom-line.ts";
 import { LayoutAlignAnchor, MaskObsceneWordsMode } from "./consts.ts";
 import type { LyricLineGroupBase } from "./group.ts";
 import type { LyricLineBase } from "./line.ts";
+import { getPosYSpringPolicy } from "./spring";
 
 export type { LyricLineBase } from "./line.ts";
 
@@ -1072,39 +1073,17 @@ export abstract class LyricPlayerBase
 
 		const { scrollToIndex, isSeeking } = this.timelineState;
 
-		if (isSeeking || isInterludeActive) {
-			this.setLinePosYSpringParams({ stiffness: 90, damping: 15 });
-			return;
-		}
-
 		const currentGroup = this.currentLyricGroups[scrollToIndex];
 		const prevGroup = this.currentLyricGroups[scrollToIndex - 1];
 
-		if (!currentGroup || !prevGroup) {
-			return;
+		let interval: number | undefined;
+		if (currentGroup && prevGroup) {
+			interval = currentGroup.startTime - prevGroup.startTime;
 		}
 
-		const interval = currentGroup.startTime - prevGroup.startTime;
-		const MIN_INTERVAL = 100;
-		const MAX_INTERVAL = 800;
-		const clampedInterval = clamp(interval, MIN_INTERVAL, MAX_INTERVAL);
+		const policy = getPosYSpringPolicy(isSeeking, isInterludeActive, interval);
 
-		const MAX_STIFFNESS = 220;
-		const MIN_STIFFNESS = 170;
-
-		let ratio =
-			1 - (clampedInterval - MIN_INTERVAL) / (MAX_INTERVAL - MIN_INTERVAL);
-		ratio = ratio ** 0.2;
-
-		const targetStiffness =
-			MIN_STIFFNESS + ratio * (MAX_STIFFNESS - MIN_STIFFNESS);
-		const dampingMultiplier = 2.2;
-		const targetDamping = Math.sqrt(targetStiffness) * dampingMultiplier;
-
-		this.setLinePosYSpringParams({
-			stiffness: targetStiffness,
-			damping: targetDamping,
-		});
+		this.setLinePosYSpringParams(policy);
 	}
 
 	/**
