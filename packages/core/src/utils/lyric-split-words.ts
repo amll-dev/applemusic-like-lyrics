@@ -50,8 +50,41 @@ export function chunkAndSplitLyricWords(
 		const obscene = w.obscene ?? false;
 		const hasRuby = (w.ruby?.length ?? 0) > 0;
 
-		if (isSpace || hasRuby) {
+		if (isSpace) {
 			processAtom({ ...w });
+			continue;
+		}
+
+		if (hasRuby) {
+			const leadingSpaceMatch = w.word.match(/^\s+/);
+			const trailingSpaceMatch = w.word.match(/\s+$/);
+			const leadingSpace = leadingSpaceMatch ? leadingSpaceMatch[0] : "";
+			const trailingSpace = trailingSpaceMatch ? trailingSpaceMatch[0] : "";
+
+			if (leadingSpace) {
+				processAtom({
+					word: leadingSpace,
+					romanWord: "",
+					startTime: w.startTime,
+					endTime: w.startTime,
+					obscene: obscene,
+				});
+			}
+
+			processAtom({
+				...w,
+				word: content,
+			});
+
+			if (trailingSpace) {
+				processAtom({
+					word: trailingSpace,
+					romanWord: "",
+					startTime: w.endTime,
+					endTime: w.endTime,
+					obscene: obscene,
+				});
+			}
 			continue;
 		}
 
