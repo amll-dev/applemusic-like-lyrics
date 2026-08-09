@@ -155,17 +155,11 @@ export class DomLyricPlayer extends LyricPlayerBase {
 	 *
 	 * @param initialTime 重建后对齐的初始时间（毫秒），默认使用当前播放进度
 	 */
-	public override rebuildLyricView(
-		initialTime: number = this.getCurrentTime(),
-	): void {
-		super.rebuildLyricView(initialTime);
+	protected override buildLyricGroups(): void {
 		if (this.hasDuetLine) {
 			this.element.classList.add(styles.hasDuetLine);
 		} else {
 			this.element.classList.remove(styles.hasDuetLine);
-		}
-		if (!this.supportMaskImage) {
-			this.element.style.setProperty("--amll-player-time", `${initialTime}`);
 		}
 
 		let currentGroup: LyricLineGroup | null = null;
@@ -184,14 +178,15 @@ export class DomLyricPlayer extends LyricPlayerBase {
 				currentGroup.addBgLine(lineEl);
 			}
 		}
+	}
 
-		// 对歌词组进行排序以便之后 syncForPlayback 可以用高性能的滑动窗口查找而不会导致时间乱序而跳过歌词行
-		this.currentLyricGroups.sort((a, b) => a.startTime - b.startTime);
+	public override rebuildLyricView(
+		initialTime: number = this.getCurrentTime(),
+	): void {
+		super.rebuildLyricView(initialTime);
 		this.setLinePosXSpringParams({});
 		this.setLinePosYSpringParams({});
 		this.setLineScaleSpringParams({});
-		this.setCurrentTime(initialTime, true);
-		this.calcLayout(true);
 		this.update(0);
 	}
 
@@ -216,12 +211,11 @@ export class DomLyricPlayer extends LyricPlayerBase {
 	}
 
 	override update(delta = 0): void {
-		if (!this.timelineState.initialLayoutFinished) return;
 		super.update(delta);
 		if (!this.supportMaskImage) {
 			this.element.style.setProperty(
 				"--amll-player-time",
-				`${this.timelineState.currentTime}`,
+				`${this.getCurrentTime()}`,
 			);
 		}
 		if (!this.isPageVisible) return;

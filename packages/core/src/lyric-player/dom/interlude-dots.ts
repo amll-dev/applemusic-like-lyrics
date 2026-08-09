@@ -41,14 +41,42 @@ export class InterludeDots implements HasElement, Disposable {
 		this.top = top;
 		this.update();
 	}
-	setInterlude(interlude?: [number, number]): void {
-		this.currentInterlude = interlude;
-		this.currentTime = interlude?.[0] ?? 0;
-		if (interlude) {
-			this.element.classList.add(styles.enabled);
-		} else {
+	/**
+	 * 设置间奏点动画区间并重新锚定时间
+	 * @param interlude 间奏起止时间
+	 * @param currentTime 当前播放时间
+	 * @param forceReset 是否强制重置动画起点，如 Seek、重新布局或切换间奏时
+	 */
+	setInterlude(
+		interlude?: [number, number],
+		currentTime?: number,
+		forceReset = false,
+	): void {
+		if (!interlude) {
+			this.currentInterlude = undefined;
 			this.element.classList.remove(styles.enabled);
+			return;
 		}
+
+		const endTime = interlude[1];
+		const now = currentTime ?? interlude[0];
+
+		// 需要重新锚定动画起点的情况：
+		// 1. 显式指定 forceReset (Seek 或重新排版)
+		// 2. 切换到了新的间奏区间
+		// 3. 当前组件未在启用状态
+		const isNewInterlude =
+			!this.currentInterlude || this.currentInterlude[1] !== endTime;
+		const shouldReset = forceReset || isNewInterlude;
+
+		if (shouldReset) {
+			// 将动画起点设为 now，结束时间设为 endTime
+			// currentDuration 将从 0 开始重新计算，让动画时长匹配剩余时间
+			this.currentInterlude = [now, endTime];
+			this.currentTime = now;
+		}
+
+		this.element.classList.add(styles.enabled);
 	}
 	pause(): void {
 		this.playing = false;
