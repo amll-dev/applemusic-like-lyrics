@@ -925,11 +925,11 @@ export class LyricLineEl extends LyricLineBase {
 		scale: number = this.scale,
 		opacity = 1,
 		blur = 0,
-		force = false,
+		immediate = false,
 		delay = 0,
 		mode: LyricLineRenderMode = LyricLineRenderMode.SOLID,
 	): void {
-		super.setTransform(scale, opacity, blur, force, delay);
+		super.setTransform(scale, opacity, blur, immediate, delay);
 
 		this.setRenderMode(mode);
 		this.top = 0;
@@ -938,35 +938,34 @@ export class LyricLineEl extends LyricLineBase {
 
 		const enableSpring = this.lyricPlayer.getEnableSpring();
 
-		if (force || !enableSpring) {
+		if (immediate || !enableSpring) {
 			this.lineTransforms.scale.setPosition(scale);
 		} else {
 			this.lineTransforms.scale.setTargetPosition(scale);
 		}
-
-		this.rebuildStyle();
 	}
 
 	update(delta = 0): void {
 		if (!this.lyricPlayer.getEnableSpring()) return;
 
+		const scaleMoving = !this.lineTransforms.scale.arrived();
 		this.lineTransforms.scale.update(delta);
 
-		if (this.lineTransforms.scale.arrived()) return;
+		if (scaleMoving) {
+			this.isUiDirty = true;
+		}
+	}
 
-		this.rebuildStyle();
+	override commitChanges(): void {
+		if (this.isUiDirty) {
+			this.rebuildStyle();
+			this.isUiDirty = false;
+		}
 	}
 
 	/** @internal */
 	_getDebugTargetPos(): string {
 		return `[位移: ${this.top}; 缩放: ${this.scale}; 延时: ${this.delay}]`;
-	}
-
-	teardownContent(): void {
-		if (this.built) {
-			this.disposeElements();
-			this.built = false;
-		}
 	}
 
 	private disposeElements() {

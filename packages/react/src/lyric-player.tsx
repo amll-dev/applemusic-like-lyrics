@@ -7,6 +7,7 @@ import type {
 } from "@applemusic-like-lyrics/core";
 import {
 	LyricPlayer as DefaultLyricPlayer,
+	LayoutReason,
 	MaskObsceneWordsMode,
 } from "@applemusic-like-lyrics/core";
 import {
@@ -243,7 +244,6 @@ export const LyricPlayer: ForwardRefExoticComponent<
 				}
 			} else {
 				corePlayer.rebuildLyricView(currentTimeRef.current);
-				corePlayer.calcLayout();
 			}
 		}, [
 			corePlayer,
@@ -266,7 +266,7 @@ export const LyricPlayer: ForwardRefExoticComponent<
 					lastTime = time;
 					requestAnimationFrame(onFrame);
 				};
-				corePlayer?.calcLayout();
+				corePlayer?.calcLayout(LayoutReason.ConfigChange);
 				requestAnimationFrame(onFrame);
 				return () => {
 					canceled = true;

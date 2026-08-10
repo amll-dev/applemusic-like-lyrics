@@ -223,6 +223,10 @@ export class DomLyricPlayer extends LyricPlayerBase {
 		for (const group of this.currentLyricGroups) {
 			group.update(deltaS);
 		}
+
+		for (const group of this.currentLyricGroups) {
+			group.commitChanges();
+		}
 	}
 
 	override dispose(): void {

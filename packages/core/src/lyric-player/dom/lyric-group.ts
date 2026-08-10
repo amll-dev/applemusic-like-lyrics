@@ -34,13 +34,18 @@ export class LyricLineGroup extends LyricLineGroupBase<LyricLineEl> {
 		lyricPlayer.resizeObserver.observe(this.element);
 	}
 
+	getElement(): HTMLElement {
+		return this.element;
+	}
+
 	get isInSight(): boolean {
 		const t = this.posY.getCurrentPosition();
 
-		let h = this.lyricPlayer.lyricGroupSize?.get(this)?.[1];
-		if (h === undefined || h === 0) {
-			h = this.lyricPlayer.size[1] / 5;
-		}
+		const index = this.lyricPlayer.currentLyricGroups.indexOf(this);
+		const h =
+			index !== -1
+				? this.lyricPlayer.getLineHeight(index)
+				: this.lyricPlayer.defaultLineHeight;
 
 		const pb = this.lyricPlayer.size[1];
 		const ov = this.lyricPlayer.getOverscanPx();
@@ -67,6 +72,9 @@ export class LyricLineGroup extends LyricLineGroupBase<LyricLineEl> {
 			playerEl.insertBefore(this.element, referenceNode);
 
 			this.lyricPlayer.resizeObserver.observe(this.element);
+			if (this.bgWrapper) {
+				this.lyricPlayer.resizeObserver.observe(this.bgWrapper);
+			}
 		}
 
 		this.mainLine.show();
@@ -76,35 +84,31 @@ export class LyricLineGroup extends LyricLineGroupBase<LyricLineEl> {
 	hide(): void {
 		if (this.element.parentElement) {
 			this.lyricPlayer.resizeObserver.unobserve(this.element);
+			if (this.bgWrapper) {
+				this.lyricPlayer.resizeObserver.unobserve(this.bgWrapper);
+			}
 			this.element.remove();
-
-			this.mainLine.teardownContent();
-			this.bgLine?.teardownContent();
 		}
 	}
 
 	override update(delta: number): void {
-		const inSight = this.isInSight;
-		if (inSight) {
+		super.update(delta);
+	}
+
+	override commitChanges(): void {
+		if (this.isInSight) {
 			this.show();
-			super.update(delta);
+			super.commitChanges();
 		} else {
 			this.hide();
-			if (this.lyricPlayer.getEnableSpring()) {
-				this.posY.update(delta);
-				this.bgSlideY.update(delta);
-			}
 		}
 	}
 
-	override onLineSizeChange(size: [number, number]): void {
-		super.onLineSizeChange(size);
-		if (this.bgWrapper) {
-			const newBgHeight = this.bgWrapper.clientHeight || 0;
-			if (this.lastBgHeight !== newBgHeight) {
-				this.lastBgHeight = newBgHeight;
-				this.lastBgSlideYNum = -9999;
-			}
+	override onBgSizeChange(size: [number, number]): void {
+		if (this.bgWrapper && this.lastBgHeight !== size[1]) {
+			this.lastBgHeight = size[1];
+			this.lastBgSlideYNum = -9999;
+			this.isUiDirty = true;
 		}
 	}
 
@@ -150,6 +154,11 @@ export class LyricLineGroup extends LyricLineGroupBase<LyricLineEl> {
 			this.element.appendChild(this.bgWrapper);
 		}
 
+		this.lyricPlayer.lyricGroupElementMap.set(this.bgWrapper, this);
+		if (this.element.parentElement) {
+			this.lyricPlayer.resizeObserver.observe(this.bgWrapper);
+		}
+
 		this.lastBgHeight = this.bgWrapper.clientHeight || 0;
 	}
 
@@ -180,11 +189,6 @@ export class LyricLineGroup extends LyricLineGroupBase<LyricLineEl> {
 			}
 
 			const bgStyle = this.bgWrapper.style;
-			const currentBgHeight = this.bgWrapper.clientHeight || 0;
-			if (currentBgHeight > 0 && this.lastBgHeight !== currentBgHeight) {
-				this.lastBgHeight = currentBgHeight;
-				this.lastBgSlideYNum = -9999;
-			}
 
 			const slideY = this.bgSlideY.getCurrentPosition();
 			if (Math.abs(slideY - this.lastBgSlideYNum) >= 0.001) {
@@ -220,6 +224,10 @@ export class LyricLineGroup extends LyricLineGroupBase<LyricLineEl> {
 	override dispose(): void {
 		super.dispose();
 		this.lyricPlayer.resizeObserver.unobserve(this.element);
+		if (this.bgWrapper) {
+			this.lyricPlayer.lyricGroupElementMap.delete(this.bgWrapper);
+			this.lyricPlayer.resizeObserver.unobserve(this.bgWrapper);
+		}
 		this.element.remove();
 	}
 }

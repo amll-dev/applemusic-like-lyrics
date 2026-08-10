@@ -10,8 +10,19 @@ import { areOptimizeOptionsEqual } from "#utils/optimize-lyric.ts";
 import type { SpringParams } from "#utils/spring.ts";
 import { InterludeDots } from "../dom/interlude-dots.ts";
 import { BottomLineEl } from "./bottom-line.ts";
-import { LayoutAlignAnchor, type MaskObsceneWordsMode } from "./consts.ts";
+import {
+	LayoutAlignAnchor,
+	LayoutReason,
+	LayoutReasonStrategyMap,
+	type MaskObsceneWordsMode,
+} from "./consts.ts";
 import type { LyricLineGroupBase } from "./group.ts";
+import {
+	type FocalTarget,
+	LayoutCalculator,
+	type LayoutConfig,
+	type LayoutFrameContext,
+} from "./layout.ts";
 import type { LyricLineBase } from "./line.ts";
 import {
 	type LyricDataConfig,
@@ -24,34 +35,36 @@ import { TimelineController } from "./timeline.ts";
 export type { LyricLineBase } from "./line.ts";
 export type { LyricDataConfig } from "./lyric-data-manager.ts";
 
+function getEntrySize(entry: ResizeObserverEntry): [number, number] {
+	if (entry.borderBoxSize && entry.borderBoxSize.length > 0) {
+		const borderBox = entry.borderBoxSize[0];
+		return [borderBox.inlineSize, borderBox.blockSize];
+	}
+	const el = entry.target as HTMLElement;
+	return [
+		el.offsetWidth || entry.contentRect.width,
+		el.offsetHeight || entry.contentRect.height,
+	];
+}
+
 /**
  * 播放器布局状态。
  *
- * 这部分状态保存布局计算阶段所需的配置项与缓存值，
- * 例如对齐方式、间奏点尺寸、上一轮布局命中的目标行等。
- * 不描述播放时间线或用户滚动交互，仅记录当前歌词排布。
+ * 记录当前视口动态测量的焦点状态与尺寸
  */
 interface PlayerLayoutState {
 	/** 间奏点元素当前测量得到的尺寸 */
 	interludeDotsSize: [number, number];
-	/** 上一轮布局实际对齐的目标歌词行索引 */
-	targetAlignIndex: number;
-	/** 当前歌词目标行的对齐锚点 */
-	alignAnchor: LayoutAlignAnchor;
-	/** 当前歌词目标行在播放器高度中的相对对齐位置 */
-	alignPosition: number;
-	/** 视口上下额外保留的预渲染距离，单位为像素 */
-	overscanPx: number;
+	/** 当前的对齐目标 */
+	alignTarget: FocalTarget;
 }
 
 /**
  * 播放器滚动状态。
  *
- * 这部分状态描述用户手势/滚轮滚动产生的临时偏移，以及当前允许滚动的范围。
+ * 记录用户的滚动行为
  */
 interface PlayerScrollState {
-	/** 当前用户滚动带来的额外偏移量 */
-	scrollOffset: number;
 	/** 是否处于用户滚动过，尚未回归自动对齐的状态 */
 	isAutoAlignSuspended: boolean;
 	isTouchScrolled: boolean;
@@ -92,10 +105,20 @@ export abstract class LyricPlayerBase
 
 	protected layoutState: PlayerLayoutState = {
 		interludeDotsSize: [0, 0],
-		targetAlignIndex: 0,
+		alignTarget: { type: "line", index: 0 },
+	};
+	protected layoutConfig: LayoutConfig = {
 		alignAnchor: LayoutAlignAnchor.Center,
 		alignPosition: 0.35,
 		overscanPx: 300,
+	};
+	/** LayoutCalculator 所使用的排版上下文状态 */
+	private frameContext: LayoutFrameContext = {
+		containerHeight: 0,
+		scrollOffset: 0,
+		target: { index: 0, type: "line" },
+		bottomLineHeight: 0,
+		interlude: undefined,
 	};
 	protected interludeDots: InterludeDots = new InterludeDots();
 	protected bottomLine: BottomLineEl = new BottomLineEl(this);
@@ -105,15 +128,29 @@ export abstract class LyricPlayerBase
 
 	protected scrollEngine: ScrollInteractionEngine;
 	protected scrollState: PlayerScrollState = {
-		scrollOffset: 0,
 		isAutoAlignSuspended: false,
 		isTouchScrolled: false,
 	};
+
+	protected layoutCalculator: LayoutCalculator = new LayoutCalculator();
 
 	public currentLyricGroups: LyricLineGroupBase[] = [];
 	lyricGroupSize: WeakMap<LyricLineGroupBase, [number, number]> = new WeakMap();
 	readonly size: [number, number] = [0, 0];
 	protected isPageVisible = true;
+
+	/** 默认/回退单行歌词估算高度基准 (containerHeight / 5) */
+	public get defaultLineHeight(): number {
+		return this.size[1] / 5;
+	}
+
+	/**
+	 * 获取指定索引歌词行的高度
+	 * @remarks 可能为测量值或估算值
+	 */
+	public getLineHeight(index: number): number {
+		return this.layoutCalculator.getLineHeight(index);
+	}
 
 	/** 是否强制让背景人声行始终后置（即始终在主歌词下方显示，不前置背景人声） */
 	protected alwaysPostpositionBackground = false;
@@ -138,6 +175,7 @@ export abstract class LyricPlayerBase
 		damping: 20,
 		stiffness: 50,
 	};
+	private lyricGroupIndexMap = new WeakMap<LyricLineGroupBase, number>();
 	private onPageShow = () => {
 		this.isPageVisible = true;
 		this.setCurrentTime(
@@ -152,21 +190,22 @@ export abstract class LyricPlayerBase
 	resizeObserver: ResizeObserver = new ResizeObserver(((entries) => {
 		let shouldRelayout = false;
 		let shouldRebuildPlayerStyle = false;
+		let shouldUpdateFallback = false;
+
 		for (const entry of entries) {
 			if (entry.target === this.element) {
 				const rect = entry.contentRect;
 				this.size[0] = rect.width;
 				this.size[1] = rect.height;
 				shouldRebuildPlayerStyle = true;
+				shouldUpdateFallback = true;
 			} else if (entry.target === this.interludeDots.getElement()) {
-				this.layoutState.interludeDotsSize[0] = entry.target.clientWidth;
-				this.layoutState.interludeDotsSize[1] = entry.target.clientHeight;
+				const size = getEntrySize(entry);
+				this.layoutState.interludeDotsSize[0] = size[0];
+				this.layoutState.interludeDotsSize[1] = size[1];
 				shouldRelayout = true;
 			} else if (entry.target === this.bottomLine.getElement()) {
-				const newSize: [number, number] = [
-					entry.target.clientWidth,
-					entry.target.clientHeight,
-				];
+				const newSize = getEntrySize(entry);
 				const oldSize: [number, number] = this.bottomLine.lineSize;
 
 				if (newSize[0] !== oldSize[0] || newSize[1] !== oldSize[1]) {
@@ -176,25 +215,39 @@ export abstract class LyricPlayerBase
 			} else {
 				const groupObj = this.lyricGroupElementMap.get(entry.target);
 				if (groupObj) {
-					const newSize: [number, number] = [
-						entry.target.clientWidth,
-						entry.target.clientHeight,
-					];
+					const newSize = getEntrySize(entry);
 
-					const oldSize: [number, number] = this.lyricGroupSize.get(
-						groupObj,
-					) ?? [0, 0];
+					const isGroupElement = entry.target === groupObj.getElement();
 
-					if (newSize[0] !== oldSize[0] || newSize[1] !== oldSize[1]) {
-						this.lyricGroupSize.set(groupObj, newSize);
-						groupObj.onLineSizeChange(newSize);
-						shouldRelayout = true;
+					if (isGroupElement) {
+						const oldSize: [number, number] = this.lyricGroupSize.get(
+							groupObj,
+						) ?? [0, 0];
+
+						if (newSize[0] !== oldSize[0] || newSize[1] !== oldSize[1]) {
+							this.lyricGroupSize.set(groupObj, newSize);
+							groupObj.onLineSizeChange(newSize);
+
+							const index = this.lyricGroupIndexMap.get(groupObj) ?? -1;
+							if (index !== -1) {
+								this.layoutCalculator.setLineHeight(index, newSize[1]);
+							}
+							shouldRelayout = true;
+						}
+					} else {
+						groupObj.onBgSizeChange?.(newSize);
 					}
 				}
 			}
 		}
+
+		if (shouldUpdateFallback) {
+			this.layoutCalculator.updateUnmeasuredHeights(this.defaultLineHeight);
+			shouldRelayout = true;
+		}
+
 		if (shouldRelayout) {
-			this.calcLayout(true);
+			this.calcLayout(LayoutReason.Resize);
 		}
 		if (shouldRebuildPlayerStyle) {
 			this.onResize();
@@ -209,6 +262,7 @@ export abstract class LyricPlayerBase
 
 		this.resizeObserver.observe(this.element);
 		this.resizeObserver.observe(this.interludeDots.getElement());
+		this.resizeObserver.observe(this.bottomLine.getElement());
 
 		this.element.appendChild(this.interludeDots.getElement());
 		this.element.appendChild(this.bottomLine.getElement());
@@ -216,7 +270,11 @@ export abstract class LyricPlayerBase
 
 		this.bottomLineObserver = new MutationObserver(() => {
 			const bottomEl = this.bottomLine.getElement();
-			this.hasBottomContent = bottomEl.innerHTML.trim().length > 0;
+			const newHasBottomContent = bottomEl.innerHTML.trim().length > 0;
+			if (this.hasBottomContent !== newHasBottomContent) {
+				this.hasBottomContent = newHasBottomContent;
+				this.calcLayout(LayoutReason.ConfigChange);
+			}
 		});
 		this.bottomLineObserver.observe(this.bottomLine.getElement(), {
 			childList: true,
@@ -228,22 +286,24 @@ export abstract class LyricPlayerBase
 		window.addEventListener("pagehide", this.onPageHide);
 
 		this.scrollEngine = new ScrollInteractionEngine(this.element, {
-			onScrollUpdate: (offset: number, isContinuous: boolean) => {
-				this.scrollState.scrollOffset = offset;
-				this.calcLayout(true, isContinuous);
+			onScrollUpdate: (isContinuous: boolean) => {
+				this.calcLayout(
+					isContinuous
+						? LayoutReason.ContinuousScroll
+						: LayoutReason.DiscreteScroll,
+				);
 			},
 			onInteractionStart: (type: ScrollInputType) => {
 				this.scrollState.isAutoAlignSuspended = true;
 				this.scrollState.isTouchScrolled = type === "touch";
-				this.calcLayout(true, false);
+				this.calcLayout(LayoutReason.InteractionStart);
 			},
 			onInteractionEnd: () => {},
 			onAutoAlignResume: () => {
 				this.scrollState.isAutoAlignSuspended = false;
 				this.scrollState.isTouchScrolled = false;
-				this.scrollState.scrollOffset = 0;
 				this.scrollEngine.resetScroll(0);
-				this.calcLayout(false, false);
+				this.calcLayout(LayoutReason.InteractionEnd);
 			},
 		});
 	}
@@ -273,7 +333,7 @@ export abstract class LyricPlayerBase
 	 */
 	setEnableScale(enable = true): void {
 		this.enableScale = enable;
-		this.calcLayout();
+		this.calcLayout(LayoutReason.ConfigChange);
 	}
 	/**
 	 * 获取当前是否启用了歌词行缩放效果
@@ -303,7 +363,7 @@ export abstract class LyricPlayerBase
 	 */
 	setHidePassedLines(hide: boolean): void {
 		this.hidePassedLines = hide;
-		this.calcLayout();
+		this.calcLayout(LayoutReason.ConfigChange);
 	}
 	/**
 	 * 设置是否启用歌词行的模糊效果
@@ -312,7 +372,7 @@ export abstract class LyricPlayerBase
 	setEnableBlur(enable: boolean): void {
 		if (this.enableBlur === enable) return;
 		this.enableBlur = enable;
-		this.calcLayout();
+		this.calcLayout(LayoutReason.ConfigChange);
 	}
 
 	/**
@@ -366,7 +426,7 @@ export abstract class LyricPlayerBase
 
 		if (this.dataManager.getRawLines().length > 0) {
 			this.rebuildLyricView(this.getCurrentTime());
-			this.calcLayout();
+			this.calcLayout(LayoutReason.ConfigChange);
 		}
 	}
 
@@ -418,14 +478,14 @@ export abstract class LyricPlayerBase
 	 * @param alignAnchor 歌词行对齐方式，详情见函数说明
 	 */
 	setAlignAnchor(alignAnchor: LayoutAlignAnchor): void {
-		this.layoutState.alignAnchor = alignAnchor;
+		this.layoutConfig.alignAnchor = alignAnchor;
 	}
 	/**
 	 * 设置默认的歌词行对齐位置，相对于整个歌词播放组件的大小位置，默认为 `0.5`
 	 * @param alignPosition 一个 `[0.0-1.0]` 之间的任意数字，代表组件高度由上到下的比例位置
 	 */
 	setAlignPosition(alignPosition: number): void {
-		this.layoutState.alignPosition = alignPosition;
+		this.layoutConfig.alignPosition = alignPosition;
 	}
 
 	/**
@@ -433,11 +493,11 @@ export abstract class LyricPlayerBase
 	 * @param px 像素值，默认 300
 	 */
 	setOverscanPx(px: number): void {
-		this.layoutState.overscanPx = clampPositive(px | 0);
+		this.layoutConfig.overscanPx = clampPositive(px | 0);
 	}
 	/** 获取当前 overscan 像素距离 */
 	getOverscanPx(): number {
-		return this.layoutState.overscanPx;
+		return this.layoutConfig.overscanPx;
 	}
 	/**
 	 * 设置是否使用物理弹簧算法实现歌词动画效果，默认启用
@@ -453,7 +513,7 @@ export abstract class LyricPlayerBase
 		} else {
 			this.element.classList.add(styles.disableSpring);
 		}
-		this.calcLayout(true);
+		this.calcLayout(LayoutReason.ConfigChange);
 	}
 	/**
 	 * 获取当前是否启用了物理弹簧
@@ -529,7 +589,7 @@ export abstract class LyricPlayerBase
 			this.updateSpringParams(isInterludeActive);
 		}
 
-		this.calcLayout();
+		this.calcLayout(isSeek ? LayoutReason.Seek : LayoutReason.PlaybackTick);
 	}
 
 	/**
@@ -546,6 +606,9 @@ export abstract class LyricPlayerBase
 	 * @param initialTime 重建后对齐的初始时间（毫秒），默认使用当前播放进度
 	 */
 	public rebuildLyricView(initialTime: number = this.getCurrentTime()): void {
+		this.resetScroll();
+		this.layoutState.alignTarget = { type: "line", index: 0 };
+
 		for (const group of this.currentLyricGroups) {
 			group.dispose();
 		}
@@ -557,14 +620,23 @@ export abstract class LyricPlayerBase
 
 		// 对歌词组进行排序，确保滑动窗口与二分查找算法面对的时间线是严格升序的
 		this.currentLyricGroups.sort((a, b) => a.startTime - b.startTime);
+		for (let i = 0; i < this.currentLyricGroups.length; i++) {
+			this.lyricGroupIndexMap.set(this.currentLyricGroups[i], i);
+		}
 
 		const bounds = this.currentLyricGroups.map((group) => ({
 			startTime: group.startTime,
 			endTime: group.endTime,
 		}));
 		this.timelineController.setTimeBounds(bounds);
+
+		this.layoutCalculator.initHeights(
+			this.currentLyricGroups.length,
+			this.defaultLineHeight,
+		);
+
 		this.setCurrentTime(initialTime, true);
-		this.calcLayout(true);
+		this.calcLayout(LayoutReason.RebuildView);
 
 		if (import.meta.env.DEV) {
 			console.log("歌词视图重建完成", this);
@@ -599,180 +671,149 @@ export abstract class LyricPlayerBase
 	}
 
 	/**
-	 * 重新布局定位歌词行的位置，调用完成后再逐帧调用 `update`
-	 * 函数即可让歌词通过动画移动到目标位置。
+	 * 重新计算歌词行的几何排版坐标与视觉状态
 	 *
-	 * 函数有一个 `force` 参数，用于指定是否强制修改布局，也就是不经过动画直接调整元素位置和大小。
+	 * 此方法不会触发 DOM 强制重排
 	 *
-	 * 因为计算布局必定会导致浏览器重排布局，所以会大幅度影响流畅度和性能，故请只在以下情况下将其​设置为 true：
+	 * 计算完成后，在每一帧调用 `update()` / `commitChanges()` 即可让歌词平滑移动至目标位置
 	 *
-	 * 1. 歌词页面大小发生改变时（这个组件会自行处理）
-	 * 2. 加载了新的歌词时（不论前后歌词是否完全一样）
-	 * 3. 用户自行跳转了歌曲播放位置（不论距离远近）
-	 *
-	 * @param sync 是否同步执行，通常用于初始化或 Resize 时立即布局
-	 * @param force 是否绕过弹簧效果强制更新位置
+	 * @internal 仅供内部和绑定包使用
+	 * @param reason 触发排版布局更新的原因场景
 	 */
-	async calcLayout(sync = false, force = false): Promise<void> {
+	calcLayout(reason: LayoutReason): void {
+		const strategy = LayoutReasonStrategyMap[reason];
+
 		const snapshot = this.timelineController.getSnapshot();
 		const interlude = snapshot.activeInterlude;
 		const isInterludeFocused = snapshot.isFocusOnInterlude && !!interlude;
+		const count = this.currentLyricGroups.length;
+		const maxValidIndex = Math.max(0, count - 1);
+		const clampLineIndex = (index: number) =>
+			count > 0 ? Math.min(Math.max(0, index), maxValidIndex) : 0;
 
-		if (!interlude) {
-			this.interludeDots.setInterlude(undefined);
-		}
+		const safeScrollToIndex = clampLineIndex(snapshot.scrollToIndex);
 
-		let targetAlignIndex = snapshot.scrollToIndex;
+		// 确定这一帧焦点应该对齐谁
+		let focalTarget: FocalTarget = {
+			type: "line",
+			index: safeScrollToIndex,
+		};
 
-		const isLayoutFocusOnInterlude =
-			isInterludeFocused && !this.scrollState.isAutoAlignSuspended;
-
-		// 当用户接管视图滚动时，锁定排版的坐标原点不随底层播放递增
+		// 如果用户正在滚动，对齐冻结的对齐目标
 		if (this.scrollState.isAutoAlignSuspended) {
-			targetAlignIndex = this.layoutState.targetAlignIndex;
+			const target = this.layoutState.alignTarget;
+			if (target.type === "line") {
+				focalTarget = { type: "line", index: clampLineIndex(target.index) };
+			} else if (target.type === "interlude") {
+				if (!isInterludeFocused) {
+					// 离开间奏区间时，自动将对齐目标移动至下一行歌词，并更新冻结目标
+					focalTarget = {
+						type: "line",
+						index: clampLineIndex(target.anchorIndex + 1),
+					};
+				} else {
+					focalTarget = target;
+				}
+			} else {
+				focalTarget = target;
+			}
 		} else {
+			// 正常自动跟随播放状态
 			if (isInterludeFocused && interlude) {
-				targetAlignIndex = interlude.anchorLineIndex + 1;
+				// 处于间奏区间，对齐间奏点
+				focalTarget = {
+					type: "interlude",
+					anchorIndex: interlude.anchorLineIndex,
+				};
 			} else if (snapshot.isEndOfSong) {
-				targetAlignIndex = this.hasBottomContent
-					? this.currentLyricGroups.length
-					: this.currentLyricGroups.length - 1;
+				// 播放完了，如果有底栏则对齐底栏，没有则对齐最后一行歌词
+				if (this.hasBottomContent) {
+					focalTarget = { type: "bottom" };
+				} else if (count > 0) {
+					focalTarget = { type: "line", index: count - 1 };
+				}
 			}
 		}
 
-		this.layoutState.targetAlignIndex = targetAlignIndex;
+		this.layoutState.alignTarget = focalTarget;
 
+		// 组装给布局计算器和滚动引擎用的数据
 		const fontSize = this.baseFontSize || 24;
 		const dotMargin = fontSize * 0.4;
 		const totalInterludeHeight =
 			this.layoutState.interludeDotsSize[1] + dotMargin * 2;
 
-		// 避免一开始就让所有歌词行挤在一起
-		const LINE_HEIGHT_FALLBACK = this.size[1] / 5;
+		const ctx = this.frameContext;
+		ctx.containerHeight = this.size[1];
+		ctx.target = focalTarget;
 
-		const scrollOffsetToTarget = this.currentLyricGroups
-			.slice(0, targetAlignIndex)
-			.reduce(
-				(acc, group) =>
-					acc + (this.lyricGroupSize.get(group)?.[1] ?? LINE_HEIGHT_FALLBACK),
-				0,
+		ctx.bottomLineHeight = this.bottomLine.lineSize[1] || 0;
+
+		// 设置间奏相关的上下文参数
+		const interludeAnchorIndex = LayoutCalculator.resolveInterludeAnchorIndex(
+			interlude,
+			focalTarget,
+		);
+
+		if (interludeAnchorIndex !== undefined) {
+			ctx.interlude = ctx.interlude || { totalHeight: 0, anchorIndex: 0 };
+			ctx.interlude.totalHeight = totalInterludeHeight;
+			ctx.interlude.anchorIndex = interludeAnchorIndex;
+		} else {
+			ctx.interlude = undefined;
+		}
+
+		// 获取滚动边界与帧 Session，钳制出安全 offset 后提交排版
+		const { bounds, session } = this.layoutCalculator.beginFrame(
+			ctx,
+			this.layoutConfig,
+		);
+		ctx.scrollOffset = this.scrollEngine.updateBoundary(bounds.min, bounds.max);
+
+		// 让 LayoutCalculator 算出各个排版信息
+		const result = this.layoutCalculator.commit(session, ctx.scrollOffset);
+
+		// 检查是否需要显示间奏点
+		if (result.hasInterlude && interlude) {
+			const nextLineIndex = interlude.anchorLineIndex + 1;
+			const nextGroup = this.currentLyricGroups[nextLineIndex];
+			const isNextDuet = nextGroup?.mainLine.getLine().isDuet ?? false;
+
+			// 如果下一行是对唱，让间奏点右对齐
+			const targetX = isNextDuet
+				? this.size[0] - this.layoutState.interludeDotsSize[0]
+				: 0;
+
+			this.interludeDots.setTransform(targetX, result.interludeY + dotMargin);
+
+			const shouldResetAnimation =
+				snapshot.isSeeking || strategy.resetInterlude;
+			this.interludeDots.setInterlude(
+				[interlude.startTime, interlude.endTime],
+				snapshot.currentTime,
+				shouldResetAnimation,
 			);
-
-		const totalGroupsHeight = this.currentLyricGroups.reduce(
-			(acc, group) =>
-				acc + (this.lyricGroupSize.get(group)?.[1] ?? LINE_HEIGHT_FALLBACK),
-			0,
-		);
-
-		const curGroup = this.currentLyricGroups[targetAlignIndex];
-		const isBottomFocused = targetAlignIndex === this.currentLyricGroups.length;
-		const targetLineHeight = isLayoutFocusOnInterlude
-			? totalInterludeHeight
-			: curGroup
-				? (this.lyricGroupSize.get(curGroup)?.[1] ?? LINE_HEIGHT_FALLBACK)
-				: isBottomFocused
-					? this.bottomLine.lineSize[1]
-					: 0;
-
-		let anchorOffset = 0;
-		if (targetLineHeight > 0) {
-			switch (this.layoutState.alignAnchor) {
-				case LayoutAlignAnchor.Bottom:
-					anchorOffset = targetLineHeight;
-					break;
-				case LayoutAlignAnchor.Center:
-					anchorOffset = targetLineHeight / 2;
-					break;
-				case LayoutAlignAnchor.Top:
-					anchorOffset = 0;
-					break;
-			}
+		} else {
+			this.interludeDots.setInterlude(undefined);
 		}
 
-		const minOffset = Math.min(0, -scrollOffsetToTarget);
-
-		let basePosWithoutScroll =
-			-scrollOffsetToTarget +
-			this.size[1] * this.layoutState.alignPosition -
-			anchorOffset;
-
-		if (
-			!isLayoutFocusOnInterlude &&
-			interlude &&
-			interlude.anchorLineIndex !== -1
-		) {
-			basePosWithoutScroll -= totalInterludeHeight;
-		}
-
-		const rawMaxOffset =
-			basePosWithoutScroll + totalGroupsHeight - this.size[1] / 2;
-		const maxOffset = Math.max(0, rawMaxOffset);
-
-		this.scrollState.scrollOffset = this.scrollEngine.updateBoundary(
-			minOffset,
-			maxOffset,
-		);
-
-		let curPos = -this.scrollState.scrollOffset;
-
-		if (
-			!isLayoutFocusOnInterlude &&
-			interlude &&
-			interlude.anchorLineIndex !== -1
-		) {
-			curPos -= totalInterludeHeight;
-		}
-
-		curPos -= scrollOffsetToTarget;
-		curPos += this.size[1] * this.layoutState.alignPosition;
-		curPos -= anchorOffset;
-
-		this.layoutState.targetAlignIndex = targetAlignIndex;
-		this.bottomLine.setFocused(isBottomFocused);
-
+		// 遍历 LayoutCalculator 算出的排版信息并应用视觉效果
 		const fallbackFocusIndex = snapshot.scrollToIndex;
 		const latestIndex = snapshot.latestHighlightedIndex ?? fallbackFocusIndex;
+		const activeCount = result.lineCount;
 
 		let delay = 0;
-		let baseDelay = sync ? 0 : 0.05;
-		let setDots = false;
+		let baseDelay = strategy.disableStagger ? 0 : 0.05;
 
-		this.currentLyricGroups.forEach((group, i) => {
+		for (let i = 0; i < activeCount; i++) {
+			const group = this.currentLyricGroups[i];
+			const instruction = result.lineInstructions[i];
+			const curPos = instruction.y;
+
+			// 设置透明度和模糊度
 			const hasHighlighted = snapshot.highlightedGroups.has(i);
-			const shouldShowDots = interlude && i === interlude.anchorLineIndex + 1;
-
-			if (!setDots && shouldShowDots) {
-				setDots = true;
-				curPos += dotMargin;
-
-				let targetX = 0;
-				if (interlude) {
-					const nextLineIndex = interlude.anchorLineIndex + 1;
-					const nextGroup = this.currentLyricGroups[nextLineIndex];
-					const isNextDuet = nextGroup?.mainLine.getLine().isDuet ?? false;
-
-					// 如果下一行是对唱，让间奏点右对齐
-					if (isNextDuet) {
-						targetX = this.size[0] - this.layoutState.interludeDotsSize[0];
-					}
-
-					this.interludeDots.setTransform(targetX, curPos);
-
-					const shouldResetAnimation = snapshot.isSeeking || sync;
-					this.interludeDots.setInterlude(
-						[interlude.startTime, interlude.endTime],
-						snapshot.currentTime,
-						shouldResetAnimation,
-					);
-				}
-
-				curPos += this.layoutState.interludeDotsSize[1];
-				curPos += dotMargin;
-			}
-
 			const isActive =
 				hasHighlighted || (i >= snapshot.scrollToIndex && i < latestIndex);
-
 			const blurFocusIndex = snapshot.isTimelineEmpty
 				? fallbackFocusIndex
 				: latestIndex;
@@ -780,17 +821,12 @@ export abstract class LyricPlayerBase
 			let blurLevel = 0;
 			let targetOpacity = 1;
 
-			const overscan = this.layoutState.overscanPx;
-			const safeBuffer = LINE_HEIGHT_FALLBACK * 2;
-
-			const isOutOfRenderRange =
-				curPos < -(overscan + safeBuffer) ||
-				curPos > this.size[1] + overscan + safeBuffer;
-
-			if (isOutOfRenderRange) {
+			if (!instruction.isInViewport) {
+				// 在视口外则剔除渲染
 				blurLevel = this.enableBlur ? 5 : 0;
 				targetOpacity = 0;
 			} else {
+				// 在视口内则应用复杂的模糊效果
 				if (this.enableBlur && !this.scrollState.isTouchScrolled && !isActive) {
 					blurLevel = 1;
 					if (i < snapshot.scrollToIndex) {
@@ -825,47 +861,61 @@ export abstract class LyricPlayerBase
 				}
 			}
 
+			// 计算 Scale 是否应该在当前帧绕过弹簧效果立刻应用
+			const scaleImmediate =
+				strategy.snapPosY && !this.scrollState.isAutoAlignSuspended;
+
+			// 设置样式
 			group.setTransform(
 				curPos,
-				force,
+				strategy.snapPosY,
 				delay,
 				isActive,
 				targetOpacity,
 				blurLevel,
+				scaleImmediate,
 			);
 
-			curPos += this.lyricGroupSize.get(group)?.[1] ?? LINE_HEIGHT_FALLBACK;
-
-			if (curPos >= 0 && !snapshot.isSeeking) {
+			// 应用阶梯式的动画延迟
+			const lineH = instruction.height;
+			if (curPos + lineH >= 0 && !snapshot.isSeeking) {
 				delay += baseDelay;
 				if (i >= snapshot.scrollToIndex) baseDelay /= 1.05;
 			}
-		});
+		}
 
-		const bottomIndex = this.currentLyricGroups.length;
+		// 底栏相关的处理
+		const isBottomFocused = focalTarget.type === "bottom";
+		this.bottomLine.setFocused(isBottomFocused);
 
 		let finalBottomBlur = 0;
 		const bottomBlurFocusIndex = snapshot.isTimelineEmpty
 			? fallbackFocusIndex
 			: latestIndex;
 
-		if (
+		if (!result.isBottomLineInViewport) {
+			finalBottomBlur = this.enableBlur ? 5 : 0;
+		} else if (
 			this.enableBlur &&
 			!this.scrollState.isAutoAlignSuspended &&
 			!isBottomFocused
 		) {
 			finalBottomBlur = 1;
-			if (bottomIndex < snapshot.scrollToIndex) {
-				finalBottomBlur += Math.abs(snapshot.scrollToIndex - bottomIndex) + 1;
+			if (activeCount < snapshot.scrollToIndex) {
+				finalBottomBlur += Math.abs(snapshot.scrollToIndex - activeCount) + 1;
 			} else {
-				finalBottomBlur += Math.abs(bottomIndex - bottomBlurFocusIndex);
+				finalBottomBlur += Math.abs(activeCount - bottomBlurFocusIndex);
 			}
-			if (window.innerWidth <= 1024) {
-				finalBottomBlur *= 0.8;
-			}
+			if (window.innerWidth <= 1024) finalBottomBlur *= 0.8;
 		}
 
-		this.bottomLine.setTransform(0, curPos, finalBottomBlur, force, delay);
+		this.bottomLine.setTransform(
+			0,
+			result.bottomLineY,
+			finalBottomBlur,
+			strategy.snapPosY,
+			delay,
+		);
 	}
 
 	/**
@@ -920,7 +970,7 @@ export abstract class LyricPlayerBase
 		this.interludeDots.pause();
 		if (this.isPlaying) {
 			this.isPlaying = false;
-			this.calcLayout();
+			this.calcLayout(LayoutReason.ConfigChange);
 		}
 	}
 	/**
@@ -930,7 +980,7 @@ export abstract class LyricPlayerBase
 		this.interludeDots.resume();
 		if (!this.isPlaying) {
 			this.isPlaying = true;
-			this.calcLayout();
+			this.calcLayout(LayoutReason.ConfigChange);
 		}
 	}
 	/**
@@ -968,7 +1018,6 @@ export abstract class LyricPlayerBase
 		this.scrollEngine.resetScroll(0);
 		this.scrollState.isAutoAlignSuspended = false;
 		this.scrollState.isTouchScrolled = false;
-		this.scrollState.scrollOffset = 0;
 	}
 	/**
 	 * 获取当前播放的、未经过优化和掩码处理的歌词数组
@@ -1004,7 +1053,7 @@ export abstract class LyricPlayerBase
 		this.alwaysPostpositionBackground = enable;
 
 		this.rebuildLyricLines();
-		this.calcLayout();
+		this.calcLayout(LayoutReason.ConfigChange);
 	}
 
 	/** 获取当前是否设置了让背景人声行始终后置显示 */

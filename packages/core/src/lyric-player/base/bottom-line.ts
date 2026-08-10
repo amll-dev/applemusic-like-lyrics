@@ -83,20 +83,20 @@ export class BottomLineEl implements HasElement, Disposable {
 		left: number = this.left,
 		top: number = this.top,
 		blur = 0,
-		force = false,
+		immediate = false,
 		delay = 0,
 	): void {
 		this.left = left;
 		this.top = top;
 
-		if (force || !this.lyricPlayer.getEnableSpring()) {
+		if (immediate || !this.lyricPlayer.getEnableSpring()) {
 			this.blur = Math.min(32, blur);
-			if (force) this.element.classList.add(styles.tmpDisableTransition);
+			if (immediate) this.element.classList.add(styles.tmpDisableTransition);
 			this.lineTransforms.posX.setPosition(left);
 			this.lineTransforms.posY.setPosition(top);
 			if (!this.lyricPlayer.getEnableSpring()) this.show();
 			else this.rebuildStyle();
-			if (force)
+			if (immediate)
 				requestAnimationFrame(() => {
 					this.element.classList.remove(styles.tmpDisableTransition);
 				});

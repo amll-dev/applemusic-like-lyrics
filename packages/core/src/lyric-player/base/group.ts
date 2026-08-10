@@ -27,6 +27,8 @@ export abstract class LyricLineGroupBase<
 
 	public isBgFirst = false;
 
+	protected isUiDirty = true;
+
 	constructor(
 		public mainLine: T,
 		public bgLine?: T | undefined,
@@ -47,13 +49,18 @@ export abstract class LyricLineGroupBase<
 		this.bgLine?.onLineSizeChange(size);
 	}
 
+	onBgSizeChange?(size: [number, number]): void;
+
+	abstract getElement(): Element;
+
 	setTransform(
 		top: number,
-		force: boolean,
+		immediate: boolean,
 		delay: number,
 		isActive: boolean,
 		opacity: number,
 		blur: number,
+		scaleImmediate: boolean = immediate,
 	): void {
 		this.top = top;
 		this.delay = delay;
@@ -61,7 +68,7 @@ export abstract class LyricLineGroupBase<
 		this.opacity = opacity;
 		this.blur = blur;
 
-		this.setLineTransformations(force, delay);
+		this.setLineTransformations(scaleImmediate, delay);
 
 		const enableSpring = this.lyricPlayer.getEnableSpring();
 		const alwaysPostposition =
@@ -70,20 +77,20 @@ export abstract class LyricLineGroupBase<
 		const hiddenSlideY = shouldBgFirst ? 80 : -80;
 
 		const isPlaying = this.lyricPlayer.getIsPlaying();
-
 		const targetBgSlideY = isActive || !isPlaying ? 0 : hiddenSlideY;
 
-		if (force || !enableSpring) {
+		if (immediate || !enableSpring) {
 			this.posY.setPosition(top);
 			this.bgSlideY.setPosition(targetBgSlideY);
-			this.renderStyles();
 		} else {
 			this.posY.setTargetPosition(top, delay);
 			this.bgSlideY.setTargetPosition(targetBgSlideY, delay);
 		}
+
+		this.isUiDirty = true;
 	}
 
-	private setLineTransformations(force: boolean, delay: number) {
+	private setLineTransformations(immediate: boolean, delay: number) {
 		const enableScale = this.lyricPlayer.getEnableScale();
 		const isPlaying = this.lyricPlayer.getIsPlaying();
 
@@ -96,13 +103,14 @@ export abstract class LyricLineGroupBase<
 		if (!this.isActive && isPlaying) {
 			mainScale = SCALE_ASPECT;
 		}
-		this.mainLine.setTransform(mainScale, 1, 0, force, delay, renderMode);
+
+		this.mainLine.setTransform(mainScale, 1, 0, immediate, delay, renderMode);
 
 		let bgScale = 100;
 		if (!this.isActive && isPlaying) {
 			bgScale = 75;
 		}
-		this.bgLine?.setTransform(bgScale, 1, 0, force, delay, renderMode);
+		this.bgLine?.setTransform(bgScale, 1, 0, immediate, delay, renderMode);
 	}
 
 	protected abstract renderStyles(): void;
@@ -111,13 +119,28 @@ export abstract class LyricLineGroupBase<
 
 	update(delta: number): void {
 		if (this.lyricPlayer.getEnableSpring()) {
+			const posMoving = !this.posY.arrived();
+			const bgMoving = !this.bgSlideY.arrived();
 			this.posY.update(delta);
 			this.bgSlideY.update(delta);
-			this.renderStyles();
+
+			if (posMoving || bgMoving) {
+				this.isUiDirty = true;
+			}
 		}
 
 		this.mainLine.update(delta);
 		this.bgLine?.update(delta);
+	}
+
+	commitChanges(): void {
+		if (!this.isInSight) return;
+		if (this.isUiDirty) {
+			this.renderStyles();
+			this.isUiDirty = false;
+		}
+		this.mainLine.commitChanges();
+		this.bgLine?.commitChanges();
 	}
 
 	rebuildAllLines(): void {

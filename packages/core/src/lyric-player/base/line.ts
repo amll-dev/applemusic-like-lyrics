@@ -17,6 +17,9 @@ export abstract class LyricLineBase extends EventTarget implements Disposable {
 	protected blur = 0;
 	protected opacity = 1;
 	protected delay = 0;
+
+	protected isUiDirty = true;
+
 	readonly lineTransforms: LineTransforms = {
 		scale: new Spring(100),
 	};
@@ -44,12 +47,13 @@ export abstract class LyricLineBase extends EventTarget implements Disposable {
 	abstract resume(): void;
 	abstract pause(): void;
 	abstract onLineSizeChange(size: [number, number]): void;
+	abstract commitChanges(): void;
 
 	setTransform(
 		scale: number = this.scale,
 		opacity: number = this.opacity,
 		blur: number = this.blur,
-		_force = false,
+		_immediate = false,
 		delay = 0,
 		_mode: LyricLineRenderMode = LyricLineRenderMode.SOLID,
 	): void {
@@ -57,6 +61,7 @@ export abstract class LyricLineBase extends EventTarget implements Disposable {
 		this.opacity = opacity;
 		this.blur = blur;
 		this.delay = delay;
+		this.isUiDirty = true;
 	}
 
 	rebuildElement(): void {}

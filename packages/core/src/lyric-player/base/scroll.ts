@@ -4,14 +4,13 @@ export interface ScrollEngineHooks {
 	/**
 	 * 当滚动偏移量发生变化时高频触发
 	 *
-	 * @param offset 计算并钳制后的最新滚动偏移量
 	 * @param isContinuous 当前是否为连续输入 (触摸或惯性 RAF)
 	 *
 	 * 一般的使用场景为：
 	 * * 若是连续输入，上层应绕过弹簧动画效果直接照着偏移量重新布局；
 	 * * 若是低频离散步进 (如滚轮)，则上层应保留弹簧效果以便在离散步进之间展示平滑的动画
 	 */
-	onScrollUpdate: (offset: number, isContinuous: boolean) => void;
+	onScrollUpdate: (isContinuous: boolean) => void;
 
 	/**
 	 * 用户明确产生滑动意图 (手指触摸超过 10px) 或使用滚轮时触发
@@ -190,7 +189,7 @@ export class ScrollInteractionEngine {
 		state.lastY = currentY;
 		state.startTime = now;
 
-		this.hooks.onScrollUpdate(this.offset, true);
+		this.hooks.onScrollUpdate(true);
 	};
 
 	private onTouchCancel = (_evt: TouchEvent) => {
@@ -272,7 +271,7 @@ export class ScrollInteractionEngine {
 
 					state.speed *= 0.95 ** (dt / 16);
 
-					this.hooks.onScrollUpdate(this.offset, true);
+					this.hooks.onScrollUpdate(true);
 					this.inertiaRafId = requestAnimationFrame(onScrollFrame);
 				} else {
 					this.inertiaRafId = 0;
@@ -301,7 +300,7 @@ export class ScrollInteractionEngine {
 		}
 
 		this.offset = this.clampOffset(this.offset);
-		this.hooks.onScrollUpdate(this.offset, false);
+		this.hooks.onScrollUpdate(false);
 
 		this.wheelEndTimeoutId = window.setTimeout(() => {
 			this.wheelEndTimeoutId = 0;
