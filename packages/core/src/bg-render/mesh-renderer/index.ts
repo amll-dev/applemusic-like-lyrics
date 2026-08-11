@@ -779,6 +779,10 @@ interface MeshState {
 
 export class MeshGradientRenderer extends BaseRenderer {
 	private gl: RenderingContext;
+	private contextLost = false;
+	private albumRequestId = 0;
+	private albumLoadController?: AbortController;
+	private lastImageData?: ImageData;
 	private lastFrameTime = 0;
 	private frameTime = 0;
 	// private currentImageData?: ImageData;
@@ -789,9 +793,9 @@ export class MeshGradientRenderer extends BaseRenderer {
 	private maxFPS = 60;
 	private paused = false;
 	private staticMode = false;
-	private mainProgram: GLProgram;
-	private quadProgram: GLProgram;
-	private quadBuffer: WebGLBuffer;
+	private mainProgram!: GLProgram;
+	private quadProgram!: GLProgram;
+	private quadBuffer!: WebGLBuffer;
 	private fbo: WebGLFramebuffer | null = null;
 	private fboTexture: WebGLTexture | null = null;
 	private manualControl = false;
@@ -809,6 +813,126 @@ export class MeshGradientRenderer extends BaseRenderer {
 	private lastFPSUpdate = 0;
 	private currentFPS = 0;
 	private enablePerformanceMonitoring = false;
+
+	private isCurrentAlbumRequest(requestId: number): boolean {
+		return (
+			!this._disposed && !this.contextLost && requestId === this.albumRequestId
+		);
+	}
+
+	private initializeGLResources(): void {
+		const gl = this.gl;
+		if (!gl.getExtension("EXT_color_buffer_float"))
+			console.warn("EXT_color_buffer_float not supported");
+		if (!gl.getExtension("EXT_float_blend")) {
+			console.warn("EXT_float_blend not supported");
+			// this.supportTextureFloat = false;
+		}
+		if (!gl.getExtension("OES_texture_float_linear"))
+			console.warn("OES_texture_float_linear not supported");
+		if (!gl.getExtension("OES_texture_float")) {
+			// this.supportTextureFloat = false;
+			console.warn("OES_texture_float not supported");
+		}
+
+		gl.enable(gl.BLEND);
+		gl.blendFuncSeparate(
+			gl.SRC_ALPHA,
+			gl.ONE_MINUS_SRC_ALPHA,
+			gl.ONE,
+			gl.ONE_MINUS_SRC_ALPHA,
+		);
+		gl.enable(gl.DEPTH_TEST);
+		gl.depthFunc(gl.ALWAYS);
+
+		this.mainProgram = new GLProgram(
+			gl,
+			meshVertShader,
+			meshFragShader,
+			"main-program-mg",
+		);
+
+		this.quadProgram = new GLProgram(
+			gl,
+			quadVertShader,
+			quadFragShader,
+			"quad-program",
+		);
+		const quadBuffer = gl.createBuffer();
+		if (!quadBuffer) throw new Error("Failed to create quad buffer");
+		this.quadBuffer = quadBuffer;
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.quadBuffer);
+		gl.bufferData(
+			gl.ARRAY_BUFFER,
+			new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]),
+			gl.STATIC_DRAW,
+		);
+	}
+
+	private createMeshState(imageData: ImageData): MeshState {
+		const newMesh = new BHPMesh(
+			this.gl,
+			this.mainProgram.attrs.a_pos,
+			this.mainProgram.attrs.a_color,
+			this.mainProgram.attrs.a_uv,
+		);
+		newMesh.resetSubdivition(50);
+
+		const chosenPreset =
+			Math.random() > 0.8
+				? generateControlPoints(6, 6)
+				: CONTROL_POINT_PRESETS[
+						Math.floor(Math.random() * CONTROL_POINT_PRESETS.length)
+					];
+
+		newMesh.resizeControlPoints(chosenPreset.width, chosenPreset.height);
+		const uPower = 2 / (chosenPreset.width - 1);
+		const vPower = 2 / (chosenPreset.height - 1);
+		for (const cp of chosenPreset.conf) {
+			const p = newMesh.getControlPoint(cp.cx, cp.cy);
+			p.location.x = cp.x;
+			p.location.y = cp.y;
+			p.uRot = (cp.ur * Math.PI) / 180;
+			p.vRot = (cp.vr * Math.PI) / 180;
+			p.uScale = uPower * cp.up;
+			p.vScale = vPower * cp.vp;
+		}
+
+		newMesh.updateMesh();
+		return {
+			mesh: newMesh,
+			texture: new GLTexture(this.gl, imageData),
+			alpha: 0,
+		};
+	}
+
+	private onContextLost = (event: Event): void => {
+		event.preventDefault();
+		this.contextLost = true;
+		this.albumLoadController?.abort();
+		if (this.tickHandle) {
+			cancelAnimationFrame(this.tickHandle);
+			this.tickHandle = 0;
+		}
+	};
+
+	private onContextRestored = (): void => {
+		if (this._disposed) return;
+
+		this.contextLost = false;
+		this.meshStates = [];
+		this.fbo = null;
+		this.fboTexture = null;
+		this.currentSize = Vec2.fromValues(0, 0);
+		this.initializeGLResources();
+		this.lastFrameTime = performance.now();
+		this.isNoCover = !this.lastImageData;
+
+		if (this.lastImageData) {
+			this.meshStates.push(this.createMeshState(this.lastImageData));
+		}
+		this.requestTick();
+	};
 
 	setManualControl(enable: boolean): void {
 		this.manualControl = enable;
@@ -844,6 +968,7 @@ export class MeshGradientRenderer extends BaseRenderer {
 		this.tickHandle = 0;
 		if (this.paused) return;
 		if (this._disposed) return;
+		if (this.contextLost) return;
 
 		// 更新性能统计
 		this.updatePerformanceStats(tickTime);
@@ -1059,52 +1184,10 @@ export class MeshGradientRenderer extends BaseRenderer {
 
 		const gl = canvas.getContext("webgl", { antialias: true });
 		if (!gl) throw new Error("WebGL not supported");
-		if (!gl.getExtension("EXT_color_buffer_float"))
-			console.warn("EXT_color_buffer_float not supported");
-		if (!gl.getExtension("EXT_float_blend")) {
-			console.warn("EXT_float_blend not supported");
-			// this.supportTextureFloat = false;
-		}
-		if (!gl.getExtension("OES_texture_float_linear"))
-			console.warn("OES_texture_float_linear not supported");
-		if (!gl.getExtension("OES_texture_float")) {
-			// this.supportTextureFloat = false;
-			console.warn("OES_texture_float not supported");
-		}
-
 		this.gl = gl;
-		gl.enable(gl.BLEND);
-		gl.blendFuncSeparate(
-			gl.SRC_ALPHA,
-			gl.ONE_MINUS_SRC_ALPHA,
-			gl.ONE,
-			gl.ONE_MINUS_SRC_ALPHA,
-		);
-		gl.enable(gl.DEPTH_TEST);
-		gl.depthFunc(gl.ALWAYS);
-
-		this.mainProgram = new GLProgram(
-			gl,
-			meshVertShader,
-			meshFragShader,
-			"main-program-mg",
-		);
-
-		this.quadProgram = new GLProgram(
-			gl,
-			quadVertShader,
-			quadFragShader,
-			"quad-program",
-		);
-		const quadBuffer = gl.createBuffer();
-		if (!quadBuffer) throw new Error("Failed to create quad buffer");
-		this.quadBuffer = quadBuffer;
-		gl.bindBuffer(gl.ARRAY_BUFFER, this.quadBuffer);
-		gl.bufferData(
-			gl.ARRAY_BUFFER,
-			new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]),
-			gl.STATIC_DRAW,
-		);
+		this.initializeGLResources();
+		canvas.addEventListener("webglcontextlost", this.onContextLost);
+		canvas.addEventListener("webglcontextrestored", this.onContextRestored);
 
 		this.requestTick();
 	}
@@ -1138,33 +1221,53 @@ export class MeshGradientRenderer extends BaseRenderer {
 		albumSource?: string | HTMLImageElement | HTMLVideoElement,
 		isVideo?: boolean,
 	): Promise<void> {
+		const requestId = ++this.albumRequestId;
+		this.albumLoadController?.abort();
+		const loadController = new AbortController();
+		this.albumLoadController = loadController;
+
 		if (
 			albumSource === undefined ||
 			(typeof albumSource === "string" && albumSource.trim().length === 0)
 		) {
 			this.isNoCover = true;
+			this.lastImageData = undefined;
 			return;
 		}
 		let res: HTMLImageElement | HTMLVideoElement | null = null;
 		let blob: Blob | null = null;
+		let objectUrl: string | undefined;
 		let remainRetryTimes = 5;
 		while (!res && remainRetryTimes > 0) {
 			try {
 				if (typeof albumSource === "string") {
 					if (!isVideo && "createImageBitmap" in window) {
 						// 如果支持 createImageBitmap 且是图片，直接 fetch blob
-						const response = await fetch(albumSource);
+						const response = await fetch(albumSource, {
+							signal: loadController.signal,
+						});
 						blob = await response.blob();
+						if (!this.isCurrentAlbumRequest(requestId)) return;
 						// 仍然需要一个 HTMLImageElement 来获取原始宽高（如果后续需要）
 						// 但这里我们主要依赖 blob 来创建 bitmap
-						res = await loadResourceFromUrl(URL.createObjectURL(blob), false);
+						objectUrl = URL.createObjectURL(blob);
+						res = await loadResourceFromUrl(objectUrl, false);
 					} else {
 						res = await loadResourceFromUrl(albumSource, isVideo);
 					}
 				} else {
 					res = await loadResourceFromElement(albumSource);
 				}
+				if (!this.isCurrentAlbumRequest(requestId)) {
+					if (objectUrl) URL.revokeObjectURL(objectUrl);
+					return;
+				}
 			} catch (error) {
+				if (objectUrl) {
+					URL.revokeObjectURL(objectUrl);
+					objectUrl = undefined;
+				}
+				if (!this.isCurrentAlbumRequest(requestId)) return;
 				console.warn(
 					`failed on loading album resource, retrying (${remainRetryTimes})`,
 					{
@@ -1176,11 +1279,10 @@ export class MeshGradientRenderer extends BaseRenderer {
 			}
 		}
 		if (!res) {
+			if (!this.isCurrentAlbumRequest(requestId)) return;
 			console.error("Failed to load album resource", albumSource);
-			this.isNoCover = true;
 			return;
 		}
-		this.isNoCover = false;
 		// resize image
 		const c = this.reduceImageSizeCanvas;
 		const ctx = c.getContext("2d", {
@@ -1206,7 +1308,6 @@ export class MeshGradientRenderer extends BaseRenderer {
 						resizeHeight: c.height,
 						resizeQuality: "low",
 					});
-					URL.revokeObjectURL(res.src); // 释放 object URL
 				} else {
 					bitmap = await createImageBitmap(res, {
 						resizeWidth: c.width,
@@ -1217,6 +1318,11 @@ export class MeshGradientRenderer extends BaseRenderer {
 			}
 		} catch (e) {
 			console.warn("createImageBitmap failed", e);
+		}
+		if (!this.isCurrentAlbumRequest(requestId)) {
+			bitmap?.close();
+			if (objectUrl) URL.revokeObjectURL(objectUrl);
+			return;
 		}
 
 		if (bitmap) {
@@ -1263,46 +1369,12 @@ export class MeshGradientRenderer extends BaseRenderer {
 			this.meshStates[0].texture.dispose();
 			this.meshStates[0].texture = new GLTexture(this.gl, imageData);
 		} else {
-			const newMesh = new BHPMesh(
-				this.gl,
-				this.mainProgram.attrs.a_pos,
-				this.mainProgram.attrs.a_color,
-				this.mainProgram.attrs.a_uv,
-			);
-			newMesh.resetSubdivition(50);
-
-			const chosenPreset =
-				Math.random() > 0.8
-					? generateControlPoints(6, 6)
-					: CONTROL_POINT_PRESETS[
-							Math.floor(Math.random() * CONTROL_POINT_PRESETS.length)
-						];
-
-			newMesh.resizeControlPoints(chosenPreset.width, chosenPreset.height);
-			const uPower = 2 / (chosenPreset.width - 1);
-			const vPower = 2 / (chosenPreset.height - 1);
-			for (const cp of chosenPreset.conf) {
-				const p = newMesh.getControlPoint(cp.cx, cp.cy);
-				p.location.x = cp.x;
-				p.location.y = cp.y;
-				p.uRot = (cp.ur * Math.PI) / 180;
-				p.vRot = (cp.vr * Math.PI) / 180;
-				p.uScale = uPower * cp.up;
-				p.vScale = vPower * cp.vp;
-			}
-
-			newMesh.updateMesh();
-			// this.currentImageData = imageData;
-
-			const albumTexture = new GLTexture(this.gl, imageData);
-			const newState: MeshState = {
-				mesh: newMesh,
-				texture: albumTexture,
-				alpha: 0,
-			};
-			this.meshStates.push(newState);
+			this.meshStates.push(this.createMeshState(imageData));
 		}
 
+		this.isNoCover = false;
+		this.lastImageData = imageData;
+		if (objectUrl) URL.revokeObjectURL(objectUrl);
 		this.requestTick();
 	}
 	override setLowFreqVolume(volume: number): void {
@@ -1314,6 +1386,12 @@ export class MeshGradientRenderer extends BaseRenderer {
 
 	override dispose(): void {
 		super.dispose();
+		this.albumLoadController?.abort();
+		this.canvas.removeEventListener("webglcontextlost", this.onContextLost);
+		this.canvas.removeEventListener(
+			"webglcontextrestored",
+			this.onContextRestored,
+		);
 		if (this.tickHandle) {
 			cancelAnimationFrame(this.tickHandle);
 			this.tickHandle = 0;
