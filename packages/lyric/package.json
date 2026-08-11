@@ -57,13 +57,12 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "catalog:",
-		"@types/node": "^25.8.0",
-		"@types/pako": "^2.0.4",
+		"@types/node": "^26.2.0",
 		"tsdown": "catalog:",
 		"vitest": "catalog:"
 	},
 	"dependencies": {
 		"@applemusic-like-lyrics/ttml": "workspace:^",
-		"pako": "^2.1.0"
+		"pako": "^3.0.1"
 	}
 }

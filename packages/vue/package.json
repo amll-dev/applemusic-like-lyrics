@@ -62,10 +62,10 @@
 		"@pixi/filter-color-matrix": "^7.4.3",
 		"@pixi/sprite": "^7.4.3",
 		"@rolldown/plugin-babel": "catalog:",
-		"@vue/babel-plugin-jsx": "^2.0.1",
+		"@vue/babel-plugin-jsx": "^3.0.0",
 		"tsdown": "catalog:",
 		"typedoc": "^0.28.17",
 		"typedoc-plugin-markdown": "catalog:",
-		"vue": "^3.5.30"
+		"vue": "^3.5.41"
 	}
 }

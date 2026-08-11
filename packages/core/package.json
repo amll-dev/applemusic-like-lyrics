@@ -84,7 +84,7 @@
 	},
 	"dependencies": {
 		"@ungap/structured-clone": "catalog:",
-		"bezier-easing": "^3.0.0",
+		"bezier-easing": "^3.0.1",
 		"deep-freeze": "^0.0.1",
 		"gl-matrix": "4.0.0-beta.2",
 		"vitest": "catalog:"
