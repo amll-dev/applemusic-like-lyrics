@@ -15,7 +15,7 @@ Trigger server to pull and update lyric data from the GitHub lyric repository.
 Calling this endpoint requires a valid Bearer Token in request headers.
 :::
 
-<ApiTrigger actionId="syncWebhook" client:load />
+<ApiTrigger actionId="syncWebhook" client:visible />
 
 ### Response Schema
 
@@ -62,7 +62,7 @@ type SyncWebhookErrorResponse = ErrorResponse;
 
 Get current API service runtime status, version, Git commit hash, build time, cached entries, and runtime metrics.
 
-<ApiTrigger actionId="getStatus" client:load />
+<ApiTrigger actionId="getStatus" client:visible />
 
 ### Response Schema
 

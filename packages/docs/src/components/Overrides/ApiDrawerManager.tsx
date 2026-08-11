@@ -1,12 +1,25 @@
 import { useStore } from "@nanostores/react";
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { isDrawerDragging, isDrawerOpen } from "#core/store.ts";
-import { ApiDrawer } from "../ApiTester/ApiDrawer";
-import { ToastContainer } from "../Toast";
+import { ApiDrawerSkeleton } from "../ApiTester/ApiDrawerSkeleton";
+
+const ApiDrawer = lazy(() =>
+	import("../ApiTester/ApiDrawer").then((m) => ({ default: m.ApiDrawer })),
+);
+const ToastContainer = lazy(() =>
+	import("../Toast").then((m) => ({ default: m.ToastContainer })),
+);
 
 export function ApiDrawerManager() {
 	const open = useStore(isDrawerOpen);
 	const dragging = useStore(isDrawerDragging);
+	const [hasBeenOpened, setHasBeenOpened] = useState(false);
+
+	useEffect(() => {
+		if (open && !hasBeenOpened) {
+			setHasBeenOpened(true);
+		}
+	}, [open, hasBeenOpened]);
 
 	useEffect(() => {
 		if (open) {
@@ -29,9 +42,9 @@ export function ApiDrawerManager() {
 	}, [dragging]);
 
 	return (
-		<>
+		<Suspense fallback={<ApiDrawerSkeleton />}>
 			<ToastContainer />
-			<ApiDrawer />
-		</>
+			{hasBeenOpened && <ApiDrawer />}
+		</Suspense>
 	);
 }

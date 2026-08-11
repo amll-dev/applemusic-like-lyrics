@@ -47,7 +47,7 @@ export interface LrclibSongItem {
 
 Fuzzy search in database, returning the first 50 items by default; use the pagination parameters to page through results.
 
-<ApiTrigger actionId="lrclibSearch" client:load />
+<ApiTrigger actionId="lrclibSearch" client:visible />
 
 ### Query Parameters
 
@@ -127,7 +127,7 @@ type LrcLibSearchResponse = LrclibSongItem[];
 
 Fuzzy match a song and return LRC and plain text lyrics directly.
 
-<ApiTrigger actionId="lrclibGet" client:load />
+<ApiTrigger actionId="lrclibGet" client:visible />
 
 ### Query Parameters
 
@@ -173,7 +173,7 @@ type LrcLibGetResponse = LrclibSongItem;
 
 Get full lyrics using the `id` returned from search endpoints.
 
-<ApiTrigger actionId="lrclibGetById" client:load />
+<ApiTrigger actionId="lrclibGetById" client:visible />
 
 ### Path Parameters
 

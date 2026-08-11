@@ -1,7 +1,7 @@
 import { API_CONFIG } from "#core/configs/index.ts";
 import { useHydratedTranslation } from "#core/i18n.ts";
 import { openTesterWith } from "#core/store.ts";
-import "./styles.css";
+import "./trigger.css";
 
 interface ApiTriggerProps {
 	actionId: keyof typeof API_CONFIG;

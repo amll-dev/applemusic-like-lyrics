@@ -11,7 +11,7 @@ AMLL 词库的原生接口，提供最完整的匹配与搜索能力
 
 在词库中搜索符合条件的歌词
 
-<ApiTrigger actionId="searchLyrics" client:load />
+<ApiTrigger actionId="searchLyrics" client:visible />
 
 ### 请求参数
 
@@ -174,7 +174,7 @@ type SearchLyricsResponse = ApiResponse<{
 
 通过 ID 获取一首歌曲的元数据及其完整的 TTML 歌词
 
-<ApiTrigger actionId="getLyric" client:load />
+<ApiTrigger actionId="getLyric" client:visible />
 
 ### 请求参数
 

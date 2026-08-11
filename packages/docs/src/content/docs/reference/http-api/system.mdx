@@ -15,7 +15,7 @@ import { ApiTrigger } from "#components/ApiTester/ApiTrigger";
 调用此接口需要在请求头携带正确的 Bearer Token
 :::
 
-<ApiTrigger actionId="syncWebhook" client:load />
+<ApiTrigger actionId="syncWebhook" client:visible />
 
 ### 响应 Schema
 
@@ -62,7 +62,7 @@ type SyncWebhookErrorResponse = ErrorResponse;
 
 获取当前 API 服务的运行状态、版本号、Git 提交 Hash、构建时间及运行时的缓存条目等元数据
 
-<ApiTrigger actionId="getStatus" client:load />
+<ApiTrigger actionId="getStatus" client:visible />
 
 ### 响应 Schema
 

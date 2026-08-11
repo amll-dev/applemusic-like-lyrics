@@ -47,7 +47,7 @@ export interface LrclibSongItem {
 
 在词库中模糊搜索，默认返回前 50 条记录，可通过分页参数翻页
 
-<ApiTrigger actionId="lrclibSearch" client:load />
+<ApiTrigger actionId="lrclibSearch" client:visible />
 
 ### 请求参数
 
@@ -123,7 +123,7 @@ type LrcLibSearchResponse = LrclibSongItem[];
 
 模糊匹配一首歌曲，并直接返回包含 LRC 歌词与纯文本歌词的结果
 
-<ApiTrigger actionId="lrclibGet" client:load />
+<ApiTrigger actionId="lrclibGet" client:visible />
 
 ### 请求参数
 
@@ -169,7 +169,7 @@ type LrcLibGetResponse = LrclibSongItem;
 
 通过搜索接口返回的 `id` 获取完整歌词
 
-<ApiTrigger actionId="lrclibGetById" client:load />
+<ApiTrigger actionId="lrclibGetById" client:visible />
 
 ### 路径参数
 

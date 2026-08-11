@@ -210,15 +210,7 @@ export default defineConfig({
 	],
 	vite: {
 		build: {
-			rollupOptions: {
-				output: {
-					manualChunks(id) {
-						if (id.includes("monaco-editor")) {
-							return "monaco-editor";
-						}
-					},
-				},
-			},
+			sourcemap: true,
 		},
 	},
 });
