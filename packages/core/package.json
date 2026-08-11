@@ -29,7 +29,10 @@
 		"build": "run-p typecheck \"build-only {@}\" --",
 		"build:dev": "tsdown",
 		"fmt": "biome format --write ./src",
-		"dev": "nx run @applemusic-like-lyrics/playground-core:dev"
+		"dev": "nx run @applemusic-like-lyrics/playground-core:dev",
+		"test": "vitest test",
+		"test:watch": "vitest test --watch",
+		"test:coverage": "vitest test --coverage"
 	},
 	"type": "module",
 	"main": "./dist/amll-core.cjs",
@@ -60,15 +63,15 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "catalog:",
+		"@tsdown/css": "catalog:",
 		"@types/deep-freeze": "^0.1.5",
 		"@types/stats.js": "^0.17.3",
 		"@types/ungap__structured-clone": "^1.2.0",
 		"lil-gui": "^0.21.0",
 		"stats.js": "^0.17.0",
+		"tsdown": "catalog:",
 		"typedoc": "catalog:",
-		"typedoc-plugin-markdown": "catalog:",
-		"@tsdown/css": "catalog:",
-		"tsdown": "catalog:"
+		"typedoc-plugin-markdown": "catalog:"
 	},
 	"peerDependencies": {
 		"@pixi/app": "*",
@@ -83,6 +86,7 @@
 		"@ungap/structured-clone": "catalog:",
 		"bezier-easing": "^3.0.0",
 		"deep-freeze": "^0.0.1",
-		"gl-matrix": "4.0.0-beta.2"
+		"gl-matrix": "4.0.0-beta.2",
+		"vitest": "catalog:"
 	}
 }

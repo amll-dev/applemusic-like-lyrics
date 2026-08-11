@@ -51,7 +51,7 @@ export function chunkAndSplitLyricWords(
 		const hasRuby = (w.ruby?.length ?? 0) > 0;
 
 		if (isSpace) {
-			processAtom({ ...w });
+			processAtom({ ...w, obscene });
 			continue;
 		}
 
@@ -74,6 +74,7 @@ export function chunkAndSplitLyricWords(
 			processAtom({
 				...w,
 				word: content,
+				obscene: obscene,
 			});
 
 			if (trailingSpace) {
@@ -94,7 +95,20 @@ export function chunkAndSplitLyricWords(
 		const timeSpan = w.endTime - w.startTime;
 		const timePerUnit = timeSpan / totalLength;
 
+		const wordParts = w.word
+			.trim()
+			.split(/\s+/)
+			.filter((p) => p.length > 0);
+		const romanTrimmed = romanWord.trim();
+		const romanParts =
+			romanTrimmed.length > 0
+				? romanTrimmed.split(/\s+/).filter((p) => p.length > 0)
+				: [];
+		const isMatched =
+			wordParts.length > 0 && wordParts.length === romanParts.length;
+
 		let currentOffset = 0;
+		let nonSpaceIndex = 0;
 
 		for (const part of parts) {
 			if (!part.trim()) {
@@ -109,7 +123,17 @@ export function chunkAndSplitLyricWords(
 				continue;
 			}
 
-			if (isCJK(part) && part.length > 1 && romanWord.trim().length === 0) {
+			let partRomanWord = "";
+			if (romanParts.length > 0) {
+				if (isMatched) {
+					partRomanWord = romanParts[nonSpaceIndex] ?? "";
+				} else if (nonSpaceIndex === 0) {
+					partRomanWord = romanWord;
+				}
+			}
+			nonSpaceIndex++;
+
+			if (isCJK(part) && part.length > 1 && romanTrimmed.length === 0) {
 				const chars = part.split("");
 				for (const char of chars) {
 					const startTime = w.startTime + currentOffset * timePerUnit;
@@ -129,7 +153,7 @@ export function chunkAndSplitLyricWords(
 
 				processAtom({
 					word: part,
-					romanWord: romanWord,
+					romanWord: partRomanWord,
 					startTime: startTime,
 					endTime: startTime + duration,
 					obscene: obscene,
