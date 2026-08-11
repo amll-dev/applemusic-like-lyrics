@@ -31,25 +31,62 @@ At least one of the following parameters must be provided. Multiple parameters c
 | `authorId`       | `string` | Exact match      | TTML contributor GitHub ID                                 |
 | `authorUsername` | `string` | Exact match      | TTML contributor GitHub username                           |
 
+### Pagination Parameters
+
+The following parameters control paging and are all optional. They do **not** count toward the
+"at least one search parameter" requirement above, and they do not affect the priority resolution
+between `q` and the other parameters.
+
+| Parameter  | Type     | Default | Range     | Description               |
+| ---------- | -------- | ------- | --------- | ------------------------- |
+| `page`     | `number` | `1`     | `>= 1`    | Page number, starting at 1 |
+| `pageSize` | `number` | `50`    | `1`–`100` | Number of items per page   |
+
+- Non-positive integers, `0`, or values outside the allowed range return `400`.
+- An empty value (e.g. `?page=`) is treated as not provided and falls back to the default.
+- Passing only pagination parameters without any search parameter still returns `400`.
+
 ### Response Behavior
-1. Results are sorted by relevance in descending order, then by timestamp descending when relevance is tied.
-2. Returns a maximum of 50 items.
+1. Results are sorted by relevance descending, then by timestamp descending when relevance is tied, then by `id` ascending when both are tied.
+2. The ordering is stable: repeated requests with the same query return consistent pages, with no duplicates or gaps between adjacent pages.
 
 ### Response Schema
 
 Returns `200` status code on success with the following structure:
 
 ```typescript
+export interface PaginationInfo {
+  /** Current page number */
+  page: number;
+  /** Number of items per page */
+  pageSize: number;
+  /** Total number of matched items */
+  total: number;
+  /** Total number of pages; `0` when `total` is `0` */
+  totalPages: number;
+  /** Whether more results exist after the current page */
+  hasMore: boolean;
+}
+
 type SearchLyricsResponse = ApiResponse<{
   items: SongItem[];
+  pagination: PaginationInfo;
 }>;
 ```
 
 **Field Descriptions:**
-- `ApiResponse<T>`: Global generic response wrapper, see [ApiResponse Model](overview#native-api-response-model-apiresponset)
+- `ApiResponse<T>`: Global generic response wrapper structure, see [ApiResponse Model](overview#native-api-response-model-apiresponset)
 - `items`: List of matched songs, element type is [SongItem Model](overview#song-metadata--lyric-model-songitem)
   - `lyrics` is fixed to `undefined` for each item in search results.
   - `matchContext` is present with highlighted `snippet` only when the query matches lyric text.
+  - Length never exceeds `pageSize`; the last page may contain fewer items.
+- `pagination`: Object containing pagination metadata for the current request, see [PaginationInfo Model](overview#pagination-metadata-model-paginationinfo)
+  - `page`: Current page number
+  - `pageSize`: Number of items per page
+  - `total`: Total number of items matching the current query, unaffected by `page` / `pageSize`
+  - `totalPages`: Total number of pages, `0` when `total` is `0`
+  - `hasMore`: Equivalent to `page < totalPages`; can be used directly to decide whether to request the next page
+- When the requested `page` exceeds `totalPages`, `items` is an empty array while the other fields are returned as usual.
 
 <details>
   <summary>Example Response</summary>
@@ -119,7 +156,14 @@ type SearchLyricsResponse = ApiResponse<{
             "snippet": "And there's a lot of lame guys out there\n<mark>'Cause one of these things is not like the others</mark>\nLiving in winter I am your summer"
           }
         }
-      ]
+      ],
+      "pagination": {
+        "page": 1,
+        "pageSize": 50,
+        "total": 2,
+        "totalPages": 1,
+        "hasMore": false
+      }
     }
   }
   ```

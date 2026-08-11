@@ -45,7 +45,7 @@ export interface LrclibSongItem {
 
 ## Search Lyrics
 
-Fuzzy search in database, returning up to 50 items in response array.
+Fuzzy search in database, returning the first 50 items by default; use the pagination parameters to page through results.
 
 <ApiTrigger actionId="lrclibSearch" client:load />
 
@@ -60,6 +60,22 @@ At least one of `track_name`, `q`, `artist_name`, or `album_name` must be provid
 | `artist_name` | `string` | No       | Artist name           |
 | `album_name`  | `string` | No       | Album title           |
 
+### Pagination Parameters
+
+This endpoint additionally supports pagination. These two parameters are an AMLL extension and are
+**not part of the LrcLib protocol**, so they use the same camelCase naming as the
+[native search endpoint](native#pagination-parameters) rather than the snake_case style of this
+endpoint's other parameters.
+
+| Parameter  | Type     | Default | Range     | Description                |
+| ---------- | -------- | ------- | --------- | -------------------------- |
+| `page`     | `number` | `1`     | `>= 1`    | Page number, starting at 1 |
+| `pageSize` | `number` | `50`    | `1`–`100` | Number of items per page   |
+
+- Non-positive integers, `0`, or values outside the allowed range return `400`.
+- Pagination parameters do not count toward the "at least one search parameter" requirement; passing only pagination parameters still returns `400`.
+- When no pagination parameters are provided, the behavior is identical to before (the first 50 items), so existing LrcLib clients need no changes.
+
 ### Response Schema
 
 Returns `200` status code on success with the following structure:
@@ -68,7 +84,11 @@ Returns `200` status code on success with the following structure:
 type LrcLibSearchResponse = LrclibSongItem[];
 ```
 
-- Element type is [LrclibSongItem Model](#lrclib-response-model-lrclibsongitem), returning up to 50 items.
+- To preserve LrcLib protocol compatibility, the response is **always a bare array** and carries no
+  pagination metadata. If you need `total` / `totalPages` / `hasMore`, use the
+  [native search endpoint](native#search-lyrics).
+- Element type is [LrclibSongItem Model](#lrclib-response-model-lrclibsongitem); the length never exceeds `pageSize`.
+- When the requested page exceeds the total number of results, an empty array `[]` is returned.
 
 <details>
   <summary>Example Response</summary>

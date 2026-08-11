@@ -142,6 +142,8 @@ paths:
         * 至少需要提供一个有效搜索参数。
         * 如果同时传入 `q` 和其他参数，忽略 `q` 并优先使用其他限定参数。
         * 多个非 `q` 参数之间为 AND 交集匹配。
+        * `page` 与 `pageSize` 为分页参数，不计入「至少一个有效搜索参数」的判定，也不参与 `q` 与其他参数的优先级计算。仅传分页参数时仍返回 400。
+        * 结果按相关性、时间戳、`id` 依次排序，排序稳定，相邻页之间不会重复或遗漏。
       parameters:
         # 全局搜索
         - name: q
@@ -192,15 +194,33 @@ paths:
           schema:
             type: string
           description: 歌词作者 GitHub 用户名（严格全等）
+        # 分页
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: 页码，从 1 开始。传入 0 或非正整数返回 400。
+        - name: pageSize
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+          description: 每页返回的条目数，上限 100。超出范围返回 400。
       responses:
         "200":
-          description: 成功（最多返回前 50 条记录，无匹配时返回空列表）
+          description: 成功（无匹配时 items 为空列表，total 为 0）
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/SearchResponse"
         "400":
-          description: 参数验证失败（未传入任何有效请求参数）
+          description: 参数验证失败（未传入任何有效请求参数，或分页参数非法）
           content:
             application/json:
               schema:
@@ -221,7 +241,14 @@ paths:
   /v1/lrclib/search:
     get:
       summary: LrcLib 兼容搜索
-      description: 在词库中模糊搜索，为兼容 LrcLib 协议的客户端提供支持。响应列表中最多返回前 50 条记录。
+      description: |
+        在词库中模糊搜索，为兼容 LrcLib 协议的客户端提供支持。
+
+        * 默认返回前 50 条记录，可通过 `page` / `pageSize` 翻页。
+        * 分页参数是 AMLL 的扩展而非 LrcLib 协议的一部分，故采用 camelCase 命名，
+          与本接口其他 snake_case 参数不同。
+        * 为保持协议兼容，响应始终是裸数组，不含分页元信息。
+          需要 `total` / `hasMore` 请改用 `/v1/lyrics/search`。
       parameters:
         - name: q
           in: query
@@ -247,9 +274,26 @@ paths:
           schema:
             type: string
           description: 专辑名
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: 页码，从 1 开始。不计入「至少一个有效搜索参数」的判定。
+        - name: pageSize
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+          description: 每页返回的条目数，上限 100。超出范围返回 400。
       responses:
         "200":
-          description: 成功返回匹配到的 LrcLib 格式歌曲列表（最多 50 条）
+          description: 成功返回匹配到的 LrcLib 格式歌曲列表（长度不超过 pageSize，页码越界时为空数组）
           content:
             application/json:
               schema:
@@ -257,7 +301,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/LrclibSongItem"
         "400":
-          description: 缺少有效的搜索参数
+          description: 缺少有效的搜索参数，或分页参数非法
           content:
             application/json:
               schema:
@@ -608,6 +652,41 @@ components:
         data:
           $ref: "#/components/schemas/SongItem"
 
+    PaginationInfo:
+      type: object
+      required:
+        - page
+        - pageSize
+        - total
+        - totalPages
+        - hasMore
+      properties:
+        page:
+          type: integer
+          minimum: 1
+          description: 当前页码
+          example: 1
+        pageSize:
+          type: integer
+          minimum: 1
+          maximum: 100
+          description: 每页条目数
+          example: 50
+        total:
+          type: integer
+          minimum: 0
+          description: 当前查询条件匹配到的总条目数，不受分页参数影响
+          example: 18
+        totalPages:
+          type: integer
+          minimum: 0
+          description: 总页数，total 为 0 时该值为 0
+          example: 1
+        hasMore:
+          type: boolean
+          description: 当前页之后是否还有更多结果，等价于 page < totalPages
+          example: false
+
     SearchResponse:
       type: object
       required:
@@ -621,12 +700,16 @@ components:
           type: object
           required:
             - items
+            - pagination
           properties:
             items:
               type: array
-              maxItems: 50
+              maxItems: 100
+              description: 当前页的歌曲列表，长度不超过 pageSize
               items:
                 $ref: "#/components/schemas/SongItem"
+            pagination:
+              $ref: "#/components/schemas/PaginationInfo"
 
     WebhookSyncResponse:
       type: object

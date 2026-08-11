@@ -45,7 +45,7 @@ export interface LrclibSongItem {
 
 ## 搜索歌词
 
-在词库中模糊搜索，响应列表中最多返回前 50 条记录
+在词库中模糊搜索，默认返回前 50 条记录，可通过分页参数翻页
 
 <ApiTrigger actionId="lrclibSearch" client:load />
 
@@ -60,6 +60,19 @@ export interface LrclibSongItem {
 | `artist_name` | `string` | 否   | 歌手名             |
 | `album_name`  | `string` | 否   | 专辑名             |
 
+### 分页参数
+
+本接口支持分页。下列两个参数是 AMLL 的扩展，**不属于 LrcLib 协议**，因此采用与 [原生搜索接口](native#分页参数) 一致的 camelCase 命名，而非其他参数的 snake_case 风格
+
+| 参数名     | 类型     | 默认值 | 取值范围  | 说明             |
+| ---------- | -------- | ------ | --------- | ---------------- |
+| `page`     | `number` | `1`    | `>= 1`    | 页码，从 1 开始  |
+| `pageSize` | `number` | `50`   | `1`–`100` | 每页返回的条目数 |
+
+- 传入非正整数、`0` 或超出范围的值将返回 `400`
+- 分页参数不计入「至少提供一个搜索参数」的要求，仅传分页参数仍会返回 `400`
+- 不传分页参数时返回前 50 条
+
 ### 响应 Schema
 
 请求成功时返回 `200` 状态码及如下结构
@@ -68,7 +81,9 @@ export interface LrclibSongItem {
 type LrcLibSearchResponse = LrclibSongItem[];
 ```
 
-- 元素类型为 [LrclibSongItem 模型](#lrclib-响应模型-lrclibsongitem)，包含了搜索匹配到的歌曲列表，最多返回 50 条
+- 响应始终是裸数组，不包含分页元信息。如果需要 `total` / `totalPages` / `hasMore`，请使用 [原生搜索接口](native#搜索歌词)
+- 元素类型为 [LrclibSongItem 模型](#lrclib-响应模型-lrclibsongitem)，长度不超过 `pageSize`
+- 请求的页码超出结果总数时返回空数组 `[]`
 
 <details>
   <summary>示例响应</summary>

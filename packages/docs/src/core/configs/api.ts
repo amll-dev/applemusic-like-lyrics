@@ -135,6 +135,18 @@ export const API_CONFIG: Record<string, ApiEndpointDef> = {
 				required: false,
 				placeholder: "Xionghaizi001",
 			},
+			{
+				name: "page",
+				type: "number",
+				required: false,
+				placeholder: "1",
+			},
+			{
+				name: "pageSize",
+				type: "number",
+				required: false,
+				placeholder: "50",
+			},
 		],
 	},
 	syncWebhook: {
@@ -180,6 +192,18 @@ export const API_CONFIG: Record<string, ApiEndpointDef> = {
 				type: "string",
 				required: false,
 				placeholder: "Lover",
+			},
+			{
+				name: "page",
+				type: "number",
+				required: false,
+				placeholder: "1",
+			},
+			{
+				name: "pageSize",
+				type: "number",
+				required: false,
+				placeholder: "50",
 			},
 		],
 	},

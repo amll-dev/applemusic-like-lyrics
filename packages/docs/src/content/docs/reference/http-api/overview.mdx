@@ -23,7 +23,7 @@ import { LinkCard } from "@astrojs/starlight/components";
 | [搜索歌词](native#搜索歌词)                  | `GET`     | `/v1/lyrics/search`   | 否       | 在词库中根据曲名、歌手或正文搜索歌词        |
 | [获取歌词](native#获取歌词)                  | `GET`     | `/v1/lyrics/get`      | 否       | 通过 ID、文件名或平台 ID 获取完整 TTML 歌词 |
 | [LrcLib 搜索](lrclib#搜索歌词)               | `GET`     | `/v1/lrclib/search`   | 否       | 兼容 LrcLib 协议的歌词搜索接口              |
-| [LrcLib 精确匹配](lrclib#精确匹配)           | `GET`     | `/v1/lrclib/get`      | 否       | 兼容 LrcLib 协议的精确匹配与歌词获取接口    |
+| [LrcLib 模糊匹配](lrclib#模糊匹配)           | `GET`     | `/v1/lrclib/get`      | 否       | 兼容 LrcLib 协议的模糊匹配与歌词获取接口    |
 | [LrcLib 按 ID 获取](lrclib#根据-id-获取歌词) | `GET`     | `/v1/lrclib/get/{id}` | 否       | 兼容 LrcLib 协议的按 ID 获取歌词接口        |
 | [触发词库同步](system#触发词库同步)          | `POST`    | `/v1/webhook/sync`    | **是**   | 触发服务器从远程歌词库拉取并更新歌词        |
 | [获取运行状态](system#获取运行状态)          | `GET`     | `/v1/status`          | 否       | 获取当前 API 服务的运行状态与元数据         |
@@ -101,7 +101,28 @@ export interface ErrorResponse {
 export type ApiResponse<T> = SuccessResponse<T> | ErrorResponse;
 ```
 
-- `SuccessResponse<T>`: 成功响应模型，`data` 为泛型业务载荷。例如在 [搜索接口](native#搜索歌词) 中 `T` 为 `{ items: SongItem[] }`；在 [获取歌词接口](native#获取歌词) 中 `T` 为 [SongItem](#歌曲元数据与歌词模型-songitem)
+- `SuccessResponse<T>`: 成功响应模型，`data` 为泛型业务载荷。例如在 [搜索接口](native#搜索歌词) 中 `T` 为 `{ items: SongItem[]; pagination: PaginationInfo }`；在 [获取歌词接口](native#获取歌词) 中 `T` 为 [SongItem](#歌曲元数据与歌词模型-songitem)
+
+---
+
+## 分页元信息模型 `PaginationInfo`
+
+原生搜索接口返回的分页信息模型，包含当前页码、每页条目数、总匹配数等元数据
+
+```typescript
+export interface PaginationInfo {
+  /** 当前页码 */
+  page: number;
+  /** 每页条目数 */
+  pageSize: number;
+  /** 当前查询条件匹配到的总条目数，不受 page / pageSize 影响 */
+  total: number;
+  /** 总页数，total 为 0 时该值为 0 */
+  totalPages: number;
+  /** 当前页之后是否还有更多结果，等价于 page < totalPages */
+  hasMore: boolean;
+}
+```
 
 ---
 

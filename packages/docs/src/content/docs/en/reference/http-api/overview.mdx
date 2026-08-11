@@ -23,7 +23,7 @@ The following table summarizes all endpoint paths, HTTP methods, and modules pro
 | [Search Lyrics](native#search-lyrics)          | `GET`       | `/v1/lyrics/search`   | No            | Search lyrics by song name, artist, album, or lyric text            |
 | [Get Lyric](native#get-lyric)                  | `GET`       | `/v1/lyrics/get`      | No            | Get full TTML lyrics by ID, filename, or platform IDs               |
 | [LrcLib Search](lrclib#search-lyrics)          | `GET`       | `/v1/lrclib/search`   | No            | LrcLib protocol compatible lyric search endpoint                    |
-| [LrcLib Exact Match](lrclib#exact-match)       | `GET`       | `/v1/lrclib/get`      | No            | LrcLib protocol compatible exact match and lyric retrieval endpoint |
+| [LrcLib Fuzzy Match](lrclib#fuzzy-match)       | `GET`       | `/v1/lrclib/get`      | No            | LrcLib protocol compatible fuzzy match and lyric retrieval endpoint |
 | [LrcLib Get by ID](lrclib#get-lyric-by-id)     | `GET`       | `/v1/lrclib/get/{id}` | No            | LrcLib protocol compatible get lyric by ID endpoint                 |
 | [Trigger Sync](system#trigger-database-sync)   | `POST`      | `/v1/webhook/sync`    | **Yes**       | Trigger server to pull and update lyrics from remote repository     |
 | [Get System Status](system#get-runtime-status) | `GET`       | `/v1/status`          | No            | Get running status and metadata of the API service                  |
@@ -101,7 +101,28 @@ export interface ErrorResponse {
 export type ApiResponse<T> = SuccessResponse<T> | ErrorResponse;
 ```
 
-- `SuccessResponse<T>`: Successful response model, `data` contains generic business data payload. E.g., in the [Search Endpoint](native#search-lyrics), `T` is `{ items: SongItem[] }`; in the [Get Lyric Endpoint](native#get-lyric), `T` is [SongItem](#song-metadata--lyric-model-songitem)
+- `SuccessResponse<T>`: Successful response model, `data` contains generic business data payload. E.g., in the [Search Endpoint](native#search-lyrics), `T` is `{ items: SongItem[]; pagination: PaginationInfo }`; in the [Get Lyric Endpoint](native#get-lyric), `T` is [SongItem](#song-metadata--lyric-model-songitem)
+
+---
+
+## Pagination Metadata Model `PaginationInfo`
+
+Pagination metadata returned by the native search endpoint, including current page, items per page, and total count.
+
+```typescript
+export interface PaginationInfo {
+  /** Current page number */
+  page: number;
+  /** Number of items per page */
+  pageSize: number;
+  /** Total number of matched items for the query, unaffected by page / pageSize */
+  total: number;
+  /** Total number of pages; 0 when total is 0 */
+  totalPages: number;
+  /** Whether more results exist after the current page, equivalent to page < totalPages */
+  hasMore: boolean;
+}
+```
 
 ---
 

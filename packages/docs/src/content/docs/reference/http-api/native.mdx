@@ -31,17 +31,44 @@ AMLL 词库的原生接口，提供最完整的匹配与搜索能力
 | `authorId`       | `string` | 严格全等 | TTML 贡献者的 GitHub ID                  |
 | `authorUsername` | `string` | 严格全等 | TTML 贡献者的 GitHub 用户名              |
 
+### 分页参数
+
+以下参数用于翻页，均为可选。它们**不计入**上方「至少提供一个搜索参数」的要求，也不会影响 `q` 与其他参数之间的优先级判定
+
+| 参数名     | 类型     | 默认值 | 取值范围  | 说明             |
+| ---------- | -------- | ------ | --------- | ---------------- |
+| `page`     | `number` | `1`    | `>= 1`    | 页码，从 1 开始  |
+| `pageSize` | `number` | `50`   | `1`–`100` | 每页返回的条目数 |
+
+- 传入非正整数、`0` 或超出范围的值将返回 `400`
+- 传入空值（如 `?page=`）视为未传入，使用默认值
+- 仅传分页参数而不带任何搜索参数仍会返回 `400`
+
 ### 响应行为
-1. 结果按匹配相关性降序排序，相关性相同时按时间戳降序排序
-2. 最多返回前 50 条记录
+1. 结果按匹配相关性降序排序，相关性相同时按时间戳降序排序，仍相同时按 `id` 升序排序
+2. 排序结果稳定，同一查询条件下重复请求的分页结果一致，相邻页之间不会重复或遗漏
 
 ### 响应 Schema
 
 请求成功时返回 `200` 状态码及如下结构
 
 ```typescript
+export interface PaginationInfo {
+  /** 当前页码 */
+  page: number;
+  /** 每页条目数 */
+  pageSize: number;
+  /** 匹配到的总条目数 */
+  total: number;
+  /** 总页数，`total` 为 0 时该值为 0 */
+  totalPages: number;
+  /** 当前页之后是否还有更多结果 */
+  hasMore: boolean;
+}
+
 type SearchLyricsResponse = ApiResponse<{
   items: SongItem[];
+  pagination: PaginationInfo;
 }>;
 ```
 
@@ -50,6 +77,14 @@ type SearchLyricsResponse = ApiResponse<{
 - `items`: 搜索到的歌曲列表，元素类型为 [SongItem 模型](overview#歌曲元数据与歌词模型-songitem)
   - 搜索结果中每项的 `lyrics` 固定为 `undefined`
   - 仅在歌词正文包含搜索词时，`matchContext` 存在且包含 `snippet` 高亮代码片段
+  - 长度不会超过 `pageSize`，末页可能少于 `pageSize`
+- `pagination`: 包含当前请求的分页元信息对象，详见 [PaginationInfo 模型](overview#分页元信息模型-paginationinfo)
+  - `page`: 当前页码
+  - `pageSize`: 每页条目数
+  - `total`: 当前查询条件匹配到的总条目数，不受 `page` / `pageSize` 影响
+  - `totalPages`: 总页数，`total` 为 0 时该值为 0
+  - `hasMore`: 等价于 `page < totalPages`，可直接用于判断是否继续请求下一页
+- 请求的 `page` 超过 `totalPages` 时，`items` 为空数组，其余字段照常返回
 
 <details>
   <summary>示例响应</summary>
@@ -119,7 +154,14 @@ type SearchLyricsResponse = ApiResponse<{
             "snippet": "And there's a lot of lame guys out there\n<mark>'Cause one of these things is not like the others</mark>\nLiving in winter I am your summer"
           }
         }
-      ]
+      ],
+      "pagination": {
+        "page": 1,
+        "pageSize": 50,
+        "total": 2,
+        "totalPages": 1,
+        "hasMore": false
+      }
     }
   }
   ```
