@@ -81,8 +81,10 @@ export interface OptimizeLyricOptions {
 	 */
 	resetLineTimestamps?: boolean;
 	/**
-	 * 把多行背景人声转换为单行背景人声 + 主歌词行的形式
-	 * @default true
+	 * 该选项已不再生效，歌词优化时始终会把多行背景人声转换为
+	 * 单行背景人声 + 主歌词行的形式
+	 *
+	 * @deprecated 现有播放器架构已不再支持多个连续的背景人声行
 	 */
 	convertExcessiveBackgroundLines?: boolean;
 	/**
@@ -93,18 +95,22 @@ export interface OptimizeLyricOptions {
 	/**
 	 * 清洗非刻意的重叠，以免不必要的多行高亮效果
 	 *
-	 * 如果两行时间轴有重叠的歌词满足下列条件之一：
-	 * * 重叠小于 100ms
-	 * * 重叠时长不足下一行时长的 10%
+	 * 重叠**达到** 500ms 时视为有意重叠并予以保留
 	 *
-	 * 则截断上一行歌词的结束时间为下一行歌词的开始时间
+	 * 重叠**不足** 500ms，且满足下列条件之一时视为无意重叠：
+	 * * 重叠不超过 100ms
+	 * * 重叠时长不超过下一行时长的 10%
+	 *
+	 * 并截断上一行歌词的结束时间为下一行歌词的开始时间
 	 * @default true
 	 */
 	cleanUnintentionalOverlaps?: boolean;
 	/**
-	 * 尝试让歌词提前最多 1 秒开始
+	 * 尝试让歌词提前最多 600ms 开始
 	 *
-	 * 有重叠则尝试最多提前 400ms 或上一行时长的 30%
+	 * 与上一行存在重叠时尝试提前 400ms
+	 *
+	 * 若重叠时长不足 400ms，则提前重叠时长的 70%
 	 * @default true
 	 */
 	tryAdvanceStartTime?: boolean;

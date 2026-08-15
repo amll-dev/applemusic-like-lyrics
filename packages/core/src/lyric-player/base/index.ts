@@ -527,6 +527,8 @@ export abstract class LyricPlayerBase
 	 * 设置当前播放歌词，要注意传入后这个数组内的信息不得修改，否则会发生错误
 	 * @param lines 歌词数组
 	 * @param initialTime 初始时间，默认为 0
+	 * @throws {TypeError} 歌词时间戳不是有限的非负数字
+	 * @throws {RangeError} 任一行、单词或注音的开始时间晚于结束时间
 	 */
 	setLyricLines(lines: LyricLine[], initialTime = 0): void {
 		if (import.meta.env.DEV) {
