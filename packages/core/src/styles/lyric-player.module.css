@@ -133,10 +133,13 @@
 		vertical-align: bottom;
 		contain: layout style;
 
-		&.emphasize,
-		span.emphasize {
+		& > span {
 			margin: -1em;
 			padding: 1em;
+		}
+
+		&.emphasize,
+		span.emphasize {
 			backface-visibility: hidden;
 
 			& > span {

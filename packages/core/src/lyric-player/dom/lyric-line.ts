@@ -686,30 +686,24 @@ export class LyricLineEl extends LyricLineBase {
 		for (const word of this.splittedWords) {
 			const wordEl = word.mainElement;
 			if (wordEl) {
-				word.width = wordEl.clientWidth;
-				word.height = wordEl.clientHeight;
 				const fadeWidth = word.height * this.lyricPlayer.getWordFadeWidth();
 				const [maskImage, totalAspect] = generateFadeGradient(
-					fadeWidth / word.width,
+					fadeWidth / (word.width + word.padding * 2),
 				);
 				const totalAspectStr = `${totalAspect * 100}% 100%`;
 				if (this.lyricPlayer.supportMaskImage) {
 					wordEl.style.maskImage = maskImage;
 					wordEl.style.maskRepeat = "no-repeat";
-					wordEl.style.maskOrigin = "left";
 					wordEl.style.maskSize = totalAspectStr;
 				} else {
 					wordEl.style.webkitMaskImage = maskImage;
 					wordEl.style.webkitMaskRepeat = "no-repeat";
-					wordEl.style.webkitMaskOrigin = "left";
 					wordEl.style.webkitMaskSize = totalAspectStr;
 				}
-				const w = word.width + fadeWidth;
+				const w = word.width + word.padding * 2 + fadeWidth;
 				const maskPos = `clamp(${-w}px,calc(${-w}px + (var(--amll-player-time) - ${
 					word.startTime
-				})*${
-					w / Math.abs(word.endTime - word.startTime)
-				}px),0px) 0px, left top`;
+				})*${w / Math.abs(word.endTime - word.startTime)}px),0px) 0px`;
 				wordEl.style.maskPosition = maskPos;
 				wordEl.style.webkitMaskPosition = maskPos;
 			}
@@ -736,12 +730,10 @@ export class LyricLineEl extends LyricLineBase {
 				if (this.lyricPlayer.supportMaskImage) {
 					wordEl.style.maskImage = maskImage;
 					wordEl.style.maskRepeat = "no-repeat";
-					wordEl.style.maskOrigin = "left";
 					wordEl.style.maskSize = totalAspectStr;
 				} else {
 					wordEl.style.webkitMaskImage = maskImage;
 					wordEl.style.webkitMaskRepeat = "no-repeat";
-					wordEl.style.webkitMaskOrigin = "left";
 					wordEl.style.webkitMaskSize = totalAspectStr;
 				}
 				// 为了尽可能将渐变动画在相连的每个单词间近似衔接起来
