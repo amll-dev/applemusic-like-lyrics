@@ -5,9 +5,13 @@
  */
 
 import "#styles/index.css";
+import type { BottomLine } from "#lyric/base/bottom-line.ts";
 import { LyricPlayerBase } from "#lyric/base/index.ts";
+import type { InterludeDots } from "#lyric/base/interlude-dots.ts";
 import type { LyricLineBase } from "#lyric/base/line.ts";
 import styles from "#styles/lyric-player.module.css";
+import { BottomLineEl } from "./bottom-line.ts";
+import { InterludeDotsEl } from "./interlude-dots.ts";
 import { LyricLineGroup } from "./lyric-group.ts";
 import { LyricLineEl } from "./lyric-line.ts";
 
@@ -147,6 +151,14 @@ export class DomLyricPlayer extends LyricPlayerBase {
 		}
 	}
 
+	protected override createInterludeDots(): InterludeDots {
+		return new InterludeDotsEl();
+	}
+
+	protected override createBottomLine(): BottomLine {
+		return new BottomLineEl(this);
+	}
+
 	/**
 	 * 重新构建歌词行和时间状态
 	 *
@@ -193,7 +205,6 @@ export class DomLyricPlayer extends LyricPlayerBase {
 	override pause(): void {
 		super.pause();
 		this.element.classList.remove(styles.playing);
-		this.interludeDots.pause();
 		for (const group of this.currentLyricGroups) {
 			group.mainLine.pause();
 			group.bgLine?.pause();
@@ -203,7 +214,6 @@ export class DomLyricPlayer extends LyricPlayerBase {
 	override resume(): void {
 		super.resume();
 		this.element.classList.add(styles.playing);
-		this.interludeDots.resume();
 		for (const group of this.currentLyricGroups) {
 			group.mainLine.resume();
 			group.bgLine?.resume();
@@ -236,7 +246,5 @@ export class DomLyricPlayer extends LyricPlayerBase {
 		for (const group of this.currentLyricGroups) {
 			group.dispose();
 		}
-		this.bottomLine.dispose();
-		this.interludeDots.dispose();
 	}
 }

@@ -8,8 +8,7 @@ import styles from "#styles/lyric-player.module.css";
 import { clampPositive } from "#utils/clamp.ts";
 import { areOptimizeOptionsEqual } from "#utils/optimize-lyric.ts";
 import type { SpringParams } from "#utils/spring.ts";
-import { InterludeDots } from "../dom/interlude-dots.ts";
-import { BottomLineEl } from "./bottom-line.ts";
+import type { BottomLine } from "./bottom-line.ts";
 import {
 	LayoutAlignAnchor,
 	LayoutReason,
@@ -17,6 +16,7 @@ import {
 	type MaskObsceneWordsMode,
 } from "./consts.ts";
 import type { LyricLineGroupBase } from "./group.ts";
+import type { InterludeDots } from "./interlude-dots.ts";
 import {
 	type FocalTarget,
 	LayoutCalculator,
@@ -32,6 +32,8 @@ import { type ScrollInputType, ScrollInteractionEngine } from "./scroll.ts";
 import { getPosYSpringPolicy } from "./spring";
 import { TimelineController } from "./timeline.ts";
 
+export type { BottomLine, BottomLineTransforms } from "./bottom-line.ts";
+export type { InterludeDots } from "./interlude-dots.ts";
 export type { LyricLineBase } from "./line.ts";
 export type { LyricDataConfig } from "./lyric-data-manager.ts";
 
@@ -120,8 +122,8 @@ export abstract class LyricPlayerBase
 		bottomLineHeight: 0,
 		interlude: undefined,
 	};
-	protected interludeDots: InterludeDots = new InterludeDots();
-	protected bottomLine: BottomLineEl = new BottomLineEl(this);
+	protected interludeDots: InterludeDots;
+	protected bottomLine: BottomLine;
 	protected enableBlur = true;
 	protected enableScale = true;
 	protected hidePassedLines = false;
@@ -259,6 +261,9 @@ export abstract class LyricPlayerBase
 		super();
 		if (element) this.element = element;
 		this.element.classList.add("amll-lyric-player");
+
+		this.interludeDots = this.createInterludeDots();
+		this.bottomLine = this.createBottomLine();
 
 		this.resizeObserver.observe(this.element);
 		this.resizeObserver.observe(this.interludeDots.getElement());
@@ -600,6 +605,26 @@ export abstract class LyricPlayerBase
 	protected abstract buildLyricGroups(): void;
 
 	/**
+	 * 由子类实现的间奏点组件创建逻辑
+	 *
+	 * 在基类构造函数中调用，子类需要返回对应渲染实现的实例
+	 *
+	 * @remarks 工厂执行时子类字段尚未初始化，实现内不得读取子类实例状态，
+	 * 所需资源应由返回的组件自行创建或延迟获取
+	 */
+	protected abstract createInterludeDots(): InterludeDots;
+
+	/**
+	 * 由子类实现的底栏组件创建逻辑
+	 *
+	 * 在基类构造函数中调用，子类需要返回对应渲染实现的实例
+	 *
+	 * @remarks 工厂执行时子类字段尚未初始化，实现内不得读取子类实例状态，
+	 * 所需资源应由返回的组件自行创建或延迟获取
+	 */
+	protected abstract createBottomLine(): BottomLine;
+
+	/**
 	 * 重新构建歌词行和时间状态
 	 *
 	 * 一般用于在调用 {@link setLyricProcessConfig} 更新配置后手动刷新视图，
@@ -912,7 +937,6 @@ export abstract class LyricPlayerBase
 		}
 
 		this.bottomLine.setTransform(
-			0,
 			result.bottomLineY,
 			finalBottomBlur,
 			strategy.snapPosY,
@@ -1070,6 +1094,8 @@ export abstract class LyricPlayerBase
 		this.scrollEngine.dispose();
 		this.element.remove();
 		this.bottomLineObserver.disconnect();
+		this.interludeDots.dispose();
+		this.bottomLine.dispose();
 		window.removeEventListener("pageshow", this.onPageShow);
 		window.removeEventListener("pagehide", this.onPageHide);
 	}
