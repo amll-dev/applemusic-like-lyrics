@@ -54,7 +54,6 @@ export abstract class LyricLineBase extends EventTarget implements Disposable {
 		scale: number = this.scale,
 		opacity: number = this.opacity,
 		blur: number = this.blur,
-		_immediate = false,
 		delay: Duration = Duration.ZERO,
 		_mode: LyricLineRenderMode = LyricLineRenderMode.SOLID,
 	): void {

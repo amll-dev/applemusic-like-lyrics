@@ -31,7 +31,7 @@ import {
 } from "./lyric-data-manager.ts";
 import { type ScrollInputType, ScrollInteractionEngine } from "./scroll.ts";
 import { getPosYSpringPolicy } from "./spring";
-import { TimelineController } from "./timeline.ts";
+import { TimelineController, type TimelineSnapshot } from "./timeline.ts";
 
 export type { BottomLine, BottomLineTransforms } from "./bottom-line.ts";
 export type { InterludeDots } from "./interlude-dots.ts";
@@ -119,6 +119,19 @@ export abstract class LyricPlayerBase
 		target: { index: 0, type: "line" },
 		bottomLineHeight: 0,
 		interlude: undefined,
+	};
+	/**
+	 * 逐帧刷新的视觉推导派生值
+	 *
+	 * 存放会在逐行循环内被反复求值的量，避免逐行重算
+	 */
+	private visualFrame = {
+		/** 最靠后的高亮行，无高亮时回退到 `scrollToIndex` */
+		latestIndex: 0,
+		/** 已播放行的分界，`hidePassedLines` 启用时此行之前的歌词被隐藏 */
+		passedBoundary: 0,
+		/** 是否为窄视口，窄视口下模糊强度打折 */
+		isNarrowViewport: false,
 	};
 	protected interludeDots: InterludeDots;
 	protected bottomLine: BottomLine;
@@ -783,9 +796,16 @@ export abstract class LyricPlayerBase
 			this.interludeDots.setInterlude(undefined);
 		}
 
+		// 刷新本帧的视觉推导派生值
+		const visual = this.visualFrame;
+		visual.latestIndex =
+			snapshot.latestHighlightedIndex ?? snapshot.scrollToIndex;
+		visual.passedBoundary = interlude
+			? interlude.anchorLineIndex + 1
+			: snapshot.scrollToIndex;
+		visual.isNarrowViewport = window.innerWidth <= 1024;
+
 		// 遍历 LayoutCalculator 算出的排版信息并应用视觉效果
-		const fallbackFocusIndex = snapshot.scrollToIndex;
-		const latestIndex = snapshot.latestHighlightedIndex ?? fallbackFocusIndex;
 		const activeCount = result.lineCount;
 
 		let delay = Duration.ZERO;
@@ -797,61 +817,8 @@ export abstract class LyricPlayerBase
 			const group = this.currentLyricGroups[i];
 			const instruction = result.lineInstructions[i];
 			const curPos = instruction.y;
-
-			// 设置透明度和模糊度
-			const hasHighlighted = snapshot.highlightedGroups.has(i);
-			const isActive =
-				hasHighlighted || (i >= snapshot.scrollToIndex && i < latestIndex);
-			const blurFocusIndex = snapshot.isTimelineEmpty
-				? fallbackFocusIndex
-				: latestIndex;
-
-			let blurLevel = 0;
-			let targetOpacity = 1;
-
-			if (!instruction.isInViewport) {
-				// 在视口外则剔除渲染
-				blurLevel = this.enableBlur ? 5 : 0;
-				targetOpacity = 0;
-			} else {
-				// 在视口内则应用复杂的模糊效果
-				if (this.enableBlur && !this.scrollState.isTouchScrolled && !isActive) {
-					blurLevel = 1;
-					if (i < snapshot.scrollToIndex) {
-						blurLevel += Math.abs(snapshot.scrollToIndex - i) + 1;
-					} else {
-						blurLevel += Math.abs(i - blurFocusIndex);
-					}
-					if (window.innerWidth <= 1024) {
-						blurLevel *= 0.8;
-					}
-				}
-
-				if (this.hidePassedLines) {
-					if (
-						i <
-							(interlude
-								? interlude.anchorLineIndex + 1
-								: snapshot.scrollToIndex) &&
-						this.isPlaying
-					) {
-						// 为了避免浏览器优化，这里使用了一个极小但不为零的值（几乎不可见）
-						targetOpacity = 1e-4;
-					} else if (hasHighlighted) {
-						targetOpacity = 0.85;
-					} else {
-						targetOpacity = this.isNonDynamic ? 0.2 : 1;
-					}
-				} else if (hasHighlighted) {
-					targetOpacity = 0.85;
-				} else {
-					targetOpacity = this.isNonDynamic ? 0.2 : 1;
-				}
-			}
-
-			// 计算 Scale 是否应该在当前帧绕过弹簧效果立刻应用
-			const scaleImmediate =
-				strategy.snapPosY && !this.scrollState.isAutoAlignSuspended;
+			const isInViewport = instruction.isInViewport;
+			const isActive = this.resolveIsActive(i, snapshot);
 
 			// 设置样式
 			group.setTransform(
@@ -859,9 +826,8 @@ export abstract class LyricPlayerBase
 				strategy.snapPosY,
 				delay,
 				isActive,
-				targetOpacity,
-				blurLevel,
-				scaleImmediate,
+				this.resolveOpacity(i, isInViewport, snapshot),
+				this.resolveBlurLevel(i, isActive, isInViewport, snapshot),
 			);
 
 			// 应用阶梯式的动画延迟
@@ -878,33 +844,89 @@ export abstract class LyricPlayerBase
 		const isBottomFocused = focalTarget.type === "bottom";
 		this.bottomLine.setFocused(isBottomFocused);
 
-		let finalBottomBlur = 0;
-		const bottomBlurFocusIndex = snapshot.isTimelineEmpty
-			? fallbackFocusIndex
-			: latestIndex;
-
-		if (!result.isBottomLineInViewport) {
-			finalBottomBlur = this.enableBlur ? 5 : 0;
-		} else if (
-			this.enableBlur &&
-			!this.scrollState.isAutoAlignSuspended &&
-			!isBottomFocused
-		) {
-			finalBottomBlur = 1;
-			if (activeCount < snapshot.scrollToIndex) {
-				finalBottomBlur += Math.abs(snapshot.scrollToIndex - activeCount) + 1;
-			} else {
-				finalBottomBlur += Math.abs(activeCount - bottomBlurFocusIndex);
-			}
-			if (window.innerWidth <= 1024) finalBottomBlur *= 0.8;
-		}
-
 		this.bottomLine.setTransform(
 			result.bottomLineY,
-			finalBottomBlur,
+			// 底栏按「末行之后的一行」索引计算模糊度
+			this.resolveBlurLevel(
+				activeCount,
+				isBottomFocused,
+				result.isBottomLineInViewport,
+				snapshot,
+			),
 			strategy.snapPosY,
 			delay,
 		);
+	}
+
+	/**
+	 * 推导某一行是否处于激活状态
+	 * @param index 歌词行索引
+	 * @param snapshot 当前帧的时间线快照
+	 */
+	private resolveIsActive(index: number, snapshot: TimelineSnapshot): boolean {
+		return (
+			snapshot.highlightedGroups.has(index) ||
+			(index >= snapshot.scrollToIndex && index < this.visualFrame.latestIndex)
+		);
+	}
+
+	/**
+	 * 推导一行的目标透明度
+	 * @param index 歌词行索引
+	 * @param isInViewport 该行是否在可视区域内
+	 * @param snapshot 当前帧的时间线快照
+	 */
+	private resolveOpacity(
+		index: number,
+		isInViewport: boolean,
+		snapshot: TimelineSnapshot,
+	): number {
+		// 在视口外则剔除渲染
+		if (!isInViewport) return 0;
+
+		if (
+			this.hidePassedLines &&
+			this.isPlaying &&
+			index < this.visualFrame.passedBoundary
+		) {
+			// 为了避免浏览器优化，这里使用了一个极小但不为零的值（几乎不可见）
+			return 1e-4;
+		}
+
+		if (snapshot.highlightedGroups.has(index)) return 0.85;
+
+		return this.isNonDynamic ? 0.2 : 1;
+	}
+
+	/**
+	 * 按距焦点的行距推导模糊档位
+	 * @param index 歌词行索引，底栏传入歌词总行数
+	 * @param isFocused 该目标是否为当前焦点，歌词行传 `isActive`，底栏传是否聚焦底栏
+	 * @param isInViewport 该目标是否在可视区域内
+	 * @param snapshot 当前帧的时间线快照
+	 */
+	private resolveBlurLevel(
+		index: number,
+		isFocused: boolean,
+		isInViewport: boolean,
+		snapshot: TimelineSnapshot,
+	): number {
+		if (!this.enableBlur) return 0;
+
+		// 在视口外直接给到最大模糊
+		if (!isInViewport) return 5;
+
+		// 用户触摸滑动期间和对焦目标不施加模糊
+		if (this.scrollState.isTouchScrolled || isFocused) return 0;
+
+		const scrollToIndex = snapshot.scrollToIndex;
+		const distance =
+			index < scrollToIndex
+				? Math.abs(scrollToIndex - index) + 1
+				: Math.abs(index - this.visualFrame.latestIndex);
+
+		const level = 1 + distance;
+		return this.visualFrame.isNarrowViewport ? level * 0.8 : level;
 	}
 
 	/**

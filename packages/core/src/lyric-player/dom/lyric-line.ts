@@ -918,23 +918,20 @@ export class LyricLineEl extends LyricLineBase {
 		scale: number = this.scale,
 		opacity: number = this.opacity,
 		blur = 0,
-		immediate = false,
 		delay: Duration = Duration.ZERO,
 		mode: LyricLineRenderMode = LyricLineRenderMode.SOLID,
 	): void {
-		super.setTransform(scale, opacity, blur, immediate, delay);
+		super.setTransform(scale, opacity, blur, delay);
 
 		this.setRenderMode(mode);
 		this.top = 0;
 		this.scale = scale;
 		this.delay = delay;
 
-		const enableSpring = this.lyricPlayer.getEnableSpring();
-
-		if (immediate || !enableSpring) {
-			this.lineTransforms.scale.setPosition(scale);
-		} else {
+		if (this.lyricPlayer.getEnableSpring()) {
 			this.lineTransforms.scale.setTargetPosition(scale);
+		} else {
+			this.lineTransforms.scale.setPosition(scale);
 		}
 	}
 

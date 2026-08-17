@@ -61,7 +61,6 @@ export abstract class LyricLineGroupBase<
 		isActive: boolean,
 		opacity: number,
 		blur: number,
-		scaleImmediate: boolean = immediate,
 	): void {
 		this.top = top;
 		this.delay = delay;
@@ -69,7 +68,7 @@ export abstract class LyricLineGroupBase<
 		this.opacity = opacity;
 		this.blur = blur;
 
-		this.setLineTransformations(scaleImmediate, delay);
+		this.setLineTransformations(delay);
 
 		const enableSpring = this.lyricPlayer.getEnableSpring();
 		const alwaysPostposition =
@@ -91,7 +90,7 @@ export abstract class LyricLineGroupBase<
 		this.isUiDirty = true;
 	}
 
-	private setLineTransformations(immediate: boolean, delay: Duration) {
+	private setLineTransformations(delay: Duration) {
 		const enableScale = this.lyricPlayer.getEnableScale();
 		const isPlaying = this.lyricPlayer.getIsPlaying();
 
@@ -105,13 +104,13 @@ export abstract class LyricLineGroupBase<
 			mainScale = SCALE_ASPECT;
 		}
 
-		this.mainLine.setTransform(mainScale, 1, 0, immediate, delay, renderMode);
+		this.mainLine.setTransform(mainScale, 1, 0, delay, renderMode);
 
 		let bgScale = 100;
 		if (!this.isActive && isPlaying) {
 			bgScale = 75;
 		}
-		this.bgLine?.setTransform(bgScale, 1, 0, immediate, delay, renderMode);
+		this.bgLine?.setTransform(bgScale, 1, 0, delay, renderMode);
 	}
 
 	protected abstract renderStyles(): void;
