@@ -8,6 +8,7 @@ import { isCJK } from "#utils/is-cjk.ts";
 import { LineBalancer } from "#utils/line-balancer.ts";
 import { chunkAndSplitLyricWords } from "#utils/lyric-split-words.ts";
 import { createMatrix4, matrix4ToCSS, scaleMatrix4 } from "#utils/matrix.ts";
+import { Duration } from "#utils/time.ts";
 import type { DomLyricPlayer } from ".";
 
 interface RealWord extends LyricWord {
@@ -915,10 +916,10 @@ export class LyricLineEl extends LyricLineBase {
 
 	override setTransform(
 		scale: number = this.scale,
-		opacity = 1,
+		opacity: number = this.opacity,
 		blur = 0,
 		immediate = false,
-		delay = 0,
+		delay: Duration = Duration.ZERO,
 		mode: LyricLineRenderMode = LyricLineRenderMode.SOLID,
 	): void {
 		super.setTransform(scale, opacity, blur, immediate, delay);
@@ -926,7 +927,7 @@ export class LyricLineEl extends LyricLineBase {
 		this.setRenderMode(mode);
 		this.top = 0;
 		this.scale = scale;
-		this.delay = (delay * 1000) | 0;
+		this.delay = delay;
 
 		const enableSpring = this.lyricPlayer.getEnableSpring();
 
@@ -937,7 +938,7 @@ export class LyricLineEl extends LyricLineBase {
 		}
 	}
 
-	update(delta = 0): void {
+	update(delta: Duration = Duration.ZERO): void {
 		if (!this.lyricPlayer.getEnableSpring()) return;
 
 		const scaleMoving = !this.lineTransforms.scale.arrived();

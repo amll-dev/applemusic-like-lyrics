@@ -10,6 +10,7 @@ import { LyricPlayerBase } from "#lyric/base/index.ts";
 import type { InterludeDots } from "#lyric/base/interlude-dots.ts";
 import type { LyricLineBase } from "#lyric/base/line.ts";
 import styles from "#styles/lyric-player.module.css";
+import { Duration } from "#utils/time.ts";
 import { BottomLineEl } from "./bottom-line.ts";
 import { InterludeDotsEl } from "./interlude-dots.ts";
 import { LyricLineGroup } from "./lyric-group.ts";
@@ -229,9 +230,9 @@ export class DomLyricPlayer extends LyricPlayerBase {
 			);
 		}
 		if (!this.isPageVisible) return;
-		const deltaS = delta / 1000;
+		const d = Duration.fromMillis(delta);
 		for (const group of this.currentLyricGroups) {
-			group.update(deltaS);
+			group.update(d);
 		}
 
 		for (const group of this.currentLyricGroups) {

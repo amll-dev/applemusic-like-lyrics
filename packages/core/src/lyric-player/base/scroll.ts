@@ -1,3 +1,5 @@
+import { Duration } from "#utils/time.ts";
+
 export type ScrollInputType = "touch" | "wheel";
 
 export interface ScrollEngineHooks {
@@ -34,6 +36,18 @@ export interface ScrollEngineHooks {
 	onAutoAlignResume: () => void;
 }
 
+/** 滚动静止后恢复自动排版与对齐的等待时间（5秒） */
+const AUTO_ALIGN_RESUME_DELAY_MS = 5000;
+
+/** 滚轮交互结束防抖时间（150毫秒） */
+const WHEEL_IDLE_TIMEOUT_MS = 150;
+
+/** 惯性动画基准物理帧时间 */
+const BASE_FRAME_DURATION = Duration.fromMillis(1000 / 60);
+
+/** 惯性单帧最大跨度阈值，超过 100ms 视为掉帧或切换页面丢弃当前步进 */
+const MAX_INERTIA_FRAME_DELTA_MS = 100;
+
 export class ScrollInteractionEngine {
 	private offset: number = 0;
 
@@ -46,7 +60,7 @@ export class ScrollInteractionEngine {
 		lastY: 0,
 		startOffset: 0,
 		speed: 0,
-		startTime: 0,
+		lastTimestamp: 0,
 		/**
 		 * 是否已经突破 10px 意图阈值
 		 */
@@ -116,7 +130,7 @@ export class ScrollInteractionEngine {
 		this.scrolledTimeoutId = window.setTimeout(() => {
 			this.scrolledTimeoutId = 0;
 			this.hooks.onAutoAlignResume();
-		}, 5000);
+		}, AUTO_ALIGN_RESUME_DELAY_MS);
 	}
 	//#endregion
 
@@ -130,7 +144,7 @@ export class ScrollInteractionEngine {
 			state.startX = touch.screenX;
 			state.lastY = touch.screenY;
 			state.startOffset = this.offset;
-			state.startTime = Date.now();
+			state.lastTimestamp = performance.now();
 			state.speed = 0;
 			return;
 		}
@@ -149,7 +163,7 @@ export class ScrollInteractionEngine {
 		state.startX = touch.screenX;
 		state.lastY = touch.screenY;
 		state.startOffset = this.offset;
-		state.startTime = Date.now();
+		state.lastTimestamp = performance.now();
 		state.speed = 0;
 		state.isIntentConfirmed = false;
 	};
@@ -180,14 +194,15 @@ export class ScrollInteractionEngine {
 			state.startOffset - (currentY - state.startY),
 		);
 
-		const now = Date.now();
-		const dt = now - state.startTime;
-		if (dt > 0) {
-			state.speed = (currentY - state.lastY) / dt;
+		const now = performance.now();
+		const dt = Duration.fromMillis(now - state.lastTimestamp);
+		const dtMs = Duration.asMillis(dt);
+		if (dtMs > 0) {
+			state.speed = (currentY - state.lastY) / dtMs;
 		}
 
 		state.lastY = currentY;
-		state.startTime = now;
+		state.lastTimestamp = now;
 
 		this.hooks.onScrollUpdate(true);
 	};
@@ -222,7 +237,7 @@ export class ScrollInteractionEngine {
 			state.startX = remainingTouch.screenX;
 			state.lastY = remainingTouch.screenY;
 			state.startOffset = this.offset;
-			state.startTime = Date.now();
+			state.lastTimestamp = performance.now();
 			state.speed = 0;
 			return;
 		}
@@ -257,19 +272,21 @@ export class ScrollInteractionEngine {
 			let lastFrameTime = performance.now();
 
 			const onScrollFrame = (time: number) => {
-				const dt = time - lastFrameTime;
+				const dt = Duration.fromMillis(time - lastFrameTime);
 				lastFrameTime = time;
+				const dtMs = Duration.asMillis(dt);
 
-				if (dt <= 0 || dt > 100) {
+				if (dtMs <= 0 || dtMs > MAX_INERTIA_FRAME_DELTA_MS) {
 					this.inertiaRafId = requestAnimationFrame(onScrollFrame);
 					return;
 				}
 
 				if (Math.abs(state.speed) > 0.05) {
-					this.offset -= state.speed * dt;
+					this.offset -= state.speed * dtMs;
 					this.offset = this.clampOffset(this.offset);
 
-					state.speed *= 0.95 ** (dt / 16);
+					const steps = Duration.divDuration(dt, BASE_FRAME_DURATION);
+					state.speed *= 0.95 ** steps;
 
 					this.hooks.onScrollUpdate(true);
 					this.inertiaRafId = requestAnimationFrame(onScrollFrame);
@@ -305,7 +322,7 @@ export class ScrollInteractionEngine {
 		this.wheelEndTimeoutId = window.setTimeout(() => {
 			this.wheelEndTimeoutId = 0;
 			this.endInteractionAndStartTimer();
-		}, 150);
+		}, WHEEL_IDLE_TIMEOUT_MS);
 	};
 	//#endregion
 
@@ -351,7 +368,7 @@ export class ScrollInteractionEngine {
 		this.touchState.speed = 0;
 		this.touchState.startY = 0;
 		this.touchState.lastY = 0;
-		this.touchState.startTime = 0;
+		this.touchState.lastTimestamp = 0;
 
 		this.offset = this.clampOffset(targetOffset);
 	}

@@ -1,4 +1,5 @@
 import { getVelocity } from "./derivative.ts";
+import { Duration } from "./time.ts";
 
 /** MIT License github.com/pushkine/ */
 export interface SpringParams {
@@ -8,24 +9,24 @@ export interface SpringParams {
 	soft: boolean; // = false
 }
 
-type seconds = number;
+type Seconds = number;
 
 export class Spring {
 	private currentPosition = 0;
 	private targetPosition = 0;
-	private currentTime = 0;
+	private currentTime: Seconds = 0;
 	private params: Partial<SpringParams> = {};
-	private currentSolver: (t: seconds) => number;
-	private getV: (t: seconds) => number;
-	private getV2: (t: seconds) => number;
+	private currentSolver: (t: Seconds) => number;
+	private getV: (t: Seconds) => number;
+	private getV2: (t: Seconds) => number;
 	private queueParams:
 		| (Partial<SpringParams> & {
-				time: number;
+				time: Seconds;
 		  })
 		| undefined;
 	private queuePosition:
 		| {
-				time: number;
+				time: Seconds;
 				position: number;
 		  }
 		| undefined;
@@ -65,11 +66,12 @@ export class Spring {
 		this.getV = () => 0;
 		this.getV2 = () => 0;
 	}
-	update(delta = 0): void {
-		this.currentTime += delta;
+	update(delta: Duration = Duration.ZERO): void {
+		const dt = Duration.asSecsF64(delta);
+		this.currentTime += dt;
 		this.currentPosition = this.currentSolver(this.currentTime);
 		if (this.queueParams) {
-			this.queueParams.time -= delta;
+			this.queueParams.time -= dt;
 			if (this.queueParams.time <= 0) {
 				this.updateParams({
 					...this.queueParams,
@@ -77,7 +79,7 @@ export class Spring {
 			}
 		}
 		if (this.queuePosition) {
-			this.queuePosition.time -= delta;
+			this.queuePosition.time -= dt;
 			if (this.queuePosition.time <= 0) {
 				this.setTargetPosition(this.queuePosition.position);
 			}
@@ -86,12 +88,16 @@ export class Spring {
 			this.setPosition(this.targetPosition);
 		}
 	}
-	updateParams(params: Partial<SpringParams>, delay = 0): void {
-		if (delay > 0) {
+	updateParams(
+		params: Partial<SpringParams>,
+		delay: Duration = Duration.ZERO,
+	): void {
+		const delaySecs = Duration.asSecsF64(delay);
+		if (delaySecs > 0) {
 			this.queueParams = {
 				...(this.queuePosition ?? {}),
 				...params,
-				time: delay,
+				time: delaySecs,
 			};
 		} else {
 			this.queuePosition = undefined;
@@ -102,17 +108,24 @@ export class Spring {
 			this.resetSolver();
 		}
 	}
-	setTargetPosition(targetPosition: number, delay = 0): void {
-		if (delay <= 0 && Math.abs(this.targetPosition - targetPosition) < 0.001) {
+	setTargetPosition(
+		targetPosition: number,
+		delay: Duration = Duration.ZERO,
+	): void {
+		const delaySecs = Duration.asSecsF64(delay);
+		if (
+			delaySecs <= 0 &&
+			Math.abs(this.targetPosition - targetPosition) < 0.001
+		) {
 			this.queuePosition = undefined;
 			return;
 		}
 
-		if (delay > 0) {
+		if (delaySecs > 0) {
 			this.queuePosition = {
 				...(this.queuePosition ?? {}),
 				position: targetPosition,
-				time: delay,
+				time: delaySecs,
 			};
 		} else {
 			this.queuePosition = undefined;
@@ -129,9 +142,9 @@ function solveSpring(
 	from: number,
 	velocity: number,
 	to: number,
-	delay: seconds = 0,
+	delay: Seconds = 0,
 	params?: Partial<SpringParams>,
-): (t: seconds) => number {
+): (t: Seconds) => number {
 	const soft = params?.soft ?? false;
 	const stiffness = params?.stiffness ?? 100;
 	const damping = params?.damping ?? 10;
@@ -140,7 +153,7 @@ function solveSpring(
 	if (soft || 1.0 <= damping / (2.0 * Math.sqrt(stiffness * mass))) {
 		const angular_frequency = -Math.sqrt(stiffness / mass);
 		const leftover = -angular_frequency * delta - velocity;
-		return (t: seconds) => {
+		return (t: Seconds) => {
 			t -= delay;
 			if (t < 0) return from;
 			return to - (delta + t * leftover) * Math.E ** (t * angular_frequency);
@@ -151,7 +164,7 @@ function solveSpring(
 		(damping * delta - 2.0 * mass * velocity) / damping_frequency;
 	const dfm = (0.5 * damping_frequency) / mass;
 	const dm = -(0.5 * damping) / mass;
-	return (t: seconds) => {
+	return (t: Seconds) => {
 		t -= delay;
 		if (t < 0) return from;
 		return (

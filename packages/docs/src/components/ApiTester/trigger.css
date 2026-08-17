@@ -121,11 +121,16 @@
 
 .skeleton-pulse {
 	animation: amll-skeleton-shimmer 1.4s ease-in-out infinite;
-	background: color-mix(in srgb, var(--sl-color-text-accent) 15%, var(--sl-color-bg-inline-code));
+	background: color-mix(
+		in srgb,
+		var(--sl-color-text-accent) 15%,
+		var(--sl-color-bg-inline-code)
+	);
 }
 
 @keyframes amll-skeleton-shimmer {
-	0%, 100% {
+	0%,
+	100% {
 		opacity: 0.35;
 	}
 	50% {

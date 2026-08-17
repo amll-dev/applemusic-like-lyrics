@@ -5,6 +5,7 @@ import type {
 import type { LyricPlayerBase } from "#lyric/base/index.ts";
 import styles from "#styles/lyric-player.module.css";
 import { Spring } from "#utils/spring.ts";
+import { Duration } from "#utils/time.ts";
 
 /**
  * 底栏组件的 DOM 实现
@@ -65,7 +66,7 @@ export class BottomLineEl implements BottomLine {
 		top: number = this.top,
 		blur = 0,
 		immediate = false,
-		delay = 0,
+		delay: Duration = Duration.ZERO,
 	): void {
 		this.top = top;
 
@@ -86,9 +87,9 @@ export class BottomLineEl implements BottomLine {
 
 	/**
 	 * 逐帧推进弹簧动画并应用样式
-	 * @param delta 距离上一次调用的时长，单位为秒
+	 * @param delta 距离上一次调用的时长
 	 */
-	public update(delta = 0): void {
+	public update(delta: Duration = Duration.ZERO): void {
 		if (!this.lyricPlayer.getEnableSpring()) return;
 		this.lineTransforms.posY.update(delta);
 		this.rebuildStyle();

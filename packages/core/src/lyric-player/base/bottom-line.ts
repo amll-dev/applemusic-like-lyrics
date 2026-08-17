@@ -1,5 +1,6 @@
 import type { Disposable, HasElement } from "#interfaces";
 import type { Spring } from "#utils/spring.ts";
+import type { Duration } from "#utils/time.ts";
 
 /** 底栏的位移动画弹簧 */
 export interface BottomLineTransforms {
@@ -34,18 +35,18 @@ export interface BottomLine extends HasElement, Disposable {
 	 * @param top 底栏的 Y 坐标
 	 * @param blur 底栏的模糊度
 	 * @param immediate 为 true 时绕过弹簧立刻跳转至目标位置
-	 * @param delay 弹簧过渡的延迟，单位为秒
+	 * @param delay 弹簧过渡的延迟
 	 */
 	setTransform(
 		top?: number,
 		blur?: number,
 		immediate?: boolean,
-		delay?: number,
+		delay?: Duration,
 	): void;
 
 	/**
 	 * 逐帧推进弹簧动画并应用样式
-	 * @param delta 距离上一次调用的时长，单位为秒
+	 * @param delta 距离上一次调用的时长
 	 */
-	update(delta?: number): void;
+	update(delta?: Duration): void;
 }

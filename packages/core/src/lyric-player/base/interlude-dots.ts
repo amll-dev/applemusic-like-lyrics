@@ -1,4 +1,5 @@
 import type { Disposable, HasElement } from "#interfaces";
+import type { Duration, MediaTime } from "#utils/time.ts";
 
 /**
  * 间奏点组件的抽象接口
@@ -16,8 +17,8 @@ export interface InterludeDots extends HasElement, Disposable {
 	 * @param forceReset 是否强制重置动画起点，如 Seek、重新布局或切换间奏时
 	 */
 	setInterlude(
-		interlude?: [number, number],
-		currentTime?: number,
+		interlude?: [MediaTime, MediaTime],
+		currentTime?: MediaTime,
 		forceReset?: boolean,
 	): void;
 
@@ -33,7 +34,7 @@ export interface InterludeDots extends HasElement, Disposable {
 
 	/**
 	 * 逐帧推进间奏点动画并写入样式
-	 * @param delta 距离上一次调用的时长，单位为毫秒
+	 * @param delta 距离上一次调用的时长
 	 */
-	update(delta?: number): void;
+	update(delta?: Duration): void;
 }

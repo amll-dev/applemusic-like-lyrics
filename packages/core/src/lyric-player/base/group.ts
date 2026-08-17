@@ -1,5 +1,6 @@
 import type { Disposable } from "#interfaces";
 import { Spring } from "#utils/spring.ts";
+import { Duration, MediaTime } from "#utils/time.ts";
 import { LyricLineRenderMode } from "./consts.ts";
 import type { LyricLineBase } from "./line.ts";
 
@@ -19,7 +20,7 @@ export abstract class LyricLineGroupBase<
 	public posY: Spring = new Spring(0);
 	public bgSlideY: Spring = new Spring(-80);
 	public top = 0;
-	public delay = 0;
+	public delay: Duration = Duration.ZERO;
 
 	public isActive = false;
 	public opacity = 1;
@@ -34,14 +35,14 @@ export abstract class LyricLineGroupBase<
 		public bgLine?: T | undefined,
 	) {}
 
-	get startTime(): number {
+	get startTime(): MediaTime {
 		// 优化歌词时 `syncMainAndBackgroundLines` 已经把时间同步好了，直接读取主歌词的即可
 		// 要是用户关掉了这个优化，我们认为在这种情况下主歌词和背景人声显示不同步是符合用户预期的
-		return this.mainLine.getLine().startTime;
+		return MediaTime.fromMillis(this.mainLine.getLine().startTime);
 	}
 
-	get endTime(): number {
-		return this.mainLine.getLine().endTime;
+	get endTime(): MediaTime {
+		return MediaTime.fromMillis(this.mainLine.getLine().endTime);
 	}
 
 	onLineSizeChange(size: [number, number]): void {
@@ -56,7 +57,7 @@ export abstract class LyricLineGroupBase<
 	setTransform(
 		top: number,
 		immediate: boolean,
-		delay: number,
+		delay: Duration,
 		isActive: boolean,
 		opacity: number,
 		blur: number,
@@ -90,7 +91,7 @@ export abstract class LyricLineGroupBase<
 		this.isUiDirty = true;
 	}
 
-	private setLineTransformations(immediate: boolean, delay: number) {
+	private setLineTransformations(immediate: boolean, delay: Duration) {
 		const enableScale = this.lyricPlayer.getEnableScale();
 		const isPlaying = this.lyricPlayer.getIsPlaying();
 
@@ -117,7 +118,7 @@ export abstract class LyricLineGroupBase<
 
 	abstract get isInSight(): boolean;
 
-	update(delta: number): void {
+	update(delta: Duration = Duration.ZERO): void {
 		if (this.lyricPlayer.getEnableSpring()) {
 			const posMoving = !this.posY.arrived();
 			const bgMoving = !this.bgSlideY.arrived();

@@ -1,6 +1,7 @@
 import type { InterludeDots } from "#lyric/base/interlude-dots.ts";
 import styles from "#styles/lyric-player.module.css";
 import { clamp, clamp01, clampPositive } from "#utils/clamp.ts";
+import { Duration, MediaTime } from "#utils/time.ts";
 
 /**
  * 带过冲回弹的缓动，用于结束阶段的收缩演出
@@ -21,7 +22,7 @@ function easeOutExpo(x: number): number {
 	return x === 1 ? 1 : 1 - 2 ** (-10 * x);
 }
 
-const TARGET_BREATHE_DURATION = 1500;
+const TARGET_BREATHE_DURATION = 4500;
 
 /**
  * 间奏点的 DOM 渲染实现
@@ -38,14 +39,14 @@ export class InterludeDotsEl implements InterludeDots {
 	private top = 0;
 	private lastStyle = "";
 
-	private currentTime = 0;
+	private currentTime: MediaTime = MediaTime.ZERO;
 	private playing = true;
 
 	/**
 	 * 当前的动画时间区间 `[动画起点, 结束时间]`
 	 * @remarks 起点是重新锚定后的动画起点，与间奏的真实开始时间可能不同
 	 */
-	private currentInterlude?: [number, number];
+	private currentInterlude?: [MediaTime, MediaTime];
 
 	constructor() {
 		this.element.className = styles.interludeDots;
@@ -71,8 +72,8 @@ export class InterludeDotsEl implements InterludeDots {
 	 * @param forceReset 是否强制重置动画起点，如 Seek、重新布局或切换间奏时
 	 */
 	public setInterlude(
-		interlude?: [number, number],
-		currentTime?: number,
+		interlude?: [MediaTime, MediaTime],
+		currentTime?: MediaTime,
 		forceReset = false,
 	): void {
 		if (!interlude) {
@@ -120,11 +121,11 @@ export class InterludeDotsEl implements InterludeDots {
 	 * 2. 持续：正弦呼吸缩放，三个圆点随进度依次点亮
 	 * 3. 结束 (最后 750ms)：以 easeInOutBack 收缩回弹，最后 375ms 渐隐
 	 *
-	 * @param delta 距离上一次调用的时长，单位为毫秒
+	 * @param delta 距离上一次调用的时长
 	 */
-	public update(delta = 0): void {
+	public update(delta: Duration = Duration.ZERO): void {
 		if (!this.playing) return;
-		this.currentTime += delta;
+		this.currentTime = MediaTime.add(this.currentTime, delta);
 		let curStyle = "";
 
 		curStyle += `transform:translate(${this.left.toFixed(
@@ -133,9 +134,12 @@ export class InterludeDotsEl implements InterludeDots {
 
 		// 计算缩放大小
 		if (this.currentInterlude) {
-			const interludeDuration =
-				this.currentInterlude[1] - this.currentInterlude[0];
-			const currentDuration = this.currentTime - this.currentInterlude[0];
+			const interludeDuration = Duration.asMillis(
+				MediaTime.since(this.currentInterlude[1], this.currentInterlude[0]),
+			);
+			const currentDuration = Duration.asMillis(
+				MediaTime.since(this.currentTime, this.currentInterlude[0]),
+			);
 			if (currentDuration <= interludeDuration) {
 				// 将总时长按基准呼吸时长切分为整数次呼吸
 				const breatheDuration =

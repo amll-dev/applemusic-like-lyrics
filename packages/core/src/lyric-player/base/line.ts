@@ -1,6 +1,7 @@
 import type { Disposable, LyricLine, LyricWord } from "#interfaces";
 import { isCJK } from "#utils/is-cjk.ts";
 import { Spring } from "#utils/spring.ts";
+import { Duration } from "#utils/time.ts";
 import { LyricLineRenderMode } from "./consts.ts";
 
 interface LineTransforms {
@@ -16,7 +17,7 @@ export abstract class LyricLineBase extends EventTarget implements Disposable {
 	protected scale = 1;
 	protected blur = 0;
 	protected opacity = 1;
-	protected delay = 0;
+	protected delay: Duration = Duration.ZERO;
 
 	protected isUiDirty = true;
 
@@ -54,7 +55,7 @@ export abstract class LyricLineBase extends EventTarget implements Disposable {
 		opacity: number = this.opacity,
 		blur: number = this.blur,
 		_immediate = false,
-		delay = 0,
+		delay: Duration = Duration.ZERO,
 		_mode: LyricLineRenderMode = LyricLineRenderMode.SOLID,
 	): void {
 		this.scale = scale;
@@ -85,6 +86,6 @@ export abstract class LyricLineBase extends EventTarget implements Disposable {
 			word.word.trim().length > 1
 		);
 	}
-	abstract update(delta?: number): void;
+	abstract update(delta?: Duration): void;
 	dispose(): void {}
 }

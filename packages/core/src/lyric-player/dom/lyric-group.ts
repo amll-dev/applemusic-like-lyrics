@@ -1,6 +1,7 @@
 import { LyricLineGroupBase } from "#lyric/base/group.ts";
 import styles from "#styles/lyric-player.module.css";
 import { clamp01 } from "#utils/clamp.ts";
+import { Duration } from "#utils/time.ts";
 import type { DomLyricPlayer } from "./index.ts";
 import type { LyricLineEl } from "./lyric-line.ts";
 
@@ -91,7 +92,7 @@ export class LyricLineGroup extends LyricLineGroupBase<LyricLineEl> {
 		}
 	}
 
-	override update(delta: number): void {
+	override update(delta: Duration = Duration.ZERO): void {
 		super.update(delta);
 	}
 

@@ -8,6 +8,7 @@ import styles from "#styles/lyric-player.module.css";
 import { clampPositive } from "#utils/clamp.ts";
 import { areOptimizeOptionsEqual } from "#utils/optimize-lyric.ts";
 import type { SpringParams } from "#utils/spring.ts";
+import { Duration, MediaTime } from "#utils/time.ts";
 import type { BottomLine } from "./bottom-line.ts";
 import {
 	LayoutAlignAnchor,
@@ -180,10 +181,7 @@ export abstract class LyricPlayerBase
 	private lyricGroupIndexMap = new WeakMap<LyricLineGroupBase, number>();
 	private onPageShow = () => {
 		this.isPageVisible = true;
-		this.setCurrentTime(
-			this.timelineController.getSnapshot().currentTime,
-			true,
-		);
+		this.setCurrentTime(this.getCurrentTime(), true);
 	};
 	private onPageHide = () => {
 		this.isPageVisible = false;
@@ -564,9 +562,9 @@ export abstract class LyricPlayerBase
 	 * @param isSeek 这个进度变化是否为跳转触发的
 	 */
 	setCurrentTime(time: number, isSeek = false): void {
-		time = Math.round(time);
+		const mediaTime = MediaTime.round(MediaTime.fromMillis(time));
 
-		const diff = this.timelineController.sync(time, isSeek);
+		const diff = this.timelineController.sync(mediaTime, isSeek);
 
 		if (!diff.hasChanged) {
 			return;
@@ -646,7 +644,9 @@ export abstract class LyricPlayerBase
 		this.buildLyricGroups();
 
 		// 对歌词组进行排序，确保滑动窗口与二分查找算法面对的时间线是严格升序的
-		this.currentLyricGroups.sort((a, b) => a.startTime - b.startTime);
+		this.currentLyricGroups.sort((a, b) =>
+			MediaTime.cmp(a.startTime, b.startTime),
+		);
 		for (let i = 0; i < this.currentLyricGroups.length; i++) {
 			this.lyricGroupIndexMap.set(this.currentLyricGroups[i], i);
 		}
@@ -689,7 +689,9 @@ export abstract class LyricPlayerBase
 
 		let interval: number | undefined;
 		if (currentGroup && prevGroup) {
-			interval = currentGroup.startTime - prevGroup.startTime;
+			interval = Duration.asMillis(
+				MediaTime.since(currentGroup.startTime, prevGroup.startTime),
+			);
 		}
 
 		const policy = getPosYSpringPolicy(isSeeking, isInterludeActive, interval);
@@ -829,8 +831,10 @@ export abstract class LyricPlayerBase
 		const latestIndex = snapshot.latestHighlightedIndex ?? fallbackFocusIndex;
 		const activeCount = result.lineCount;
 
-		let delay = 0;
-		let baseDelay = strategy.disableStagger ? 0 : 0.05;
+		let delay = Duration.ZERO;
+		let baseDelay = strategy.disableStagger
+			? Duration.ZERO
+			: Duration.fromSecs(0.05);
 
 		for (let i = 0; i < activeCount; i++) {
 			const group = this.currentLyricGroups[i];
@@ -906,8 +910,10 @@ export abstract class LyricPlayerBase
 			// 应用阶梯式的动画延迟
 			const lineH = instruction.height;
 			if (curPos + lineH >= 0 && !snapshot.isSeeking) {
-				delay += baseDelay;
-				if (i >= snapshot.scrollToIndex) baseDelay /= 1.05;
+				delay = Duration.add(delay, baseDelay);
+				if (i >= snapshot.scrollToIndex) {
+					baseDelay = Duration.mulF64(baseDelay, 1 / 1.05);
+				}
 			}
 		}
 
@@ -1017,8 +1023,9 @@ export abstract class LyricPlayerBase
 	 */
 
 	update(delta = 0): void {
-		this.bottomLine.update(delta / 1000);
-		this.interludeDots.update(delta);
+		const d = Duration.fromMillis(delta);
+		this.bottomLine.update(d);
+		this.interludeDots.update(d);
 	}
 
 	protected onResize(): void {}
@@ -1061,7 +1068,9 @@ export abstract class LyricPlayerBase
 	 * @returns 当前播放位置
 	 */
 	getCurrentTime(): number {
-		return this.timelineController.getSnapshot().currentTime;
+		return MediaTime.asMillis(
+			this.timelineController.getSnapshot().currentTime,
+		);
 	}
 
 	/**

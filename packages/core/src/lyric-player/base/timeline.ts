@@ -1,18 +1,20 @@
+import { Duration, MediaTime } from "#utils/time.ts";
+
 //#region 类型定义
 /**
  * 用于进度计算的最小歌词数据
  */
 export interface TimeBounds {
-	readonly startTime: number;
-	readonly endTime: number;
+	readonly startTime: MediaTime;
+	readonly endTime: MediaTime;
 }
 
 /**
  * 当前命中的间奏区间信息
  */
 export interface PlayerInterlude {
-	readonly startTime: number;
-	readonly endTime: number;
+	readonly startTime: MediaTime;
+	readonly endTime: MediaTime;
 	/**
 	 * 间奏点应插入的位置基准
 	 *
@@ -37,7 +39,7 @@ export interface TimelineSnapshot {
 	 *
 	 * 例如给 InterludeDots 计算播放动画的当前时间戳
 	 */
-	readonly currentTime: number;
+	readonly currentTime: MediaTime;
 
 	/**
 	 * 标识当前帧是否处于跳转状态
@@ -199,7 +201,7 @@ export class TimelineController {
 	private expiredHighlightedIds: number[] = [];
 
 	private readonly snapshot: Mutable<TimelineSnapshot> = {
-		currentTime: 0,
+		currentTime: MediaTime.ZERO,
 		isSeeking: false,
 		playingGroups: this.playingGroupsSet,
 		highlightedGroups: this.highlightedGroupsSet,
@@ -246,7 +248,7 @@ export class TimelineController {
 		return this.snapshot;
 	}
 
-	public sync(time: number, forceSeek = false): TimelineDiff {
+	public sync(time: MediaTime, forceSeek = false): TimelineDiff {
 		this.addedPlayingIds.length = 0;
 		this.removedPlayingIds.length = 0;
 		this.addedHighlightedIds.length = 0;
@@ -327,7 +329,7 @@ export class TimelineController {
 	/**
 	 * 处理正常播放时的时间线推导
 	 */
-	private performPlayback(time: number): void {
+	private performPlayback(time: MediaTime): void {
 		// 我在这里定义了歌词的不同状态：
 		// 播放行：只要当前时间落在 [startTime, endTime) 内，就是在播放行，播放行是高亮行的真子集
 		// 高亮行：UI 层真正看到的高亮状态
@@ -438,7 +440,7 @@ export class TimelineController {
 	 *
 	 * 将会丢弃所有高亮状态的行，直接根据当前时间重新计算播放状态的行
 	 */
-	private performSeek(time: number): void {
+	private performSeek(time: MediaTime): void {
 		for (const id of this.playingGroupsSet) {
 			this.removedPlayingIds.push(id);
 		}
@@ -495,15 +497,16 @@ export class TimelineController {
 	//#region 间奏计算
 	private calculateInterludes(bounds: TimeBounds[]): PlayerInterlude[] {
 		const interludes: PlayerInterlude[] = [];
+		const minGap = Duration.fromMillis(4000);
 
 		for (let i = -1; i < bounds.length - 1; i++) {
 			const prevGroup = i === -1 ? null : bounds[i];
 			const nextGroup = bounds[i + 1];
 
-			const gapStart = prevGroup ? prevGroup.endTime : 0;
-			const gapEnd = Math.max(gapStart, nextGroup.startTime);
+			const gapStart = prevGroup ? prevGroup.endTime : MediaTime.ZERO;
+			const gapEnd = MediaTime.max(gapStart, nextGroup.startTime);
 
-			if (gapEnd - gapStart >= 4000) {
+			if (MediaTime.since(gapEnd, gapStart) >= minGap) {
 				interludes.push({
 					startTime: gapStart,
 					endTime: gapEnd,
@@ -515,7 +518,7 @@ export class TimelineController {
 		return interludes;
 	}
 
-	private updateInterludeState(time: number, isSeek: boolean): void {
+	private updateInterludeState(time: MediaTime, isSeek: boolean): void {
 		let activeInterlude: PlayerInterlude | undefined;
 
 		if (this.precalculatedInterludes.length > 0) {
@@ -582,7 +585,7 @@ export class TimelineController {
 		this.playingGroupsSet.clear();
 		this.highlightedGroupsSet.clear();
 
-		this.snapshot.currentTime = 0;
+		this.snapshot.currentTime = MediaTime.ZERO;
 		this.snapshot.isSeeking = false;
 		this.snapshot.scrollToIndex = 0;
 		this.snapshot.latestHighlightedIndex = undefined;
