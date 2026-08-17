@@ -16,10 +16,10 @@ import {
 	LayoutReasonStrategyMap,
 	type MaskObsceneWordsMode,
 } from "./consts.ts";
+import { FocusController } from "./focus.ts";
 import type { LyricLineGroupBase } from "./group.ts";
 import type { InterludeDots } from "./interlude-dots.ts";
 import {
-	type FocalTarget,
 	LayoutCalculator,
 	type LayoutConfig,
 	type LayoutFrameContext,
@@ -53,13 +53,11 @@ function getEntrySize(entry: ResizeObserverEntry): [number, number] {
 /**
  * 播放器布局状态。
  *
- * 记录当前视口动态测量的焦点状态与尺寸
+ * 记录当前视口动态测量得到的尺寸
  */
 interface PlayerLayoutState {
 	/** 间奏点元素当前测量得到的尺寸 */
 	interludeDotsSize: [number, number];
-	/** 当前的对齐目标 */
-	alignTarget: FocalTarget;
 }
 
 /**
@@ -108,7 +106,6 @@ export abstract class LyricPlayerBase
 
 	protected layoutState: PlayerLayoutState = {
 		interludeDotsSize: [0, 0],
-		alignTarget: { type: "line", index: 0 },
 	};
 	protected layoutConfig: LayoutConfig = {
 		alignAnchor: LayoutAlignAnchor.Center,
@@ -136,6 +133,7 @@ export abstract class LyricPlayerBase
 	};
 
 	protected layoutCalculator: LayoutCalculator = new LayoutCalculator();
+	private focusController: FocusController = new FocusController();
 
 	public currentLyricGroups: LyricLineGroupBase[] = [];
 	lyricGroupSize: WeakMap<LyricLineGroupBase, [number, number]> = new WeakMap();
@@ -632,7 +630,7 @@ export abstract class LyricPlayerBase
 	 */
 	public rebuildLyricView(initialTime: number = this.getCurrentTime()): void {
 		this.resetScroll();
-		this.layoutState.alignTarget = { type: "line", index: 0 };
+		this.focusController.reset();
 
 		for (const group of this.currentLyricGroups) {
 			group.dispose();
@@ -714,57 +712,16 @@ export abstract class LyricPlayerBase
 
 		const snapshot = this.timelineController.getSnapshot();
 		const interlude = snapshot.activeInterlude;
-		const isInterludeFocused = snapshot.isFocusOnInterlude && !!interlude;
-		const count = this.currentLyricGroups.length;
-		const maxValidIndex = Math.max(0, count - 1);
-		const clampLineIndex = (index: number) =>
-			count > 0 ? Math.min(Math.max(0, index), maxValidIndex) : 0;
-
-		const safeScrollToIndex = clampLineIndex(snapshot.scrollToIndex);
 
 		// 确定这一帧焦点应该对齐谁
-		let focalTarget: FocalTarget = {
-			type: "line",
-			index: safeScrollToIndex,
-		};
-
-		// 如果用户正在滚动，对齐冻结的对齐目标
-		if (this.scrollState.isAutoAlignSuspended) {
-			const target = this.layoutState.alignTarget;
-			if (target.type === "line") {
-				focalTarget = { type: "line", index: clampLineIndex(target.index) };
-			} else if (target.type === "interlude") {
-				if (!isInterludeFocused) {
-					// 离开间奏区间时，自动将对齐目标移动至下一行歌词，并更新冻结目标
-					focalTarget = {
-						type: "line",
-						index: clampLineIndex(target.anchorIndex + 1),
-					};
-				} else {
-					focalTarget = target;
-				}
-			} else {
-				focalTarget = target;
-			}
-		} else {
-			// 正常自动跟随播放状态
-			if (isInterludeFocused && interlude) {
-				// 处于间奏区间，对齐间奏点
-				focalTarget = {
-					type: "interlude",
-					anchorIndex: interlude.anchorLineIndex,
-				};
-			} else if (snapshot.isEndOfSong) {
-				// 播放完了，如果有底栏则对齐底栏，没有则对齐最后一行歌词
-				if (this.hasBottomContent) {
-					focalTarget = { type: "bottom" };
-				} else if (count > 0) {
-					focalTarget = { type: "line", index: count - 1 };
-				}
-			}
-		}
-
-		this.layoutState.alignTarget = focalTarget;
+		const focalTarget = this.focusController.resolve(
+			snapshot,
+			this.currentLyricGroups.length,
+			{
+				isAutoAlignSuspended: this.scrollState.isAutoAlignSuspended,
+				hasBottomContent: this.hasBottomContent,
+			},
+		);
 
 		// 组装给布局计算器和滚动引擎用的数据
 		const fontSize = this.baseFontSize || 24;
