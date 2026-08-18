@@ -45,7 +45,7 @@ import {
 	LyricPlayer,
 	type LyricPlayerRef,
 } from "@applemusic-like-lyrics/vue";
-import { onMounted, reactive, ref, shallowRef } from "vue";
+import { onMounted, reactive, ref } from "vue";
 
 const audioRef = ref<HTMLAudioElement>();
 const state = reactive({
@@ -54,7 +54,7 @@ const state = reactive({
 	albumIsVideo: false,
 	currentTime: 0,
 });
-const lyricLines = shallowRef<LyricLine[]>([]);
+const lyricLines = ref<LyricLine[]>([]);
 
 const playerRef = ref<LyricPlayerRef>();
 const bgRef = ref<BackgroundRenderRef>();
