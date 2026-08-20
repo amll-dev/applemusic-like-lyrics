@@ -1,5 +1,10 @@
 import { Duration, MediaTime } from "#utils/time.ts";
 
+/**
+ * 判定为间奏所需的最小空隙时长
+ */
+const MIN_INTERLUDE_GAP = Duration.fromMillis(4000);
+
 //#region 类型定义
 /**
  * 用于进度计算的最小歌词数据
@@ -13,12 +18,20 @@ export interface TimeBounds {
  * 当前命中的间奏区间信息
  */
 export interface PlayerInterlude {
+	/**
+	 * 间奏开始时间，即此前全部歌词行中最晚的结束时间
+	 */
 	readonly startTime: MediaTime;
+
+	/**
+	 * 间奏结束时间，即间奏后第一行歌词的开始时间
+	 */
 	readonly endTime: MediaTime;
+
 	/**
 	 * 间奏点应插入的位置基准
 	 *
-	 * 即间奏前最后一句歌词的索引，-1 表示第一句之前
+	 * 即显示顺序上间奏前的最后一行歌词的索引，`-1` 表示第一句之前
 	 */
 	readonly anchorLineIndex: number;
 }
@@ -56,33 +69,38 @@ export interface TimelineSnapshot {
 	/**
 	 * 当前进度命中的、正在高亮的歌词组
 	 *
-	 * 高亮的歌词组可能会多于正在播放的，一般用于多行高亮时、保留上一行播放完毕的歌词的高亮状态
+	 * 高亮的歌词组可能会多于正在播放的，例如一行歌词唱完后不会自行熄灭，而是保持高亮直到下一行开始播放
+	 *
+	 * 因此多行重叠时先唱完的行会陪着后面的行一起亮，句间空隙内上一行也保持高亮以维持可读性
 	 */
 	readonly highlightedGroups: ReadonlySet<number>;
 
 	/**
 	 * 自动滚动应该对齐到哪一行歌词
+	 *
+	 * 取值始终落在 `[0, 歌词行数 - 1]` 内，没有歌词时为 `0`，因此可以直接用于索引
+	 *
+	 * @remarks
+	 * 仅在 {@link isFocusOnInterlude} 为 `false` 时有效
+	 *
+	 * 间奏期间此值仍然指向间奏前的那一组歌词，此时应当改为对齐 {@link activeInterlude} 的间奏点
 	 */
 	readonly scrollToIndex: number;
 
 	/**
 	 * 处于高亮状态的歌词行中，最靠后的一行
 	 *
-	 * 例如，如果当前有高亮行索引 `[1, 2, 3]`，则 `latesthighlightedIndex` 为 `3`
+	 * 例如，如果当前有高亮行索引 `[1, 2, 3]`，则 `latestHighlightedIndex` 为 `3`
 	 *
-	 * 如果当前没有任何高亮行，如两行歌词之间的间隙，被置为 undefined
+	 * 如果当前没有任何高亮行，被置为 undefined，如首行开始之前、间奏区间内、
+	 * 歌曲播放完毕、或已开始的行均为零时长的情况
 	 */
 	readonly latestHighlightedIndex?: number;
 
 	/**
-	 * 标识当前是否有任何高亮中的歌词组
-	 */
-	readonly isTimelineEmpty: boolean;
-
-	/**
-	 * 标识歌曲是否播放完毕
+	 * 标识歌曲是否播放完毕，即当前时间已经越过全部歌词行中最晚的结束时间
 	 *
-	 * 一般用于展示底栏
+	 * 此时所有高亮都已被清空，一般用于展示底栏
 	 */
 	readonly isEndOfSong: boolean;
 
@@ -114,12 +132,15 @@ export interface TimelineDiff {
 	/**
 	 * 在当前时间进度下，最新被命中的、正在播放的歌词索引列表
 	 *
-	 * 用于通知 UI 哪些歌词行开始播放了了
+	 * 用于通知 UI 哪些歌词行开始播放了
 	 */
 	readonly addedPlaying: ReadonlyArray<number>;
 
 	/**
-	 * 在当前时间进度下，刚刚脱离正在播放状态的歌词索引列表，即上一帧还在播放、但本帧时间已超过其 endTime 的歌词行
+	 * 在当前时间进度下，刚刚脱离正在播放状态的歌词索引列表，
+	 * 即上一帧还在播放、但本帧已不再命中其 `[startTime, endTime)` 的歌词行
+	 *
+	 * 正常播放时是时间越过了 `endTime`，跳转时也可能是跳到了 `startTime` 之前
 	 *
 	 * 用于通知 UI 侧哪些歌词行已结束，后续可能会转入高亮行以保持高亮状态
 	 */
@@ -173,7 +194,11 @@ type Mutable<T> = {
 
 export class TimelineController {
 	//#region 内部状态
-	private lyricBounds: TimeBounds[] = [];
+	private lyricBounds: readonly TimeBounds[] = [];
+	/**
+	 * 全部歌词行中最晚的结束时间，用于判定歌曲是否播放完毕
+	 */
+	private maxEndTime: MediaTime = MediaTime.ZERO;
 	/**
 	 * 外部显式传入的持续性 Seek 状态（例如正在拖拽进度条）
 	 */
@@ -185,14 +210,16 @@ export class TimelineController {
 	private precalculatedInterludes: PlayerInterlude[] = [];
 
 	/**
-	 * 保存上次检索到的正在播放歌词的位置，用于避免每次都从头遍历所有歌词，提高性能
+	 * 保存上次顺序扫描停止的位置，用于避免每次都从头遍历所有歌词，提高性能
 	 */
 	private playbackCursor = 0;
 	private interludeCursor = 0;
-	private isFocusOnInterludeState = false;
 
 	private playingGroupsSet: Set<number> = new Set();
 	private highlightedGroupsSet: Set<number> = new Set();
+
+	private nextPlayingSet: Set<number> = new Set();
+	private nextHighlightedSet: Set<number> = new Set();
 
 	private addedPlayingIds: number[] = [];
 	private removedPlayingIds: number[] = [];
@@ -207,7 +234,6 @@ export class TimelineController {
 		highlightedGroups: this.highlightedGroupsSet,
 		scrollToIndex: 0,
 		latestHighlightedIndex: undefined,
-		isTimelineEmpty: true,
 		isEndOfSong: false,
 		activeInterlude: undefined,
 		isFocusOnInterlude: false,
@@ -228,10 +254,21 @@ export class TimelineController {
 	//#region 外部 API
 	/**
 	 * 提前设置好歌词的时间数据，内部会根据此数据来进行时间线推导，同时预计算间奏区间
+	 *
+	 * @param bounds 歌词行的时间边界，**必须按 `startTime` 升序排列**，不按 `startTime`
+	 * 排列可能会导致时间推导出现意外情况
 	 */
-	public setTimeBounds(bounds: TimeBounds[]): void {
+	public setTimeBounds(bounds: readonly TimeBounds[]): void {
 		this.lyricBounds = bounds;
 		this.precalculatedInterludes = this.calculateInterludes(bounds);
+
+		// 歌词行按开始时间排序，末行的结束时间不一定是最大值
+		// 例如末尾存在时间上被前一行包住的重叠行，因此单独预计算一次
+		let maxEnd = MediaTime.ZERO;
+		for (const bound of bounds) {
+			maxEnd = MediaTime.max(maxEnd, bound.endTime);
+		}
+		this.maxEndTime = maxEnd;
 
 		this.reset();
 	}
@@ -248,49 +285,87 @@ export class TimelineController {
 		return this.snapshot;
 	}
 
+	/**
+	 * 将播放进度推进到指定时间，并返回相对上一帧的增量变化
+	 *
+	 * @remarks
+	 * 歌词行的高亮生命周期为：
+	 * * 命中 `[startTime, endTime)` 时高亮
+	 * * 唱完后不会自行熄灭，而是继续保持高亮
+	 *
+	 * 直到出现下列任一情况：
+	 *
+	 * 1. 有新的歌词行开始播放，此时已唱完的行被一起熄灭
+	 * 2. 进入间奏区间，此时清空全部高亮并把焦点交给间奏点
+	 * 3. 歌曲播放完毕，此时清空全部高亮并设置 {@link TimelineSnapshot.isEndOfSong} 为 true
+	 * 4. 发生跳转，此时按跳转后的时间重新推导
+	 *
+	 * @param time 当前播放时间
+	 * @param forceSeek 这次时间变化是否由跳转触发
+	 * @returns 相对上一帧的增量变化
+	 */
 	public sync(time: MediaTime, forceSeek = false): TimelineDiff {
 		this.addedPlayingIds.length = 0;
 		this.removedPlayingIds.length = 0;
 		this.addedHighlightedIds.length = 0;
 		this.removedHighlightedIds.length = 0;
-		this.expiredHighlightedIds.length = 0;
 
 		const prevInterlude = this.snapshot.activeInterlude;
 		const prevFocusOnInterlude = this.snapshot.isFocusOnInterlude;
 		const prevScrollToIndex = this.snapshot.scrollToIndex;
+		const prevEndOfSong = this.snapshot.isEndOfSong;
 
-		// 将时间倒退视为 seek 是为了避免 performPlayback 顺序查找时失效
-		// performPlayback 会保存上次找到的最小的播放行的索引，下次从该索引查找以提高性能
-		// 若时间倒退，将会导致倒退到的那行直到 playbackCursor 之间都无法高亮
+		// 将时间倒退视为 seek 是为了避免 performPlayback 的顺序扫描失效
+		// performPlayback 会保存上次扫描停止的位置，下次从该位置继续扫描以提高性能
+		// 若时间倒退，倒退到的行可能位于扫描位置之前，需要按跳转路径重新推导
 		const isTimeRegression = time < this.snapshot.currentTime;
 		const isJump = forceSeek || isTimeRegression;
 
 		this.snapshot.isSeeking = this.isManualSeeking || isJump;
+
+		// 间奏命中情况需要先于歌词状态确定
+		// Seek 时要按同样的规则决定是否保留已经唱完的行，需要提前知道结果
+		const activeInterlude = this.resolveActiveInterlude(time, isJump);
+		this.snapshot.activeInterlude = activeInterlude;
+
+		const isPastLastLine =
+			this.lyricBounds.length > 0 && time >= this.maxEndTime;
+
 		if (this.snapshot.isSeeking) {
-			this.performSeek(time);
+			this.performSeek(time, !!activeInterlude || isPastLastLine);
 		} else {
 			this.performPlayback(time);
 		}
 
-		this.updateInterludeState(time, isJump);
+		// 高亮行本身不会因为唱完而熄灭，这里处理两个需要清空的场景
+		// 1. 进入间奏区间：间奏点接过焦点，不应该再有亮着的旧歌词
+		// 2. 歌曲播放完毕：不会再有新歌词接续，需要主动熄灭并把焦点交给底栏
+		if (activeInterlude && this.playingGroupsSet.size === 0) {
+			this.flushAllHighlighted();
+		}
+		if (isPastLastLine) {
+			this.flushAllHighlighted();
+		}
 
-		const isInterludeChanged = prevInterlude !== this.snapshot.activeInterlude;
+		this.updateInterludeFocus(activeInterlude);
+
+		const isInterludeChanged = prevInterlude !== activeInterlude;
 		const isFocusChanged =
 			prevFocusOnInterlude !== this.snapshot.isFocusOnInterlude;
 		const isScrollToChanged = prevScrollToIndex !== this.snapshot.scrollToIndex;
 
 		const hasChanged =
-			isJump ||
+			this.snapshot.isSeeking ||
 			this.addedPlayingIds.length > 0 ||
 			this.removedPlayingIds.length > 0 ||
 			this.addedHighlightedIds.length > 0 ||
 			this.removedHighlightedIds.length > 0 ||
 			isInterludeChanged ||
 			isFocusChanged ||
-			isScrollToChanged;
+			isScrollToChanged ||
+			isPastLastLine !== prevEndOfSong;
 
 		this.snapshot.currentTime = time;
-		this.snapshot.isTimelineEmpty = this.highlightedGroupsSet.size === 0;
 
 		if (this.highlightedGroupsSet.size > 0) {
 			let maxIndex = -1;
@@ -302,14 +377,7 @@ export class TimelineController {
 			this.snapshot.latestHighlightedIndex = undefined;
 		}
 
-		// 判断歌曲是否播放完毕，UI 会根据此标志决定是否聚焦到底栏
-		this.snapshot.isEndOfSong = false;
-		if (this.highlightedGroupsSet.size === 0 && this.lyricBounds.length > 0) {
-			const lastLine = this.lyricBounds[this.lyricBounds.length - 1];
-			if (time >= lastLine.endTime) {
-				this.snapshot.isEndOfSong = true;
-			}
-		}
+		this.snapshot.isEndOfSong = isPastLastLine;
 
 		this.diff.hasChanged = hasChanged;
 		this.diff.isInterludeChanged = isInterludeChanged;
@@ -319,6 +387,15 @@ export class TimelineController {
 		return this.diff;
 	}
 
+	/**
+	 * 设置持续性的跳转状态，例如用户正按住进度条拖拽
+	 *
+	 * @remarks
+	 * 此状态由外部持有，内部只做镜像，因此加载新歌词时不会被清除，
+	 * 需要由调用方在拖拽结束时显式置回 false
+	 *
+	 * @param isSeeking 当前是否处于持续跳转状态
+	 */
 	public setSeekingState(isSeeking: boolean): void {
 		this.isManualSeeking = isSeeking;
 		this.snapshot.isSeeking = isSeeking;
@@ -331,11 +408,12 @@ export class TimelineController {
 	 */
 	private performPlayback(time: MediaTime): void {
 		// 我在这里定义了歌词的不同状态：
-		// 播放行：只要当前时间落在 [startTime, endTime) 内，就是在播放行，播放行是高亮行的真子集
+		// 播放行：只要当前时间落在 [startTime, endTime) 内，就是在播放行，播放行是高亮行的子集
 		// 高亮行：UI 层真正看到的高亮状态
 		//
-		// 一行歌词播放完毕后，会立刻退出播放状态，但可以继续高亮，用于多行高亮时保留播放完的歌词继续高亮，
-		// 直到所有高亮行全部播放完毕后全部退出高亮
+		// 一行歌词播放完毕后会立刻退出播放状态，但会继续保持高亮，直到下一行开始播放才熄灭
+		// 这样多行重叠时先唱完的行会陪着后面的行一起亮，句间空隙内上一行也不会提前变暗
+		// 空隙长到构成间奏、以及歌曲已经播完这两种没有下一行接续的情况，由 sync 统一清空
 
 		// 清理不再播放的行
 		for (const lastPlayingId of this.playingGroupsSet) {
@@ -369,18 +447,10 @@ export class TimelineController {
 		}
 
 		// 更新 this.playbackCursor 指针
-		if (this.playingGroupsSet.size > 0) {
-			let minPlaying = Number.POSITIVE_INFINITY;
-			for (const id of this.playingGroupsSet) {
-				if (id < minPlaying) minPlaying = id;
-			}
-			this.playbackCursor = minPlaying;
-		} else {
-			this.playbackCursor = cursor;
-		}
+		this.playbackCursor = cursor;
 
 		// 找出那些已经唱完但仍处于高亮状态的歌词行
-		// 稍后会结合下一行的开启来决定什么时候熄灭高亮
+		// 它们会保持高亮，直到有新歌词开始播放才被一起熄灭
 		this.expiredHighlightedIds.length = 0;
 		for (const id of this.highlightedGroupsSet) {
 			if (!this.playingGroupsSet.has(id)) {
@@ -388,49 +458,34 @@ export class TimelineController {
 			}
 		}
 
-		// 只要有新歌词开始播放，将其存入 highlightedGroupsSet，并向 addedHighlightedIds 压入 Diff
-		// UI 将会启用这些歌词
 		const addedPlayingCount = this.addedPlayingIds.length;
 		const expiredCount = this.expiredHighlightedIds.length;
 
-		if (addedPlayingCount > 0) {
-			for (let i = 0; i < addedPlayingCount; i++) {
-				const id = this.addedPlayingIds[i];
-				this.highlightedGroupsSet.add(id);
-				this.addedHighlightedIds.push(id);
-			}
+		// 只要有新歌词开始播放，将其存入 highlightedGroupsSet，并向 addedHighlightedIds 压入 Diff
+		// UI 将会启用这些歌词
+		for (let i = 0; i < addedPlayingCount; i++) {
+			const id = this.addedPlayingIds[i];
+			this.highlightedGroupsSet.add(id);
+			this.addedHighlightedIds.push(id);
 		}
 
-		// 定义两个应该清理旧高亮歌词的充分条件，满足其一即可：
-		// 1. 有新歌词进入播放状态
-		// 2. 当前处于高亮状态的歌词全部播放完了
+		// 清理旧高亮的唯一条件是「有新歌词进入播放状态」
 		//
-		// 注意，expiredCount > 0 不作为清理条件，这是为了在多行高亮时，让播放完毕的行保持高亮状态
-		const shouldTransitionToNext = addedPlayingCount > 0;
-
-		const isCurrentGroupAllFinished =
-			expiredCount > 0 && expiredCount === this.highlightedGroupsSet.size;
-
-		const shouldFlushExpiredLines =
-			shouldTransitionToNext || isCurrentGroupAllFinished;
-
-		if (shouldFlushExpiredLines && expiredCount > 0) {
+		// 注意 expiredCount > 0 不作为清理条件，一行歌词唱完时若没有新行接续，
+		// 它会继续保持高亮，这样多行高亮时先唱完的行和句间空隙的上一行不会失去可读性
+		if (addedPlayingCount > 0) {
 			for (let i = 0; i < expiredCount; i++) {
 				const id = this.expiredHighlightedIds[i];
 				this.highlightedGroupsSet.delete(id);
 				this.removedHighlightedIds.push(id);
 			}
-		}
 
-		// 不更新 scrollToIndex，以便在播放完毕后保持聚焦在这行歌词
-		if (
-			(addedPlayingCount > 0 || shouldFlushExpiredLines) &&
-			this.highlightedGroupsSet.size > 0
-		) {
 			let minHighlighted = Number.POSITIVE_INFINITY;
 			for (const id of this.highlightedGroupsSet) {
 				if (id < minHighlighted) minHighlighted = id;
 			}
+
+			// 只在歌词更替时更新，以便在播放完毕后保持聚焦在这一组歌词
 			this.snapshot.scrollToIndex = minHighlighted;
 		}
 	}
@@ -438,77 +493,161 @@ export class TimelineController {
 	/**
 	 * 处理 Seek 时的时间线推导
 	 *
-	 * 将会丢弃所有高亮状态的行，直接根据当前时间重新计算播放状态的行
+	 * 直接按目标时间重建播放与高亮行集合，结果与正常播放到该时刻时一致
+	 *
+	 * @param time 跳转到的时间
+	 * @param dropLingeringWhenIdle 在没有任何行正在播放时，是否丢弃那些已经唱完、
+	 * 但在正常播放中仍会保持高亮的行，用于在间奏和播放完时清空高亮行
 	 */
-	private performSeek(time: MediaTime): void {
-		for (const id of this.playingGroupsSet) {
-			this.removedPlayingIds.push(id);
-		}
-		for (const id of this.highlightedGroupsSet) {
-			this.removedHighlightedIds.push(id);
-		}
+	private performSeek(time: MediaTime, dropLingeringWhenIdle: boolean): void {
+		const nextPlaying = this.nextPlayingSet;
+		const nextHighlighted = this.nextHighlightedSet;
+		nextPlaying.clear();
+		nextHighlighted.clear();
 
-		this.playingGroupsSet.clear();
-		this.highlightedGroupsSet.clear();
-
+		// 二分法找出第一个开始时间晚于目标时间的歌词行，排除所有尚未开始唱的歌词
 		let left = 0;
 		let right = this.lyricBounds.length - 1;
-		let firstGreaterOrEqual = this.lyricBounds.length;
+		let firstGreater = this.lyricBounds.length;
 
 		while (left <= right) {
 			const mid = (left + right) >> 1;
-			if (this.lyricBounds[mid].startTime >= time) {
-				firstGreaterOrEqual = mid;
+			if (this.lyricBounds[mid].startTime > time) {
+				firstGreater = mid;
 				right = mid - 1;
 			} else {
 				left = mid + 1;
 			}
 		}
 
-		let minPlayingIndex = Number.POSITIVE_INFINITY;
-		const startIndex = Math.min(
-			firstGreaterOrEqual,
-			this.lyricBounds.length - 1,
-		);
-
-		for (let i = startIndex; i >= 0; i--) {
+		// 往前找到最后一个真正开始播放过的歌词行作为锚点
+		let anchorIndex = -1;
+		for (let i = firstGreater - 1; i >= 0; i--) {
 			const bound = this.lyricBounds[i];
-			if (bound && bound.startTime <= time && bound.endTime > time) {
-				this.playingGroupsSet.add(i);
-				this.highlightedGroupsSet.add(i);
-				this.addedPlayingIds.push(i);
-				this.addedHighlightedIds.push(i);
-				if (i < minPlayingIndex) minPlayingIndex = i;
+			// 有意跳过时长为 0 的歌词行
+			if (bound.endTime > bound.startTime) {
+				anchorIndex = i;
+				break;
 			}
 		}
 
-		if (this.highlightedGroupsSet.size > 0) {
-			// 聚焦到命中的第一行歌词
-			this.snapshot.scrollToIndex = minPlayingIndex;
-			this.playbackCursor = minPlayingIndex;
-		} else {
-			// 如果跳转到了两行歌词间隔里 (不是间奏)，聚焦到即将播放的下一行歌词
-			this.snapshot.scrollToIndex = firstGreaterOrEqual;
-			this.playbackCursor = firstGreaterOrEqual;
+		if (anchorIndex === -1) {
+			// 目标时间在第一行歌词开始之前，或此前所有已开始的行都是零时长
+			// 正常播放时尚未有任何歌词行进入播放状态，scrollToIndex 保持为 0
+			this.playbackCursor = firstGreater;
+			this.snapshot.scrollToIndex = 0;
+			this.commitSeekDiff();
+			return;
 		}
+
+		// 还原「歌词唱完不熄灭，直到下一句开始才更替」的状态
+		// 锚点之后的歌词行要么开始时间晚于目标时间、要么时长为零，都不可能命中，无需遍历
+		const anchorStart = this.lyricBounds[anchorIndex].startTime;
+		let minPlaying = -1;
+		let minHighlighted = -1;
+
+		for (let i = anchorIndex; i >= 0; i--) {
+			const bound = this.lyricBounds[i];
+
+			// 锚点时刻尚未唱完的行，在正常播放中会一直亮到下一行开始
+			// 正在播放的行必然满足此条件，因为其结束时间晚于目标时间，而目标时间不早于锚点
+			if (bound.endTime <= anchorStart) continue;
+
+			if (bound.startTime <= time && bound.endTime > time) {
+				nextPlaying.add(i);
+				minPlaying = i;
+			}
+
+			nextHighlighted.add(i);
+			minHighlighted = i;
+		}
+
+		// 间奏与曲末清空高亮行，如果没有行在播放的话
+		if (dropLingeringWhenIdle && nextPlaying.size === 0) {
+			nextHighlighted.clear();
+		}
+
+		this.playbackCursor = minPlaying === -1 ? firstGreater : minPlaying;
+		this.snapshot.scrollToIndex = minHighlighted;
+
+		this.commitSeekDiff();
+	}
+
+	/**
+	 * 把 Seek 重建出的目标集合与上一帧的集合求对称差，输出发生变化的部分
+	 */
+	private commitSeekDiff(): void {
+		for (const id of this.playingGroupsSet) {
+			if (!this.nextPlayingSet.has(id)) {
+				this.playingGroupsSet.delete(id);
+				this.removedPlayingIds.push(id);
+			}
+		}
+		for (const id of this.nextPlayingSet) {
+			if (!this.playingGroupsSet.has(id)) {
+				this.playingGroupsSet.add(id);
+				this.addedPlayingIds.push(id);
+			}
+		}
+
+		for (const id of this.highlightedGroupsSet) {
+			if (!this.nextHighlightedSet.has(id)) {
+				this.highlightedGroupsSet.delete(id);
+				this.removedHighlightedIds.push(id);
+			}
+		}
+		for (const id of this.nextHighlightedSet) {
+			if (!this.highlightedGroupsSet.has(id)) {
+				this.highlightedGroupsSet.add(id);
+				this.addedHighlightedIds.push(id);
+			}
+		}
+	}
+
+	/**
+	 * 立即熄灭当前全部高亮歌词行
+	 *
+	 * 用于间奏与曲末这两个没有下一行接续、但必须清空高亮的场景
+	 */
+	private flushAllHighlighted(): void {
+		if (this.highlightedGroupsSet.size === 0) return;
+
+		for (const id of this.highlightedGroupsSet) {
+			this.removedHighlightedIds.push(id);
+		}
+		this.highlightedGroupsSet.clear();
 	}
 	//#endregion
 
 	//#region 间奏计算
-	private calculateInterludes(bounds: TimeBounds[]): PlayerInterlude[] {
+	/**
+	 * 预计算全部间奏区间
+	 * @param bounds 按 `startTime` 升序排列的歌词时间边界
+	 * @returns 按时间升序排列、互不重叠的间奏区间，供二分查找与游标推进使用
+	 */
+	private calculateInterludes(
+		bounds: readonly TimeBounds[],
+	): PlayerInterlude[] {
 		const interludes: PlayerInterlude[] = [];
-		const minGap = Duration.fromMillis(4000);
 
+		// 已扫描过的歌词行中最晚的结束时间
+		let maxEnd = MediaTime.ZERO;
+
+		// 歌词行只保证按 `startTime` 升序，前一行的 `endTime` 并不等于此前
+		// 所有行的最晚结束时间 (例如多行高亮的情况)
+		//
+		// 所以这里按前缀最大结束时间做一次区间并集扫描，保证产出的区间与
+		// 任何歌词行都不重叠
 		for (let i = -1; i < bounds.length - 1; i++) {
-			const prevGroup = i === -1 ? null : bounds[i];
-			const nextGroup = bounds[i + 1];
+			if (i >= 0) {
+				maxEnd = MediaTime.max(maxEnd, bounds[i].endTime);
+			}
 
-			const gapStart = prevGroup ? prevGroup.endTime : MediaTime.ZERO;
-			const gapEnd = MediaTime.max(gapStart, nextGroup.startTime);
+			const gapEnd = MediaTime.max(maxEnd, bounds[i + 1].startTime);
 
-			if (MediaTime.since(gapEnd, gapStart) >= minGap) {
+			if (MediaTime.since(gapEnd, maxEnd) >= MIN_INTERLUDE_GAP) {
 				interludes.push({
-					startTime: gapStart,
+					startTime: maxEnd,
 					endTime: gapEnd,
 					anchorLineIndex: i,
 				});
@@ -518,78 +657,92 @@ export class TimelineController {
 		return interludes;
 	}
 
-	private updateInterludeState(time: MediaTime, isSeek: boolean): void {
-		let activeInterlude: PlayerInterlude | undefined;
+	/**
+	 * 查找当前时间命中的间奏区间，并顺带推进或重定位间奏游标
+	 * @param time 当前播放时间
+	 * @param isSeek 当前帧是否为跳转
+	 * @returns 命中的间奏区间，未命中时为 undefined
+	 */
+	private resolveActiveInterlude(
+		time: MediaTime,
+		isSeek: boolean,
+	): PlayerInterlude | undefined {
+		if (this.precalculatedInterludes.length === 0) return undefined;
 
-		if (this.precalculatedInterludes.length > 0) {
-			if (isSeek) {
-				let cursor = this.precalculatedInterludes.length;
-				let left = 0;
-				let right = this.precalculatedInterludes.length - 1;
+		if (isSeek) {
+			let cursor = this.precalculatedInterludes.length;
+			let left = 0;
+			let right = this.precalculatedInterludes.length - 1;
 
-				while (left <= right) {
-					const mid = (left + right) >> 1;
-					const inter = this.precalculatedInterludes[mid];
+			while (left <= right) {
+				const mid = (left + right) >> 1;
+				const inter = this.precalculatedInterludes[mid];
 
-					if (inter.endTime > time) {
-						cursor = mid;
-						right = mid - 1;
-					} else {
-						left = mid + 1;
-					}
+				if (inter.endTime > time) {
+					cursor = mid;
+					right = mid - 1;
+				} else {
+					left = mid + 1;
 				}
+			}
 
-				this.interludeCursor = cursor;
+			this.interludeCursor = cursor;
 
-				if (cursor < this.precalculatedInterludes.length) {
-					const inter = this.precalculatedInterludes[cursor];
-					if (time >= inter.startTime && time < inter.endTime) {
-						activeInterlude = inter;
-					}
+			if (cursor < this.precalculatedInterludes.length) {
+				const inter = this.precalculatedInterludes[cursor];
+				if (time >= inter.startTime && time < inter.endTime) {
+					return inter;
 				}
+			}
+
+			return undefined;
+		}
+
+		while (this.interludeCursor < this.precalculatedInterludes.length) {
+			const inter = this.precalculatedInterludes[this.interludeCursor];
+			if (time >= inter.startTime && time < inter.endTime) {
+				return inter;
+			}
+			if (time >= inter.endTime) {
+				this.interludeCursor++;
 			} else {
-				while (this.interludeCursor < this.precalculatedInterludes.length) {
-					const inter = this.precalculatedInterludes[this.interludeCursor];
-					if (time >= inter.startTime && time < inter.endTime) {
-						activeInterlude = inter;
-						break;
-					} else if (time >= inter.endTime) {
-						this.interludeCursor++;
-					} else {
-						break;
-					}
-				}
+				break;
 			}
 		}
 
-		this.snapshot.activeInterlude = activeInterlude;
+		return undefined;
+	}
 
-		if (activeInterlude && this.highlightedGroupsSet.size === 0) {
-			// 处于间奏区域且未高亮任何歌词时，聚焦在间奏区域
-			this.isFocusOnInterludeState = true;
-		} else if (this.highlightedGroupsSet.size > 0 || !activeInterlude) {
-			// 有新歌词高亮或离开间奏区域时，解除聚焦
-			this.isFocusOnInterludeState = false;
-		}
-
-		this.snapshot.isFocusOnInterlude = this.isFocusOnInterludeState;
+	/**
+	 * 根据间奏命中情况和当前高亮状态推导是否应当聚焦间奏点
+	 *
+	 * 处于间奏区域且没有任何歌词高亮时聚焦间奏点，否则交还给歌词行
+	 *
+	 * @param activeInterlude 当前命中的间奏区间
+	 */
+	private updateInterludeFocus(activeInterlude?: PlayerInterlude): void {
+		this.snapshot.isFocusOnInterlude =
+			!!activeInterlude && this.highlightedGroupsSet.size === 0;
 	}
 	//#endregion
 
 	//#region 重置
+	/**
+	 * 清空全部推导状态，回到时间原点
+	 */
 	private reset(): void {
 		this.playbackCursor = 0;
 		this.interludeCursor = 0;
-		this.isFocusOnInterludeState = false;
 
 		this.playingGroupsSet.clear();
 		this.highlightedGroupsSet.clear();
+		this.nextPlayingSet.clear();
+		this.nextHighlightedSet.clear();
 
 		this.snapshot.currentTime = MediaTime.ZERO;
 		this.snapshot.isSeeking = false;
 		this.snapshot.scrollToIndex = 0;
 		this.snapshot.latestHighlightedIndex = undefined;
-		this.snapshot.isTimelineEmpty = true;
 		this.snapshot.isEndOfSong = false;
 		this.snapshot.activeInterlude = undefined;
 		this.snapshot.isFocusOnInterlude = false;

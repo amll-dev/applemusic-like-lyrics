@@ -13,7 +13,6 @@ function makeSnapshot(over: Partial<TimelineSnapshot> = {}): TimelineSnapshot {
 		playingGroups: new Set(),
 		highlightedGroups: new Set(),
 		scrollToIndex: 0,
-		isTimelineEmpty: false,
 		isEndOfSong: false,
 		isFocusOnInterlude: false,
 		...over,
