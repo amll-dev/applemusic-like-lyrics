@@ -103,7 +103,7 @@ export interface LyricPlayerProps {
 	 * 此属性只标注 {@link currentTime} 的变化，本身不会触发推送，
 	 * 因此 {@link currentTime} 未变化时改动它不产生任何效果
 	 *
-	 * 通常无需传入，默认会自动推导跳转状态。仅在自动推导被关闭时才需要显式指定
+	 * @see https://amll.dev/guides/component/seeking
 	 */
 	isSeeking?: boolean;
 	/**
