@@ -125,7 +125,7 @@ export interface TimelineDiff {
 	/**
 	 * 标识本次同步的时间轴是否发生了跳转
 	 *
-	 * 在显式跳转 (`sync` 的 `forceSeek`) 和推送停滞或重复的时间两种情况下为 `true`
+	 * 在显式跳转 (`sync` 的 `forceSeek`) 或时间倒退 / 停滞（重复推送同一时间）时为 `true`
 	 *
 	 * 例如跳转时使用更缓慢的弹簧参数 (参见 `spring.ts`)，
 	 * 以及在非触摸状态下重置滚动坐标系
