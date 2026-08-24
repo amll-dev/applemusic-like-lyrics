@@ -107,46 +107,9 @@ function stopFrameLoop() {
 
 ### Seeking
 
-Outside normal playback, playback progress may jump. Common cases include:
+Outside normal playback, playback progress may jump. For this kind of progress change, the lyric component switches to a different set of layout and animation behavior.
 
-- Dragging the progress bar
-- Fast-forwarding or rewinding
-- Clicking a lyric line to seek
-- Loop playback, where progress jumps from the end back to the beginning
-
-When playback progress jumps, set the second parameter of `setCurrentTime` to `true`:
-
-```ts
-function onSeeked() {
-	player.setCurrentTime(Math.round(audio.currentTime * 1000), true);
-}
-audio.addEventListener("seeked", onSeeked);
-```
-
-**This parameter indicates that the current sync is a seek. Normal playback and seek state use different layout and animation behavior:**
-
-- During normal playback, the component lays out and applies spring animation to each visible line individually for a refined visual effect.
-- During seeking, the component force-aligns the lyric position and applies layout plus spring animation to all lyric lines as a whole, reducing work and making the animation snappier.
-
-If seek state is not marked correctly, layout glitches may occur, such as stutters or lyric lines quickly flying from one side of the screen to the other and disappearing. You can see screenshots in [issue #429](https://github.com/amll-dev/applemusic-like-lyrics/issues/429).
-
-### Lyric Line Click Events
-
-The component provides a `line-click` event, fired when a lyric line is clicked. Its event type is [`LyricLineMouseEvent`](/en/reference/core/classlyriclinemouseevent).
-
-**The component itself does not respond to lyric line clicks.** The host environment needs to listen to the event and perform actions such as seeking the audio progress. For example:
-
-```ts
-import type { LyricLineMouseEvent } from "@applemusic-like-lyrics/core";
-
-player.addEventListener("line-click", (event) => {
-	const lineEvent = event as LyricLineMouseEvent;
-	audio.currentTime = lineEvent.line.getLine().startTime / 1000;
-	player.setCurrentTime(lineEvent.line.getLine().startTime, true);
-});
-```
-
-It is worth noting that clicking a lyric line to jump is also a seek.
+For more information, see [Seeking and Progress Alignment](./seeking).
 
 ## Changing Lyrics
 
@@ -169,20 +132,7 @@ You still need to provide these states:
 | Current progress | `currentTime`     | Synced from audio with `requestAnimationFrame` during playback |
 | Playback state   | `playing`         | Pauses or resumes the lyric component's internal presentation  |
 
-The React binding additionally provides an `isSeeking` prop, which you can pass during seeking:
-
-```tsx
-<LyricPlayer
-	lyricLines={lyricLines}
-	currentTime={currentTime}
-	isSeeking={isSeeking}
-	playing={playing}
-/>
-```
-
-`isSeeking` should not stay `true` for a long time. Usually, set it to `true` briefly when the user completes a seek, then restore it to `false` after the next sync.
-
-The Vue binding is currently less complete and does not have a separate `isSeeking` prop. In common scenarios, syncing `currentTime` is enough to work. If you need finer state control, use the vanilla API directly. We will continue improving the Vue binding functionality and usage experience in upcoming versions.
+The React binding additionally provides an `isSeeking` prop, which maps to the second parameter of `setCurrentTime`. The Vue binding is currently less complete and does not have a corresponding prop. Automatic derivation is enabled by default for both, so syncing `currentTime` is generally enough; see [Seeking and Progress Alignment](./seeking#react-and-vue-bindings) for details. We will continue improving the Vue binding functionality and usage experience in upcoming versions.
 
 If `disabled` is set, the binding no longer manages frame-by-frame animation. In that case, you can access the underlying `lyricPlayer` through a component ref and call `update` yourself, just like with the vanilla API.
 
@@ -215,5 +165,5 @@ If you use the React or Vue bindings, the component automatically calls the unde
 - During playback, `currentTime` is synced with `requestAnimationFrame`.
 - In vanilla usage, `update(delta)` is called frame by frame.
 - Pause, resume, and playback end are synced to `pause()` / `resume()` or `playing`.
-- Seeking uses the seek flag to align the lyric position.
+- Seeks are recognized automatically by default; when you know a seek happened, you can additionally use the seek flag to mark it explicitly.
 - On unmount, cancel animation frames, remove event listeners, and dispose the component.

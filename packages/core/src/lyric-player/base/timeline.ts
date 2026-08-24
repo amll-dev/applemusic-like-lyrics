@@ -55,13 +55,6 @@ export interface TimelineSnapshot {
 	readonly currentTime: MediaTime;
 
 	/**
-	 * 标识当前帧是否处于跳转状态
-	 *
-	 * 例如跳转期间使用更缓慢的弹簧参数 (参见 `spring.ts`)，并关闭各个歌词行的延时递增动画
-	 */
-	readonly isSeeking: boolean;
-
-	/**
 	 * 当前进度命中的、正在播放的歌词组
 	 */
 	readonly playingGroups: ReadonlySet<number>;
@@ -123,11 +116,21 @@ export interface TimelineSnapshot {
  */
 export interface TimelineDiff {
 	/**
-	 * 当前帧是否有任何实质性的状态变更，如播放行更替、高亮行新增/移除、间奏状态切换、焦点切换，或处于 Seek 状态中
+	 * 当前帧是否有任何实质性的状态变更，如播放行更替、高亮行新增/移除、间奏状态切换、焦点切换，或发生了跳转
 	 *
 	 * UI 层接收到 diff 后，检查此标志即可直接跳过后续所有的布局计算
 	 */
 	readonly hasChanged: boolean;
+
+	/**
+	 * 标识本次同步的时间轴是否发生了跳转
+	 *
+	 * 在显式跳转 (`sync` 的 `forceSeek`) 和推送停滞或重复的时间两种情况下为 `true`
+	 *
+	 * 例如跳转时使用更缓慢的弹簧参数 (参见 `spring.ts`)，
+	 * 以及在非触摸状态下重置滚动坐标系
+	 */
+	readonly isTimeJumped: boolean;
 
 	/**
 	 * 在当前时间进度下，最新被命中的、正在播放的歌词索引列表
@@ -175,13 +178,6 @@ export interface TimelineDiff {
 	 * 用于通知 UI 需要移动到新的歌词行
 	 */
 	readonly isScrollToChanged: boolean;
-
-	/**
-	 * 标识时间轴是否发生了非连续的跳跃，会在时间轴倒退和 Seek 状态下为 true
-	 *
-	 * 用于通知 UI 层在非触摸状态下重置滚动坐标系
-	 */
-	readonly isTimeJumped: boolean;
 }
 
 /**
@@ -199,10 +195,6 @@ export class TimelineController {
 	 * 全部歌词行中最晚的结束时间，用于判定歌曲是否播放完毕
 	 */
 	private maxEndTime: MediaTime = MediaTime.ZERO;
-	/**
-	 * 外部显式传入的持续性 Seek 状态（例如正在拖拽进度条）
-	 */
-	private isManualSeeking = false;
 
 	/**
 	 * 预先计算的间奏区域
@@ -229,7 +221,6 @@ export class TimelineController {
 
 	private readonly snapshot: Mutable<TimelineSnapshot> = {
 		currentTime: MediaTime.ZERO,
-		isSeeking: false,
 		playingGroups: this.playingGroupsSet,
 		highlightedGroups: this.highlightedGroupsSet,
 		scrollToIndex: 0,
@@ -241,13 +232,13 @@ export class TimelineController {
 
 	private readonly diff: Mutable<TimelineDiff> = {
 		hasChanged: false,
+		isTimeJumped: false,
 		addedPlaying: this.addedPlayingIds,
 		removedPlaying: this.removedPlayingIds,
 		addedHighlighted: this.addedHighlightedIds,
 		removedHighlighted: this.removedHighlightedIds,
 		isInterludeChanged: false,
 		isScrollToChanged: false,
-		isTimeJumped: false,
 	};
 	//#endregion
 
@@ -315,13 +306,15 @@ export class TimelineController {
 		const prevScrollToIndex = this.snapshot.scrollToIndex;
 		const prevEndOfSong = this.snapshot.isEndOfSong;
 
-		// 将时间倒退视为 seek 是为了避免 performPlayback 的顺序扫描失效
-		// performPlayback 会保存上次扫描停止的位置，下次从该位置继续扫描以提高性能
-		// 若时间倒退，倒退到的行可能位于扫描位置之前，需要按跳转路径重新推导
-		const isTimeRegression = time < this.snapshot.currentTime;
-		const isJump = forceSeek || isTimeRegression;
-
-		this.snapshot.isSeeking = this.isManualSeeking || isJump;
+		// 时间不再前进时一律按跳转处理，这里有两个各自独立的理由
+		//
+		// 倒退是机制上的必需：performPlayback 会保存上次扫描停止的位置，下次从该位置
+		// 继续扫描以提高性能，若时间倒退，倒退到的行可能位于扫描位置之前，只能重新推导
+		//
+		// 停滞则是语义上的约定：正常播放不会让进度停在原地，推送同一个时间表达的是把
+		// 逐字遮罩这类自行推进的动画重新对齐到该时间的意图，因此也走跳转路径
+		const isTimeNotAdvancing = time <= this.snapshot.currentTime;
+		const isJump = forceSeek || isTimeNotAdvancing;
 
 		// 间奏命中情况需要先于歌词状态确定
 		// Seek 时要按同样的规则决定是否保留已经唱完的行，需要提前知道结果
@@ -331,7 +324,7 @@ export class TimelineController {
 		const isPastLastLine =
 			this.lyricBounds.length > 0 && time >= this.maxEndTime;
 
-		if (this.snapshot.isSeeking) {
+		if (isJump) {
 			this.performSeek(time, !!activeInterlude || isPastLastLine);
 		} else {
 			this.performPlayback(time);
@@ -355,7 +348,7 @@ export class TimelineController {
 		const isScrollToChanged = prevScrollToIndex !== this.snapshot.scrollToIndex;
 
 		const hasChanged =
-			this.snapshot.isSeeking ||
+			isJump ||
 			this.addedPlayingIds.length > 0 ||
 			this.removedPlayingIds.length > 0 ||
 			this.addedHighlightedIds.length > 0 ||
@@ -380,25 +373,11 @@ export class TimelineController {
 		this.snapshot.isEndOfSong = isPastLastLine;
 
 		this.diff.hasChanged = hasChanged;
+		this.diff.isTimeJumped = isJump;
 		this.diff.isInterludeChanged = isInterludeChanged;
 		this.diff.isScrollToChanged = isScrollToChanged;
-		this.diff.isTimeJumped = isJump;
 
 		return this.diff;
-	}
-
-	/**
-	 * 设置持续性的跳转状态，例如用户正按住进度条拖拽
-	 *
-	 * @remarks
-	 * 此状态由外部持有，内部只做镜像，因此加载新歌词时不会被清除，
-	 * 需要由调用方在拖拽结束时显式置回 false
-	 *
-	 * @param isSeeking 当前是否处于持续跳转状态
-	 */
-	public setSeekingState(isSeeking: boolean): void {
-		this.isManualSeeking = isSeeking;
-		this.snapshot.isSeeking = isSeeking;
 	}
 	//#endregion
 
@@ -740,7 +719,6 @@ export class TimelineController {
 		this.nextHighlightedSet.clear();
 
 		this.snapshot.currentTime = MediaTime.ZERO;
-		this.snapshot.isSeeking = false;
 		this.snapshot.scrollToIndex = 0;
 		this.snapshot.latestHighlightedIndex = undefined;
 		this.snapshot.isEndOfSong = false;

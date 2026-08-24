@@ -9,7 +9,6 @@ import { MediaTime } from "#utils/time.ts";
 function makeSnapshot(over: Partial<TimelineSnapshot> = {}): TimelineSnapshot {
 	return {
 		currentTime: MediaTime.ZERO,
-		isSeeking: false,
 		playingGroups: new Set(),
 		highlightedGroups: new Set(),
 		scrollToIndex: 0,

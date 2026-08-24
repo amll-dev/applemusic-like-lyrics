@@ -448,8 +448,32 @@ describe("TimelineController seek", () => {
 		expect(highlighted(c)).toEqual([1]);
 
 		const diff = tick(c, 500);
+		expect(diff.hasChanged).toBe(true);
 		expect(diff.isTimeJumped).toBe(true);
 		expect(highlighted(c)).toEqual([0]);
+	});
+
+	it("treats a repeated identical time as a seek jump", () => {
+		const c = makeController([0, 1000], [3000, 4000]);
+
+		tick(c, 3500);
+		expect(highlighted(c)).toEqual([1]);
+
+		const diff = tick(c, 3500);
+		expect(diff.hasChanged).toBe(true);
+		expect(diff.isTimeJumped).toBe(true);
+		expect(highlighted(c)).toEqual([1]);
+	});
+
+	it("returns to normal playback on the frame after a stalled push", () => {
+		const c = makeController([0, 1000], [3000, 4000]);
+
+		tick(c, 3500);
+		expect(tick(c, 3500).isTimeJumped).toBe(true);
+
+		const diff = tick(c, 3600);
+		expect(diff.isTimeJumped).toBe(false);
+		expect(highlighted(c)).toEqual([1]);
 	});
 });
 
@@ -470,26 +494,35 @@ describe("TimelineController seek diff", () => {
 		expect([...diff.removedHighlighted]).toEqual([]);
 	});
 
-	it("produces no diff on unchanged frames during continuous seeking", () => {
+	it("reports no set changes but keeps hasChanged while scrubbing continuously", () => {
 		const c = makeController([0, 1000], [3000, 8000]);
 
-		c.setSeekingState(true);
-
-		const first = tick(c, 4000);
+		const first = tick(c, 4000, true);
 		expect([...first.addedHighlighted]).toEqual([1]);
 		expect(first.hasChanged).toBe(true);
 
 		for (const ms of [4500, 5000, 5500]) {
-			const diff = tick(c, ms);
+			const diff = tick(c, ms, true);
 			expect([...diff.addedPlaying]).toEqual([]);
 			expect([...diff.removedPlaying]).toEqual([]);
 			expect([...diff.addedHighlighted]).toEqual([]);
 			expect([...diff.removedHighlighted]).toEqual([]);
 			expect(diff.hasChanged).toBe(true);
+			expect(diff.isTimeJumped).toBe(true);
 		}
 
 		expect(playing(c)).toEqual([1]);
 		expect(highlighted(c)).toEqual([1]);
+	});
+
+	it("stops forcing hasChanged once scrubbing stops", () => {
+		const c = makeController([0, 1000], [3000, 8000]);
+
+		tick(c, 4000, true);
+
+		const diff = tick(c, 4500);
+		expect(diff.hasChanged).toBe(false);
+		expect(diff.isTimeJumped).toBe(false);
 	});
 
 	it("does not both remove and re-add the same line within the same frame", () => {
@@ -530,7 +563,7 @@ describe("TimelineController seek diff", () => {
 		];
 
 		const played = makeController(...ranges);
-		tick(played, 0);
+		tick(played, 500);
 		tick(played, 1000);
 		tick(played, 2000);
 		expect(played.getSnapshot().scrollToIndex).toBe(0);
@@ -590,18 +623,17 @@ describe("TimelineController diff flags", () => {
 		expect(tick(c, 6000).isInterludeChanged).toBe(true);
 	});
 
-	it("sets isTimeJumped and isSeeking on explicit seek, resetting on the next frame", () => {
+	it("sets isTimeJumped on explicit seek, clearing it on the next sync", () => {
 		const c = makeController([0, 1000], [3000, 4000]);
 
 		tick(c, 500);
 		const diff = tick(c, 3500, true);
+		expect(diff.hasChanged).toBe(true);
 		expect(diff.isTimeJumped).toBe(true);
-		expect(c.getSnapshot().isSeeking).toBe(true);
 
 		const next = tick(c, 3600);
-		expect(next.isTimeJumped).toBe(false);
 		expect(next.hasChanged).toBe(false);
-		expect(c.getSnapshot().isSeeking).toBe(false);
+		expect(next.isTimeJumped).toBe(false);
 	});
 });
 
@@ -719,25 +751,6 @@ describe("TimelineController snapshot details", () => {
 		tick(c, 500);
 		expect(highlighted(c)).toEqual([]);
 		expect(c.getSnapshot().latestHighlightedIndex).toBeUndefined();
-	});
-
-	it("mirrors manual seeking state to snapshot and resets after exit", () => {
-		const c = makeController([0, 1000], [3000, 4000]);
-		expect(c.getSnapshot().isSeeking).toBe(false);
-
-		c.setSeekingState(true);
-		expect(c.getSnapshot().isSeeking).toBe(true);
-
-		const diff = tick(c, 2000);
-		expect(diff.isTimeJumped).toBe(false);
-		expect(diff.hasChanged).toBe(true);
-		expect(highlighted(c)).toEqual([0]);
-		expect(c.getSnapshot().isSeeking).toBe(true);
-
-		c.setSeekingState(false);
-		tick(c, 3500);
-		expect(c.getSnapshot().isSeeking).toBe(false);
-		expect(highlighted(c)).toEqual([1]);
 	});
 
 	it("produces no diff on sync with empty lyrics, keeping initial snapshot values", () => {

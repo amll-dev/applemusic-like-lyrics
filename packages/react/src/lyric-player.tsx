@@ -97,6 +97,14 @@ export interface LyricPlayerProps {
 	 * 内部会根据调用间隔和播放进度自动决定如何滚动和显示歌词，所以这个的调用频率越快越准确越好
 	 */
 	currentTime?: number;
+	/**
+	 * 标识本次 {@link currentTime} 变化是否由跳转触发，将强制触发一次重新排版
+	 *
+	 * 此属性只标注 {@link currentTime} 的变化，本身不会触发推送，
+	 * 因此 {@link currentTime} 未变化时改动它不产生任何效果
+	 *
+	 * 通常无需传入，默认会自动推导跳转状态。仅在自动推导被关闭时才需要显式指定
+	 */
 	isSeeking?: boolean;
 	/**
 	 * 设置文字动画的渐变宽度，单位以歌词行的主文字字体大小的倍数为单位，默认为 0.5，即一个全角字符的一半宽度
@@ -234,9 +242,6 @@ export const LyricPlayer: ForwardRefExoticComponent<
 			if (lyricLinesChanged || corePlayer.getLyricLines().length === 0) {
 				if (lyricLines !== undefined) {
 					corePlayer.setLyricLines(lyricLines, currentTimeRef.current);
-					if (currentTimeRef.current !== undefined) {
-						corePlayer.setCurrentTime(currentTimeRef.current, true);
-					}
 					corePlayer.update();
 				} else {
 					corePlayer.setLyricLines([]);
@@ -313,6 +318,11 @@ export const LyricPlayer: ForwardRefExoticComponent<
 			corePlayer?.setEnableBlur(enableBlur ?? true);
 		}, [corePlayer, enableBlur]);
 
+		// isSeeking 只标注本次 currentTime 推送是否为跳转，不作为推送的触发源
+		//
+		// currentTime 未变而 isSeeking 变化若重跑此 Effect，会推送一次重复的进度，
+		// 而重复推送同一个时间会被跳转推导判定为跳转，触发一次多余的完整重排
+		// biome-ignore lint/correctness/useExhaustiveDependencies: isSeeking 不作为触发源
 		useLayoutEffect(() => {
 			if (currentTime !== undefined) {
 				corePlayer?.setCurrentTime(currentTime, isSeeking);
@@ -321,11 +331,7 @@ export const LyricPlayer: ForwardRefExoticComponent<
 				corePlayer?.setCurrentTime(0);
 				currentTimeRef.current = 0;
 			}
-		}, [corePlayer, currentTime, isSeeking]);
-
-		useEffect(() => {
-			corePlayer?.setIsSeeking(!!isSeeking);
-		}, [corePlayer, isSeeking]);
+		}, [corePlayer, currentTime]);
 
 		useEffect(() => {
 			corePlayer?.setWordFadeWidth(wordFadeWidth);

@@ -30,6 +30,7 @@ import {
 	LyricDataManager,
 } from "./lyric-data-manager.ts";
 import { type ScrollInputType, ScrollInteractionEngine } from "./scroll.ts";
+import { SeekDetector } from "./seek-detector.ts";
 import { getPosYSpringPolicy } from "./spring";
 import { TimelineController, type TimelineSnapshot } from "./timeline.ts";
 
@@ -84,6 +85,8 @@ export abstract class LyricPlayerBase
 
 	protected isPlaying = false;
 	protected timelineController: TimelineController = new TimelineController();
+	protected seekDetector: SeekDetector = new SeekDetector();
+	protected enableAutoSeekDetection = true;
 
 	private hasBottomContent = false;
 	private bottomLineObserver: MutationObserver;
@@ -365,12 +368,62 @@ export abstract class LyricPlayerBase
 		return this.wordFadeWidth;
 	}
 
-	setIsSeeking(isSeeking: boolean): void {
-		this.timelineController.setSeekingState(isSeeking);
-		this.updateSpringParams(
-			!!this.timelineController.getSnapshot().activeInterlude,
-		);
+	/**
+	 * 设置持续性的跳转状态
+	 *
+	 * @deprecated 此方法已无实际作用，调用它不会产生任何效果，仅为兼容保留，将在未来移除
+	 *
+	 * 跳转状态现在由每次进度推送逐帧推导，不再存在需要外部显式解除的持续状态
+	 *
+	 * 跳转会通过以下三条途径被识别，三者同时生效：
+	 *
+	 * - {@link setCurrentTime} 的 `isSeek` 参数，由调用方明确告知某次进度变化是跳转
+	 * - 进度倒退或停滞，由内部无条件识别，不受任何开关控制
+	 * - 自动推导，由内部比对进度的实际推进量与它应有的推进量识别超量前进，默认启用，
+	 *   可通过 {@link setEnableAutoSeekDetection} 关闭
+	 */
+	setIsSeeking(_isSeeking: boolean): void {}
+
+	/**
+	 * 设置是否自动推导跳转状态，默认启用
+	 *
+	 * 启用后，即使调用 {@link setCurrentTime} 时没有传入 `isSeek`，
+	 * 内部也会在进度前进时比较它的实际推进量与应有的推进量，超量前进即视为跳转
+	 *
+	 * 应有的推进量取决于当前的播放状态，因此请按 {@link pause} 与 {@link resume}
+	 * 的文档正确同步播放状态：
+	 * - 播放时以物理时钟的推进量为准，容差随之按比例放宽，以容纳倍速播放与不均匀的推送节奏
+	 * - 暂停时进度本不该前进，应有的推进量是零，因此任何超出抖动幅度的前进都会被视为跳转
+	 *
+	 * 这意味着进度信息的粒度粗于推送间隔时，绝大多数推送都会被视为跳转，
+	 * 此时应当改善进度来源的精度，或在进度未发生变化时跳过推送
+	 *
+	 * 较小的向前跳转可能无法被识别，但一般影响不大
+	 *
+	 * 此开关只控制上述超量前进的判定。进度倒退与停滞不受它控制，无论是否启用推导都会
+	 * 被视为跳转：正常播放不会让进度停滞不前，因此重复推送同一个时间表达的是把逐字遮罩
+	 * 这类自行推进的动画拉回到该时间的意图
+	 *
+	 * 推导只会额外识别出跳转，不会否决已显式传入的跳转标志，因此如果你已经在正确传入
+	 * 跳转标志了，则一般无需关心此开关。若你的进度来源精度很差而导致超量前进被频繁误判，
+	 * 可以选择关闭
+	 *
+	 * @param enable 是否启用自动推导
+	 */
+	setEnableAutoSeekDetection(enable = true): void {
+		if (this.enableAutoSeekDetection === enable) return;
+		this.enableAutoSeekDetection = enable;
+		this.seekDetector.reset();
 	}
+
+	/**
+	 * 获取当前是否启用了跳转状态的自动推导
+	 * @returns 是否启用自动推导
+	 */
+	getEnableAutoSeekDetection(): boolean {
+		return this.enableAutoSeekDetection;
+	}
+
 	/**
 	 * 设置是否隐藏已经播放过的歌词行，默认不隐藏
 	 * @param hide 是否隐藏已经播放过的歌词行，默认不隐藏
@@ -564,48 +617,82 @@ export abstract class LyricPlayerBase
 	/**
 	 * 设置当前播放进度，此时将会更新内部的歌词进度信息。
 	 *
-	 * 内部会根据调用间隔和播放进度自动决定如何滚动和显示歌词，所以这个的调用频率越快越准确越好。
-	 * 调用完成后，应每帧调用 {@link update} 方法来执行歌词动画效果。**此函数本身不会触发动画效果**。
+	 * 内部会根据调用间隔和播放进度自动决定应如何滚动和显示歌词，所以此方法的调用频率越快越准确越好。
+	 * 调用频率较低或进度细度过粗可能会导致歌词显示延迟或导致自动跳转推导错误。
+	 * 调用完成后，应每帧调用 {@link update} 方法来执行歌词动画效果。此函数本身不会触发动画效果。
 	 *
-	 * 当 `isSeek` 为 `true` 时，将触发重新排版，代价较高，因此请只在真正跳转时设为 `true`
+	 * 当 `isSeek` 为 `true` 时，将强制按跳转处理，并在下次调用 {@link update} 时触发一系列的行为变更，
+	 * 具体请参考 <https://amll.dev/guides/component/seeking>，因此请只在真正跳转时设为 `true`
 	 *
-	 * @param time 当前播放进度，单位为毫秒
-	 * @param isSeek 这个进度变化是否为跳转触发的
+	 * @param time 当前播放进度，单位为毫秒，非有限值会被静默忽略
+	 * @param isSeek 是否强制按跳转处理，默认交由内部推导
+	 * @see {@link setEnableAutoSeekDetection} 自动推导跳转状态的文档
+	 * @see https://amll.dev/guides/component/sequence#播放进度
 	 */
 	setCurrentTime(time: number, isSeek = false): void {
+		if (!Number.isFinite(time)) return;
+
 		const mediaTime = MediaTime.round(MediaTime.fromMillis(time));
 
+		if (
+			!isSeek &&
+			!this.isPlaying &&
+			mediaTime === this.timelineController.getSnapshot().currentTime
+		) {
+			return;
+		}
+
+		// 探测器必须消费每一次进度推送才能维持内部状态正确，即使本次已经被调用方标记为跳转
+		const isDetectedSeek = this.enableAutoSeekDetection
+			? this.seekDetector.detect(mediaTime, this.isPlaying)
+			: false;
+
+		this.syncTime(mediaTime, isSeek || isDetectedSeek);
+	}
+
+	/**
+	 * 推进时间线并把增量变化应用到视图上
+	 * @param mediaTime 当前播放进度
+	 * @param isSeek 这次进度变化是否为跳转
+	 */
+	private syncTime(mediaTime: MediaTime, isSeek: boolean): void {
 		const diff = this.timelineController.sync(mediaTime, isSeek);
 
 		if (!diff.hasChanged) {
 			return;
 		}
 
+		// 时间轴是否跳跃由时间线统一推导，除了传入的 isSeek 外还包含进度倒退和停滞的情况
+		const isTimeJumped = diff.isTimeJumped;
+		const snapshot = this.timelineController.getSnapshot();
+
 		for (let i = 0; i < diff.removedHighlighted.length; i++) {
 			this.currentLyricGroups[diff.removedHighlighted[i]]?.disable();
 		}
 
-		for (let i = 0; i < diff.addedHighlighted.length; i++) {
-			this.currentLyricGroups[diff.addedHighlighted[i]]?.enable();
+		if (isTimeJumped) {
+			for (const index of snapshot.highlightedGroups) {
+				this.currentLyricGroups[index]?.enable();
+			}
+		} else {
+			for (let i = 0; i < diff.addedHighlighted.length; i++) {
+				this.currentLyricGroups[diff.addedHighlighted[i]]?.enable();
+			}
 		}
 
-		if (diff.isTimeJumped) {
+		if (isTimeJumped) {
 			if (!this.scrollState.isTouchScrolled) {
 				this.resetScroll();
 			}
 		}
 
-		if (
-			diff.isInterludeChanged ||
-			diff.isScrollToChanged ||
-			diff.isTimeJumped
-		) {
-			const isInterludeActive =
-				!!this.timelineController.getSnapshot().activeInterlude;
-			this.updateSpringParams(isInterludeActive);
+		if (diff.isInterludeChanged || diff.isScrollToChanged || isTimeJumped) {
+			this.updateSpringParams(!!snapshot.activeInterlude, isTimeJumped);
 		}
 
-		this.calcLayout(isSeek ? LayoutReason.Seek : LayoutReason.PlaybackTick);
+		this.calcLayout(
+			isTimeJumped ? LayoutReason.Seek : LayoutReason.PlaybackTick,
+		);
 	}
 
 	/**
@@ -673,6 +760,7 @@ export abstract class LyricPlayerBase
 			this.defaultLineHeight,
 		);
 
+		this.seekDetector.reset();
 		this.setCurrentTime(initialTime, true);
 		this.calcLayout(LayoutReason.RebuildView);
 
@@ -686,14 +774,19 @@ export abstract class LyricPlayerBase
 	 * 其策略为：
 	 * - seeking 或间奏时使用更稳定的固定参数
 	 * - 普通播放时根据相邻歌词的时间间隔动态调整 stiffness / damping
+	 *
+	 * @param isInterludeActive 当前是否命中间奏区间
+	 * @param isSeeking 本次同步的时间轴是否发生了跳转
 	 */
-	private updateSpringParams(isInterludeActive: boolean): void {
+	private updateSpringParams(
+		isInterludeActive: boolean,
+		isSeeking: boolean,
+	): void {
 		if (!this.getEnableSpring() || this.currentLyricGroups.length === 0) {
 			return;
 		}
 
-		const snapshot = this.timelineController.getSnapshot();
-		const { scrollToIndex, isSeeking } = snapshot;
+		const { scrollToIndex } = this.timelineController.getSnapshot();
 
 		const currentGroup = this.currentLyricGroups[scrollToIndex];
 		const prevGroup = this.currentLyricGroups[scrollToIndex - 1];
@@ -785,12 +878,10 @@ export abstract class LyricPlayerBase
 
 			this.interludeDots.setTransform(targetX, result.interludeY + dotMargin);
 
-			const shouldResetAnimation =
-				snapshot.isSeeking || strategy.resetInterlude;
 			this.interludeDots.setInterlude(
 				[interlude.startTime, interlude.endTime],
 				snapshot.currentTime,
-				shouldResetAnimation,
+				strategy.resetInterlude,
 			);
 		} else {
 			this.interludeDots.setInterlude(undefined);
@@ -832,7 +923,7 @@ export abstract class LyricPlayerBase
 
 			// 应用阶梯式的动画延迟
 			const lineH = instruction.height;
-			if (curPos + lineH >= 0 && !snapshot.isSeeking) {
+			if (curPos + lineH >= 0) {
 				delay = Duration.add(delay, baseDelay);
 				if (i >= snapshot.scrollToIndex) {
 					baseDelay = Duration.mulF64(baseDelay, 1 / 1.05);
