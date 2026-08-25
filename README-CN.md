@@ -6,6 +6,8 @@
 
 [English](./README.md) / 简体中文
 
+[![Maintenance: Looking for Maintainers](https://img.shields.io/badge/Maintenance-Looking%20for%20Maintainers-orange)](https://github.com/amll-dev/applemusic-like-lyrics/issues/597)
+
 一个基于 Web 技术制作的类 Apple Music 歌词显示组件库，同时支持 [DOM 原生](./packages/core/README.md)、[React](./packages/react/README.md) 和 [Vue](./packages/react/README.md) 绑定。
 
 这是你能在前端系里能见到的最像 iPad Apple Music 的播放页面了。
@@ -31,12 +33,11 @@
 
 ***
 
-> [!TIP]
->
-> ### 开发者招募：
-> 我们正在招募长期维护开发者！  
-> 更多信息请到 [公告帖](https://github.com/amll-dev/amll-ttml-db/discussions/8127) 查看。  
-> 感谢各位投稿者对本项目的支持！
+> [!IMPORTANT]
+> 📢 **我们正在寻找共同维护者！**  
+> 项目目前仅有 1 位活跃维护者，精力有限，如果你对项目和维护工作感兴趣，欢迎加入！
+> 详见 [招募维护者 / Looking for Maintainers](https://github.com/amll-dev/applemusic-like-lyrics/issues/597) 和 [贡献指南](https://amll.dev/en/contribute)。
+> 你还可以加入 [QQ 群 (678038548)](https://qm.qq.com/cgi-bin/qm/qr?k=BOmiF3QlYBCrvfpnBM_uHn5YOvT7B_SP&jump_from=webapi&authKey=OHl/VM/OfFEUF6IOXoW7ovJKvYeGrzZDsTx77cJtDPuLy7m+r/vXDBJ+FnFdjRSl) 或 [Discord 服务器](https://discord.com/invite/s53urK9v2G) 进一步交流！
 
 ***
 
