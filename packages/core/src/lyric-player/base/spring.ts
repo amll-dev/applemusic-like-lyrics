@@ -4,6 +4,10 @@ import type { SpringParams } from "#utils/spring.ts";
 const SLOW_STIFFNESS = 90;
 const SLOW_DAMPING = 15;
 
+// 中速模式参数，目前用于歌曲结束的场景，一般会在之后使用此参数切换到底栏
+const MEDIUM_STIFFNESS = 140;
+const MEDIUM_DAMPING = 22;
+
 // 正常播放时候的参数，会根据歌词行之间的间隔动态调整弹簧效果
 const MIN_INTERVAL = 100;
 const MAX_INTERVAL = 800;
@@ -17,18 +21,33 @@ const INTERVAL_EXPONENT = 0.2;
  * @param isSeeking 当前是否是跳转状态
  * @param isInterludeActive 当前是否处于间奏动画状态
  * @param intervalMs 当前歌词行与上一行的时间差，若无法提供（如首尾行），传入 undefined
+ * @param isEndOfSong 歌曲是否播放完毕
  * @returns 弹簧参数配置 {@link SpringParams}
  */
 export function getPosYSpringPolicy(
 	isSeeking: boolean,
 	isInterludeActive: boolean,
 	intervalMs?: number,
+	isEndOfSong = false,
 ): Partial<SpringParams> {
-	// 处于下列情况之一时，始终使用较为缓慢的弹簧参数：
-	// 1. 当前处于 Seek 状态
-	// 2. 当前处于间奏状态 (间奏时的间隔是 *间奏前结束的歌词* 和 *间奏结束后开始的歌词* 的时间差，非常巨大)
-	// 3. 没有间隔，即处于第一句或最后一句，一般是兜底用
-	if (isSeeking || isInterludeActive || intervalMs == null) {
+	// Seek 和间奏使用较为缓慢的弹簧参数
+	if (isSeeking || isInterludeActive) {
+		return {
+			stiffness: SLOW_STIFFNESS,
+			damping: SLOW_DAMPING,
+		};
+	}
+
+	// 歌曲播放完毕时，使用中速参数
+	if (isEndOfSong) {
+		return {
+			stiffness: MEDIUM_STIFFNESS,
+			damping: MEDIUM_DAMPING,
+		};
+	}
+
+	// 没有间隔，即处于第一句或最后一句，用慢速模式兜底
+	if (intervalMs == null) {
 		return {
 			stiffness: SLOW_STIFFNESS,
 			damping: SLOW_DAMPING,

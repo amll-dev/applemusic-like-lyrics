@@ -286,14 +286,18 @@ export abstract class LyricPlayerBase
 		this.interludeDots.setTransform(0, 200);
 
 		this.bottomLineObserver = new MutationObserver(() => {
-			const bottomEl = this.bottomLine.getElement();
+			const bottomEl = this.getBottomLineElement();
 			const newHasBottomContent = bottomEl.innerHTML.trim().length > 0;
 			if (this.hasBottomContent !== newHasBottomContent) {
+				if (newHasBottomContent) {
+					// 内容可能在歌词视图重建后才由调用者写入，此时也要与歌词行保持从底部远处飞入的入场效果
+					this.bottomLine.resetPosition();
+				}
 				this.hasBottomContent = newHasBottomContent;
 				this.calcLayout(LayoutReason.ConfigChange);
 			}
 		});
-		this.bottomLineObserver.observe(this.bottomLine.getElement(), {
+		this.bottomLineObserver.observe(this.getBottomLineElement(), {
 			childList: true,
 			characterData: true,
 			subtree: true,
@@ -686,8 +690,17 @@ export abstract class LyricPlayerBase
 			}
 		}
 
-		if (diff.isInterludeChanged || diff.isScrollToChanged || isTimeJumped) {
-			this.updateSpringParams(!!snapshot.activeInterlude, isTimeJumped);
+		if (
+			diff.isInterludeChanged ||
+			diff.isScrollToChanged ||
+			diff.isEndOfSongChanged ||
+			isTimeJumped
+		) {
+			this.updateSpringParams(
+				!!snapshot.activeInterlude,
+				isTimeJumped,
+				snapshot.isEndOfSong,
+			);
 		}
 
 		this.calcLayout(
@@ -732,6 +745,11 @@ export abstract class LyricPlayerBase
 		this.resetScroll();
 		this.focusController.reset();
 
+		const bottomLineContent = this.getBottomLineElement();
+		if (bottomLineContent.innerHTML.trim().length > 0) {
+			this.bottomLine.resetPosition();
+		}
+
 		for (const group of this.currentLyricGroups) {
 			group.dispose();
 		}
@@ -774,13 +792,16 @@ export abstract class LyricPlayerBase
 	 * 其策略为：
 	 * - seeking 或间奏时使用更稳定的固定参数
 	 * - 普通播放时根据相邻歌词的时间间隔动态调整 stiffness / damping
+	 * - 播放完毕时使用中速弹簧参数
 	 *
 	 * @param isInterludeActive 当前是否命中间奏区间
 	 * @param isSeeking 本次同步的时间轴是否发生了跳转
+	 * @param isEndOfSong 歌曲是否播放完毕
 	 */
 	private updateSpringParams(
 		isInterludeActive: boolean,
 		isSeeking: boolean,
+		isEndOfSong: boolean,
 	): void {
 		if (!this.getEnableSpring() || this.currentLyricGroups.length === 0) {
 			return;
@@ -798,7 +819,12 @@ export abstract class LyricPlayerBase
 			);
 		}
 
-		const policy = getPosYSpringPolicy(isSeeking, isInterludeActive, interval);
+		const policy = getPosYSpringPolicy(
+			isSeeking,
+			isInterludeActive,
+			interval,
+			isEndOfSong,
+		);
 
 		this.setLinePosYSpringParams(policy);
 	}
@@ -1110,7 +1136,9 @@ export abstract class LyricPlayerBase
 	 * @returns 一个元素，可以往内部添加任意元素
 	 */
 	getBottomLineElement(): HTMLElement {
-		return this.bottomLine.getElement();
+		return (
+			this.bottomLine.getContentElement?.() ?? this.bottomLine.getElement()
+		);
 	}
 	/**
 	 * 重置用户滚动状态并恢复自动对齐

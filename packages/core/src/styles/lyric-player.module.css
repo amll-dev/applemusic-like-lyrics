@@ -30,11 +30,11 @@
 		filter 0.4s ease,
 		background-color 0.25s ease;
 
-	&:hover {
+	&:not(.bottomLineWrapper):hover {
 		background-color: var(--amll-lp-hover-bg-color, #fff1);
 	}
 
-	&:active {
+	&:not(.bottomLineWrapper):active {
 		background-color: var(--amll-lp-hover-bg-color, #ffffff05);
 	}
 }
@@ -188,8 +188,15 @@
 .bottomLine {
 	padding-top: 0;
 	padding-bottom: 0;
+	font-size: var(--amll-lp-bottom-line-font-size, max(0.7em, 10px));
 	line-height: 1.8em;
 	cursor: default;
+	opacity: 0.2;
+	transition: opacity 0.4s ease;
+
+	&.gradientMask {
+		opacity: 0.85;
+	}
 
 	&:empty {
 		display: none;

@@ -178,6 +178,11 @@ export interface TimelineDiff {
 	 * 用于通知 UI 需要移动到新的歌词行
 	 */
 	readonly isScrollToChanged: boolean;
+
+	/**
+	 * 标识歌曲播放完毕状态是否发生了变化
+	 */
+	readonly isEndOfSongChanged: boolean;
 }
 
 /**
@@ -239,6 +244,7 @@ export class TimelineController {
 		removedHighlighted: this.removedHighlightedIds,
 		isInterludeChanged: false,
 		isScrollToChanged: false,
+		isEndOfSongChanged: false,
 	};
 	//#endregion
 
@@ -346,6 +352,7 @@ export class TimelineController {
 		const isFocusChanged =
 			prevFocusOnInterlude !== this.snapshot.isFocusOnInterlude;
 		const isScrollToChanged = prevScrollToIndex !== this.snapshot.scrollToIndex;
+		const isEndOfSongChanged = isPastLastLine !== prevEndOfSong;
 
 		const hasChanged =
 			isJump ||
@@ -356,7 +363,7 @@ export class TimelineController {
 			isInterludeChanged ||
 			isFocusChanged ||
 			isScrollToChanged ||
-			isPastLastLine !== prevEndOfSong;
+			isEndOfSongChanged;
 
 		this.snapshot.currentTime = time;
 
@@ -376,6 +383,7 @@ export class TimelineController {
 		this.diff.isTimeJumped = isJump;
 		this.diff.isInterludeChanged = isInterludeChanged;
 		this.diff.isScrollToChanged = isScrollToChanged;
+		this.diff.isEndOfSongChanged = isEndOfSongChanged;
 
 		return this.diff;
 	}
