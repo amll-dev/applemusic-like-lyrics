@@ -1,21 +1,10 @@
 <script setup lang="ts">
-import type { LyricLine } from "@applemusic-like-lyrics/core";
 import {
 	DomLyricPlayer,
 	type LyricLineMouseEvent,
 } from "@applemusic-like-lyrics/core";
-import {
-	parseEslrc,
-	parseLqe,
-	parseLrc,
-	parseLrcA2,
-	parseLyl,
-	parseLys,
-	parseQrc,
-	parseTTML,
-	parseYrc,
-} from "@applemusic-like-lyrics/lyric";
 import { onBeforeUnmount, onMounted, ref, shallowRef, watch } from "vue";
+import { extractSongwriters, parseLyricSource } from "@/lib/parse-lyric";
 import { audioRuntime } from "@/runtime/audio";
 import { backgroundRuntime } from "@/runtime/background";
 import { usePlayerStore } from "@/stores/player";
@@ -50,85 +39,16 @@ function mountBackground(): void {
 	void backgroundRuntime.loadAlbum(player);
 }
 
-function getSourceName(source: string, fallbackName: string): string {
-	const rawName = fallbackName || source;
-	const withoutHash = rawName.split("#", 1)[0] ?? rawName;
-	return (withoutHash.split("?", 1)[0] ?? withoutHash).toLowerCase();
-}
+function applySongwriters(songwriters: string[]): void {
+	const bottomLineElement = lyricPlayerRef.value?.getBottomLineElement();
+	if (!bottomLineElement) return;
 
-function hasLrcA2Timestamps(content: string): boolean {
-	return /<(?:(?:\d+:)*\d+(?:\.\d+)?)>/.test(content);
-}
+	bottomLineElement.textContent = "";
+	if (songwriters.length === 0) return;
 
-function buildDemoLyricLine(
-	lyric: string,
-	startTime = 1000,
-	otherParams: Partial<LyricLine> = {},
-): LyricLine {
-	let currentTime = startTime;
-	const words: LyricLine["words"] = [];
-	for (const word of lyric.split("|")) {
-		const [text = "", duration = "0"] = word.split(",");
-		const endTime = currentTime + Number.parseInt(duration, 10);
-		words.push({
-			word: text,
-			romanWord: "",
-			startTime: currentTime,
-			endTime,
-			obscene: false,
-		});
-		currentTime = endTime;
-	}
-
-	return {
-		words,
-		startTime,
-		endTime: currentTime + 3000,
-		translatedLyric: "",
-		romanLyric: "",
-		isBG: false,
-		isDuet: false,
-		...otherParams,
-	};
-}
-
-async function parseLyricSource(source: string): Promise<LyricLine[]> {
-	const trimmedSource = source.trim();
-	if (!trimmedSource) return [];
-	if (trimmedSource === "bug") {
-		return [
-			buildDemoLyricLine(
-				"Apple ,750|Music ,500|Like ,500|Ly,400|ri,500|cs ,250",
-				1000,
-			),
-			buildDemoLyricLine("BG ,750|Lyrics ,1000", 2000, { isBG: true }),
-			buildDemoLyricLine("Next ,1000|Lyrics,1000", 2500),
-		];
-	}
-
-	const response = await fetch(trimmedSource);
-	if (!response.ok) {
-		throw new Error(`歌词加载失败：${response.status} ${response.statusText}`);
-	}
-
-	const content = await response.text();
-	const sourceName = getSourceName(trimmedSource, player.source.lyricName);
-
-	if (sourceName.endsWith(".ttml")) return parseTTML(content).lines;
-	if (sourceName.endsWith(".alrc")) return parseLrcA2(content);
-	if (sourceName.endsWith(".lrc")) {
-		return hasLrcA2Timestamps(content)
-			? parseLrcA2(content)
-			: parseLrc(content);
-	}
-	if (sourceName.endsWith(".yrc")) return parseYrc(content);
-	if (sourceName.endsWith(".lys")) return parseLys(content);
-	if (sourceName.endsWith(".lyl")) return parseLyl(content);
-	if (sourceName.endsWith(".lqe")) return parseLqe(content);
-	if (sourceName.endsWith(".qrc")) return parseQrc(content);
-	if (sourceName.endsWith(".eslrc")) return parseEslrc(content);
-
-	throw new Error("不支持的歌词格式");
+	const b = document.createElement("b");
+	b.textContent = "创作者";
+	bottomLineElement.append(b, `：${songwriters.join("，")}`);
 }
 
 async function loadLyric(): Promise<void> {
@@ -140,7 +60,10 @@ async function loadLyric(): Promise<void> {
 	player.setLyricError("");
 
 	try {
-		const lines = await parseLyricSource(player.source.lyricUrl);
+		const { lines, metadata } = await parseLyricSource(
+			player.source.lyricUrl,
+			player.source.lyricName,
+		);
 		if (revision !== lyricLoadRevision) return;
 
 		const currentTime = Math.round(player.audio.currentTime * 1000);
@@ -148,9 +71,13 @@ async function loadLyric(): Promise<void> {
 		lyricPlayer.setCurrentTime(currentTime, true);
 		backgroundRuntime.setHasLyric(lines.length > 0);
 		applyLyricSettings();
+
+		const songwriters = extractSongwriters(metadata);
+		applySongwriters(songwriters);
 	} catch (error) {
 		if (revision !== lyricLoadRevision) return;
 		lyricPlayer.setLyricLines([]);
+		applySongwriters([]);
 		backgroundRuntime.setHasLyric(false);
 		player.setLyricError(
 			error instanceof Error ? error.message : String(error),
