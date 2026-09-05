@@ -759,6 +759,9 @@ importers:
       typedoc-plugin-markdown:
         specifier: 'catalog:'
         version: 4.12.0(typedoc@0.28.20(typescript@6.0.3))
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.10(@types/node@26.2.0)(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(stylus@0.57.0(supports-color@7.2.0))(yaml@2.9.0))
       vue:
         specifier: ^3.5.41
         version: 3.5.41(typescript@6.0.3)
