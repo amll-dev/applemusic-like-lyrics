@@ -1,6 +1,7 @@
+import type { PaletteAlgorithm } from "@applemusic-like-lyrics/core";
 import { defineStore } from "pinia";
 
-export type BackgroundRendererMode = "mg" | "pixi";
+export type BackgroundRendererMode = "mg" | "pixi" | "isolation";
 
 export interface SpringParams {
 	mass: number;
@@ -72,10 +73,17 @@ export const usePlayerStore = defineStore("player", {
 			staticMode: false,
 			renderer: (query.get("bg") === "pixi"
 				? "pixi"
-				: "mg") as BackgroundRendererMode,
+				: query.get("bg") === "isolation"
+					? "isolation"
+					: "mg") as BackgroundRendererMode,
 			scale: 1,
 			fps: 60,
 			flowSpeed: 0.2,
+			isolation: {
+				lightWave: false,
+				dithering: true,
+				paletteAlgorithm: "auto" as PaletteAlgorithm,
+			},
 			error: "",
 		},
 	}),

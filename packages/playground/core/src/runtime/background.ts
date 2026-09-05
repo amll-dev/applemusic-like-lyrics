@@ -1,17 +1,23 @@
 import {
 	BackgroundRender,
+	type BaseRenderer,
+	IsolationRenderer,
 	MeshGradientRenderer,
 	PixiRenderer,
 } from "@applemusic-like-lyrics/core";
 import type { BackgroundRendererMode, usePlayerStore } from "@/stores/player";
 
 type PlayerStore = ReturnType<typeof usePlayerStore>;
-type PlayerBackground =
-	| BackgroundRender<MeshGradientRenderer>
-	| BackgroundRender<PixiRenderer>;
+type RendererConstructor = new (canvas: HTMLCanvasElement) => BaseRenderer;
+
+const RENDERERS: Record<BackgroundRendererMode, RendererConstructor> = {
+	mg: MeshGradientRenderer,
+	pixi: PixiRenderer,
+	isolation: IsolationRenderer,
+};
 
 class BackgroundRuntime {
-	private background: PlayerBackground | undefined;
+	private background: BackgroundRender<BaseRenderer> | undefined;
 	private renderer: BackgroundRendererMode | undefined;
 	private albumKey = "";
 	private albumLoadRevision = 0;
@@ -33,10 +39,7 @@ class BackgroundRuntime {
 		if (this.background && this.renderer === renderer) return;
 
 		this.background?.dispose();
-		this.background =
-			renderer === "pixi"
-				? BackgroundRender.new(PixiRenderer)
-				: BackgroundRender.new(MeshGradientRenderer);
+		this.background = BackgroundRender.new(RENDERERS[renderer]);
 		this.renderer = renderer;
 		this.albumKey = "";
 
@@ -61,6 +64,12 @@ class BackgroundRuntime {
 		background.setStaticMode(store.background.staticMode);
 		if (store.background.playing) background.resume();
 		else background.pause();
+
+		// 渲染器专属选项走实例本体，统一接口里没有对应的方法
+		const renderer = background.getRenderer();
+		if (renderer instanceof IsolationRenderer) {
+			renderer.setOptions(store.background.isolation);
+		}
 	}
 
 	setHasLyric(hasLyric: boolean): void {

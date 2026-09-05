@@ -249,6 +249,9 @@ watch(
 		player.background.flowSpeed,
 		player.background.staticMode,
 		player.background.playing,
+		player.background.isolation.lightWave,
+		player.background.isolation.dithering,
+		player.background.isolation.paletteAlgorithm,
 	],
 	() => backgroundRuntime.applySettings(player),
 );
