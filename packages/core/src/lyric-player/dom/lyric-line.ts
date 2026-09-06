@@ -1,4 +1,3 @@
-import bezier from "bezier-easing";
 import type { LyricLine, LyricWord } from "#interfaces";
 import { LyricLineRenderMode } from "#lyric/base/consts.ts";
 import { LyricLineBase } from "#lyric/base/line.ts";
@@ -7,10 +6,12 @@ import { clamp, clamp01, clampPositive } from "#utils/clamp.ts";
 import { isCJK } from "#utils/is-cjk.ts";
 import { LineBalancer } from "#utils/line-balancer.ts";
 import { chunkAndSplitLyricWords } from "#utils/lyric-split-words.ts";
-import { createMatrix4, matrix4ToCSS, scaleMatrix4 } from "#utils/matrix.ts";
 import { Duration } from "#utils/time.ts";
 import type { DomLyricPlayer } from ".";
-import { createFloatAnimation } from "./animation/index.ts";
+import {
+	createEmphasizeAnimation,
+	createFloatAnimation,
+} from "./animation/index.ts";
 
 interface RealWord extends LyricWord {
 	mainElement: HTMLSpanElement;
@@ -22,21 +23,6 @@ interface RealWord extends LyricWord {
 	padding: number;
 	shouldEmphasize: boolean;
 }
-
-const ANIMATION_FRAME_QUANTITY = 32;
-
-const norNum = (min: number, max: number) => (x: number) =>
-	clamp01((x - min) / (max - min));
-const EMP_EASING_MID = 0.5;
-const beginNum = norNum(0, EMP_EASING_MID);
-const endNum = norNum(EMP_EASING_MID, 1);
-
-const bezIn = bezier(0.2, 0.4, 0.58, 1.0);
-const bezOut = bezier(0.3, 0.0, 0.58, 1.0);
-
-const makeEmpEasing = (mid: number) => {
-	return (x: number) => (x < mid ? bezIn(beginNum(x)) : 1 - bezOut(endNum(x)));
-};
 
 function generateFadeGradient(
 	width: number,
@@ -495,133 +481,25 @@ export class LyricLineEl extends LyricLineBase {
 				0,
 			);
 
+			const lineWords = this.lyricLine.words;
+			const isLastWord =
+				lineWords.length > 0 &&
+				merged.word.includes(lineWords[lineWords.length - 1].word);
+
 			lastWordOfChunk.elementAnimations.push(
-				...this.initEmphasizeAnimation(
-					merged,
-					characterElements,
-					merged.endTime - merged.startTime,
-					merged.startTime - this.lyricLine.startTime,
-					rubyCharCount,
-				),
+				...createEmphasizeAnimation({
+					word: merged,
+					characterElements: characterElements,
+					duration: merged.endTime - merged.startTime,
+					delay: merged.startTime - this.lyricLine.startTime,
+					rubyCharCount: rubyCharCount,
+					isBG: this.lyricLine.isBG,
+					isLastWord: isLastWord,
+				}),
 			);
 		}
 
 		main.appendChild(wrapperWordEl);
-	}
-
-	// 按照原 Apple Music 参考，强调效果只应用缩放、轻微左右位移和辉光效果，原主要的悬浮位移效果不变
-	// 为了避免产生锯齿抖动感，使用 matrix3d 来实现缩放和位移
-	private initEmphasizeAnimation(
-		word: LyricWord,
-		characterElements: HTMLElement[],
-		duration: number,
-		delay: number,
-		rubyCharCount: number,
-	): Animation[] {
-		const de = clampPositive(delay);
-		let du = Math.max(1000, duration);
-		const anchorCharCount =
-			rubyCharCount > 0 ? rubyCharCount : Math.max(1, characterElements.length);
-
-		let result: Animation[] = [];
-
-		let amount = du / 2000;
-		amount = amount > 1 ? Math.sqrt(amount) : amount ** 3;
-		let blur = du / 3000;
-		blur = blur > 1 ? Math.sqrt(blur) : blur ** 3;
-		amount *= 0.6;
-		blur *= 0.5;
-		if (
-			this.lyricLine.words.length > 0 &&
-			word.word.includes(
-				this.lyricLine.words[this.lyricLine.words.length - 1].word,
-			)
-		) {
-			amount *= 1.6;
-			blur *= 1.5;
-			du *= 1.2;
-		}
-		amount = Math.min(1.2, amount);
-		blur = Math.min(0.8, blur);
-
-		const animateDu = Number.isFinite(du) ? du : 0;
-		const empEasing = makeEmpEasing(EMP_EASING_MID);
-
-		result = characterElements.flatMap((el, i, arr) => {
-			const wordDe = de + (du / 2.5 / anchorCharCount) * i;
-			const result: Animation[] = [];
-
-			const frames: Keyframe[] = new Array(ANIMATION_FRAME_QUANTITY)
-				.fill(0)
-				.map((_, j) => {
-					const x = (j + 1) / ANIMATION_FRAME_QUANTITY;
-					const transX = empEasing(x);
-					const glowLevel = empEasing(x) * blur;
-
-					const mat = scaleMatrix4(createMatrix4(), 1 + transX * 0.1 * amount);
-					const offsetX = -transX * 0.03 * amount * (arr.length / 2 - i);
-					const offsetY = -transX * 0.025 * amount;
-
-					return {
-						offset: x,
-						transform: `${matrix4ToCSS(
-							mat,
-							4,
-						)} translate(${offsetX}em, ${offsetY}em)`,
-						textShadow: `0 0 ${Math.min(
-							0.3,
-							blur * 0.3,
-						)}em rgba(255, 255, 255, ${glowLevel})`,
-					};
-				});
-
-			const glow = el.animate(frames, {
-				duration: animateDu,
-				delay: Number.isFinite(wordDe) ? wordDe : 0,
-				id: `emphasize-word-${el.textContent}-${i}`,
-				iterations: 1,
-				composite: "replace",
-				fill: "both",
-			});
-			glow.onfinish = () => {
-				glow.pause();
-			};
-			glow.pause();
-			result.push(glow);
-
-			const floatFrame: Keyframe[] = new Array(ANIMATION_FRAME_QUANTITY)
-				.fill(0)
-				.map((_, j) => {
-					const x = (j + 1) / ANIMATION_FRAME_QUANTITY;
-					let y = Math.sin(x * Math.PI);
-					// y = x < 0.5 ? y : Math.max(y, 1.0);
-					if (this.lyricLine.isBG) {
-						y *= 2;
-					}
-
-					return {
-						offset: x,
-						transform: `translateY(${-y * 0.05}em)`,
-					};
-				});
-			const float = el.animate(floatFrame, {
-				duration: animateDu * 1.4,
-				delay: Number.isFinite(wordDe) ? wordDe - 400 : 0,
-				id: "emphasize-word-float",
-				iterations: 1,
-				composite: "add",
-				fill: "both",
-			});
-			float.onfinish = () => {
-				float.pause();
-			};
-			float.pause();
-			result.push(float);
-
-			return result;
-		});
-
-		return result;
 	}
 
 	private get totalDuration() {
