@@ -2,7 +2,7 @@ import type { LyricLine, LyricWord } from "#interfaces";
 import { LyricLineRenderMode } from "#lyric/base/consts.ts";
 import { LyricLineBase } from "#lyric/base/line.ts";
 import styles from "#styles/lyric-player.module.css";
-import { clamp, clamp01, clampPositive } from "#utils/clamp.ts";
+import { clampPositive } from "#utils/clamp.ts";
 import { isCJK } from "#utils/is-cjk.ts";
 import { LineBalancer } from "#utils/line-balancer.ts";
 import { chunkAndSplitLyricWords } from "#utils/lyric-split-words.ts";
@@ -11,34 +11,18 @@ import type { DomLyricPlayer } from ".";
 import {
 	createEmphasizeAnimation,
 	createFloatAnimation,
+	createLineMaskAnimator,
+	type LineMaskAnimator,
 } from "./animation/index.ts";
 
 interface RealWord extends LyricWord {
 	mainElement: HTMLSpanElement;
 	subElements: HTMLSpanElement[];
 	elementAnimations: Animation[];
-	maskAnimations: Animation[];
 	width: number;
 	height: number;
 	padding: number;
 	shouldEmphasize: boolean;
-}
-
-function generateFadeGradient(
-	width: number,
-	padding = 0,
-	bright = "rgba(0,0,0,var(--bright-mask-alpha, 1.0))",
-	dark = "rgba(0,0,0,var(--dark-mask-alpha, 1.0))",
-): [string, number] {
-	const totalAspect = 2 + width + padding;
-	const widthInTotal = width / totalAspect;
-	const leftPos = (1 - widthInTotal) / 2;
-	return [
-		`linear-gradient(to right,${bright} ${leftPos * 100}%,${dark} ${
-			(leftPos + widthInTotal) * 100
-		}%)`,
-		totalAspect,
-	];
 }
 
 export class LyricLineEl extends LyricLineBase {
@@ -51,6 +35,7 @@ export class LyricLineEl extends LyricLineBase {
 	lineSize: number[] = [0, 0];
 
 	private renderMode: LyricLineRenderMode = LyricLineRenderMode.SOLID;
+	private maskAnimator?: LineMaskAnimator;
 
 	private lastScaleNum = -1;
 
@@ -95,24 +80,6 @@ export class LyricLineEl extends LyricLineBase {
 		this.rebuildStyle();
 	}
 
-	areWordsOnSameLine(word1: RealWord, word2: RealWord): boolean {
-		if (word1?.mainElement && word2?.mainElement) {
-			const word1el = word1.mainElement;
-			const word2el = word2.mainElement;
-
-			const rect1 = word1el.getBoundingClientRect();
-			const rect2 = word2el.getBoundingClientRect();
-
-			// 检查两个单词的顶部距离是否相等（或者差值很小）
-			const topDifference = Math.abs(rect1.top - rect2.top);
-
-			// 如果顶部距离相差很小，可以认为它们在同一行上
-			return topDifference < 10;
-		}
-
-		return true;
-	}
-
 	private isEnabled = false;
 	async enable(
 		maskAnimationTime: number = this.lyricPlayer.getCurrentTime(),
@@ -132,28 +99,15 @@ export class LyricLineEl extends LyricLineBase {
 				a.playbackRate = 1;
 
 				const timing = a.effect?.getComputedTiming();
-				const duration = Number(timing?.duration ?? 0);
-				const delay = Number(timing?.delay ?? 0);
-				const endTime = delay + duration;
-
+				const endTime =
+					Number(timing?.delay ?? 0) + Number(timing?.duration ?? 0);
 				if (shouldPlay && relativeTime < endTime) a.play();
 				else a.pause();
 			}
-
-			for (const a of word.maskAnimations) {
-				const t = Math.min(this.totalDuration, relativeTime);
-				a.currentTime = t;
-				a.playbackRate = 1;
-
-				const timing = a.effect?.getComputedTiming();
-				const duration = Number(timing?.duration ?? 0);
-				const delay = Number(timing?.delay ?? 0);
-				const endTime = delay + duration;
-
-				if (shouldPlay && t < endTime) a.play();
-				else a.pause();
-			}
 		}
+
+		this.maskAnimator?.setCurrentTime(relativeTime, shouldPlay);
+
 		main.classList.add(styles.active);
 	}
 
@@ -174,11 +128,9 @@ export class LyricLineEl extends LyricLineBase {
 					a.play();
 				}
 			}
-
-			for (const a of word.maskAnimations) {
-				a.pause();
-			}
 		}
+
+		this.maskAnimator?.pause();
 		main.classList.remove(styles.active);
 	}
 
@@ -194,36 +146,17 @@ export class LyricLineEl extends LyricLineBase {
 						this.splittedWords.indexOf(word)
 				) {
 					const timing = a.effect?.getComputedTiming();
-					const duration = (timing?.duration as number) || 0;
-					const delay = (timing?.delay as number) || 0;
-					const endTime = delay + duration;
-					const currentTime = (a.currentTime as number) || 0;
-
-					if (a.playState !== "finished" && currentTime < endTime) {
+					const endTime =
+						Number(timing?.delay ?? 0) + Number(timing?.duration ?? 0);
+					if (
+						a.playState !== "finished" &&
+						((a.currentTime as number) || 0) < endTime
+					)
 						a.play();
-					}
-				}
-			}
-
-			for (const a of word.maskAnimations) {
-				if (
-					!this.lastWord ||
-					this.splittedWords.indexOf(this.lastWord) <
-						this.splittedWords.indexOf(word)
-				) {
-					const timing = a.effect?.getComputedTiming();
-					const duration = (timing?.duration as number) || 0;
-					const delay = (timing?.delay as number) || 0;
-					const endTime = delay + duration;
-
-					const currentTime = (a.currentTime as number) || 0;
-
-					if (a.playState !== "finished" && currentTime < endTime) {
-						a.play();
-					}
 				}
 			}
 		}
+		this.maskAnimator?.resume();
 	}
 
 	async pause(): Promise<void> {
@@ -232,21 +165,8 @@ export class LyricLineEl extends LyricLineBase {
 			for (const a of word.elementAnimations) {
 				a.pause();
 			}
-			for (const a of word.maskAnimations) {
-				a.pause();
-			}
 		}
-	}
-	setMaskAnimationState(maskAnimationTime = 0): void {
-		const t = maskAnimationTime - this.lyricLine.startTime;
-		for (const word of this.splittedWords) {
-			for (const a of word.maskAnimations) {
-				a.currentTime = clamp(t, 0, this.totalDuration);
-				a.playbackRate = 1;
-				if (t >= 0 && t < this.totalDuration) a.play();
-				else a.pause();
-			}
-		}
+		this.maskAnimator?.pause();
 	}
 
 	getLine(): LyricLine {
@@ -405,7 +325,6 @@ export class LyricLineEl extends LyricLineBase {
 					isBG: this.lyricLine.isBG,
 				}),
 			],
-			maskAnimations: [],
 			width: 0,
 			height: 0,
 			padding: 0,
@@ -502,10 +421,6 @@ export class LyricLineEl extends LyricLineBase {
 		main.appendChild(wrapperWordEl);
 	}
 
-	private get totalDuration() {
-		return this.lyricLine.endTime - this.lyricLine.startTime;
-	}
-
 	override onLineSizeChange(_size: [number, number]): void {
 		this.updateMaskImageSync();
 	}
@@ -529,235 +444,32 @@ export class LyricLineEl extends LyricLineBase {
 				LyricLineBase.wordSegmenter,
 			);
 		}
-		if (this.lyricPlayer.supportMaskImage) {
-			this.generateWebAnimationBasedMaskImage();
-		} else {
-			this.generateCalcBasedMaskImage();
-		}
+
+		this.maskAnimator?.dispose();
+
+		// 因为歌词行有可能比行内单词的结束时间早，有可能导致过渡动画提早停止出现瑕疵
+		// 所以要以单词的结束时间为准
+		const maxEndTime = Math.max(
+			0,
+			...this.splittedWords.map((w) => w.endTime),
+			this.lyricLine.endTime,
+		);
+
+		this.maskAnimator = createLineMaskAnimator(this.splittedWords, {
+			lineStartTime: this.lyricLine.startTime,
+			lineEndTime: maxEndTime,
+			wordFadeWidth: this.lyricPlayer.getWordFadeWidth(),
+			supportMaskImage: this.lyricPlayer.supportMaskImage,
+		});
+
+		this.maskAnimator.apply();
+
 		if (this.isEnabled) {
 			const isPlayerRunning = this.lyricPlayer.getIsPlaying?.() ?? true;
 			this.enable(this.lyricPlayer.getCurrentTime(), isPlayerRunning);
 		}
 	}
 
-	private generateCalcBasedMaskImage() {
-		for (const word of this.splittedWords) {
-			const wordEl = word.mainElement;
-			if (wordEl) {
-				const fadeWidth = word.height * this.lyricPlayer.getWordFadeWidth();
-				const [maskImage, totalAspect] = generateFadeGradient(
-					fadeWidth / (word.width + word.padding * 2),
-				);
-				const totalAspectStr = `${totalAspect * 100}% 100%`;
-				if (this.lyricPlayer.supportMaskImage) {
-					wordEl.style.maskImage = maskImage;
-					wordEl.style.maskRepeat = "no-repeat";
-					wordEl.style.maskSize = totalAspectStr;
-				} else {
-					wordEl.style.webkitMaskImage = maskImage;
-					wordEl.style.webkitMaskRepeat = "no-repeat";
-					wordEl.style.webkitMaskSize = totalAspectStr;
-				}
-				const w = word.width + word.padding * 2 + fadeWidth;
-				const maskPos = `clamp(${-w}px,calc(${-w}px + (var(--amll-player-time) - ${
-					word.startTime
-				})*${w / Math.abs(word.endTime - word.startTime)}px),0px) 0px`;
-				wordEl.style.maskPosition = maskPos;
-				wordEl.style.webkitMaskPosition = maskPos;
-			}
-		}
-	}
-
-	private generateWebAnimationBasedMaskImage() {
-		// 因为歌词行有可能比行内单词的结束时间早，有可能导致过渡动画提早停止出现瑕疵
-		// 所以要以单词的结束时间为准
-		const totalFadeDuration =
-			Math.max(
-				0,
-				...this.splittedWords.map((w) => w.endTime),
-				this.lyricLine.endTime,
-			) - this.lyricLine.startTime;
-		this.splittedWords.forEach((word, i) => {
-			const wordEl = word.mainElement;
-			if (wordEl) {
-				const fadeWidth = word.height * this.lyricPlayer.getWordFadeWidth();
-				const [maskImage, totalAspect] = generateFadeGradient(
-					fadeWidth / (word.width + word.padding * 2),
-				);
-				const totalAspectStr = `${totalAspect * 100}% 100%`;
-				if (this.lyricPlayer.supportMaskImage) {
-					wordEl.style.maskImage = maskImage;
-					wordEl.style.maskRepeat = "no-repeat";
-					wordEl.style.maskSize = totalAspectStr;
-				} else {
-					wordEl.style.webkitMaskImage = maskImage;
-					wordEl.style.webkitMaskRepeat = "no-repeat";
-					wordEl.style.webkitMaskSize = totalAspectStr;
-				}
-				// 为了尽可能将渐变动画在相连的每个单词间近似衔接起来
-				// 要综合每个单词的效果时间和间隙生成动画帧数组
-				const widthBeforeSelf =
-					this.splittedWords.slice(0, i).reduce((a, b) => a + b.width, 0) +
-					(this.splittedWords[0] ? fadeWidth : 0);
-				const minOffset = -(word.width + word.padding * 2 + fadeWidth);
-				const clampOffset = (x: number) => clamp(x, minOffset, 0);
-				let curPos = -widthBeforeSelf - word.width - word.padding - fadeWidth;
-				let timeOffset = 0;
-				const frames: Keyframe[] = [];
-				let lastPos = curPos;
-				let lastTime = 0;
-				const pushFrame = () => {
-					// 此处如果添加过渡函数，会导致单词时序不准确，所以不添加
-					// const easing = "cubic-bezier(.33,.12,.83,.9)";
-					const moveOffset = curPos - lastPos;
-					const time = clamp01(timeOffset);
-					const duration = time - lastTime;
-					const d = Math.abs(duration / moveOffset);
-					// 因为有可能会和之前的动画有边界
-					if (curPos > minOffset && lastPos < minOffset) {
-						const staticTime = Math.abs(lastPos - minOffset) * d;
-						const value = `${clampOffset(lastPos)}px 0`;
-						const frame: Keyframe = {
-							offset: lastTime + staticTime,
-							maskPosition: value,
-						};
-						frames.push(frame);
-					}
-					if (curPos > 0 && lastPos < 0) {
-						const staticTime = Math.abs(lastPos) * d;
-						const value = `${clampOffset(curPos)}px 0`;
-						const frame: Keyframe = {
-							offset: lastTime + staticTime,
-							maskPosition: value,
-						};
-						frames.push(frame);
-					}
-					const value = `${clampOffset(curPos)}px 0`;
-					const frame: Keyframe = {
-						offset: time,
-						maskPosition: value,
-					};
-					frames.push(frame);
-					lastPos = curPos;
-					lastTime = time;
-				};
-				pushFrame();
-				let lastTimeStamp = 0;
-				this.splittedWords.forEach((otherWord, j) => {
-					// 停顿
-					{
-						const curTimeStamp = otherWord.startTime - this.lyricLine.startTime;
-						const staticDuration = curTimeStamp - lastTimeStamp;
-						timeOffset += staticDuration / totalFadeDuration;
-						if (staticDuration > 0) pushFrame();
-						lastTimeStamp = curTimeStamp;
-					}
-					// 移动
-					{
-						const fadeDuration = clampPositive(
-							otherWord.endTime - otherWord.startTime,
-						);
-						const rubySegments = this.getRubySegments(otherWord);
-						const rubyCharCount = rubySegments.reduce(
-							(total, ruby) => total + ruby.word.length,
-							0,
-						);
-						if (rubyCharCount > 0) {
-							const widthPerChar = otherWord.width / rubyCharCount;
-							let charIndex = 0;
-							for (const ruby of rubySegments) {
-								const rubyStartTime = Number.isFinite(ruby.startTime)
-									? ruby.startTime
-									: otherWord.startTime;
-								const rubyEndTime = Number.isFinite(ruby.endTime)
-									? ruby.endTime
-									: otherWord.endTime;
-								const rubyStart = Math.max(rubyStartTime, otherWord.startTime);
-								const rubyEnd = Math.min(
-									Math.max(rubyEndTime, rubyStart),
-									otherWord.endTime,
-								);
-								const rubyStartStamp = rubyStart - this.lyricLine.startTime;
-								const rubyStaticDuration = rubyStartStamp - lastTimeStamp;
-								timeOffset += rubyStaticDuration / totalFadeDuration;
-								if (rubyStaticDuration > 0) pushFrame();
-								lastTimeStamp = rubyStartStamp;
-								const rubyDuration = clampPositive(rubyEnd - rubyStart);
-								const perCharDuration = rubyDuration / ruby.word.length;
-								for (
-									let rubyCharIndex = 0;
-									rubyCharIndex < ruby.word.length;
-									rubyCharIndex++
-								) {
-									timeOffset += perCharDuration / totalFadeDuration;
-									curPos += widthPerChar;
-									if (j === 0 && charIndex === 0) {
-										curPos += fadeWidth * 1.5;
-									}
-									if (
-										j === this.splittedWords.length - 1 &&
-										charIndex === rubyCharCount - 1
-									) {
-										curPos += fadeWidth * 0.5;
-									}
-									if (perCharDuration > 0) pushFrame();
-									lastTimeStamp += perCharDuration;
-									charIndex++;
-								}
-							}
-							const wordEndStamp = Math.max(
-								otherWord.endTime - this.lyricLine.startTime,
-								lastTimeStamp,
-							);
-							const wordTailDuration = wordEndStamp - lastTimeStamp;
-							timeOffset += wordTailDuration / totalFadeDuration;
-							if (wordTailDuration > 0) pushFrame();
-							lastTimeStamp = wordEndStamp;
-						} else {
-							const segmentCount = 1;
-							const segmentWidth = otherWord.width / segmentCount;
-							const segmentDuration = fadeDuration / segmentCount;
-							for (
-								let segmentIndex = 0;
-								segmentIndex < segmentCount;
-								segmentIndex++
-							) {
-								timeOffset += segmentDuration / totalFadeDuration;
-								curPos += segmentWidth;
-								if (j === 0 && segmentIndex === 0) {
-									curPos += fadeWidth * 1.5;
-								}
-								if (
-									j === this.splittedWords.length - 1 &&
-									segmentIndex === segmentCount - 1
-								) {
-									curPos += fadeWidth * 0.5;
-								}
-								if (segmentDuration > 0) pushFrame();
-								lastTimeStamp += segmentDuration;
-							}
-						}
-					}
-				});
-				for (const a of word.maskAnimations) {
-					a.cancel();
-				}
-				try {
-					// TODO: 如果此处动画帧计算出错，需要一个后备方案
-					// 此处如果添加过渡函数，会导致单词时序不准确，所以不添加
-					const ani = wordEl.animate(frames, {
-						duration: totalFadeDuration || 1,
-						id: `fade-word-${word.word}-${i}`,
-						fill: "both",
-					});
-					ani.pause();
-					word.maskAnimations = [ani];
-				} catch (err) {
-					console.warn("应用渐变动画发生错误", frames, totalFadeDuration, err);
-				}
-			}
-		});
-	}
 	getElement(): HTMLElement {
 		return this.element;
 	}
@@ -817,11 +529,11 @@ export class LyricLineEl extends LyricLineBase {
 
 	private disposeElements() {
 		this.balancer?.reset();
+		this.maskAnimator?.dispose();
+		this.maskAnimator = undefined;
+
 		for (const realWord of this.splittedWords) {
 			for (const a of realWord.elementAnimations) {
-				a.cancel();
-			}
-			for (const a of realWord.maskAnimations) {
 				a.cancel();
 			}
 			for (const sub of realWord.subElements) {
@@ -829,7 +541,6 @@ export class LyricLineEl extends LyricLineBase {
 				sub.parentNode?.removeChild(sub);
 			}
 			realWord.elementAnimations = [];
-			realWord.maskAnimations = [];
 			realWord.subElements = [];
 			if (realWord.mainElement?.parentNode) {
 				realWord.mainElement.parentNode.removeChild(realWord.mainElement);
