@@ -10,6 +10,7 @@ import { chunkAndSplitLyricWords } from "#utils/lyric-split-words.ts";
 import { createMatrix4, matrix4ToCSS, scaleMatrix4 } from "#utils/matrix.ts";
 import { Duration } from "#utils/time.ts";
 import type { DomLyricPlayer } from ".";
+import { createFloatAnimation } from "./animation/index.ts";
 
 interface RealWord extends LyricWord {
 	mainElement: HTMLSpanElement;
@@ -411,7 +412,13 @@ export class LyricLineEl extends LyricLineBase {
 			...word,
 			mainElement: mainWordEl,
 			subElements: subElements,
-			elementAnimations: [this.initFloatAnimation(word, mainWordEl)],
+			elementAnimations: [
+				createFloatAnimation(mainWordEl, {
+					word: word,
+					lineStartTime: this.lyricLine.startTime,
+					isBG: this.lyricLine.isBG,
+				}),
+			],
 			maskAnimations: [],
 			width: 0,
 			height: 0,
@@ -502,34 +509,6 @@ export class LyricLineEl extends LyricLineBase {
 		main.appendChild(wrapperWordEl);
 	}
 
-	private initFloatAnimation(word: LyricWord, wordEl: HTMLSpanElement) {
-		const delay = word.startTime - this.lyricLine.startTime;
-		const duration = Math.max(1000, word.endTime - word.startTime);
-		let up = 0.05;
-		if (this.lyricLine.isBG) {
-			up *= 2;
-		}
-		const a = wordEl.animate(
-			[
-				{
-					transform: "translateY(0px)",
-				},
-				{
-					transform: `translateY(${-up}em)`,
-				},
-			],
-			{
-				duration: Number.isFinite(duration) ? duration : 0,
-				delay: Number.isFinite(delay) ? delay : 0,
-				id: "float-word",
-				composite: "add",
-				fill: "both",
-				easing: "ease-out",
-			},
-		);
-		a.pause();
-		return a;
-	}
 	// 按照原 Apple Music 参考，强调效果只应用缩放、轻微左右位移和辉光效果，原主要的悬浮位移效果不变
 	// 为了避免产生锯齿抖动感，使用 matrix3d 来实现缩放和位移
 	private initEmphasizeAnimation(
