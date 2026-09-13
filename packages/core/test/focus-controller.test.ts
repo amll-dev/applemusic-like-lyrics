@@ -27,14 +27,23 @@ function makeInterlude(anchorLineIndex: number): PlayerInterlude {
 }
 
 /** 自动跟随，未被用户滚动挂起 */
-const FOLLOWING = { isAutoAlignSuspended: false, hasBottomContent: false };
+const FOLLOWING = {
+	isAutoAlignSuspended: false,
+	hasBottomContent: false,
+	canDisplayInterlude: true,
+};
 /** 自动跟随，且底栏有内容 */
 const FOLLOWING_WITH_BOTTOM = {
 	isAutoAlignSuspended: false,
 	hasBottomContent: true,
+	canDisplayInterlude: true,
 };
 /** 用户滚动挂起中 */
-const SUSPENDED = { isAutoAlignSuspended: true, hasBottomContent: false };
+const SUSPENDED = {
+	isAutoAlignSuspended: true,
+	hasBottomContent: false,
+	canDisplayInterlude: true,
+};
 
 describe("FocusController", () => {
 	describe("auto-align", () => {
@@ -258,6 +267,70 @@ describe("FocusController", () => {
 				SUSPENDED,
 			);
 			expect(afterReset).toEqual({ type: "line", index: 0 });
+		});
+	});
+
+	describe("Interlude Degradation (canDisplayInterlude)", () => {
+		it("advances focal target to the next lyric line when interlude cannot be displayed (Case 3)", () => {
+			const controller = new FocusController();
+			const snapshot = {
+				currentTime: MediaTime.ZERO,
+				playingGroups: new Set<number>(),
+				highlightedGroups: new Set<number>(),
+				scrollToIndex: 2,
+				isEndOfSong: false,
+				isFocusOnInterlude: true,
+				activeInterlude: {
+					startTime: MediaTime.fromMillis(5000),
+					endTime: MediaTime.fromMillis(8000),
+					anchorLineIndex: 2,
+				},
+			};
+
+			const normalTarget = controller.resolve(snapshot, 10, {
+				isAutoAlignSuspended: false,
+				hasBottomContent: false,
+				canDisplayInterlude: true,
+			});
+			expect(normalTarget).toEqual({ type: "interlude", anchorIndex: 2 });
+
+			const degradedTarget = controller.resolve(snapshot, 10, {
+				isAutoAlignSuspended: false,
+				hasBottomContent: false,
+				canDisplayInterlude: false,
+			});
+			expect(degradedTarget).toEqual({ type: "line", index: 3 });
+		});
+
+		it("transitions suspended interlude focus to next line if interlude becomes unplayable during scroll suspend", () => {
+			const controller = new FocusController();
+			const snapshot = {
+				currentTime: MediaTime.ZERO,
+				playingGroups: new Set<number>(),
+				highlightedGroups: new Set<number>(),
+				scrollToIndex: 1,
+				isEndOfSong: false,
+				isFocusOnInterlude: true,
+				activeInterlude: {
+					startTime: MediaTime.fromMillis(3000),
+					endTime: MediaTime.fromMillis(6000),
+					anchorLineIndex: 1,
+				},
+			};
+
+			controller.resolve(snapshot, 10, {
+				isAutoAlignSuspended: false,
+				hasBottomContent: false,
+				canDisplayInterlude: true,
+			});
+
+			const suspendedTarget = controller.resolve(snapshot, 10, {
+				isAutoAlignSuspended: true,
+				hasBottomContent: false,
+				canDisplayInterlude: false,
+			});
+
+			expect(suspendedTarget).toEqual({ type: "line", index: 2 });
 		});
 	});
 });

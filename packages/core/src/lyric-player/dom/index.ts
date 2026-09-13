@@ -6,8 +6,8 @@
 
 import "#styles/index.css";
 import type { BottomLine } from "#lyric/base/bottom-line.ts";
+import { MAX_FRAME_DELTA } from "#lyric/base/consts.ts";
 import { LyricPlayerBase } from "#lyric/base/index.ts";
-import type { InterludeDots } from "#lyric/base/interlude-dots.ts";
 import type { LyricLineBase } from "#lyric/base/line.ts";
 import styles from "#styles/lyric-player.module.css";
 import { Duration } from "#utils/time.ts";
@@ -152,7 +152,7 @@ export class DomLyricPlayer extends LyricPlayerBase {
 		}
 	}
 
-	protected override createInterludeDots(): InterludeDots {
+	protected override createInterludeDots(): InterludeDotsEl {
 		return new InterludeDotsEl();
 	}
 
@@ -222,7 +222,8 @@ export class DomLyricPlayer extends LyricPlayerBase {
 	}
 
 	override update(delta = 0): void {
-		super.update(delta);
+		const d = Duration.min(Duration.fromMillis(delta), MAX_FRAME_DELTA);
+		super.update(Duration.asMillis(d));
 		if (!this.supportMaskImage) {
 			this.element.style.setProperty(
 				"--amll-player-time",
@@ -230,7 +231,6 @@ export class DomLyricPlayer extends LyricPlayerBase {
 			);
 		}
 		if (!this.isPageVisible) return;
-		const d = Duration.fromMillis(delta);
 		for (const group of this.currentLyricGroups) {
 			group.update(d);
 		}

@@ -3,7 +3,7 @@ import { Duration, MediaTime } from "#utils/time.ts";
 /**
  * 判定为间奏所需的最小空隙时长
  */
-const MIN_INTERLUDE_GAP = Duration.fromMillis(4000);
+const MIN_INTERLUDE_GAP = Duration.fromMillis(7000);
 
 //#region 类型定义
 /**
@@ -50,7 +50,7 @@ export interface TimelineSnapshot {
 	 *
 	 * 一般用于提供给 UI 层在绘制/排版阶段作为基准时间
 	 *
-	 * 例如给 InterludeDots 计算播放动画的当前时间戳
+	 * 例如给 InterludeDotsBase 计算播放动画的当前时间戳
 	 */
 	readonly currentTime: MediaTime;
 

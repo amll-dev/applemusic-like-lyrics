@@ -14,6 +14,13 @@ export interface FocusResolveFlags {
 	 * 底栏当前是否有内容
 	 */
 	hasBottomContent: boolean;
+
+	/**
+	 * 当前命中的间奏点是否具备可展示的时长
+	 *
+	 * 为 false 时，焦点将顺延至下一行待唱歌词
+	 */
+	canDisplayInterlude: boolean;
 }
 
 /**
@@ -24,7 +31,7 @@ export interface FocusResolveFlags {
  * @remarks
  * 规则为：
  * - 用户滚动挂起期间冻结上一帧的焦点，不再跟随播放进度
- * - 若冻结在间奏点上而间奏已经结束，则自动前移至间奏后的第一行歌词
+ * - 若冻结在间奏点上而间奏已经结束，则自动顺延至间奏后的第一行歌词
  * - 未挂起时跟随播放状态：间奏中对齐间奏点，曲末对齐底栏或末行，其余对齐 `scrollToIndex`
  * - 任何情况下产出的歌词行索引都被钳制在 `[0, lineCount - 1]` 内
  */
@@ -43,19 +50,20 @@ export class FocusController {
 		flags: FocusResolveFlags,
 	): FocalTarget {
 		const nextTarget = flags.isAutoAlignSuspended
-			? this.resolveSuspendedTarget(snapshot, lineCount)
-			: this.resolveActiveTarget(snapshot, lineCount, flags.hasBottomContent);
+			? this.resolveSuspendedTarget(snapshot, lineCount, flags)
+			: this.resolveActiveTarget(snapshot, lineCount, flags);
 
 		this.target = nextTarget;
 		return nextTarget;
 	}
 
 	/**
-	 * 用户滚动挂起期间的焦点解析（维持上一帧目标或在间奏结束时顺延）
+	 * 用户滚动挂起期间的焦点解析（维持上一帧目标或在间奏结束/不可用时顺延）
 	 */
 	private resolveSuspendedTarget(
 		snapshot: TimelineSnapshot,
 		lineCount: number,
+		flags: FocusResolveFlags,
 	): FocalTarget {
 		const target = this.target;
 
@@ -68,9 +76,11 @@ export class FocusController {
 
 			case "interlude": {
 				const isInterludeActive =
-					snapshot.isFocusOnInterlude && !!snapshot.activeInterlude;
+					snapshot.isFocusOnInterlude &&
+					!!snapshot.activeInterlude &&
+					flags.canDisplayInterlude;
 
-				// 离开间奏区间时，将冻结目标移动至间奏后的下一行歌词
+				// 离开间奏区间或间奏不可显示时，将冻结目标移动至间奏后的下一行歌词
 				if (!isInterludeActive) {
 					return {
 						type: "line",
@@ -91,10 +101,20 @@ export class FocusController {
 	private resolveActiveTarget(
 		snapshot: TimelineSnapshot,
 		lineCount: number,
-		hasBottomContent: boolean,
+		flags: FocusResolveFlags,
 	): FocalTarget {
-		// 处于间奏区间且需聚焦间奏点时对焦到间奏点
+		// 处于间奏区间且需聚焦间奏点
 		if (snapshot.isFocusOnInterlude && snapshot.activeInterlude) {
+			// 若间奏不可显示，焦点顺延至下一行待唱歌词
+			if (!flags.canDisplayInterlude) {
+				return {
+					type: "line",
+					index: this.clampLineIndex(
+						snapshot.activeInterlude.anchorLineIndex + 1,
+						lineCount,
+					),
+				};
+			}
 			return {
 				type: "interlude",
 				anchorIndex: snapshot.activeInterlude.anchorLineIndex,
@@ -103,7 +123,7 @@ export class FocusController {
 
 		// 播放完了，如果有底栏则对齐底栏，没有则对齐最后一行歌词
 		if (snapshot.isEndOfSong) {
-			if (hasBottomContent) {
+			if (flags.hasBottomContent) {
 				return { type: "bottom" };
 			}
 			return {

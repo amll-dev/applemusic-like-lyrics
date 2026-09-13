@@ -14,11 +14,12 @@ import {
 	LayoutAlignAnchor,
 	LayoutReason,
 	LayoutReasonStrategyMap,
+	MAX_FRAME_DELTA,
 	type MaskObsceneWordsMode,
 } from "./consts.ts";
 import { FocusController } from "./focus.ts";
 import type { LyricLineGroupBase } from "./group.ts";
-import type { InterludeDots } from "./interlude-dots.ts";
+import type { InterludeDotsBase } from "./interlude-dots.ts";
 import {
 	LayoutCalculator,
 	type LayoutConfig,
@@ -35,7 +36,10 @@ import { getPosYSpringPolicy } from "./spring";
 import { TimelineController, type TimelineSnapshot } from "./timeline.ts";
 
 export type { BottomLine, BottomLineTransforms } from "./bottom-line.ts";
-export type { InterludeDots } from "./interlude-dots.ts";
+export type {
+	InterludeDotsBase,
+	InterludeDotsSnapshot,
+} from "./interlude-dots.ts";
 export type { LyricLineBase } from "./line.ts";
 export type { LyricDataConfig } from "./lyric-data-manager.ts";
 
@@ -136,7 +140,7 @@ export abstract class LyricPlayerBase
 		/** 是否为窄视口，窄视口下模糊强度打折 */
 		isNarrowViewport: false,
 	};
-	protected interludeDots: InterludeDots;
+	protected interludeDots: InterludeDotsBase & HasElement;
 	protected bottomLine: BottomLine;
 	protected enableBlur = true;
 	protected enableScale = true;
@@ -199,6 +203,13 @@ export abstract class LyricPlayerBase
 	};
 	private onPageHide = () => {
 		this.isPageVisible = false;
+	};
+	private onVisibilityChange = () => {
+		if (document.visibilityState !== "visible") return;
+		// 标签页挂起期间音频可能仍在持续播放，恢复首帧的推送间隔会远超
+		// SeekDetector 信任的物理时钟跨度（MAX_TRUSTED_GAP），被误判为跳转
+		// 所以丢弃基线让恢复后的首次推送重新建立基线，按连续播放推导
+		this.seekDetector.reset();
 	};
 	/** @internal */
 	resizeObserver: ResizeObserver = new ResizeObserver(((entries) => {
@@ -305,6 +316,7 @@ export abstract class LyricPlayerBase
 
 		window.addEventListener("pageshow", this.onPageShow);
 		window.addEventListener("pagehide", this.onPageHide);
+		document.addEventListener("visibilitychange", this.onVisibilityChange);
 
 		this.scrollEngine = new ScrollInteractionEngine(this.element, {
 			onScrollUpdate: (isContinuous: boolean) => {
@@ -662,6 +674,11 @@ export abstract class LyricPlayerBase
 	private syncTime(mediaTime: MediaTime, isSeek: boolean): void {
 		const diff = this.timelineController.sync(mediaTime, isSeek);
 
+		// 间奏播放时，时间线没有任何差异，calcLayout 与 setInterlude 不会执行，
+		// 演出时钟需要在这里对齐到推送的媒体时间，否则只能靠 update 的 delta 累加推进，
+		// 页面挂起恢复后 delta 被钳制，时钟会落后于媒体时间
+		this.interludeDots.syncClock(mediaTime);
+
 		if (!diff.hasChanged) {
 			return;
 		}
@@ -716,12 +733,12 @@ export abstract class LyricPlayerBase
 	/**
 	 * 由子类实现的间奏点组件创建逻辑
 	 *
-	 * 在基类构造函数中调用，子类需要返回对应渲染实现的实例
+	 * 在基类构造函数中调用，子类需要返回对应渲染实现的后端
 	 *
 	 * @remarks 工厂执行时子类字段尚未初始化，实现内不得读取子类实例状态，
 	 * 所需资源应由返回的组件自行创建或延迟获取
 	 */
-	protected abstract createInterludeDots(): InterludeDots;
+	protected abstract createInterludeDots(): InterludeDotsBase & HasElement;
 
 	/**
 	 * 由子类实现的底栏组件创建逻辑
@@ -755,7 +772,7 @@ export abstract class LyricPlayerBase
 		}
 		this.currentLyricGroups = [];
 
-		this.interludeDots.setInterlude(undefined);
+		this.interludeDots.clearInterlude(true);
 
 		this.buildLyricGroups();
 
@@ -845,6 +862,19 @@ export abstract class LyricPlayerBase
 		const snapshot = this.timelineController.getSnapshot();
 		const interlude = snapshot.activeInterlude;
 
+		// 确定间奏演出状态与可用性
+		let canDisplayInterlude = false;
+		if (interlude) {
+			canDisplayInterlude = this.interludeDots.setInterlude(
+				[interlude.startTime, interlude.endTime],
+				snapshot.currentTime,
+				strategy.resetInterlude,
+				interlude.anchorLineIndex,
+			);
+		} else {
+			this.interludeDots.clearInterlude();
+		}
+
 		// 确定这一帧焦点应该对齐谁
 		const focalTarget = this.focusController.resolve(
 			snapshot,
@@ -852,6 +882,7 @@ export abstract class LyricPlayerBase
 			{
 				isAutoAlignSuspended: this.scrollState.isAutoAlignSuspended,
 				hasBottomContent: this.hasBottomContent,
+				canDisplayInterlude,
 			},
 		);
 
@@ -864,12 +895,14 @@ export abstract class LyricPlayerBase
 		const ctx = this.frameContext;
 		ctx.containerHeight = this.size[1];
 		ctx.target = focalTarget;
-
 		ctx.bottomLineHeight = this.bottomLine.lineSize[1] || 0;
 
 		// 设置间奏相关的上下文参数
+		const activeInterludeForLayout = canDisplayInterlude
+			? interlude
+			: undefined;
 		const interludeAnchorIndex = LayoutCalculator.resolveInterludeAnchorIndex(
-			interlude,
+			activeInterludeForLayout,
 			focalTarget,
 		);
 
@@ -892,7 +925,7 @@ export abstract class LyricPlayerBase
 		const result = this.layoutCalculator.commit(session, ctx.scrollOffset);
 
 		// 检查是否需要显示间奏点
-		if (result.hasInterlude && interlude) {
+		if (result.hasInterlude && canDisplayInterlude && interlude) {
 			const nextLineIndex = interlude.anchorLineIndex + 1;
 			const nextGroup = this.currentLyricGroups[nextLineIndex];
 			const isNextDuet = nextGroup?.mainLine.getLine().isDuet ?? false;
@@ -902,15 +935,11 @@ export abstract class LyricPlayerBase
 				? this.size[0] - this.layoutState.interludeDotsSize[0]
 				: 0;
 
-			this.interludeDots.setTransform(targetX, result.interludeY + dotMargin);
-
-			this.interludeDots.setInterlude(
-				[interlude.startTime, interlude.endTime],
-				snapshot.currentTime,
-				strategy.resetInterlude,
+			this.interludeDots.setTransform(
+				targetX,
+				result.interludeY + dotMargin,
+				strategy.snapPosY || !this.getEnableSpring(),
 			);
-		} else {
-			this.interludeDots.setInterlude(undefined);
 		}
 
 		// 刷新本帧的视觉推导派生值
@@ -1047,14 +1076,14 @@ export abstract class LyricPlayerBase
 	}
 
 	/**
-	 * 设置所有歌词行在横坐标上的弹簧属性，包括重量、弹力和阻力。
+	 * 设置所有歌词行、底栏和间奏点在横坐标上的弹簧属性，包括重量、弹力和阻力。
 	 *
 	 * @param params 需要设置的弹簧属性，提供的属性将会覆盖原来的属性，未提供的属性将会保持原样
 	 * @deprecated 考虑到横向弹簧效果并不常见，所以这个函数将会在未来的版本中移除
 	 */
 	setLinePosXSpringParams(_params: Partial<SpringParams> = {}): void {}
 	/**
-	 * 设置所有歌词行在​纵坐标上的弹簧属性，包括重量、弹力和阻力。
+	 * 设置所有歌词行、底栏和间奏点在​纵坐标上的弹簧属性，包括重量、弹力和阻力。
 	 *
 	 * @param params 需要设置的弹簧属性，提供的属性将会覆盖原来的属性，未提供的属性将会保持原样
 	 */
@@ -1064,6 +1093,7 @@ export abstract class LyricPlayerBase
 			...params,
 		};
 		this.bottomLine.lineTransforms.posY.updateParams(this.posYSpringParams);
+		this.interludeDots.posY.updateParams(this.posYSpringParams);
 		for (const group of this.currentLyricGroups) {
 			group.posY.updateParams(this.posYSpringParams);
 			group.bgSlideY.updateParams(this.posYSpringParams);
@@ -1119,7 +1149,7 @@ export abstract class LyricPlayerBase
 	 */
 
 	update(delta = 0): void {
-		const d = Duration.fromMillis(delta);
+		const d = Duration.min(Duration.fromMillis(delta), MAX_FRAME_DELTA);
 		this.bottomLine.update(d);
 		this.interludeDots.update(d);
 	}
@@ -1205,5 +1235,6 @@ export abstract class LyricPlayerBase
 		this.bottomLine.dispose();
 		window.removeEventListener("pageshow", this.onPageShow);
 		window.removeEventListener("pagehide", this.onPageHide);
+		document.removeEventListener("visibilitychange", this.onVisibilityChange);
 	}
 }

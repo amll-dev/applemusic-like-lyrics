@@ -250,32 +250,22 @@
 	position: absolute;
 	left: 0;
 	display: flex;
-	gap: 0.25em;
+	align-items: center;
+	/* gap 应和圆点直径保持 0.6:1 的比例 */
+	gap: 0.18em;
 	width: fit-content;
 	height: clamp(0.5em, 1vh, 3em);
-	padding: 2.5% 0.75em;
+	padding: 0.4em var(--lyric-line-padding-x);
 
-	opacity: 0;
 	transform-origin: center;
-	transition: opacity 0.25s;
-
-	&.enabled {
-		opacity: 1;
-	}
 
 	& > * {
 		display: inline-block;
-		width: clamp(0.5em, 1vh, 3em);
-		height: clamp(0.5em, 1vh, 3em);
-		margin-right: 4px;
+		width: 0.3em;
+		height: 0.3em;
 		border-radius: 50%;
 		background-color: var(--amll-lp-color, white);
 		aspect-ratio: 1 / 1;
-	}
-
-	&.duet {
-		right: 0;
-		transform-origin: center;
 	}
 }
 

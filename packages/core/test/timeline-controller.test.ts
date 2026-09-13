@@ -137,7 +137,7 @@ describe("TimelineController highlight lifecycle", () => {
 
 describe("TimelineController interludes", () => {
 	it("clears all highlights and focuses on interlude point when entering interlude range", () => {
-		const c = makeController([0, 1000], [6000, 7000]);
+		const c = makeController([0, 1000], [9000, 10000]);
 
 		tick(c, 999);
 		expect(highlighted(c)).toEqual([0]);
@@ -155,7 +155,7 @@ describe("TimelineController interludes", () => {
 	});
 
 	it("calculates interlude start time from the latest end time of all preceding lines", () => {
-		const c = makeController([0, 10000], [1000, 2000], [15000, 16000]);
+		const c = makeController([0, 10000], [1000, 2000], [18000, 19000]);
 
 		tick(c, 1000);
 		expect(highlighted(c)).toEqual([0, 1]);
@@ -170,13 +170,13 @@ describe("TimelineController interludes", () => {
 		const interlude = c.getSnapshot().activeInterlude;
 		expect(interlude).toBeDefined();
 		expect(millis(interlude?.startTime)).toBe(10000);
-		expect(millis(interlude?.endTime)).toBe(15000);
+		expect(millis(interlude?.endTime)).toBe(18000);
 		expect(interlude?.anchorLineIndex).toBe(1);
 		expect(highlighted(c)).toEqual([]);
 		expect([...diff.removedHighlighted].sort((a, b) => a - b)).toEqual([0, 1]);
 		expect(c.getSnapshot().isFocusOnInterlude).toBe(true);
 
-		tick(c, 15000);
+		tick(c, 18000);
 		expect(highlighted(c)).toEqual([2]);
 		expect(c.getSnapshot().isFocusOnInterlude).toBe(false);
 	});
@@ -203,7 +203,7 @@ describe("TimelineController interludes", () => {
 	});
 
 	it("does not trigger interlude early when preceding enclosing line is still playing", () => {
-		const c = makeController([0, 60000], [10000, 12000], [65000, 70000]);
+		const c = makeController([0, 60000], [10000, 12000], [68000, 73000]);
 
 		tick(c, 10000);
 		expect(highlighted(c)).toEqual([0, 1]);
@@ -217,7 +217,7 @@ describe("TimelineController interludes", () => {
 		tick(c, 60000);
 		const interlude = c.getSnapshot().activeInterlude;
 		expect(millis(interlude?.startTime)).toBe(60000);
-		expect(millis(interlude?.endTime)).toBe(65000);
+		expect(millis(interlude?.endTime)).toBe(68000);
 		expect(interlude?.anchorLineIndex).toBe(1);
 		expect(highlighted(c)).toEqual([]);
 	});
@@ -377,7 +377,7 @@ describe("TimelineController seek", () => {
 	});
 
 	it("does not backfill and focuses on interlude point when seeking into interlude range", () => {
-		const c = makeController([0, 1000], [6000, 7000]);
+		const c = makeController([0, 1000], [9000, 10000]);
 
 		tick(c, 3000, true);
 		expect(highlighted(c)).toEqual([]);
@@ -389,7 +389,7 @@ describe("TimelineController seek", () => {
 	it("keeps scrollToIndex consistent with normal playback when seeking into interlude", () => {
 		const ranges: [number, number][] = [
 			[0, 1000],
-			[6000, 7000],
+			[9000, 10000],
 		];
 
 		const played = makeController(...ranges);
@@ -405,7 +405,7 @@ describe("TimelineController seek", () => {
 	});
 
 	it("keeps scrollToIndex at 0 when seeking into leading silence interlude", () => {
-		const c = makeController([5000, 6000]);
+		const c = makeController([8000, 9000]);
 
 		tick(c, 1000, true);
 		expect(c.getSnapshot().activeInterlude?.anchorLineIndex).toBe(-1);
@@ -615,12 +615,12 @@ describe("TimelineController diff flags", () => {
 	});
 
 	it("reflects interlude state transitions in isInterludeChanged", () => {
-		const c = makeController([0, 1000], [6000, 7000]);
+		const c = makeController([0, 1000], [9000, 10000]);
 
 		tick(c, 500);
 		expect(tick(c, 1000).isInterludeChanged).toBe(true);
 		expect(tick(c, 3000).isInterludeChanged).toBe(false);
-		expect(tick(c, 6000).isInterludeChanged).toBe(true);
+		expect(tick(c, 9000).isInterludeChanged).toBe(true);
 	});
 
 	it("sets isTimeJumped on explicit seek, clearing it on the next sync", () => {
@@ -638,20 +638,20 @@ describe("TimelineController diff flags", () => {
 });
 
 describe("TimelineController interlude boundaries and multiple interludes", () => {
-	it("forms an interlude when gap reaches exactly 4s", () => {
-		const c = makeController([0, 1000], [5000, 6000]);
+	it("forms an interlude when gap reaches exactly 7s", () => {
+		const c = makeController([0, 1000], [8000, 9000]);
 
 		tick(c, 1000);
 		const interlude = c.getSnapshot().activeInterlude;
 		expect(millis(interlude?.startTime)).toBe(1000);
-		expect(millis(interlude?.endTime)).toBe(5000);
+		expect(millis(interlude?.endTime)).toBe(8000);
 		expect(interlude?.anchorLineIndex).toBe(0);
 		expect(highlighted(c)).toEqual([]);
 		expect(c.getSnapshot().isFocusOnInterlude).toBe(true);
 	});
 
-	it("does not form an interlude when gap is 1ms short of 4s, keeping previous line highlighted", () => {
-		const c = makeController([0, 1000], [4999, 5999]);
+	it("does not form an interlude when gap is 1ms short of 7s, keeping previous line highlighted", () => {
+		const c = makeController([0, 1000], [7999, 8999]);
 
 		tick(c, 500);
 		expect(highlighted(c)).toEqual([0]);
@@ -667,26 +667,26 @@ describe("TimelineController interlude boundaries and multiple interludes", () =
 		expect(highlighted(c)).toEqual([0]);
 	});
 
-	it("produces an interlude for leading silence over 4s with anchor before first line", () => {
-		const c = makeController([5000, 6000]);
+	it("produces an interlude for leading silence over 7s with anchor before first line", () => {
+		const c = makeController([8000, 9000]);
 
 		tick(c, 1000);
 		const interlude = c.getSnapshot().activeInterlude;
 		expect(interlude).toBeDefined();
 		expect(interlude?.anchorLineIndex).toBe(-1);
 		expect(millis(interlude?.startTime)).toBe(0);
-		expect(millis(interlude?.endTime)).toBe(5000);
+		expect(millis(interlude?.endTime)).toBe(8000);
 		expect(highlighted(c)).toEqual([]);
 		expect(c.getSnapshot().isFocusOnInterlude).toBe(true);
 		expect(c.getSnapshot().latestHighlightedIndex).toBeUndefined();
 
-		tick(c, 5000);
+		tick(c, 8000);
 		expect(highlighted(c)).toEqual([0]);
 		expect(c.getSnapshot().isFocusOnInterlude).toBe(false);
 	});
 
 	it("hits multiple interludes sequentially and transitions properly", () => {
-		const c = makeController([0, 1000], [6000, 7000], [13000, 14000]);
+		const c = makeController([0, 1000], [9000, 10000], [18000, 19000]);
 
 		tick(c, 500);
 		expect(tick(c, 1000).isInterludeChanged).toBe(true);
@@ -696,32 +696,32 @@ describe("TimelineController interlude boundaries and multiple interludes", () =
 		expect(c.getSnapshot().isFocusOnInterlude).toBe(true);
 		expect(highlighted(c)).toEqual([]);
 
-		expect(tick(c, 6000).isInterludeChanged).toBe(true);
+		expect(tick(c, 9000).isInterludeChanged).toBe(true);
 		expect(highlighted(c)).toEqual([1]);
 		expect(c.getSnapshot().isFocusOnInterlude).toBe(false);
 
-		const diff = tick(c, 7000);
+		const diff = tick(c, 10000);
 		expect(diff.isInterludeChanged).toBe(true);
 		expect(c.getSnapshot().activeInterlude?.anchorLineIndex).toBe(1);
 		expect(highlighted(c)).toEqual([]);
 		expect(c.getSnapshot().isFocusOnInterlude).toBe(true);
 
-		tick(c, 10000);
+		tick(c, 14000);
 		expect(c.getSnapshot().isFocusOnInterlude).toBe(true);
 
-		tick(c, 13000);
+		tick(c, 18000);
 		expect(highlighted(c)).toEqual([2]);
 		expect(c.getSnapshot().isFocusOnInterlude).toBe(false);
 	});
 
 	it("resumes lyrics when playback reaches the end of an interlude entered via seek", () => {
-		const c = makeController([0, 1000], [6000, 7000]);
+		const c = makeController([0, 1000], [9000, 10000]);
 
 		tick(c, 3000, true);
 		expect(c.getSnapshot().isFocusOnInterlude).toBe(true);
 		expect(highlighted(c)).toEqual([]);
 
-		tick(c, 6000);
+		tick(c, 9000);
 		expect(c.getSnapshot().activeInterlude).toBeUndefined();
 		expect(highlighted(c)).toEqual([1]);
 		expect(c.getSnapshot().isFocusOnInterlude).toBe(false);
@@ -815,7 +815,7 @@ describe("TimelineController zero-duration and time boundaries", () => {
 
 describe("TimelineController lyrics reload", () => {
 	it("resets all timeline states to origin when time bounds are reset", () => {
-		const c = makeController([0, 1000], [6000, 7000]);
+		const c = makeController([0, 1000], [9000, 10000]);
 		tick(c, 3000);
 		expect(c.getSnapshot().activeInterlude).toBeDefined();
 		expect(c.getSnapshot().isFocusOnInterlude).toBe(true);
