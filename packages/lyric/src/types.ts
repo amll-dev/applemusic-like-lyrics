@@ -55,6 +55,13 @@ export interface LyricLine {
 }
 
 /**
+ * 一段带元数据的歌词，元数据以 `[键, 值数组]` 的形式存储
+ *
+ * 与 {@link TTMLLyric} 结构相同，用于描述不限于 TTML 的歌词对象
+ */
+export type LyricParseResult = TTMLLyric;
+
+/**
  * 一个 TTML 歌词行对象，存储了歌词行信息和 AMLL 元数据信息
  */
 export interface TTMLLyric {

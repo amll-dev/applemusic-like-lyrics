@@ -1,16 +1,32 @@
 export { stringifyAss } from "./formats/ass";
 export { decryptQrcHex, encryptQrcHex } from "./formats/eqrc";
-export { parseEslrc, stringifyEslrc } from "./formats/eslrc";
 export { parseLqe, stringifyLqe } from "./formats/lqe";
-export { parseLrc, stringifyLrc } from "./formats/lrc";
-export { parseLrcA2, stringifyLrcA2 } from "./formats/lrca2";
+export type {
+	LrcAuxiliaryLineOptions,
+	LrcAuxiliaryLinesOptions,
+	LrcEndTimestampOptions,
+	ParseLrcLikeOptions,
+	StringifyLrcLikeOptions,
+} from "./formats/lrc";
+export {
+	parseEslrc,
+	parseLrc,
+	parseLrcA2,
+	parseLrcLike,
+	parseSPL,
+	stringifyEslrc,
+	stringifyLrc,
+	stringifyLrcA2,
+	stringifyLrcLike,
+	stringifySPL,
+} from "./formats/lrc";
 export { parseLyl, stringifyLyl } from "./formats/lyl";
 export { parseLys, stringifyLys } from "./formats/lys";
 export { parseQrc, stringifyQrc } from "./formats/qrc";
 export { parseTTML, stringifyTTML } from "./formats/ttml";
 export { parseYrc, stringifyYrc } from "./formats/yrc";
 
-import { stringifyLrcA2 } from "./formats/lrca2";
+import { stringifyLrcA2 } from "./formats/lrc";
 
 /**
  * {@link stringifyLrcA2} 的别名。
@@ -23,4 +39,9 @@ export function stringifylrcA2(
 	return stringifyLrcA2(...args);
 }
 
-export type { LyricLine, LyricWord, TTMLLyric } from "./types";
+export type {
+	LyricLine,
+	LyricParseResult,
+	LyricWord,
+	TTMLLyric,
+} from "./types";
