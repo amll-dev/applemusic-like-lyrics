@@ -31,9 +31,6 @@ export class LyricLineEl extends LyricLineBase {
 	// 标记是否已经构建了行内的实际 DOM（单词与动画等）
 	private built = false;
 
-	// 由 LyricPlayer 来设置
-	lineSize: number[] = [0, 0];
-
 	private renderMode: LyricLineRenderMode = LyricLineRenderMode.SOLID;
 	private maskAnimator?: LineMaskAnimator;
 
