@@ -97,8 +97,8 @@ const player = usePlayerStore();
 					<SelectTrigger class="w-full">
 						<SelectValue placeholder="取色算法" />
 					</SelectTrigger>
-				<SelectContent>
-					<SelectItem value="auto">自动择优（K-Means / 八叉树）</SelectItem>
+					<SelectContent>
+						<SelectItem value="auto">自动择优（K-Means / 八叉树）</SelectItem>
 						<SelectItem value="kmeans">K-Means</SelectItem>
 						<SelectItem value="octtree">八叉树</SelectItem>
 					</SelectContent>
