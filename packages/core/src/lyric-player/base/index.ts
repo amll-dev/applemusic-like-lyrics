@@ -331,13 +331,6 @@ export abstract class LyricPlayerBase
 				this.scrollState.isTouchScrolled = type === "touch";
 				this.calcLayout(LayoutReason.InteractionStart);
 			},
-			onInteractionEnd: () => {},
-			onAutoAlignResume: () => {
-				this.scrollState.isAutoAlignSuspended = false;
-				this.scrollState.isTouchScrolled = false;
-				this.scrollEngine.resetScroll(0);
-				this.calcLayout(LayoutReason.InteractionEnd);
-			},
 		});
 	}
 
@@ -663,6 +656,8 @@ export abstract class LyricPlayerBase
 	 * @param isSeek 这次进度变化是否为跳转
 	 */
 	private syncTime(mediaTime: MediaTime, isSeek: boolean): void {
+		const wasFocusOnInterlude =
+			this.timelineController.getSnapshot().isFocusOnInterlude;
 		const diff = this.timelineController.sync(mediaTime, isSeek);
 
 		// 间奏播放时，时间线没有任何差异，calcLayout 与 setInterlude 不会执行，
@@ -696,6 +691,15 @@ export abstract class LyricPlayerBase
 			if (!this.scrollState.isTouchScrolled) {
 				this.resetScroll();
 			}
+		} else if (
+			(diff.isScrollToChanged || wasFocusOnInterlude) &&
+			!snapshot.isFocusOnInterlude &&
+			snapshot.playingGroups.has(snapshot.scrollToIndex) &&
+			this.scrollState.isAutoAlignSuspended &&
+			this.scrollEngine.canResumeAutoAlign &&
+			this.currentLyricGroups[snapshot.scrollToIndex]?.isInRenderRange(false)
+		) {
+			this.resetScroll();
 		}
 
 		if (

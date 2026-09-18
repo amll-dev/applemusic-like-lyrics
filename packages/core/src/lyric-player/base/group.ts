@@ -115,7 +115,13 @@ export abstract class LyricLineGroupBase<
 
 	protected abstract renderStyles(): void;
 
-	abstract get isInSight(): boolean;
+	/**
+	 * 根据当前动画位置判断歌词行是否处于渲染范围内
+	 *
+	 * @param includeOverscan 是否包含 overscan 渲染缓冲范围，默认包含；
+	 * 传入 false 时，仅判断歌词行是否在真实视口范围内
+	 */
+	abstract isInRenderRange(includeOverscan?: boolean): boolean;
 
 	update(delta: Duration = Duration.ZERO): void {
 		if (this.lyricPlayer.getEnableSpring()) {
@@ -134,7 +140,7 @@ export abstract class LyricLineGroupBase<
 	}
 
 	commitChanges(): void {
-		if (!this.isInSight) return;
+		if (!this.isInRenderRange()) return;
 		if (this.isUiDirty) {
 			this.renderStyles();
 			this.isUiDirty = false;

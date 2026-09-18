@@ -54,8 +54,6 @@ export const LayoutReason = {
 	ContinuousScroll: "continuous-scroll",
 	/** 离散单步滚动（鼠标滚轮单次滚动） */
 	DiscreteScroll: "discrete-scroll",
-	/** 用户交互结束并恢复自动对齐 */
-	InteractionEnd: "interaction-end",
 	/** 跳转播放进度 */
 	Seek: "seek",
 	/** 重新构建歌词视图 */
@@ -88,11 +86,6 @@ export interface LayoutStrategy {
  */
 export const LayoutReasonStrategyMap: Record<LayoutReason, LayoutStrategy> = {
 	[LayoutReason.PlaybackTick]: {
-		disableStagger: false,
-		resetInterlude: false,
-		snapPosY: false,
-	},
-	[LayoutReason.InteractionEnd]: {
 		disableStagger: false,
 		resetInterlude: false,
 		snapPosY: false,

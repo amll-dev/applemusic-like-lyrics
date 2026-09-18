@@ -39,19 +39,21 @@ export class LyricLineGroup extends LyricLineGroupBase<LyricLineEl> {
 		return this.element;
 	}
 
-	get isInSight(): boolean {
-		const t = this.posY.getCurrentPosition();
+	isInRenderRange(includeOverscan = true): boolean {
+		const top = this.posY.getCurrentPosition();
 
 		const index = this.lyricPlayer.currentLyricGroups.indexOf(this);
-		const h =
+		const height =
 			index !== -1
 				? this.lyricPlayer.getLineHeight(index)
 				: this.lyricPlayer.defaultLineHeight;
 
-		const pb = this.lyricPlayer.size[1];
-		const ov = this.lyricPlayer.getOverscanPx();
+		const viewportHeight = this.lyricPlayer.size[1];
+		if (viewportHeight <= 0 || height <= 0) return false;
 
-		return !(t > pb + h + ov || t < -h - ov);
+		const overscan = includeOverscan ? this.lyricPlayer.getOverscanPx() : 0;
+
+		return top < viewportHeight + overscan && top + height > -overscan;
 	}
 
 	show(): void {
@@ -97,7 +99,7 @@ export class LyricLineGroup extends LyricLineGroupBase<LyricLineEl> {
 	}
 
 	override commitChanges(): void {
-		if (this.isInSight) {
+		if (this.isInRenderRange()) {
 			this.show();
 			super.commitChanges();
 		} else {
