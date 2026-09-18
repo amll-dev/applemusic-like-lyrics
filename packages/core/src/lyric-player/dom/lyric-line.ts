@@ -39,6 +39,9 @@ export class LyricLineEl extends LyricLineBase {
 
 	private lastScaleNum = -1;
 
+	private lineHasRubyWords: boolean;
+	private lineHasRomanWords: boolean;
+
 	/**
 	 * 用于平衡换行、尽量减少各行长度差异的类
 	 */
@@ -57,6 +60,12 @@ export class LyricLineEl extends LyricLineBase {
 		},
 	) {
 		super();
+		this.lineHasRubyWords = this.lyricLine.words.some(
+			(word) => (word.ruby?.length ?? 0) > 0,
+		);
+		this.lineHasRomanWords = this.lyricLine.words.some(
+			(word) => (word.romanWord?.trim().length ?? 0) > 0,
+		);
 		this.element.setAttribute("class", styles.lyricLine);
 		if (this.lyricLine.isBG) {
 			this.element.classList.add(styles.lyricBgLine);
@@ -205,16 +214,10 @@ export class LyricLineEl extends LyricLineBase {
 		}
 
 		const chunkedWords = chunkAndSplitLyricWords(this.lyricLine.words);
-		const hasRubyLine = this.lyricLine.words.some(
-			(word) => (word.ruby?.length ?? 0) > 0,
-		);
-		const hasRomanLine = this.lyricLine.words.some(
-			(word) => (word.romanWord?.trim().length ?? 0) > 0,
-		);
 		main.innerHTML = "";
 
 		for (const chunk of chunkedWords) {
-			this.buildWord(chunk, main, hasRubyLine, hasRomanLine);
+			this.buildWord(chunk, main);
 		}
 
 		this.setSubLinesText(trans, roman);
@@ -239,23 +242,18 @@ export class LyricLineEl extends LyricLineBase {
 		);
 	}
 
-	private createWord(
-		word: LyricWord,
-		shouldEmphasize: boolean,
-		hasRubyLine: boolean,
-		hasRomanLine: boolean,
-	): RealWord {
+	private createWord(word: LyricWord, shouldEmphasize: boolean): RealWord {
 		const mainWordEl = document.createElement("span");
 		const subElements: HTMLSpanElement[] = [];
 		const romanWord = word.romanWord?.trim() ?? "";
-		const wordContainer = hasRubyLine
+		const wordContainer = this.lineHasRubyWords
 			? document.createElement("span")
 			: mainWordEl;
-		const wordTextContainer = hasRubyLine
+		const wordTextContainer = this.lineHasRubyWords
 			? document.createElement("span")
 			: wordContainer;
 
-		if (hasRubyLine) {
+		if (this.lineHasRubyWords) {
 			const rubyWordEl = document.createElement("span");
 			const rubySegments = this.getRubySegments(word);
 			for (const ruby of rubySegments) {
@@ -298,7 +296,7 @@ export class LyricLineEl extends LyricLineBase {
 				}
 			}
 		} else {
-			if (hasRomanLine) {
+			if (this.lineHasRomanWords) {
 				const wordEl = document.createElement("div");
 				wordEl.textContent = displayWord.trim();
 				wordTextContainer.appendChild(wordEl);
@@ -307,7 +305,7 @@ export class LyricLineEl extends LyricLineBase {
 			}
 		}
 
-		if (hasRomanLine) {
+		if (this.lineHasRomanWords) {
 			const romanWordEl = document.createElement("div");
 			romanWordEl.textContent = romanWord.length > 0 ? romanWord : "\u00A0";
 			romanWordEl.classList.add(styles.romanWord);
@@ -334,12 +332,7 @@ export class LyricLineEl extends LyricLineBase {
 		return realWord;
 	}
 
-	private buildWord(
-		input: LyricWord | LyricWord[],
-		main: HTMLDivElement,
-		hasRubyLine: boolean,
-		hasRomanLine: boolean,
-	) {
+	private buildWord(input: LyricWord | LyricWord[], main: HTMLDivElement) {
 		const chunk = Array.isArray(input) ? input : [input];
 		if (chunk.length === 0) return;
 
@@ -383,7 +376,7 @@ export class LyricLineEl extends LyricLineBase {
 				continue;
 			}
 
-			const realWord = this.createWord(word, emp, hasRubyLine, hasRomanLine);
+			const realWord = this.createWord(word, emp);
 
 			if (emp) {
 				characterElements.push(...realWord.subElements);
