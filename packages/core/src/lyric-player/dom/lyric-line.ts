@@ -294,7 +294,7 @@ export class LyricLineEl extends LyricLineBase {
 			}
 		} else {
 			if (this.lineHasRomanWords) {
-				const wordEl = document.createElement("div");
+				const wordEl = document.createElement("span");
 				wordEl.textContent = displayWord.trim();
 				wordTextContainer.appendChild(wordEl);
 			} else if (romanWord.length === 0) {
@@ -303,7 +303,7 @@ export class LyricLineEl extends LyricLineBase {
 		}
 
 		if (this.lineHasRomanWords) {
-			const romanWordEl = document.createElement("div");
+			const romanWordEl = document.createElement("span");
 			romanWordEl.textContent = romanWord.length > 0 ? romanWord : "\u00A0";
 			romanWordEl.classList.add(styles.romanWord);
 			wordContainer.appendChild(romanWordEl);
