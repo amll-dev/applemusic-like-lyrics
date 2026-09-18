@@ -26,7 +26,7 @@ interface RealWord extends LyricWord {
 }
 
 export class LyricLineEl extends LyricLineBase {
-	private element: HTMLElement = document.createElement("div");
+	private readonly element: HTMLElement = document.createElement("div");
 	private splittedWords: RealWord[] = [];
 	// 标记是否已经构建了行内的实际 DOM（单词与动画等）
 	private built = false;
@@ -39,17 +39,17 @@ export class LyricLineEl extends LyricLineBase {
 
 	private lastScaleNum = -1;
 
-	private lineHasRubyWords: boolean;
-	private lineHasRomanWords: boolean;
+	private readonly lineHasRubyWords: boolean;
+	private readonly lineHasRomanWords: boolean;
 
 	/**
 	 * 用于平衡换行、尽量减少各行长度差异的类
 	 */
-	private balancer?: LineBalancer;
+	private readonly balancer?: LineBalancer;
 
 	constructor(
-		private lyricPlayer: DomLyricPlayer,
-		private lyricLine: LyricLine = {
+		private readonly lyricPlayer: DomLyricPlayer,
+		private readonly lyricLine: LyricLine = {
 			words: [],
 			translatedLyric: "",
 			romanLyric: "",
