@@ -13,6 +13,7 @@ import {
 	createFloatAnimation,
 	createLineMaskAnimator,
 	type LineMaskAnimator,
+	syncAnimationPlayback,
 } from "./animation/index.ts";
 
 interface RealWord extends LyricWord {
@@ -82,6 +83,12 @@ export class LyricLineEl extends LyricLineBase {
 		if (LyricLineBase.wordSegmenter) {
 			this.balancer = new LineBalancer(main);
 		}
+		this.lineTransforms.scale.attach({
+			element: this.element,
+			frame: (scale) => ({
+				transform: `scale(${(scale / 100).toFixed(3)})`,
+			}),
+		});
 		// 延迟构建具体行内容，进入可视区（含 overscan）时再构建
 		this.rebuildStyle();
 	}
@@ -189,6 +196,9 @@ export class LyricLineEl extends LyricLineBase {
 	}
 
 	private rebuildStyle(): void {
+		// 由弹簧自身负责缩放时不再逐帧写入，避免与动画重复覆盖
+		if (this.lineTransforms.scale.managesStyle) return;
+
 		const style = this.element.style;
 		const currentScale = this.lineTransforms.scale.getCurrentPosition() / 100;
 
@@ -495,6 +505,9 @@ export class LyricLineEl extends LyricLineBase {
 	}
 
 	update(delta: Duration = Duration.ZERO): void {
+		// 逐帧调度单词动画，让数值停滞的动画保持暂停
+		this.syncWordAnimations();
+
 		if (!this.lyricPlayer.getEnableSpring()) return;
 
 		const scaleMoving = !this.lineTransforms.scale.arrived();
@@ -503,6 +516,29 @@ export class LyricLineEl extends LyricLineBase {
 		if (scaleMoving) {
 			this.isUiDirty = true;
 		}
+	}
+
+	/**
+	 * 按当前播放进度同步单词动画的播放状态
+	 *
+	 * 单词动画只在各自的活动区间内真正改变数值，区间外数值停滞不变。
+	 * 若让它们一直挂着跑，每个单词元素都会在每帧触发一次样式重算，
+	 * 因此这里只让当前该动的动画保持播放
+	 */
+	private syncWordAnimations(): void {
+		if (!this.isEnabled) return;
+
+		const timeRelative =
+			this.lyricPlayer.getCurrentTime() - this.lyricLine.startTime;
+		const isPlaying = this.lyricPlayer.getIsPlaying();
+
+		for (const word of this.splittedWords) {
+			for (const animation of word.elementAnimations) {
+				syncAnimationPlayback(animation, timeRelative, isPlaying);
+			}
+		}
+
+		this.maskAnimator?.setCurrentTime(timeRelative, isPlaying);
 	}
 
 	override commitChanges(): void {

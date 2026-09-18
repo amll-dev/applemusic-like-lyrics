@@ -1,4 +1,4 @@
-import type { PaletteAlgorithm } from "@applemusic-like-lyrics/core";
+import type { PaletteAlgorithm, SpringImplementation } from "@applemusic-like-lyrics/core";
 import { defineStore } from "pinia";
 
 export type BackgroundRendererMode = "mg" | "pixi" | "isolation";
@@ -11,6 +11,10 @@ export interface SpringParams {
 }
 
 const query = new URLSearchParams(globalThis.location?.search ?? "");
+
+/** 可用 `?spring=wa` 在启动时直接使用 Web Animation API 实现 */
+const initialSpringImplementation: SpringImplementation =
+	query.get("spring") === "wa" ? "wa" : "frame";
 
 function revokeObjectUrl(url: string): void {
 	if (url) URL.revokeObjectURL(url);
@@ -53,6 +57,7 @@ export const usePlayerStore = defineStore("player", {
 			fadeWidth: 0.5,
 			enableBlur: true,
 			enableSpring: true,
+			springImplementation: initialSpringImplementation,
 			fontFamily: "",
 			fontWeight: 600,
 			verticalSpring: {

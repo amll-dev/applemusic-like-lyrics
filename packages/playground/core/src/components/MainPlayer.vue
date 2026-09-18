@@ -2,21 +2,38 @@
 import {
 	DomLyricPlayer,
 	type LyricLineMouseEvent,
+	setSpringImplementation,
 } from "@applemusic-like-lyrics/core";
 import { onBeforeUnmount, onMounted, ref, shallowRef, watch } from "vue";
 import { extractSongwriters, parseLyricSource } from "@/lib/parse-lyric";
 import { audioRuntime } from "@/runtime/audio";
 import { backgroundRuntime } from "@/runtime/background";
 import { usePlayerStore } from "@/stores/player";
-import { SidebarTrigger } from "./ui/sidebar";
+import { SidebarTrigger, useSidebar } from "./ui/sidebar";
 
 const player = usePlayerStore();
 const playerEl = ref<HTMLElement | null>(null);
 const lyricPlayerRef = shallowRef<DomLyricPlayer>();
+const sidebar = useSidebar();
+
+/**
+ * 进度条等 UI 的刷新间隔（毫秒）
+ *
+ * 歌词需要逐帧精确的播放进度，但 UI 不需要，逐帧写入响应式状态
+ * 会带来大量无谓的样式重算，干扰对歌词动画的性能测量
+ */
+const PROGRESS_SYNC_INTERVAL_MS = 250;
 
 let frameId = 0;
 let lastFrameTime = -1;
 let lyricLoadRevision = 0;
+let lastProgressSyncTime = -Infinity;
+let wasPaused = true;
+
+/** 侧边栏及其中的播放进度条当前是否可见 */
+function isProgressUiVisible(): boolean {
+	return sidebar.isMobile.value ? sidebar.openMobile.value : sidebar.open.value;
+}
 
 function applyLyricSettings(): void {
 	const lyricPlayer = lyricPlayerRef.value;
@@ -66,7 +83,8 @@ async function loadLyric(): Promise<void> {
 		);
 		if (revision !== lyricLoadRevision) return;
 
-		const currentTime = Math.round(player.audio.currentTime * 1000);
+		// 直接读音频运行时，避免用到限频后的过期进度值
+		const currentTime = Math.round(audioRuntime.currentTime * 1000);
 		lyricPlayer.setLyricLines(lines, currentTime);
 		lyricPlayer.setCurrentTime(currentTime, true);
 		backgroundRuntime.setHasLyric(lines.length > 0);
@@ -114,12 +132,29 @@ function startFrameLoop(): void {
 		if (lastFrameTime === -1) lastFrameTime = time;
 		const delta = time - lastFrameTime;
 		const lyricPlayer = lyricPlayerRef.value;
+		const isPaused = audioRuntime.isPaused;
 
-		if (!audioRuntime.isPaused) {
+		if (!isPaused) {
 			const currentTime = audioRuntime.currentTime;
-			player.syncCurrentTime(currentTime);
+
+			// 歌词需要逐帧精确的播放进度
 			lyricPlayer?.setCurrentTime(Math.round(currentTime * 1000));
+
+			// 播放器状态只用于刷新进度条等 UI，因此需要限频，
+			// 且侧边栏不可见时完全不必刷新
+			if (
+				isProgressUiVisible() &&
+				time - lastProgressSyncTime >= PROGRESS_SYNC_INTERVAL_MS
+			) {
+				lastProgressSyncTime = time;
+				player.syncCurrentTime(currentTime);
+			}
+		} else if (!wasPaused) {
+			// 暂停时补齐一次进度，避免 UI 停留在过期位置
+			player.syncCurrentTime(audioRuntime.currentTime);
 		}
+
+		wasPaused = isPaused;
 
 		lyricPlayer?.update(delta);
 		lastFrameTime = time;
@@ -133,6 +168,35 @@ function stopFrameLoop(): void {
 	if (frameId) cancelAnimationFrame(frameId);
 	frameId = 0;
 	lastFrameTime = -1;
+	lastProgressSyncTime = -Infinity;
+}
+
+function createLyricPlayer(): void {
+	const host = playerEl.value;
+	const lyricPlayer = new DomLyricPlayer();
+	lyricPlayer.addEventListener("line-click", onLineClick);
+	host?.appendChild(lyricPlayer.getElement());
+	lyricPlayerRef.value = lyricPlayer;
+}
+
+function disposeLyricPlayer(): void {
+	const lyricPlayer = lyricPlayerRef.value;
+	if (!lyricPlayer) return;
+	lyricPlayer.removeEventListener("line-click", onLineClick);
+	lyricPlayer.dispose();
+	lyricPlayerRef.value = undefined;
+}
+
+/**
+ * 弹簧实现只在创建弹簧时生效，所以切换后需要连同底栏一起重建整个播放器
+ */
+function recreateLyricPlayer(): void {
+	disposeLyricPlayer();
+	createLyricPlayer();
+	mountBackground();
+	applyLyricSettings();
+	applyPlayback(player.audio.playing);
+	void loadLyric();
 }
 
 function onLineClick(event: Event): void {
@@ -165,13 +229,13 @@ function onGlobalKeyDown(event: KeyboardEvent): void {
 
 	if (event.code === "ArrowLeft") {
 		event.preventDefault();
-		player.seek(player.audio.currentTime - 5);
+		player.seek(audioRuntime.currentTime - 5);
 		return;
 	}
 
 	if (event.code === "ArrowRight") {
 		event.preventDefault();
-		player.seek(player.audio.currentTime + 5);
+		player.seek(audioRuntime.currentTime + 5);
 	}
 }
 
@@ -182,10 +246,8 @@ onMounted(() => {
 	audioRuntime.attachStore(player);
 	audioRuntime.mount(host);
 
-	const lyricPlayer = new DomLyricPlayer();
-	lyricPlayer.addEventListener("line-click", onLineClick);
-	host.appendChild(lyricPlayer.getElement());
-	lyricPlayerRef.value = lyricPlayer;
+	setSpringImplementation(player.lyric.springImplementation);
+	createLyricPlayer();
 
 	mountBackground();
 	applyLyricSettings();
@@ -200,8 +262,7 @@ onBeforeUnmount(() => {
 	stopFrameLoop();
 	window.removeEventListener("keydown", onGlobalKeyDown);
 
-	lyricPlayerRef.value?.removeEventListener("line-click", onLineClick);
-	lyricPlayerRef.value?.dispose();
+	disposeLyricPlayer();
 });
 
 watch(
@@ -235,6 +296,14 @@ watch(
 watch(
 	() => player.audio.seekRevision,
 	() => seekCoreToStoreTime(),
+);
+
+watch(
+	() => player.lyric.springImplementation,
+	(impl) => {
+		setSpringImplementation(impl);
+		recreateLyricPlayer();
+	},
 );
 
 watch(

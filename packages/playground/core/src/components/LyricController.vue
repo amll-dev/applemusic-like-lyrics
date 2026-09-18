@@ -5,6 +5,13 @@ import {
 	TypeIcon,
 	WandIcon,
 } from "lucide-vue-next";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { usePlayerStore } from "@/stores/player";
 import ControllerSlider from "./ControllerSlider.vue";
@@ -72,6 +79,21 @@ const springFields = [
 				title="使用弹簧动画"
 				description="使用物理弹簧替代 CSS transition"
 			/>
+			<div class="space-y-1.5 rounded-md border p-2">
+				<div class="text-sm">弹簧动画实现</div>
+				<Select v-model="player.lyric.springImplementation">
+					<SelectTrigger class="w-full">
+						<SelectValue placeholder="选择弹簧实现" />
+					</SelectTrigger>
+					<SelectContent>
+						<SelectItem value="frame">逐帧计算（默认）</SelectItem>
+						<SelectItem value="wa">Web Animation API（实验性）</SelectItem>
+					</SelectContent>
+				</Select>
+				<div class="text-xs text-muted-foreground">
+					切换后会重建歌词播放器以应用新实现
+				</div>
+			</div>
 		</section>
 
 		<Separator />

@@ -1,5 +1,5 @@
 import type { Disposable } from "#interfaces";
-import { Spring } from "#utils/spring.ts";
+import { createSpring, type Spring } from "#utils/spring-impl.ts";
 import { Duration, MediaTime } from "#utils/time.ts";
 import { LyricLineRenderMode } from "./consts.ts";
 import type { LyricLineBase } from "./line.ts";
@@ -17,8 +17,8 @@ export abstract class LyricLineGroupBase<
 {
 	protected abstract readonly lyricPlayer: LyricPlayerFlags;
 
-	public posY: Spring = new Spring(0);
-	public bgSlideY: Spring = new Spring(-80);
+	public posY: Spring = createSpring(0);
+	public bgSlideY: Spring = createSpring(-80);
 	public top = 0;
 	public delay: Duration = Duration.ZERO;
 

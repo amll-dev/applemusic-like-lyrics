@@ -53,7 +53,9 @@ export function createFloatAnimation(
 			duration: Number.isFinite(duration) ? duration : 0,
 			delay: Number.isFinite(delay) ? delay : 0,
 			id: "float-word",
-			composite: "add",
+			// 单词元素上只有这一条 transform 动画，因此不需要加法合成。
+			// 加法动画无法交给合成线程，会让正在上浮的单词每帧重算样式
+			composite: "replace",
 			fill: "both",
 			easing: "ease-out",
 		},

@@ -30,9 +30,51 @@ export interface InterludeDotsSnapshot {
 	readonly opacity: number;
 }
 
-type Mutable<T> = {
-	-readonly [P in keyof T]: T[P];
+/**
+ * 内部复用的可变快照
+ *
+ * 对外暴露的 {@link InterludeDotsSnapshot} 是只读的，但基类需要逐帧改写同一份对象
+ */
+type MutableSnapshot = {
+	isActive: boolean;
+	dotOpacities: [number, number, number];
+	scale: number;
+	opacity: number;
 };
+
+/**
+ * 间奏点演出时间轴上的一个采样点
+ *
+ * 采样自 {@link InterludeDotsBase.sampleTimeline}，用于交给 Web Animations API
+ * 在合成线程上推进整段演出
+ */
+export interface InterludeDotsFrame {
+	/** 距演出时间锚点的相对时间，单位为毫秒 */
+	readonly time: number;
+	/** 容器缩放值 */
+	readonly scale: number;
+	/** 容器整体不透明度 */
+	readonly opacity: number;
+	/** 三颗圆点各自的不透明度 */
+	readonly dotOpacities: readonly [number, number, number];
+}
+
+/**
+ * 演出的时间编排
+ *
+ * 由 {@link InterludeDotsBase.setInterlude} 一次性确定，此后的逐帧演算与
+ * 时间轴采样都只依赖这份编排
+ */
+interface InterludeSchedule {
+	mode: PerformingMode;
+	delayEndMs: number;
+	bodyEndMs: number;
+	totalEndMs: number;
+	breathePeriodMs: number;
+	segmentMs: number;
+	dot3DurationMs: number;
+	dot3Target: number;
+}
 
 /**
  * 间奏点演出的生命周期阶段
@@ -82,6 +124,16 @@ const DOT_INACTIVE_OPACITY = 0.2;
 const DOT_ACTIVE_OPACITY = 0.9;
 const DOT_COUNT = 3;
 
+/**
+ * 时间轴采样间隔（毫秒）
+ *
+ * 演算曲线都很平缓，60Hz 采样后经线性插值还原，肉眼已无法分辨与逐帧演算的差异
+ */
+const TIMELINE_SAMPLE_INTERVAL_MS = 1000 / 60;
+
+/** 单条时间轴的关键帧上限，防止超长间奏生成过多关键帧 */
+const TIMELINE_MAX_FRAMES = 600;
+
 const lightingEasing = bezier(0.56, 0.01, 0.45, 1);
 const enterFadeEasing = bezier(0.59, 0.02, 0.07, 1);
 const exitPhase1Easing = bezier(0.14, 0.06, 0.25, 1);
@@ -114,27 +166,26 @@ export abstract class InterludeDotsBase implements Disposable {
 	private currentTime: MediaTime = MediaTime.ZERO;
 	private playing = true;
 	private phase: InterludePhase = "idle";
-	private mode: PerformingMode = "breathe";
 	private fadeElapsedMs = 0;
 	private fadeInitialOpacity = 0;
 	private startTime: MediaTime = MediaTime.ZERO;
 	private endTime: MediaTime = MediaTime.ZERO;
 	private anchorTime: MediaTime = MediaTime.ZERO;
 
-	private delayEndMs = 0;
-	private bodyEndMs = 0;
-	private totalEndMs = 0;
+	private schedule: InterludeSchedule = {
+		mode: "breathe",
+		delayEndMs: 0,
+		bodyEndMs: 0,
+		totalEndMs: 0,
+		breathePeriodMs: BREATHE_BASE_PERIOD_MS,
+		segmentMs: 0,
+		dot3DurationMs: 0,
+		dot3Target: 0,
+	};
 
-	private breathePeriodMs = BREATHE_BASE_PERIOD_MS;
-	private segmentMs = 0;
-	private dot3DurationMs = 0;
-	private dot3Target = 0;
-
-	private readonly mutDotOpacities: [number, number, number] = [0, 0, 0];
-
-	private readonly snapshot: Mutable<InterludeDotsSnapshot> = {
+	private readonly snapshot: MutableSnapshot = {
 		isActive: true,
-		dotOpacities: this.mutDotOpacities,
+		dotOpacities: [0, 0, 0],
 		scale: 1,
 		opacity: 0,
 	};
@@ -170,13 +221,15 @@ export abstract class InterludeDotsBase implements Disposable {
 		this.endTime = endTime;
 		this.currentTime = currentTime ?? startTime;
 
+		const schedule = this.schedule;
+
 		// 确定时间锚点与入场延迟
 		if (forceReset) {
 			this.anchorTime = this.currentTime;
-			this.delayEndMs = ENTER_HOLD_MS;
+			schedule.delayEndMs = ENTER_HOLD_MS;
 		} else {
 			this.anchorTime = startTime;
-			this.delayEndMs = anchorLineIndex === -1 ? 0 : ENTER_HOLD_MS;
+			schedule.delayEndMs = anchorLineIndex === -1 ? 0 : ENTER_HOLD_MS;
 		}
 
 		// 计算剩余可用时长
@@ -184,7 +237,7 @@ export abstract class InterludeDotsBase implements Disposable {
 			0,
 			Duration.asMillis(MediaTime.since(endTime, this.anchorTime)),
 		);
-		const bodyMs = remainingMs - this.delayEndMs - EXIT_TOTAL_MS;
+		const bodyMs = remainingMs - schedule.delayEndMs - EXIT_TOTAL_MS;
 
 		if (bodyMs < DOT_ENTER_TOTAL_MS) {
 			// 连进退场都不足以支撑，直接隐藏
@@ -192,28 +245,27 @@ export abstract class InterludeDotsBase implements Disposable {
 			return false;
 		}
 
-		this.bodyEndMs = this.delayEndMs + bodyMs;
-		this.totalEndMs = this.bodyEndMs + EXIT_TOTAL_MS;
+		schedule.bodyEndMs = schedule.delayEndMs + bodyMs;
+		schedule.totalEndMs = schedule.bodyEndMs + EXIT_TOTAL_MS;
 
-		let mode: PerformingMode;
 		if (bodyMs < FALLBACK_HOLD_THRESHOLD_MS) {
 			// 降级为进退场与常态高亮
-			mode = "fallback-hold";
-			this.dot3Target = 1.0;
+			schedule.mode = "fallback-hold";
+			schedule.dot3Target = 1.0;
 		} else {
 			// 正常播放，基于 bodyMs 重新编排
-			mode = "breathe";
+			schedule.mode = "breathe";
 			const breatheCycles = Math.max(
 				1,
 				Math.floor(bodyMs / BREATHE_BASE_PERIOD_MS),
 			);
-			this.breathePeriodMs = bodyMs / breatheCycles;
-			this.segmentMs = Math.round((bodyMs + DOT3_TRAILING_MS) / DOT_COUNT);
-			this.dot3DurationMs = bodyMs - this.segmentMs * 2;
-			this.dot3Target = this.dot3DurationMs / this.segmentMs;
+			schedule.breathePeriodMs = bodyMs / breatheCycles;
+			schedule.segmentMs = Math.round((bodyMs + DOT3_TRAILING_MS) / DOT_COUNT);
+			schedule.dot3DurationMs = bodyMs - schedule.segmentMs * 2;
+			schedule.dot3Target = schedule.dot3DurationMs / schedule.segmentMs;
 		}
 
-		this.enterPerforming(mode);
+		this.enterPerforming();
 
 		return true;
 	}
@@ -289,6 +341,7 @@ export abstract class InterludeDotsBase implements Disposable {
 
 	public pause(): void {
 		this.playing = false;
+		this.onPlaybackStateChange(false);
 		if (this.phase === "fading") {
 			this.hidePerformance();
 		}
@@ -296,6 +349,7 @@ export abstract class InterludeDotsBase implements Disposable {
 
 	public resume(): void {
 		this.playing = true;
+		this.onPlaybackStateChange(true);
 	}
 
 	/**
@@ -328,11 +382,77 @@ export abstract class InterludeDotsBase implements Disposable {
 
 		const snapshot = this.resolveSnapshot(elapsed);
 		this.posY.update(delta);
-		this.render(snapshot, this.left, this.posY.getCurrentPosition());
+		this.render(
+			snapshot,
+			this.left,
+			this.posY.getCurrentPosition(),
+			Duration.asMillis(elapsed),
+		);
 
 		if (!snapshot.isActive) {
 			this.enterIdle();
+			this.onPerformanceEnd();
 		}
+	}
+
+	/**
+	 * 把整段演出采样成一条时间轴
+	 *
+	 * 采样直接复用 {@link resolveFrame}，因此时间轴上的每一帧与逐帧演算完全一致，
+	 * 子类可以把它整条交给 Web Animations API，让演出改由合成线程推进
+	 *
+	 * @returns 从演出锚点到结束的关键帧，时间戳升序且首帧恒为 0
+	 */
+	public sampleTimeline(): readonly InterludeDotsFrame[] {
+		const schedule = this.schedule;
+		const totalMs = schedule.totalEndMs;
+		if (totalMs <= 0) return [];
+
+		// 快速过场的转折点单独补点，避免线性插值把短促的渐变拉平
+		const boundaries = [
+			schedule.delayEndMs,
+			schedule.delayEndMs + ENTER_FADE_MS,
+			schedule.bodyEndMs,
+			schedule.bodyEndMs + EXIT_PHASE1_MS,
+			schedule.bodyEndMs + EXIT_TOTAL_MS - EXIT_FADE_MS,
+		];
+
+		const step = Math.max(
+			TIMELINE_SAMPLE_INTERVAL_MS,
+			totalMs / TIMELINE_MAX_FRAMES,
+		);
+		const times = [0];
+		for (let time = step; time < totalMs; time += step) times.push(time);
+		for (const boundary of boundaries) {
+			if (boundary > 0 && boundary < totalMs) times.push(boundary);
+		}
+		times.push(totalMs);
+		times.sort((a, b) => a - b);
+
+		const scratch: MutableSnapshot = {
+			isActive: true,
+			dotOpacities: [0, 0, 0],
+			scale: 1,
+			opacity: 0,
+		};
+		const frames: InterludeDotsFrame[] = [];
+		let previous = Number.NEGATIVE_INFINITY;
+		for (const time of times) {
+			if (time - previous < 0.01) continue;
+			previous = time;
+			resolveFrame(schedule, time, scratch);
+			frames.push({
+				time,
+				scale: scratch.scale,
+				opacity: scratch.opacity,
+				dotOpacities: [
+					scratch.dotOpacities[0],
+					scratch.dotOpacities[1],
+					scratch.dotOpacities[2],
+				],
+			});
+		}
+		return frames;
 	}
 
 	/**
@@ -354,26 +474,66 @@ export abstract class InterludeDotsBase implements Disposable {
 	 * @param snapshot 当前帧的视觉状态
 	 * @param left 由 {@link setTransform} 设置的横向位置
 	 * @param top 由 {@link setTransform} 设置的纵向位置经 {@link posY} 平滑后的坐标
+	 * @param elapsedMs 当前帧距演出锚点的相对时间，子类可据此把外部动画对齐到演出时钟
 	 */
 	protected abstract render(
 		snapshot: Readonly<InterludeDotsSnapshot>,
 		left: number,
 		top: number,
+		elapsedMs: number,
 	): void;
+
+	/**
+	 * 演出开始（含 Seek 后重建）时调用
+	 *
+	 * 子类可据此把 {@link sampleTimeline} 采出的关键帧交给 Web Animations API，
+	 * 让整段演出改由合成线程推进，从而免去逐帧样式写入
+	 *
+	 * @param timeline 整段演出的关键帧
+	 * @param elapsedMs 演出应当从此相对时间开始播放
+	 * @param playing 当前是否处于播放状态
+	 */
+	protected onPerformanceStart(
+		_timeline: readonly InterludeDotsFrame[],
+		_elapsedMs: number,
+		_playing: boolean,
+	): void {}
+
+	/**
+	 * 演出结束或被取消时调用，子类应停止并释放时间轴
+	 */
+	protected onPerformanceEnd(): void {}
+
+	/**
+	 * 播放或暂停状态变化时调用，子类应同步时间轴的播放状态
+	 */
+	protected onPlaybackStateChange(_playing: boolean): void {}
+
+	/**
+	 * 演出淡出开始时调用
+	 *
+	 * 子类应停止时间轴，并把传入快照固化为静态样式——淡出由基类逐帧推进，
+	 * 期间不再有合成线程动画参与
+	 */
+	protected onFadeOut(_snapshot: Readonly<InterludeDotsSnapshot>): void {}
 	//#endregion
 
 	//#region 状态转移
 	/**
-	 * 进入演出阶段并确定编排方式
+	 * 进入演出阶段
 	 *
 	 * 演出重建后的第一帧位置由外部重新给出，不参与弹簧过渡，
 	 * 因此一并重置 {@link shouldSnapPosY}
 	 */
-	private enterPerforming(mode: PerformingMode): void {
-		this.mode = mode;
+	private enterPerforming(): void {
 		this.phase = "performing";
 		// 演出重建后的第一帧位置由外部重新给出，不参与弹簧过渡，因此一并重置 shouldSnapPosY
 		this.shouldSnapPosY = true;
+		this.onPerformanceStart(
+			this.sampleTimeline(),
+			this.getElapsedMs(),
+			this.playing,
+		);
 	}
 
 	/**
@@ -383,6 +543,7 @@ export abstract class InterludeDotsBase implements Disposable {
 		this.fadeElapsedMs = 0;
 		this.fadeInitialOpacity = this.snapshot.opacity;
 		this.phase = "fading";
+		this.onFadeOut(this.snapshot);
 	}
 
 	/**
@@ -405,6 +566,18 @@ export abstract class InterludeDotsBase implements Disposable {
 	}
 
 	/**
+	 * 当前帧距演出锚点的相对时间（毫秒）
+	 */
+	private getElapsedMs(): number {
+		return Duration.asMillis(
+			Duration.max(
+				Duration.ZERO,
+				MediaTime.since(this.currentTime, this.anchorTime),
+			),
+		);
+	}
+
+	/**
 	 * 演出被取消时立即隐藏渲染物并清空演出状态
 	 */
 	private hidePerformance(): void {
@@ -412,32 +585,18 @@ export abstract class InterludeDotsBase implements Disposable {
 		this.enterIdle();
 
 		if (wasActive) {
-			this.render(HIDDEN_SNAPSHOT, this.left, this.posY.getCurrentPosition());
+			this.onPerformanceEnd();
+			this.render(
+				HIDDEN_SNAPSHOT,
+				this.left,
+				this.posY.getCurrentPosition(),
+				this.getElapsedMs(),
+			);
 		}
 	}
 	//#endregion
 
 	//#region 时间线推导
-
-	/**
-	 * 写入三颗圆点当前帧的不透明度
-	 *
-	 * 最终不透明度由点亮分数映射的透明度与各圆点的错峰入场系数相乘得到
-	 *
-	 * @param internalMs 距演出开始的经过时间
-	 * @param fractions 三颗圆点各自的点亮分数（0~1）
-	 */
-	private writeDotOpacities(
-		internalMs: number,
-		fractions: readonly [number, number, number],
-	): void {
-		this.mutDotOpacities[0] =
-			dotOpacity(fractions[0]) * dotEnterAlpha(0, internalMs);
-		this.mutDotOpacities[1] =
-			dotOpacity(fractions[1]) * dotEnterAlpha(1, internalMs);
-		this.mutDotOpacities[2] =
-			dotOpacity(fractions[2]) * dotEnterAlpha(2, internalMs);
-	}
 
 	/**
 	 * 物理淡出步进器
@@ -457,7 +616,12 @@ export abstract class InterludeDotsBase implements Disposable {
 		this.snapshot.isActive = true;
 
 		this.posY.update(delta);
-		this.render(this.snapshot, this.left, this.posY.getCurrentPosition());
+		this.render(
+			this.snapshot,
+			this.left,
+			this.posY.getCurrentPosition(),
+			this.getElapsedMs(),
+		);
 	}
 
 	/**
@@ -467,119 +631,156 @@ export abstract class InterludeDotsBase implements Disposable {
 	 * @param elapsed 距离本次演出时间锚点的经过时间
 	 */
 	private resolveSnapshot(elapsed: Duration): Readonly<InterludeDotsSnapshot> {
-		const elapsedMs = Duration.asMillis(elapsed);
-
-		if (elapsedMs >= this.totalEndMs) {
-			this.snapshot.isActive = false;
-			this.snapshot.scale = 1;
-			this.snapshot.opacity = 0;
-			this.mutDotOpacities[0] = 0;
-			this.mutDotOpacities[1] = 0;
-			this.mutDotOpacities[2] = 0;
-			return this.snapshot;
-		}
-
-		this.snapshot.isActive = true;
-
-		// 入场延迟等待阶段：处于占位但完全透明
-		if (elapsedMs < this.delayEndMs) {
-			this.snapshot.opacity = 0;
-			this.snapshot.scale = 1;
-			this.mutDotOpacities[0] = 0;
-			this.mutDotOpacities[1] = 0;
-			this.mutDotOpacities[2] = 0;
-			return this.snapshot;
-		}
-
-		const internalMs = elapsedMs - this.delayEndMs;
-		const fractionAt = (startDelay: number, duration: number, target: number) =>
-			computeDotFraction(startDelay, duration, internalMs, target);
-
-		/*
-		 * 退场阶段 [bodyEndMs, totalEndMs)
-		 *
-		 * 退场分为两个阶段：
-		 * 1. 快速放大以蓄力
-		 * 2. 快速缩小并渐隐
-		 *
-		 * 第三颗圆点也在此补亮剩余的亮度
-		 */
-		if (elapsedMs >= this.bodyEndMs) {
-			const exitElapsedMs = elapsedMs - this.bodyEndMs;
-
-			// 在最后 EXIT_FADE_MS 执行退场渐隐，蓄力阶段保持不透明
-			const fadeT = clamp01(
-				(exitElapsedMs - (EXIT_TOTAL_MS - EXIT_FADE_MS)) / EXIT_FADE_MS,
-			);
-			this.snapshot.opacity =
-				enterOpacity(internalMs) * (1 - exitFadeEasing(fadeT));
-
-			// 放大蓄力（1.0 -> BREATHE_MAX_SCALE）
-			if (exitElapsedMs < EXIT_PHASE1_MS) {
-				this.snapshot.scale =
-					1 +
-					exitPhase1Easing(exitElapsedMs / EXIT_PHASE1_MS) *
-						(BREATHE_MAX_SCALE - 1);
-			} else {
-				// 快速缩小（BREATHE_MAX_SCALE -> BREATHE_MIN_SCALE）
-				const phase2T = clamp01(
-					(exitElapsedMs - EXIT_PHASE1_MS) / EXIT_PHASE2_MS,
-				);
-				this.snapshot.scale =
-					BREATHE_MAX_SCALE -
-					exitPhase2Easing(phase2T) * (BREATHE_MAX_SCALE - BREATHE_MIN_SCALE);
-			}
-
-			// breath 下前两颗圆点在 body 结束时已点满，第三颗以 750ms 补齐剩余亮度；
-			// fallback-hold 下 dot3Target 为 1.0，计算自然退化为恒定全亮
-			const trailing = clamp01(exitElapsedMs / DOT3_TRAILING_MS);
-
-			this.writeDotOpacities(internalMs, [
-				1,
-				1,
-				this.dot3Target + (1 - this.dot3Target) * trailing,
-			]);
-
-			return this.snapshot;
-		}
-
-		/*
-		 * 主演出阶段 [delayEndMs, bodyEndMs)
-		 *
-		 * 入场分为两个部分，同时与容器周期呼吸缩放并行推进：
-		 * 1. 整个容器以 180ms 渐入
-		 * 2. 三个圆点错峰 750ms 依次点亮
-		 */
-		this.snapshot.opacity = enterOpacity(internalMs);
-
-		if (this.mode === "fallback-hold") {
-			// 缩放恒为 1.0，三颗圆点各自保留 80ms 错峰淡入至全亮，随后维持全亮
-			this.snapshot.scale = 1;
-			this.writeDotOpacities(internalMs, [1, 1, 1]);
-			return this.snapshot;
-		}
-
-		const cycleT = (internalMs % this.breathePeriodMs) / this.breathePeriodMs;
-		const progress = breathingProgress(cycleT);
-		this.snapshot.scale =
-			progress <= 0.5
-				? 1 + (progress / 0.5) * (BREATHE_MAX_SCALE - 1)
-				: BREATHE_MAX_SCALE -
-					((progress - 0.5) / 0.5) * (BREATHE_MAX_SCALE - 1);
-
-		// 三颗圆点依次开始点亮，前两颗全亮，第三颗只点亮部分，剩余由退场动画进行补充
-		this.writeDotOpacities(internalMs, [
-			fractionAt(0, this.segmentMs, 1),
-			fractionAt(this.segmentMs, this.segmentMs, 1),
-			fractionAt(this.segmentMs * 2, this.dot3DurationMs, this.dot3Target),
-		]);
-
+		resolveFrame(this.schedule, Duration.asMillis(elapsed), this.snapshot);
 		return this.snapshot;
 	}
 	//#endregion
 }
 
 //#region 辅助函数
+/**
+ * 写入三颗圆点的不透明度
+ *
+ * 最终不透明度由点亮分数映射的透明度与各圆点的错峰入场系数相乘得到
+ *
+ * @param out 待写入的快照
+ * @param internalMs 距演出开始的经过时间
+ * @param fractions 三颗圆点各自的点亮分数（0~1）
+ */
+function writeDotOpacities(
+	out: MutableSnapshot,
+	internalMs: number,
+	fractions: readonly [number, number, number],
+): void {
+	out.dotOpacities[0] = dotOpacity(fractions[0]) * dotEnterAlpha(0, internalMs);
+	out.dotOpacities[1] = dotOpacity(fractions[1]) * dotEnterAlpha(1, internalMs);
+	out.dotOpacities[2] = dotOpacity(fractions[2]) * dotEnterAlpha(2, internalMs);
+}
+
+/**
+ * 按经过时间求出该时刻的视觉状态并写入 `out`
+ *
+ * 演出编排一旦确定，任一时刻的数值就是纯粹的推导结果，因此逐帧演算与
+ * 时间轴采样共用本函数，保证两条路径渲染出的画面完全一致
+ *
+ * @param schedule 演出的时间编排
+ * @param elapsedMs 距演出时间锚点的相对时间
+ * @param out 待写入的快照
+ */
+function resolveFrame(
+	schedule: InterludeSchedule,
+	elapsedMs: number,
+	out: MutableSnapshot,
+): void {
+	if (elapsedMs >= schedule.totalEndMs) {
+		out.isActive = false;
+		out.scale = 1;
+		out.opacity = 0;
+		out.dotOpacities[0] = 0;
+		out.dotOpacities[1] = 0;
+		out.dotOpacities[2] = 0;
+		return;
+	}
+
+	out.isActive = true;
+
+	// 入场延迟等待阶段：处于占位但完全透明
+	if (elapsedMs < schedule.delayEndMs) {
+		out.opacity = 0;
+		out.scale = 1;
+		out.dotOpacities[0] = 0;
+		out.dotOpacities[1] = 0;
+		out.dotOpacities[2] = 0;
+		return;
+	}
+
+	const internalMs = elapsedMs - schedule.delayEndMs;
+	const fractionAt = (startDelay: number, duration: number, target: number) =>
+		computeDotFraction(startDelay, duration, internalMs, target);
+
+	/*
+	 * 退场阶段 [bodyEndMs, totalEndMs)
+	 *
+	 * 退场分为两个阶段：
+	 * 1. 快速放大以蓄力
+	 * 2. 快速缩小并渐隐
+	 *
+	 * 第三颗圆点也在此补亮剩余的亮度
+	 */
+	if (elapsedMs >= schedule.bodyEndMs) {
+		const exitElapsedMs = elapsedMs - schedule.bodyEndMs;
+
+		// 在最后 EXIT_FADE_MS 执行退场渐隐，蓄力阶段保持不透明
+		const fadeT = clamp01(
+			(exitElapsedMs - (EXIT_TOTAL_MS - EXIT_FADE_MS)) / EXIT_FADE_MS,
+		);
+		out.opacity = enterOpacity(internalMs) * (1 - exitFadeEasing(fadeT));
+
+		// 放大蓄力（1.0 -> BREATHE_MAX_SCALE）
+		if (exitElapsedMs < EXIT_PHASE1_MS) {
+			out.scale =
+				1 +
+				exitPhase1Easing(exitElapsedMs / EXIT_PHASE1_MS) *
+					(BREATHE_MAX_SCALE - 1);
+		} else {
+			// 快速缩小（BREATHE_MAX_SCALE -> BREATHE_MIN_SCALE）
+			const phase2T = clamp01(
+				(exitElapsedMs - EXIT_PHASE1_MS) / EXIT_PHASE2_MS,
+			);
+			out.scale =
+				BREATHE_MAX_SCALE -
+				exitPhase2Easing(phase2T) * (BREATHE_MAX_SCALE - BREATHE_MIN_SCALE);
+		}
+
+		// breath 下前两颗圆点在 body 结束时已点满，第三颗以 750ms 补齐剩余亮度；
+		// fallback-hold 下 dot3Target 为 1.0，计算自然退化为恒定全亮
+		const trailing = clamp01(exitElapsedMs / DOT3_TRAILING_MS);
+
+		writeDotOpacities(out, internalMs, [
+			1,
+			1,
+			schedule.dot3Target + (1 - schedule.dot3Target) * trailing,
+		]);
+
+		return;
+	}
+
+	/*
+	 * 主演出阶段 [delayEndMs, bodyEndMs)
+	 *
+	 * 入场分为两个部分，同时与容器周期呼吸缩放并行推进：
+	 * 1. 整个容器以 180ms 渐入
+	 * 2. 三个圆点错峰 750ms 依次点亮
+	 */
+	out.opacity = enterOpacity(internalMs);
+
+	if (schedule.mode === "fallback-hold") {
+		// 缩放恒为 1.0，三颗圆点各自保留 80ms 错峰淡入至全亮，随后维持全亮
+		out.scale = 1;
+		writeDotOpacities(out, internalMs, [1, 1, 1]);
+		return;
+	}
+
+	const cycleT =
+		(internalMs % schedule.breathePeriodMs) / schedule.breathePeriodMs;
+	const progress = breathingProgress(cycleT);
+	out.scale =
+		progress <= 0.5
+			? 1 + (progress / 0.5) * (BREATHE_MAX_SCALE - 1)
+			: BREATHE_MAX_SCALE - ((progress - 0.5) / 0.5) * (BREATHE_MAX_SCALE - 1);
+
+	// 三颗圆点依次开始点亮，前两颗全亮，第三颗只点亮部分，剩余由退场动画进行补充
+	writeDotOpacities(out, internalMs, [
+		fractionAt(0, schedule.segmentMs, 1),
+		fractionAt(schedule.segmentMs, schedule.segmentMs, 1),
+		fractionAt(
+			schedule.segmentMs * 2,
+			schedule.dot3DurationMs,
+			schedule.dot3Target,
+		),
+	]);
+}
+
 /**
  * 容器呼吸式缩放的曲线
  */

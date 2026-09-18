@@ -1,6 +1,6 @@
 import type { Disposable, LyricLine, LyricWord } from "#interfaces";
 import { isCJK } from "#utils/is-cjk.ts";
-import { Spring } from "#utils/spring.ts";
+import { createSpring, type Spring } from "#utils/spring-impl.ts";
 import { Duration } from "#utils/time.ts";
 import { LyricLineRenderMode } from "./consts.ts";
 
@@ -22,7 +22,7 @@ export abstract class LyricLineBase extends EventTarget implements Disposable {
 	protected isUiDirty = true;
 
 	readonly lineTransforms: LineTransforms = {
-		scale: new Spring(100),
+		scale: createSpring(100),
 	};
 
 	/**

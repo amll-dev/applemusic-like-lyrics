@@ -1,5 +1,6 @@
+import { type AnimationInterval, syncAnimationPlayback } from "../sync.ts";
 import type { LineMaskAnimator, MaskContext, MaskTargetWord } from "./types.ts";
-import { generateFadeGradient } from "./utils.ts";
+import { generateFadeGradient, getFrameChangeWindow } from "./utils.ts";
 
 interface KeyframeTimelineCursor {
 	curPos: number;
@@ -15,13 +16,22 @@ interface KeyframeConfig {
 	readonly fadeWidth: number;
 }
 
+/** 单个单词的遮罩动画及其真正发生变化的区间 */
+interface MaskAnimationEntry {
+	readonly animation: Animation;
+	readonly interval: AnimationInterval;
+}
+
+/** 遮罩始终不动时的占位区间，此时动画永远不处于活动状态 */
+const STATIC_INTERVAL: AnimationInterval = { start: 0, end: 0 };
+
 /**
  * 使用 Web Animations API 为行内所有单词创建逐词点亮的遮罩动画
  *
  * 创建后的动画均处于暂停状态，外部需要根据播放进度进行调度
  */
 export class WebMaskAnimator implements LineMaskAnimator {
-	private readonly animations: Animation[] = [];
+	private readonly animations: MaskAnimationEntry[] = [];
 	private readonly totalFadeDuration: number;
 
 	constructor(
@@ -37,33 +47,23 @@ export class WebMaskAnimator implements LineMaskAnimator {
 	}
 
 	public setCurrentTime(timeRelative: number, isPlaying: boolean): void {
-		const t = Math.min(this.totalFadeDuration, Math.max(0, timeRelative));
-		for (const a of this.animations) {
-			a.currentTime = t;
-			a.playbackRate = 1;
-			const endTime = this.getAnimationEndTime(a);
-
-			if (isPlaying && t < endTime) {
-				a.play();
-			} else {
-				a.pause();
-			}
+		for (const { animation, interval } of this.animations) {
+			syncAnimationPlayback(animation, timeRelative, isPlaying, interval);
 		}
 	}
 
 	public pause(): void {
-		for (const a of this.animations) {
-			a.pause();
+		for (const { animation } of this.animations) {
+			animation.pause();
 		}
 	}
 
 	public resume(): void {
-		for (const a of this.animations) {
-			const endTime = this.getAnimationEndTime(a);
-			const currentTime = Number(a.currentTime ?? 0);
+		for (const { animation, interval } of this.animations) {
+			const currentTime = Number(animation.currentTime ?? 0);
 
-			if (a.playState !== "finished" && currentTime < endTime) {
-				a.play();
+			if (animation.playState !== "finished" && currentTime < interval.end) {
+				animation.play();
 			}
 		}
 	}
@@ -78,6 +78,8 @@ export class WebMaskAnimator implements LineMaskAnimator {
 			this.updateWordMaskStyles(wordEl, word, fadeWidth);
 
 			const frames = this.generateWordKeyframes(word, i, fadeWidth);
+			const interval =
+				getFrameChangeWindow(frames, this.totalFadeDuration) ?? STATIC_INTERVAL;
 
 			try {
 				const ani = wordEl.animate(frames, {
@@ -86,7 +88,10 @@ export class WebMaskAnimator implements LineMaskAnimator {
 					fill: "both",
 				});
 				ani.pause();
-				this.animations.push(ani);
+				this.animations.push({
+					animation: ani,
+					interval,
+				});
 			} catch (err) {
 				console.warn(
 					"应用渐变动画发生错误",
@@ -328,14 +333,9 @@ export class WebMaskAnimator implements LineMaskAnimator {
 		cursor.lastTime = time;
 	}
 
-	private getAnimationEndTime(animation: Animation): number {
-		const timing = animation.effect?.getComputedTiming();
-		return Number(timing?.delay ?? 0) + Number(timing?.duration ?? 0);
-	}
-
 	public dispose(): void {
-		for (const a of this.animations) {
-			a.cancel();
+		for (const { animation } of this.animations) {
+			animation.cancel();
 		}
 		this.animations.length = 0;
 

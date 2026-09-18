@@ -11,14 +11,30 @@ export interface SpringParams {
 
 type Seconds = number;
 
+/**
+ * 弹簧输出的样式目标
+ *
+ * 描述弹簧的位置应该如何反映到元素上，由具体实现决定何时以及如何写入样式
+ */
+export interface SpringStyleTarget {
+	/** 样式需要被写入的元素 */
+	element: HTMLElement;
+	/**
+	 * 将弹簧当前位置映射为 CSS 声明
+	 * @param position 弹簧当前位置
+	 * @returns 键为驼峰式 CSS 属性名的声明集合
+	 */
+	frame(position: number): Record<string, string>;
+}
+
 export class Spring {
-	private currentPosition = 0;
-	private targetPosition = 0;
-	private currentTime: Seconds = 0;
-	private params: Partial<SpringParams> = {};
-	private currentSolver: (t: Seconds) => number;
-	private getV: (t: Seconds) => number;
-	private getV2: (t: Seconds) => number;
+	protected currentPosition: number = 0;
+	protected targetPosition: number = 0;
+	protected currentTime: number = 0;
+	protected params: Partial<SpringParams> = {};
+	protected currentSolver: (t: number) => number;
+	protected getV: (t: number) => number;
+	protected getV2: (t: number) => number;
 	private queueParams:
 		| (Partial<SpringParams> & {
 				time: Seconds;
@@ -136,9 +152,32 @@ export class Spring {
 	getCurrentPosition(): number {
 		return this.currentPosition;
 	}
+
+	/**
+	 * 是否由弹簧自身负责把位置写入元素样式
+	 *
+	 * 逐帧实现始终由调用方负责写入，因此恒为 `false`
+	 */
+	get managesStyle(): boolean {
+		return false;
+	}
+
+	/**
+	 * 绑定或解绑弹簧的样式目标，对于需要逐帧应用样式的 DOM 操作
+	 *
+	 * 可以通过这个函数来注册每帧需要调用的回调函数，然后由开发者自行处理样式计算
+	 */
+	attach(_target: SpringStyleTarget | undefined): void {}
+
+	/**
+	 * 强制按当前状态重新生成样式输出
+	 *
+	 * 一般用于样式映射所依赖的外部量变化时，逐帧实现为空实现
+	 */
+	refresh(): void {}
 }
 
-function solveSpring(
+export function solveSpring(
 	from: number,
 	velocity: number,
 	to: number,

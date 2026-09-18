@@ -38,6 +38,7 @@ import { TimelineController, type TimelineSnapshot } from "./timeline.ts";
 export type { BottomLine, BottomLineTransforms } from "./bottom-line.ts";
 export type {
 	InterludeDotsBase,
+	InterludeDotsFrame,
 	InterludeDotsSnapshot,
 } from "./interlude-dots.ts";
 export type { LyricLineBase } from "./line.ts";

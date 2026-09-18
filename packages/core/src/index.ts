@@ -3,4 +3,9 @@ export * from "./bg-render/index.ts";
 export type * from "./interfaces.ts";
 export * from "./lyric-player/index.ts";
 export * as spring from "./utils/spring.ts";
+export {
+	getSpringImplementation,
+	type SpringImplementation,
+	setSpringImplementation,
+} from "./utils/spring-impl.ts";
 export { Duration, MediaTime } from "./utils/time.ts";

@@ -30,6 +30,10 @@ export class LyricLineGroup extends LyricLineGroupBase<LyricLineEl> {
 		}
 
 		this.element.appendChild(mainLine.getElement());
+		this.posY.attach({
+			element: this.element,
+			frame: (posY) => ({ transform: `translateY(${posY.toFixed(1)}px)` }),
+		});
 		this.posY.setPosition(window.innerHeight * 2);
 
 		lyricPlayer.resizeObserver.observe(this.element);
@@ -112,6 +116,9 @@ export class LyricLineGroup extends LyricLineGroupBase<LyricLineEl> {
 			this.lastBgHeight = size[1];
 			this.lastBgSlideYNum = -9999;
 			this.isUiDirty = true;
+			// 背景高度参与了样式映射，需要按新尺寸重新生成，
+			// 尚未绑定样式目标（逐帧实现）时为空实现
+			this.bgSlideY.refresh();
 		}
 	}
 
@@ -163,6 +170,26 @@ export class LyricLineGroup extends LyricLineGroupBase<LyricLineEl> {
 		}
 
 		this.lastBgHeight = this.bgWrapper.clientHeight || 0;
+
+		this.bgSlideY.attach({
+			element: this.bgWrapper,
+			frame: (slideY) => {
+				const activeProgress = clamp01(1 - Math.abs(slideY) / 80);
+				const alwaysPostposition =
+					this.lyricPlayer.getAlwaysPostpositionBackground();
+				const shouldBgFirst = !alwaysPostposition && this.isBgFirst;
+				const translateYPx = (slideY / 100) * this.lastBgHeight;
+
+				return {
+					transform: `translateY(${translateYPx.toFixed(1)}px) scale(${(
+						0.8 + activeProgress * 0.2
+					).toFixed(3)})`,
+					marginTop: shouldBgFirst
+						? `${(-this.lastBgHeight * (1 - activeProgress)).toFixed(1)}px`
+						: "0px",
+				};
+			},
+		});
 	}
 
 	protected renderStyles(): void {
@@ -171,7 +198,10 @@ export class LyricLineGroup extends LyricLineGroupBase<LyricLineEl> {
 		const currentY = this.posY.getCurrentPosition();
 		if (Math.abs(currentY - this.lastYNum) >= 0.001) {
 			this.lastYNum = currentY;
-			style.transform = `translateY(${currentY.toFixed(1)}px)`;
+			// 由弹簧自身负责位移时不再逐帧写入，避免与动画重复覆盖
+			if (!this.posY.managesStyle) {
+				style.transform = `translateY(${currentY.toFixed(1)}px)`;
+			}
 		}
 
 		if (Math.abs(this.opacity - this.lastOpacityNum) >= 0.05) {
@@ -203,14 +233,17 @@ export class LyricLineGroup extends LyricLineGroupBase<LyricLineEl> {
 				const shouldBgFirst = !alwaysPostposition && this.isBgFirst;
 
 				const translateYPx = (slideY / 100) * this.lastBgHeight;
-				if (shouldBgFirst) {
-					const currentMarginTop = -this.lastBgHeight * (1 - activeProgress);
-					bgStyle.marginTop = `${currentMarginTop.toFixed(1)}px`;
-				} else {
-					bgStyle.marginTop = "";
-				}
+				// 由弹簧自身负责位移时不再逐帧写入，避免与动画重复覆盖
+				if (!this.bgSlideY.managesStyle) {
+					if (shouldBgFirst) {
+						const currentMarginTop = -this.lastBgHeight * (1 - activeProgress);
+						bgStyle.marginTop = `${currentMarginTop.toFixed(1)}px`;
+					} else {
+						bgStyle.marginTop = "";
+					}
 
-				bgStyle.transform = `translateY(${translateYPx.toFixed(1)}px) scale(${scaleStr})`;
+					bgStyle.transform = `translateY(${translateYPx.toFixed(1)}px) scale(${scaleStr})`;
+				}
 
 				const targetHiddenY = shouldBgFirst ? 80 : -80;
 				const isHidden =
