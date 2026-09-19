@@ -24,6 +24,7 @@ import {
 	watch,
 	watchEffect,
 } from "vue";
+import { unwrapLyricLines } from "./utils/unwrap-lyric-lines";
 
 const lyricPlayerProps = {
 	/**
@@ -297,7 +298,7 @@ export const LyricPlayer = defineComponent({
 						maskMode: props.maskObsceneWordsMode,
 						maskChar: props.maskObsceneWordChar,
 					});
-					player.setLyricLines(lyricLines ?? []);
+					player.setLyricLines(unwrapLyricLines(lyricLines));
 
 					if (props.currentTime !== undefined) {
 						player.setCurrentTime(props.currentTime, true);
