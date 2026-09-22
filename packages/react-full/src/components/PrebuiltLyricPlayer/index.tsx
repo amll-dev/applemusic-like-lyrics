@@ -130,7 +130,8 @@ import styles from "./index.module.css";
 const PrebuiltMusicInfo: FC<{
 	className?: string;
 	style?: React.CSSProperties;
-}> = ({ className, style }) => {
+	infoProps?: ComponentPropsWithRef<typeof MusicInfo>["infoProps"];
+}> = ({ className, style, infoProps }) => {
 	const musicName = useAtomValue(musicNameAtom);
 	const musicArtists = useAtomValue(musicArtistsAtom);
 	const musicAlbum = useAtomValue(musicAlbumNameAtom);
@@ -155,6 +156,7 @@ const PrebuiltMusicInfo: FC<{
 		<MusicInfo
 			className={className}
 			style={combinedStyle}
+			infoProps={infoProps}
 			name={showMusicName ? musicName : undefined}
 			artists={showMusicArtists ? musicArtists.map((v) => v.name) : undefined}
 			album={showMusicAlbum ? musicAlbum : undefined}
@@ -523,6 +525,8 @@ export interface PrebuiltLyricPlayerProps extends HTMLProps<HTMLDivElement> {
 	>;
 	/** Attributes, container ref, and button ref for the collapse control. */
 	controlThumbProps?: ComponentPropsWithRef<typeof ControlThumb>;
+	/** Text-container attributes/ref for the active layout only; excludes the menu button. */
+	musicInfoProps?: ComponentPropsWithRef<typeof MusicInfo>["infoProps"];
 	/** Controlled state of the host application's playlist panel. */
 	playlistOpened?: boolean;
 	/** Requests the next playlist state; does not create or manage a panel. */
@@ -543,6 +547,7 @@ export const PrebuiltLyricPlayer: FC<PrebuiltLyricPlayerProps> = ({
 	coverFrameRef,
 	coverProps,
 	controlThumbProps,
+	musicInfoProps,
 	playlistOpened = false,
 	onPlaylistOpenedChange,
 	playlistControls,
@@ -649,6 +654,9 @@ export const PrebuiltLyricPlayer: FC<PrebuiltLyricPlayerProps> = ({
 				}
 				smallControlsSlot={
 					<PrebuiltMusicInfo
+						infoProps={
+							isVertical && !hideLyricView ? musicInfoProps : undefined
+						}
 						className={classNames(
 							styles.smallMusicInfo,
 							hideLyricView && styles.hideLyric,
@@ -687,6 +695,9 @@ export const PrebuiltLyricPlayer: FC<PrebuiltLyricPlayerProps> = ({
 				bigControlsSlot={
 					<>
 						<PrebuiltMusicInfo
+							infoProps={
+								isVertical && hideLyricView ? musicInfoProps : undefined
+							}
 							className={classNames(
 								styles.bigMusicInfo,
 								hideLyricView && styles.hideLyric,
@@ -724,7 +735,10 @@ export const PrebuiltLyricPlayer: FC<PrebuiltLyricPlayerProps> = ({
 				}
 				controlsSlot={
 					<>
-						<PrebuiltMusicInfo className={styles.horizontalControls} />
+						<PrebuiltMusicInfo
+							className={styles.horizontalControls}
+							infoProps={!isVertical ? musicInfoProps : undefined}
+						/>
 						<PrebuiltProgressBar />
 						<PrebuiltMusicControls
 							className={styles.controls}
