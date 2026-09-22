@@ -12,6 +12,8 @@ export const MusicInfo: React.FC<
 		onArtistClicked?: (artist: string, index: number) => void;
 		onAlbumClicked?: () => void;
 		onMenuButtonClicked?: () => void;
+		/** Hide the menu when reusing the same metadata in a compact player. */
+		showMenuButton?: boolean;
 		/** Attributes and ref for the text container, excluding the menu button. */
 		infoProps?: HTMLProps<HTMLDivElement>;
 	} & HTMLProps<HTMLDivElement>
@@ -23,6 +25,7 @@ export const MusicInfo: React.FC<
 		onArtistClicked,
 		onAlbumClicked,
 		onMenuButtonClicked,
+		showMenuButton = true,
 		infoProps,
 		className,
 		...rest
@@ -47,7 +50,7 @@ export const MusicInfo: React.FC<
 						<TextMarquee className={styles.album}>{album}</TextMarquee>
 					)}
 				</div>
-				<MenuButton onClick={onMenuButtonClicked} />
+				{showMenuButton && <MenuButton onClick={onMenuButtonClicked} />}
 			</div>
 		);
 	},
