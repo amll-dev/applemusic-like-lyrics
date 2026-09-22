@@ -18,6 +18,7 @@ import classNames from "classnames";
 import { AnimatePresence, LayoutGroup } from "framer-motion";
 import { atom, useAtom, useAtomValue, useSetAtom } from "jotai";
 import {
+	type ComponentPropsWithRef,
 	type FC,
 	type HTMLProps,
 	useCallback,
@@ -29,6 +30,7 @@ import {
 } from "react";
 import { AutoLyricLayout } from "../../layout/auto";
 import { toDuration } from "../../utils";
+import { useComposedRefs } from "../../utils/useComposedRefs";
 import { AudioFFTVisualizer } from "../AudioFFTVisualizer";
 import { AudioQualityTag } from "../AudioQualityTag";
 import { BouncingSlider } from "../BouncingSlider";
@@ -512,6 +514,23 @@ const PrebuiltMusicControls: FC<
 export interface PrebuiltLyricPlayerProps extends HTMLProps<HTMLDivElement> {
 	bottomLineSlot?: React.ReactNode;
 	optimizeOptions?: OptimizeLyricOptions;
+	/** Layout anchor, including the layout's mask but not the cover's own transform. */
+	coverFrameRef?: React.Ref<HTMLDivElement>;
+	/** Attributes and ref for the live cover. Media state remains controlled by atoms. */
+	coverProps?: Omit<
+		ComponentPropsWithRef<typeof Cover>,
+		"coverUrl" | "coverIsVideo" | "musicPaused"
+	>;
+	/** Attributes, container ref, and button ref for the collapse control. */
+	controlThumbProps?: ComponentPropsWithRef<typeof ControlThumb>;
+	/** Controlled state of the host application's playlist panel. */
+	playlistOpened?: boolean;
+	/** Requests the next playlist state; does not create or manage a panel. */
+	onPlaylistOpenedChange?: (opened: boolean) => void;
+	/** ID of the panel controlled by both playlist buttons. */
+	playlistControls?: string;
+	/** Accessible name shared by the playlist buttons. */
+	playlistButtonLabel?: string;
 }
 
 /**
@@ -521,6 +540,13 @@ export const PrebuiltLyricPlayer: FC<PrebuiltLyricPlayerProps> = ({
 	className,
 	bottomLineSlot,
 	optimizeOptions,
+	coverFrameRef,
+	coverProps,
+	controlThumbProps,
+	playlistOpened = false,
+	onPlaylistOpenedChange,
+	playlistControls,
+	playlistButtonLabel,
 	...rest
 }) => {
 	const [hideLyricView, setHideLyricView] = useAtom(hideLyricViewAtom);
@@ -541,7 +567,8 @@ export const PrebuiltLyricPlayer: FC<PrebuiltLyricPlayerProps> = ({
 	const [alignAnchor, setAlignAnchor] = useState<"center" | "bottom" | "top">(
 		"top",
 	);
-	const coverElRef = useRef<HTMLDivElement>(null);
+	const coverFrameElRef = useRef<HTMLDivElement>(null);
+	const composedCoverFrameRef = useComposedRefs(coverFrameElRef, coverFrameRef);
 	const [layoutEl, setLayoutEl] = useState<HTMLDivElement | null>(null);
 	const backgroundRenderer = useAtomValue(lyricBackgroundRendererAtom);
 	// 配置里存的可能是字符串标识，也可能是调用方直接塞进来的渲染器类。字符串一律
@@ -571,16 +598,16 @@ export const PrebuiltLyricPlayer: FC<PrebuiltLyricPlayerProps> = ({
 
 	useLayoutEffect(() => {
 		// 如果是水平布局，则让歌词对齐到封面的中心
-		if (!isVertical && coverElRef.current && layoutEl) {
+		if (!isVertical && coverFrameElRef.current && layoutEl) {
 			const obz = new ResizeObserver(() => {
-				if (!(coverElRef.current && layoutEl)) return;
-				const coverB = coverElRef.current.getBoundingClientRect();
+				if (!(coverFrameElRef.current && layoutEl)) return;
+				const coverB = coverFrameElRef.current.getBoundingClientRect();
 				const layoutB = layoutEl.getBoundingClientRect();
 				setAlignPosition(
 					(coverB.top + coverB.height / 2 - layoutB.top) / layoutB.height,
 				);
 			});
-			obz.observe(coverElRef.current);
+			obz.observe(coverFrameElRef.current);
 			obz.observe(layoutEl);
 			setAlignAnchor("center");
 			return () => obz.disconnect();
@@ -606,17 +633,20 @@ export const PrebuiltLyricPlayer: FC<PrebuiltLyricPlayerProps> = ({
 				className={classNames(styles.autoLyricLayout, className)}
 				onLayoutChange={setIsVertical}
 				verticalImmerseCover={verticalImmerseCover}
+				coverFrameRef={composedCoverFrameRef}
 				coverSlot={
 					<Cover
+						{...coverProps}
 						coverUrl={musicCover}
 						coverIsVideo={musicCoverIsVideo}
-						ref={coverElRef}
 						musicPaused={
 							!musicIsPlaying && !musicCoverIsVideo && verticalImmerseCover
 						}
 					/>
 				}
-				thumbSlot={<ControlThumb onClick={onClickControlThumb} />}
+				thumbSlot={
+					<ControlThumb onClick={onClickControlThumb} {...controlThumbProps} />
+				}
 				smallControlsSlot={
 					<PrebuiltMusicInfo
 						className={classNames(
@@ -681,6 +711,11 @@ export const PrebuiltLyricPlayer: FC<PrebuiltLyricPlayerProps> = ({
 								/>
 								<PrebuiltToggleIconButton
 									type={PrebuiltToggleIconButtonType.Playlist}
+									checked={playlistOpened}
+									aria-expanded={playlistOpened}
+									aria-controls={playlistControls}
+									aria-label={playlistButtonLabel}
+									onClick={() => onPlaylistOpenedChange?.(!playlistOpened)}
 								/>
 							</div>
 						)}
@@ -703,6 +738,11 @@ export const PrebuiltLyricPlayer: FC<PrebuiltLyricPlayerProps> = ({
 						<>
 							<PrebuiltToggleIconButton
 								type={PrebuiltToggleIconButtonType.Playlist}
+								checked={playlistOpened}
+								aria-expanded={playlistOpened}
+								aria-controls={playlistControls}
+								aria-label={playlistButtonLabel}
+								onClick={() => onPlaylistOpenedChange?.(!playlistOpened)}
 							/>
 							<PrebuiltToggleIconButton
 								type={PrebuiltToggleIconButtonType.Lyrics}

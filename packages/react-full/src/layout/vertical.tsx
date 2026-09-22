@@ -6,8 +6,9 @@
 import classNames from "classnames";
 import { type MotionProps, motion, type Target } from "framer-motion";
 import type React from "react";
-import type { HTMLProps } from "react";
+import type { HTMLProps, Ref } from "react";
 import { useCallback, useLayoutEffect, useRef, useState } from "react";
+import { useMotionElementRef } from "../utils/useMotionElementRef";
 import styles from "./vertical.module.css";
 
 export const VerticalLayout: React.FC<
@@ -16,6 +17,7 @@ export const VerticalLayout: React.FC<
 		smallControlsSlot?: React.ReactNode;
 		bigControlsSlot?: React.ReactNode;
 		coverSlot?: React.ReactNode;
+		coverFrameRef?: Ref<HTMLDivElement>;
 		lyricSlot?: React.ReactNode;
 		asChild?: boolean;
 		hideLyric?: boolean;
@@ -24,6 +26,7 @@ export const VerticalLayout: React.FC<
 > = ({
 	thumbSlot,
 	coverSlot,
+	coverFrameRef,
 	smallControlsSlot,
 	bigControlsSlot,
 	lyricSlot,
@@ -33,10 +36,10 @@ export const VerticalLayout: React.FC<
 	immerseCover,
 	...rest
 }) => {
+	const frameRef = useMotionElementRef(coverFrameRef);
 	const rootRef = useRef<HTMLDivElement>(null);
 	const phonyBigCoverRef = useRef<HTMLDivElement>(null);
 	const phonySmallCoverRef = useRef<HTMLDivElement>(null);
-	const coverFrameRef = useRef<HTMLDivElement>(null);
 	const hideLyricRef = useRef(hideLyric ?? false);
 	const immerseCoverRef = useRef(immerseCover ?? false);
 	const [currentCoverStyle, setCurrentCoverStyle] =
@@ -103,7 +106,6 @@ export const VerticalLayout: React.FC<
 	useLayoutEffect(() => {
 		const phonyBigCoverEl = phonyBigCoverRef.current;
 		const phonySmallCoverEl = phonySmallCoverRef.current;
-		// const coverFrameEl = coverFrameRef.current;
 		if (!phonyBigCoverEl || !phonySmallCoverEl) return;
 		const obz = new ResizeObserver(() => {
 			setCurrentCoverStyle(calcCoverLayout(hideLyricRef.current));
@@ -151,7 +153,7 @@ export const VerticalLayout: React.FC<
 						stiffness: 200,
 						damping: 30,
 					}}
-					ref={coverFrameRef}
+					ref={frameRef}
 				>
 					{coverSlot}
 				</motion.div>
