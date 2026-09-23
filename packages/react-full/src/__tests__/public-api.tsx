@@ -13,8 +13,8 @@ import {
 } from "../index";
 import "@applemusic-like-lyrics/core/style.css";
 
-const result = document.getElementById("result")!;
-const fixture = document.getElementById("fixture")!;
+const result = document.getElementById("result") as HTMLPreElement;
+const fixture = document.getElementById("fixture") as HTMLDivElement;
 const run = document.getElementById("run") as HTMLButtonElement;
 run.onclick = async () => {
 	run.disabled = true;
@@ -109,7 +109,7 @@ run.onclick = async () => {
 			"coverFrameRef targets the layout anchor",
 		);
 		check(
-			thumbRef.current?.contains(active.get("button1")!) === true,
+			thumbRef.current?.contains(active.get("button1") ?? null) === true,
 			"container and interactive button refs are distinct",
 		);
 		(active.get("button1") as HTMLButtonElement).click();
