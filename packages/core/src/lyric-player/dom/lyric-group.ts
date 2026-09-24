@@ -86,6 +86,8 @@ export class LyricLineGroup extends LyricLineGroupBase<LyricLineEl> {
 
 	hide(): void {
 		if (this.element.parentElement) {
+			this.mainLine.hide();
+			this.bgLine?.hide();
 			this.lyricPlayer.resizeObserver.unobserve(this.element);
 			if (this.bgWrapper) {
 				this.lyricPlayer.resizeObserver.unobserve(this.bgWrapper);
@@ -182,7 +184,7 @@ export class LyricLineGroup extends LyricLineGroupBase<LyricLineEl> {
 		const blurVal = Math.min(5, this.blur);
 		if (Math.abs(blurVal - this.lastBlurNum) >= 0.05) {
 			this.lastBlurNum = blurVal;
-			style.filter = blurVal > 0.01 ? `blur(${blurVal.toFixed(2)}px)` : "none";
+			style.filter = `blur(${blurVal.toFixed(2)}px)`;
 		}
 
 		if (this.bgWrapper) {

@@ -55,6 +55,9 @@ function getEntrySize(entry: ResizeObserverEntry): [number, number] {
 	];
 }
 
+/** 活跃窗口向前后两端扩展保留亮度层副本的缓冲行数 */
+const BRIGHTNESS_WINDOW_LINES = 2;
+
 /**
  * 播放器布局状态。
  *
@@ -944,7 +947,19 @@ export abstract class LyricPlayerBase
 		visual.passedBoundary = interlude
 			? interlude.anchorLineIndex + 1
 			: snapshot.scrollToIndex;
-		visual.isNarrowViewport = window.innerWidth <= 1024;
+		visual.isNarrowViewport = this.size[0] <= 1024;
+
+		// 计算亮度层副本的保留区间。该区间需完整覆盖当前焦点行与所有高亮行，并向前后各扩展 2 行。
+		// 其中向上扩展确保离开高亮时的淡出过渡动画完整播放，向下扩展则为即将高亮的行预先构建所需副本。
+		// 若高亮行脱离该区间，其副本将被回收并退回无亮度层的单层结构，导致逐词擦除动效中断。
+		let windowEarliest = snapshot.scrollToIndex;
+		let windowLatest = snapshot.scrollToIndex;
+		for (const index of snapshot.highlightedGroups) {
+			if (index < windowEarliest) windowEarliest = index;
+			if (index > windowLatest) windowLatest = index;
+		}
+		const brightnessWindowFrom = windowEarliest - BRIGHTNESS_WINDOW_LINES;
+		const brightnessWindowTo = windowLatest + BRIGHTNESS_WINDOW_LINES;
 
 		// 遍历 LayoutCalculator 算出的排版信息并应用视觉效果
 		const activeCount = result.lineCount;
@@ -969,6 +984,7 @@ export abstract class LyricPlayerBase
 				isActive,
 				this.resolveOpacity(i, isInViewport, snapshot),
 				this.resolveBlurLevel(i, isActive, isInViewport, snapshot),
+				i >= brightnessWindowFrom && i <= brightnessWindowTo,
 			);
 
 			// 应用阶梯式的动画延迟
@@ -1054,8 +1070,8 @@ export abstract class LyricPlayerBase
 	): number {
 		if (!this.enableBlur) return 0;
 
-		// 在视口外直接给到最大模糊
-		if (!isInViewport) return 5;
+		// 视口外不施加模糊
+		if (!isInViewport) return 0;
 
 		// 用户触摸滑动期间和对焦目标不施加模糊
 		if (this.scrollState.isTouchScrolled || isFocused) return 0;

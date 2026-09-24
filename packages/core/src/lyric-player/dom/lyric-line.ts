@@ -14,6 +14,7 @@ import {
 	createLineMaskAnimator,
 	type LineMaskAnimator,
 } from "./animation/index.ts";
+import { LineBrightness } from "./line-brightness.ts";
 
 interface RealWord extends LyricWord {
 	mainElement: HTMLSpanElement;
@@ -33,6 +34,20 @@ export class LyricLineEl extends LyricLineBase {
 
 	private renderMode: LyricLineRenderMode = LyricLineRenderMode.SOLID;
 	private maskAnimator?: LineMaskAnimator;
+	/**
+	 * 亮层与均匀副本
+	 *
+	 * 逐词遮罩的渐变停止点固定在 1 / 0.4，行的整体明暗由副本承担
+	 */
+	private readonly brightness: LineBrightness;
+	/**
+	 * 上次构建遮罩时全部输入的签名
+	 *
+	 * 输入未变时跳过重建流程，避免首次显示后触发的尺寸回调导致刚生成的遮罩被冗余销毁与重复构建
+	 */
+	private maskSignature = "";
+	/** 上次接收到的行尺寸，用于在尺寸未变化时跳过冗余的二次测量 */
+	private lastLineSize?: [number, number];
 
 	private lastScaleNum = -1;
 
@@ -77,6 +92,10 @@ export class LyricLineEl extends LyricLineBase {
 		const trans = this.element.children[1] as HTMLDivElement;
 		const roman = this.element.children[2] as HTMLDivElement;
 		main.setAttribute("class", styles.lyricMainLine);
+		this.brightness = new LineBrightness(
+			main,
+			!this.lyricPlayer._getIsNonDynamic(),
+		);
 		trans.setAttribute("class", styles.lyricSubLine);
 		roman.setAttribute("class", styles.lyricSubLine);
 		if (LyricLineBase.wordSegmenter) {
@@ -184,8 +203,16 @@ export class LyricLineEl extends LyricLineBase {
 		if (!this.built) {
 			this.rebuildElement();
 			this.built = true;
+		} else if (!this.maskAnimator) {
+			// 遮罩曾随元素重建而释放，重新进入渲染范围时需重新构建
 			this.updateMaskImageSync();
 		}
+		this.brightness.sync();
+	}
+
+	/** 离开渲染范围时释放副本，避免不可见元素继续持有镜像动画 */
+	hide(): void {
+		this.brightness.deactivate();
 	}
 
 	private rebuildStyle(): void {
@@ -207,6 +234,7 @@ export class LyricLineEl extends LyricLineBase {
 		if (this.lyricPlayer._getIsNonDynamic()) {
 			main.textContent = this.lyricLine.words.map((w) => w.word).join("");
 			this.setSubLinesText(trans, roman);
+			this.syncMaskAfterRebuild();
 			return;
 		}
 
@@ -218,6 +246,17 @@ export class LyricLineEl extends LyricLineBase {
 		}
 
 		this.setSubLinesText(trans, roman);
+		this.syncMaskAfterRebuild();
+	}
+
+	/**
+	 * 元素重建后重新同步遮罩
+	 *
+	 * 重建操作会释放原有遮罩。若此时元素已挂载则立刻重新构建，未挂载的行则留待
+	 * {@link show} 进入渲染范围时处理，避免对不可见元素执行无效测量。
+	 */
+	private syncMaskAfterRebuild(): void {
+		if (this.element.isConnected) this.updateMaskImageSync();
 	}
 
 	/** 设置翻译与音译行文本 */
@@ -411,31 +450,83 @@ export class LyricLineEl extends LyricLineBase {
 		main.appendChild(wrapperWordEl);
 	}
 
-	override onLineSizeChange(_size: [number, number]): void {
+	override onLineSizeChange(size: [number, number]): void {
+		if (
+			this.maskAnimator &&
+			this.lastLineSize &&
+			this.lastLineSize[0] === size[0] &&
+			this.lastLineSize[1] === size[1]
+		) {
+			return;
+		}
+
+		const isInitialObservation =
+			!this.lastLineSize && Boolean(this.maskAnimator);
+		this.lastLineSize = [size[0], size[1]];
+
+		if (isInitialObservation) {
+			return;
+		}
+
 		this.updateMaskImageSync();
 	}
-	updateMaskImageSync(): void {
-		for (const word of this.splittedWords) {
+	private measureWords(): void {
+		const words = this.splittedWords;
+		if (words.length === 0) return;
+
+		const firstEl = words[0].mainElement;
+		const padding = firstEl
+			? Number.parseFloat(getComputedStyle(firstEl).paddingLeft)
+			: 0;
+
+		for (const word of words) {
 			const el = word.mainElement;
 			if (el) {
-				word.padding = Number.parseFloat(getComputedStyle(el).paddingLeft);
-				word.width = el.clientWidth - word.padding * 2;
-				word.height = el.clientHeight - word.padding * 2;
+				word.padding = padding;
+				word.width = el.clientWidth - padding * 2;
+				word.height = el.clientHeight - padding * 2;
 			} else {
 				word.width = 0;
 				word.height = 0;
 				word.padding = 0;
 			}
 		}
-		if (this.balancer && LyricLineBase.wordSegmenter) {
-			this.balancer.balanceLineBreaks(
-				this.lyricPlayer._getIsNonDynamic(),
-				this.splittedWords.length > 0,
-				LyricLineBase.wordSegmenter,
-			);
+	}
+	/**
+	 * 计算本次遮罩构建全部输入的特征签名
+	 * @param containerWidth 换行平衡所使用的容器可用宽度
+	 * @param maxEndTime 遮罩动画时间轴的结束时间
+	 */
+	private computeMaskSignature(
+		containerWidth: number,
+		maxEndTime: number,
+	): string {
+		// 签名输入项包含各词尺寸、行时间戳以及换行平衡所使用的容器宽度，其中任意一项变更均需触发重建
+		// 引入容器宽度旨在避免外部锁定字号时，容器变宽无法正常触发重建流程
+		let signature = `${this.splittedWords.length}|${this.lyricLine.startTime}|${maxEndTime}|${containerWidth}|${this.lyricPlayer.getWordFadeWidth()}|${this.lyricPlayer.supportMaskImage ? 1 : 0}|${this.lyricPlayer._getIsNonDynamic() ? 1 : 0}`;
+		for (const word of this.splittedWords) {
+			signature += `|${word.width},${word.height},${word.padding}`;
+		}
+		return signature;
+	}
+	/**
+	 * 同步遮罩状态，使其与当前歌词内容、尺寸及时间轴保持一致
+	 * @returns 本次调用是否实际触发了遮罩重建
+	 */
+	updateMaskImageSync(): boolean {
+		// 脱离文档的元素无法读取到有效的样式，计算出的的内边距与宽高为 NaN，会覆盖掉
+		// 已有的有效遮罩（例如调用 setWordFadeWidth 时）。因此让这些元素在重新进入渲染范围内时
+		// 由 show() 重建
+		if (!this.element.isConnected) {
+			this.invalidateMask();
+			return false;
 		}
 
-		this.maskAnimator?.dispose();
+		const mainStyle = getComputedStyle(this.element.children[0]);
+
+		this.measureWords();
+		// 此时样式与布局已完成解析，读取副本的定位几何数据不会再次引发强制同步布局
+		this.brightness.captureGeometry(mainStyle);
 
 		// 因为歌词行有可能比行内单词的结束时间早，有可能导致过渡动画提早停止出现瑕疵
 		// 所以要以单词的结束时间为准
@@ -445,6 +536,25 @@ export class LyricLineEl extends LyricLineBase {
 			this.lyricLine.endTime,
 		);
 
+		const containerWidth = this.balancer?.getContainerWidth(mainStyle) ?? 0;
+		const signature = this.computeMaskSignature(containerWidth, maxEndTime);
+
+		// 若输入未发生变更，则直接复用现有动画。由于销毁并重建逐词动画是该调用路径上性能开销最高的操作，
+		// 且首次显示后的尺寸监听回调所传入的参数与初次完全相同，因此复用机制可避免不必要的重建。
+		if (this.maskAnimator && signature === this.maskSignature) return false;
+		this.maskSignature = signature;
+
+		if (this.balancer && LyricLineBase.wordSegmenter) {
+			this.balancer.balanceLineBreaks(
+				this.lyricPlayer._getIsNonDynamic(),
+				this.splittedWords.length > 0,
+				LyricLineBase.wordSegmenter,
+				mainStyle,
+			);
+		}
+
+		this.maskAnimator?.dispose();
+
 		this.maskAnimator = createLineMaskAnimator(this.splittedWords, {
 			lineStartTime: this.lyricLine.startTime,
 			lineEndTime: maxEndTime,
@@ -453,11 +563,14 @@ export class LyricLineEl extends LyricLineBase {
 		});
 
 		this.maskAnimator.apply();
+		this.brightness.sync(true);
 
 		if (this.isEnabled) {
 			const isPlayerRunning = this.lyricPlayer.getIsPlaying?.() ?? true;
 			this.enable(this.lyricPlayer.getCurrentTime(), isPlayerRunning);
 		}
+
+		return true;
 	}
 
 	getElement(): HTMLElement {
@@ -466,6 +579,12 @@ export class LyricLineEl extends LyricLineBase {
 
 	private setRenderMode(mode: LyricLineRenderMode): void {
 		if (this.renderMode === mode) return;
+
+		// 当从高亮态（GRADIENT）退出时，记录退出高亮的绝对时刻，以确保后续淡出过渡能够完整播放
+		if (this.renderMode === LyricLineRenderMode.GRADIENT) {
+			this.brightness.markHighlightExited();
+		}
+
 		this.renderMode = mode;
 		this.element.classList.toggle(
 			styles.gradientMask,
@@ -479,13 +598,26 @@ export class LyricLineEl extends LyricLineBase {
 		blur = 0,
 		delay: Duration = Duration.ZERO,
 		mode: LyricLineRenderMode = LyricLineRenderMode.SOLID,
+		inBrightnessWindow = true,
 	): void {
 		super.setTransform(scale, opacity, blur, delay);
+
+		const isColdActivation =
+			this.renderMode !== LyricLineRenderMode.GRADIENT &&
+			mode === LyricLineRenderMode.GRADIENT &&
+			!this.brightness.isReady;
 
 		this.setRenderMode(mode);
 		this.top = 0;
 		this.scale = scale;
 		this.delay = delay;
+
+		// 同步当前行在亮度活跃窗口中的状态
+		this.brightness.setInWindow(inBrightnessWindow);
+
+		if (isColdActivation) {
+			this.brightness.playActivationTransition();
+		}
 
 		if (this.lyricPlayer.getEnableSpring()) {
 			this.lineTransforms.scale.setTargetPosition(scale);
@@ -517,10 +649,23 @@ export class LyricLineEl extends LyricLineBase {
 		return `[位移: ${this.top}; 缩放: ${this.scale}; 延时: ${this.delay}]`;
 	}
 
-	private disposeElements() {
-		this.balancer?.reset();
+	/**
+	 * 将当前遮罩标记为失效，使其在下次进入渲染范围时由 {@link show} 重建
+	 *
+	 * 用于影响遮罩几何的配置在行未挂载时发生变更的场景，
+	 * 此时无法立刻测量出有效几何信息，只能待元素重新回到文档后重建。
+	 */
+	private invalidateMask(): void {
 		this.maskAnimator?.dispose();
 		this.maskAnimator = undefined;
+		this.maskSignature = "";
+		this.lastLineSize = undefined;
+	}
+
+	private disposeElements() {
+		this.brightness.deactivate();
+		this.balancer?.reset();
+		this.invalidateMask();
 
 		for (const realWord of this.splittedWords) {
 			for (const a of realWord.elementAnimations) {
@@ -545,8 +690,8 @@ export class LyricLineEl extends LyricLineBase {
 		if (roman) roman.innerHTML = "";
 	}
 	override dispose(): void {
+		this.brightness.dispose();
 		this.disposeElements();
-		this.lyricPlayer.resizeObserver.unobserve(this.element);
 		this.element.remove();
 	}
 }

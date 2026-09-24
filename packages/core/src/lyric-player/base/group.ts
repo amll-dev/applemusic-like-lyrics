@@ -28,6 +28,13 @@ export abstract class LyricLineGroupBase<
 
 	public isBgFirst = false;
 
+	/**
+	 * 指示当前歌词组是否处于亮度层活跃窗口内
+	 *
+	 * 由排版逻辑在状态变更时计算并同步。同一组的背景行与主行索引至多相差 1，共用同一判定结果。
+	 */
+	public inBrightnessWindow = true;
+
 	protected isUiDirty = true;
 
 	constructor(
@@ -61,12 +68,14 @@ export abstract class LyricLineGroupBase<
 		isActive: boolean,
 		opacity: number,
 		blur: number,
+		inBrightnessWindow: boolean,
 	): void {
 		this.top = top;
 		this.delay = delay;
 		this.isActive = isActive;
 		this.opacity = opacity;
 		this.blur = blur;
+		this.inBrightnessWindow = inBrightnessWindow;
 
 		this.setLineTransformations(delay);
 
@@ -104,13 +113,27 @@ export abstract class LyricLineGroupBase<
 			mainScale = SCALE_ASPECT;
 		}
 
-		this.mainLine.setTransform(mainScale, 1, 0, delay, renderMode);
+		this.mainLine.setTransform(
+			mainScale,
+			1,
+			0,
+			delay,
+			renderMode,
+			this.inBrightnessWindow,
+		);
 
 		let bgScale = 100;
 		if (!this.isActive && isPlaying) {
 			bgScale = 75;
 		}
-		this.bgLine?.setTransform(bgScale, 1, 0, delay, renderMode);
+		this.bgLine?.setTransform(
+			bgScale,
+			1,
+			0,
+			delay,
+			renderMode,
+			this.inBrightnessWindow,
+		);
 	}
 
 	protected abstract renderStyles(): void;

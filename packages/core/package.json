@@ -67,6 +67,7 @@
 		"@types/deep-freeze": "^0.1.5",
 		"@types/stats.js": "^0.17.3",
 		"@types/ungap__structured-clone": "^1.2.0",
+		"happy-dom": "^20.14.5",
 		"lil-gui": "^0.21.0",
 		"stats.js": "^0.17.0",
 		"tsdown": "catalog:",

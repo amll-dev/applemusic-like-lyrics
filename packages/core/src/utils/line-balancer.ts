@@ -30,14 +30,12 @@ export class LineBalancer {
 		isNonDynamic: boolean,
 		hasSplittedWords: boolean,
 		wordSegmenter: Intl.Segmenter,
+		mainStyle?: CSSStyleDeclaration,
 	): void {
 		if (this.isBalancing || !this.mainElement) return;
 
-		const computedStyle = getComputedStyle(this.mainElement);
-		const paddingLeft = Number.parseFloat(computedStyle.paddingLeft) || 0;
-		const paddingRight = Number.parseFloat(computedStyle.paddingRight) || 0;
-		const containerWidth =
-			this.mainElement.clientWidth - paddingLeft - paddingRight;
+		const computedStyle = mainStyle ?? getComputedStyle(this.mainElement);
+		const containerWidth = this.computeContainerWidth(computedStyle);
 
 		if (containerWidth <= 0) return;
 
@@ -52,6 +50,27 @@ export class LineBalancer {
 
 		if (!hasSplittedWords) return;
 		this.balanceDynamicLineBreaks(containerWidth, wordSegmenter);
+	}
+
+	/**
+	 * 计算换行平衡所使用的容器可用宽度
+	 *
+	 * 调用方在判断换行输入是否变更时可复用此计算逻辑，以确保与
+	 * {@link balanceLineBreaks} 内部的计算标准保持严格一致
+	 * @returns 容器宽度减去左右内边距。若容器尚未完成布局，返回值可能为负值或零
+	 * @param mainStyle 调用方预先获取的的主歌词行计算样式。未提供时会自行读取
+	 */
+	public getContainerWidth(mainStyle?: CSSStyleDeclaration): number {
+		if (!this.mainElement) return 0;
+		return this.computeContainerWidth(
+			mainStyle ?? getComputedStyle(this.mainElement),
+		);
+	}
+
+	private computeContainerWidth(computedStyle: CSSStyleDeclaration): number {
+		const paddingLeft = Number.parseFloat(computedStyle.paddingLeft) || 0;
+		const paddingRight = Number.parseFloat(computedStyle.paddingRight) || 0;
+		return this.mainElement.clientWidth - paddingLeft - paddingRight;
 	}
 
 	public reset(): void {
