@@ -9,6 +9,7 @@ import {
 	type ForwardRefExoticComponent,
 	forwardRef,
 	type HTMLProps,
+	type Ref,
 	type RefAttributes,
 	useEffect,
 	useLayoutEffect,
@@ -16,12 +17,15 @@ import {
 	useRef,
 	useState,
 } from "react";
+import { useComposedRefs } from "../../utils/useComposedRefs";
 import styles from "./index.module.css";
 
 export type CoverProps = {
 	coverUrl?: string;
 	coverIsVideo?: boolean;
 	coverVideoPaused?: boolean;
+	/** The live video element, when coverIsVideo is true. */
+	videoRef?: Ref<HTMLVideoElement>;
 	musicPaused?: boolean;
 	pauseShrinkAspect?: number;
 } & HTMLProps<HTMLDivElement>;
@@ -37,27 +41,33 @@ export const Cover: ForwardRefExoticComponent<
 			coverUrl,
 			coverIsVideo,
 			coverVideoPaused,
+			videoRef: externalVideoRef,
 			className,
 			musicPaused,
 			pauseShrinkAspect,
+			style,
 			...rest
 		},
 		ref,
 	) => {
 		const frameRef = useRef<HTMLDivElement>(null);
+		const composedRef = useComposedRefs(frameRef, ref);
 		const clsNames = useMemo(
 			() =>
 				classNames(styles.cover, musicPaused && styles.musicPaused, className),
 			[className, musicPaused],
 		);
 		const videoRef = useRef<HTMLVideoElement>(null);
+		const composedVideoRef = useComposedRefs(videoRef, externalVideoRef);
 		useEffect(() => {
 			const videoEl = videoRef.current;
 			if (videoEl) {
 				if (coverVideoPaused) {
 					videoEl.pause();
 				} else {
-					videoEl.play();
+					void videoEl.play().catch(() => {
+						// Pausing, replacing the source, or autoplay policy can cancel playback.
+					});
 				}
 			}
 		}, [coverVideoPaused]);
@@ -89,16 +99,10 @@ export const Cover: ForwardRefExoticComponent<
 				style={
 					{
 						"--scale-level": pauseShrinkAspect ?? 0.75,
+						...style,
 					} as React.CSSProperties
 				}
-				ref={(node) => {
-					frameRef.current = node;
-					if (typeof ref === "function") {
-						ref(node);
-					} else if (ref) {
-						ref.current = node;
-					}
-				}}
+				ref={composedRef}
 				{...rest}
 			>
 				<Squircle
@@ -110,12 +114,12 @@ export const Cover: ForwardRefExoticComponent<
 						<video
 							className={styles.coverInner}
 							src={coverUrl}
-							autoPlay
+							autoPlay={!coverVideoPaused}
 							loop
 							muted
 							playsInline
 							crossOrigin={isRemoteUrl ? "anonymous" : undefined}
-							ref={videoRef}
+							ref={composedVideoRef}
 						/>
 					) : (
 						<div

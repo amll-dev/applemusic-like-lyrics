@@ -1,5 +1,5 @@
 import type React from "react";
-import type { HTMLProps } from "react";
+import type { HTMLProps, Ref } from "react";
 import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import styles from "./auto.module.css";
 import { HorizontalLayout } from "./horizontal";
@@ -16,6 +16,8 @@ export const AutoLyricLayout: React.FC<
 		smallControlsSlot?: React.ReactNode;
 		bigControlsSlot?: React.ReactNode;
 		coverSlot?: React.ReactNode;
+		/** Layout anchor for the cover, unaffected by the cover's own transforms. */
+		coverFrameRef?: Ref<HTMLDivElement>;
 		lyricSlot?: React.ReactNode;
 		backgroundSlot?: React.ReactNode;
 		hideLyric?: boolean;
@@ -30,6 +32,7 @@ export const AutoLyricLayout: React.FC<
 	smallControlsSlot,
 	bigControlsSlot,
 	coverSlot,
+	coverFrameRef,
 	lyricSlot,
 	backgroundSlot,
 	hideLyric,
@@ -83,6 +86,7 @@ export const AutoLyricLayout: React.FC<
 					smallControlsSlot={smallControlsSlot}
 					bigControlsSlot={bigControlsSlot}
 					coverSlot={coverSlot}
+					coverFrameRef={coverFrameRef}
 					lyricSlot={lyricSlot}
 					hideLyric={hideLyric}
 					immerseCover={verticalImmerseCover}
@@ -92,6 +96,7 @@ export const AutoLyricLayout: React.FC<
 					thumbSlot={thumbSlot}
 					controlsSlot={controlsSlot}
 					coverSlot={coverSlot}
+					coverFrameRef={coverFrameRef}
 					lyricSlot={lyricSlot}
 					bottomControls={horizontalBottomControls}
 					hideLyric={hideLyric}
