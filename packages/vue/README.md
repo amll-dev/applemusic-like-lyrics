@@ -39,12 +39,18 @@ For detailed API documentation, please refer to [AMLL Docs](https://amll.dev/en/
 A test program can be found in [../playground/vue/src/test.ts](../playground/vue/src/test.ts).
 
 ```vue
-<tamplate>
-    <LyricPlayer :lyric-lines="[]" :current-time="0" />
-</tamplate>
+<template>
+    <LyricPlayer :lyric-lines="lyricLines" :current-time="0" />
+</template>
 
 <script setup lang="ts">
+import type { LyricLine } from "@applemusic-like-lyrics/core";
 import { LyricPlayer } from "@applemusic-like-lyrics/vue";
+import { ref } from "vue";
 
+const lyricLines = ref<LyricLine[]>([]);
 </script>
 ```
+
+`lyricLines` can use Vue's regular `ref`. The Vue binding unwraps reactive
+proxies before passing the data to the Core component.
