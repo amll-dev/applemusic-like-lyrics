@@ -96,23 +96,21 @@ export class LineBalancer {
 		const prevWhiteSpace = this.mainElement.style.whiteSpace;
 		this.mainElement.style.whiteSpace = "nowrap";
 
-		// 临时移除父级的 transform 以便让 getBoundingClientRect 返回纯粹的布局尺寸
-		// 基类在 enableScale 时设置的 0.97 缩放倍率会影响到计算的宽度
+		// DOM rects include scale on both the lyric line and its background wrapper.
+		// Compare unscaled measurements with clientWidth, restoring animation styles after.
 		const parentElement = this.mainElement.parentElement;
-		let prevTransform = "";
-		let transformChanged = false;
-
-		if (parentElement) {
-			prevTransform = parentElement.style.transform;
-			if (prevTransform && prevTransform !== "none") {
-				parentElement.style.transform = "none";
-				transformChanged = true;
-			}
-		}
-
+		const transformedAncestors: Array<[HTMLElement, string]> = [];
 		let lockAcquired = false;
 
 		try {
+			for (const ancestor of [parentElement, parentElement?.parentElement]) {
+				const transform = ancestor?.style.transform;
+				if (ancestor && transform && transform !== "none") {
+					transformedAncestors.push([ancestor, transform]);
+					ancestor.style.transform = "none";
+				}
+			}
+
 			const { childInfos, fullText } = adapter.buildChildInfos();
 
 			let layoutWidth = childInfos.reduce((sum, c) => sum + c.width, 0);
@@ -160,8 +158,8 @@ export class LineBalancer {
 			this.isBalancing = false;
 		} finally {
 			this.mainElement.style.whiteSpace = prevWhiteSpace;
-			if (transformChanged && parentElement) {
-				parentElement.style.transform = prevTransform;
+			for (const [ancestor, original] of transformedAncestors.reverse()) {
+				ancestor.style.transform = original;
 			}
 
 			if (lockAcquired) {

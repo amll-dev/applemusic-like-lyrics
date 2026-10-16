@@ -110,7 +110,11 @@ export class LyricLineGroup extends LyricLineGroupBase<LyricLineEl> {
 	}
 
 	override onBgSizeChange(size: [number, number]): void {
-		if (this.bgWrapper && this.lastBgHeight !== size[1]) {
+		if (!this.bgWrapper) return;
+
+		this.bgLine?.onLineSizeChange(size);
+
+		if (this.lastBgHeight !== size[1]) {
 			this.lastBgHeight = size[1];
 			this.lastBgSlideYNum = -9999;
 			this.isUiDirty = true;
