@@ -132,6 +132,18 @@
 			}
 		}
 	}
+
+	/* 基字两侧均为 JLReq §4067 允许悬挂的字符时，注音退出整词计宽，
+	   以零宽居中向两侧假名溢出，避免撑开主歌词字与字之间的间距 */
+	.rubyHang > .rubyWord {
+		width: 0;
+		overflow: visible;
+
+		& > span {
+			flex-shrink: 0;
+			white-space: pre;
+		}
+	}
 }
 
 .lyricBgLine {

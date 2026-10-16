@@ -15,6 +15,7 @@ import {
 	type LineMaskAnimator,
 } from "./animation/index.ts";
 import { LineBrightness } from "./line-brightness.ts";
+import { resolveRubyHangMap } from "./ruby-layout.ts";
 
 interface RealWord extends LyricWord {
 	mainElement: HTMLSpanElement;
@@ -239,10 +240,11 @@ export class LyricLineEl extends LyricLineBase {
 		}
 
 		const chunkedWords = chunkAndSplitLyricWords(this.lyricLine.words);
+		const rubyHangMap = resolveRubyHangMap(chunkedWords);
 		main.innerHTML = "";
 
 		for (const chunk of chunkedWords) {
-			this.buildWord(chunk, main);
+			this.buildWord(chunk, main, rubyHangMap);
 		}
 
 		this.setSubLinesText(trans, roman);
@@ -278,7 +280,11 @@ export class LyricLineEl extends LyricLineBase {
 		);
 	}
 
-	private createWord(word: LyricWord, shouldEmphasize: boolean): RealWord {
+	private createWord(
+		word: LyricWord,
+		shouldEmphasize: boolean,
+		canHangRuby: boolean,
+	): RealWord {
 		const mainWordEl = document.createElement("span");
 		const subElements: HTMLSpanElement[] = [];
 		const romanWord = word.romanWord?.trim() ?? "";
@@ -306,6 +312,7 @@ export class LyricLineEl extends LyricLineBase {
 			wordContainer.appendChild(wordTextContainer);
 			mainWordEl.appendChild(rubyWordEl);
 			mainWordEl.appendChild(wordContainer);
+			if (canHangRuby) mainWordEl.classList.add(styles.rubyHang);
 		}
 
 		const displayWord = word.word;
@@ -368,7 +375,11 @@ export class LyricLineEl extends LyricLineBase {
 		return realWord;
 	}
 
-	private buildWord(input: LyricWord | LyricWord[], main: HTMLDivElement) {
+	private buildWord(
+		input: LyricWord | LyricWord[],
+		main: HTMLDivElement,
+		rubyHangMap: Map<LyricWord, boolean>,
+	) {
 		const chunk = Array.isArray(input) ? input : [input];
 		if (chunk.length === 0) return;
 
@@ -412,7 +423,11 @@ export class LyricLineEl extends LyricLineBase {
 				continue;
 			}
 
-			const realWord = this.createWord(word, emp);
+			const realWord = this.createWord(
+				word,
+				emp,
+				rubyHangMap.get(word) === true,
+			);
 
 			if (emp) {
 				characterElements.push(...realWord.subElements);
