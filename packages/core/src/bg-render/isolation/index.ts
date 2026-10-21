@@ -22,6 +22,8 @@ import {
 	srgbToOkLab,
 } from "../palette/index.ts";
 import { isHighpFragmentSupported, isWebGL1Supported } from "../support.ts";
+import blitFragShader from "./blit.frag.glsl?raw";
+import blitVertShader from "./blit.vert.glsl?raw";
 import isolationFragShader from "./isolation.frag.glsl?raw";
 import isolationVertShader from "./isolation.vert.glsl?raw";
 
@@ -89,7 +91,12 @@ export class IsolationRenderer extends BaseRenderer {
 
 	private gl: WebGLRenderingContext;
 	private program!: GLProgram;
+	private blitProgram!: GLProgram;
 	private quadBuffer!: WebGLBuffer;
+	private fbo!: WebGLFramebuffer;
+	private fboTexture!: WebGLTexture;
+	private fboWidth = 0;
+	private fboHeight = 0;
 	private contextLost = false;
 	private _disposed = false;
 
@@ -158,6 +165,7 @@ export class IsolationRenderer extends BaseRenderer {
 			this.initializeGLResources();
 		} catch (e) {
 			this.program?.dispose();
+			this.blitProgram?.dispose();
 			gl.getExtension("WEBGL_lose_context")?.loseContext();
 			this.disconnectResizeObserver();
 			throw e;
@@ -184,10 +192,64 @@ export class IsolationRenderer extends BaseRenderer {
 			new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]),
 			gl.STATIC_DRAW,
 		);
-		// 全程只有这一个程序、这一个缓冲，顶点属性绑好之后不必逐帧重设
+		// 两个程序共用这一个缓冲，顶点属性都叫 a_position，绑好之后不必逐帧重设
 		const position = this.program.attrs.a_position;
 		gl.enableVertexAttribArray(position);
 		gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
+
+		// 直接画到默认帧缓冲时，WebKitGTK 的 DMA-BUF 合成（NVIDIA 关闭 explicit
+		// sync）会把交换链里的旧帧和当前帧交替显示，先画进 FBO 再贴到屏幕上可以
+		// 避开，MeshGradientRenderer 也是这么画的
+		this.blitProgram = new GLProgram(
+			gl,
+			blitVertShader,
+			blitFragShader,
+			"isolation-blit",
+		);
+		const fbo = gl.createFramebuffer();
+		const fboTexture = gl.createTexture();
+		if (!fbo || !fboTexture) throw new Error("Failed to create framebuffer");
+		this.fbo = fbo;
+		this.fboTexture = fboTexture;
+		this.fboWidth = 0;
+		this.fboHeight = 0;
+	}
+
+	private updateFBO(): void {
+		if (
+			this.fboWidth === this.currentWidth &&
+			this.fboHeight === this.currentHeight
+		) {
+			return;
+		}
+		const gl = this.gl;
+		gl.bindTexture(gl.TEXTURE_2D, this.fboTexture);
+		gl.texImage2D(
+			gl.TEXTURE_2D,
+			0,
+			gl.RGBA,
+			this.currentWidth,
+			this.currentHeight,
+			0,
+			gl.RGBA,
+			gl.UNSIGNED_BYTE,
+			null,
+		);
+		// 必须用 LINEAR：用 NEAREST 时 DMA-BUF 下贴到屏幕上采样出来是全黑
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+		gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo);
+		gl.framebufferTexture2D(
+			gl.FRAMEBUFFER,
+			gl.COLOR_ATTACHMENT0,
+			gl.TEXTURE_2D,
+			this.fboTexture,
+			0,
+		);
+		this.fboWidth = this.currentWidth;
+		this.fboHeight = this.currentHeight;
 	}
 
 	private readonly onContextLost = (event: Event): void => {
@@ -205,6 +267,7 @@ export class IsolationRenderer extends BaseRenderer {
 			this.initializeGLResources();
 		} catch (e) {
 			this.program?.dispose();
+			this.blitProgram?.dispose();
 			console.error("Failed to restore WebGL resources", e);
 			return;
 		}
@@ -337,6 +400,9 @@ export class IsolationRenderer extends BaseRenderer {
 		}
 		this.updateColorBuffer();
 
+		const gl = this.gl;
+		this.updateFBO();
+		gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo);
 		this.program.use();
 		this.program.setUniform2f(
 			"u_resolution",
@@ -363,7 +429,13 @@ export class IsolationRenderer extends BaseRenderer {
 			this.options.dithering ? 1 : 0,
 		);
 
-		const gl = this.gl;
+		gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+		this.blitProgram.use();
+		gl.activeTexture(gl.TEXTURE0);
+		gl.bindTexture(gl.TEXTURE_2D, this.fboTexture);
+		this.blitProgram.setUniform1i("u_texture", 0);
 		gl.drawArrays(gl.TRIANGLES, 0, 6);
 
 		// 调色板过渡跑完之后才允许静态模式停下来
@@ -521,7 +593,10 @@ export class IsolationRenderer extends BaseRenderer {
 			this.onContextRestored,
 		);
 		this.program.dispose();
+		this.blitProgram.dispose();
 		this.gl.deleteBuffer(this.quadBuffer);
+		this.gl.deleteFramebuffer(this.fbo);
+		this.gl.deleteTexture(this.fboTexture);
 		this.gl.getExtension("WEBGL_lose_context")?.loseContext();
 		super.dispose();
 	}
