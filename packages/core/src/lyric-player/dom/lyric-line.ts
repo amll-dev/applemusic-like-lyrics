@@ -15,9 +15,12 @@ import {
 	type LineMaskAnimator,
 } from "./animation/index.ts";
 import { LineBrightness } from "./line-brightness.ts";
+import { applyRubyCollisionSpacing } from "./ruby-layout.ts";
 
 interface RealWord extends LyricWord {
 	mainElement: HTMLSpanElement;
+	/** 该词自身的注音容器，无注音的单词不存在 */
+	rubyElement?: HTMLSpanElement;
 	subElements: HTMLSpanElement[];
 	elementAnimations: Animation[];
 	width: number;
@@ -282,6 +285,7 @@ export class LyricLineEl extends LyricLineBase {
 		const mainWordEl = document.createElement("span");
 		const subElements: HTMLSpanElement[] = [];
 		const romanWord = word.romanWord?.trim() ?? "";
+		let rubyElement: HTMLSpanElement | undefined;
 		const wordContainer = this.lineHasRubyWords
 			? document.createElement("span")
 			: mainWordEl;
@@ -306,6 +310,7 @@ export class LyricLineEl extends LyricLineBase {
 			wordContainer.appendChild(wordTextContainer);
 			mainWordEl.appendChild(rubyWordEl);
 			mainWordEl.appendChild(wordContainer);
+			if (rubySegments.length > 0) rubyElement = rubyWordEl;
 		}
 
 		const displayWord = word.word;
@@ -351,6 +356,7 @@ export class LyricLineEl extends LyricLineBase {
 		const realWord: RealWord = {
 			...word,
 			mainElement: mainWordEl,
+			rubyElement: rubyElement,
 			subElements: subElements,
 			elementAnimations: [
 				createFloatAnimation(mainWordEl, {
@@ -524,6 +530,8 @@ export class LyricLineEl extends LyricLineBase {
 
 		const mainStyle = getComputedStyle(this.element.children[0]);
 
+		// 撑开会改变单词盒宽，需在逐词测量之前判定
+		applyRubyCollisionSpacing(this.splittedWords);
 		this.measureWords();
 		// 此时样式与布局已完成解析，读取副本的定位几何数据不会再次引发强制同步布局
 		this.brightness.captureGeometry(mainStyle);

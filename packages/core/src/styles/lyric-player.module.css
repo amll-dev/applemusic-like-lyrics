@@ -86,6 +86,15 @@
 		min-height: 1em;
 		font-size: 0.5em;
 		line-height: 1em;
+		/* 注音宽于基字时不参与整词计宽，假名溢出到单词自身遮罩预留的内边距里，
+		   避免撑开主歌词字与字之间的间距 */
+		width: 0;
+		overflow: visible;
+
+		& > span {
+			flex-shrink: 0;
+			white-space: pre;
+		}
 	}
 
 	.wordWithRuby {
@@ -93,6 +102,12 @@
 		flex-direction: column;
 		align-items: center;
 		vertical-align: bottom;
+	}
+
+	/* 注音与相邻注音相撞时，由逐词测量流程挂上该类名，
+	   让该词退回整词计宽、把主歌词间距撑开，假名不再重叠 */
+	.rubySpaced .rubyWord {
+		width: auto;
 	}
 
 	.wordBody {
