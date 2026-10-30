@@ -21,6 +21,10 @@ const CJK_BREAK_PENALTY_RATIO = 0.15;
  */
 const NORMAL_BREAK_PENALTY_RATIO = 0.5;
 /**
+ * 在缩略词附近断开的大惩罚比例
+ */
+const ABBREVIATION_BREAK_PENALTY_RATIO = 1;
+/**
  * 在空格处断开的奖励比例
  */
 const SPACE_BREAK_REWARD_RATIO = 0.4;
@@ -30,7 +34,10 @@ const SPACE_BREAK_REWARD_RATIO = 0.4;
  * 比空格更高以便优先一点在标点处换行
  */
 const PUNCTUATION_BREAK_REWARD_RATIO = 0.6;
-const PUNCTUATION_REGEX = /[,.;:!?，。；：！？、）】》」』’”)[\]}>~…]$/;
+const PUNCTUATION_REGEX = /[,;:!?，。；：！？、）】》」』’”)[\]}>~…]$/;
+const ABBREVIATION_STEM_REGEX =
+	/\b(?:Mr|Ms|Mrs|Dr|Prof|St|Jr|Sr|vs|etc|e\.g|i\.e|U\.S|U\.K)$/i;
+const INITIAL_STEM_REGEX = /\b[A-Z]$/;
 
 /**
  * 计算平均行长度的断点位置
@@ -84,6 +91,25 @@ export function calcBalancedBreaks(
 
 	const PENALTY_CJK = (containerWidth * CJK_BREAK_PENALTY_RATIO) ** 2;
 	const PENALTY_NORMAL = (containerWidth * NORMAL_BREAK_PENALTY_RATIO) ** 2;
+	const PENALTY_ABBREVIATION =
+		(containerWidth * ABBREVIATION_BREAK_PENALTY_RATIO) ** 2;
+
+	// 不同粒度可能把缩略词和句点合并或拆开，因此要从全文上下文同时保护
+	// 词干与句点之间、句点之后、句点后的空格之后这三处候选断点。
+	// 只加大惩罚而不硬排除，以保留容器极窄、单词超宽时的断行兜底。
+	const abbreviationBreaks = new Set<number>();
+	for (let j = 1; j < n; j++) {
+		const offset = charOffsets[j];
+		const beforeBreak = fullText.slice(0, offset);
+		const stem = beforeBreak.replace(/\.\s*$/, "");
+		const hasPeriod = stem !== beforeBreak || fullText[offset] === ".";
+		if (
+			hasPeriod &&
+			(ABBREVIATION_STEM_REGEX.test(stem) || INITIAL_STEM_REGEX.test(stem))
+		) {
+			abbreviationBreaks.add(j);
+		}
+	}
 
 	for (let i = n - 1; i >= 0; i--) {
 		for (let j = i + 1; j <= n; j++) {
@@ -108,8 +134,10 @@ export function calcBalancedBreaks(
 			if (j < n) {
 				const prevChild = children[j - 1];
 
-				// 优先级：标点 > 空格 > CJK 词界 > 普通文本
-				if (PUNCTUATION_REGEX.test(prevChild.text)) {
+				// 优先级：缩略词保护 > 标点 > 空格 > CJK 词界 > 普通文本
+				if (abbreviationBreaks.has(j)) {
+					breakPenalty = PENALTY_ABBREVIATION;
+				} else if (PUNCTUATION_REGEX.test(prevChild.text)) {
 					breakPenalty = -(
 						(containerWidth * PUNCTUATION_BREAK_REWARD_RATIO) **
 						2
