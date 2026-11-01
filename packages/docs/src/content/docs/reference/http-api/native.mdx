@@ -54,16 +54,18 @@ AMLL 词库的原生接口，提供最完整的匹配与搜索能力
 
 ```typescript
 export interface PaginationInfo {
-  /** 当前页码 */
-  page: number;
+  /** 当前页码（游标分页模式下省略） */
+  page?: number;
   /** 每页条目数 */
   pageSize: number;
   /** 匹配到的总条目数 */
   total: number;
-  /** 总页数，`total` 为 0 时该值为 0 */
-  totalPages: number;
+  /** 总页数，`total` 为 0 时该值为 0（游标分页模式下省略） */
+  totalPages?: number;
   /** 当前页之后是否还有更多结果 */
   hasMore: boolean;
+  /** 下一页游标，格式为 `<createdAt>_<id>`，当还有更多结果时提供 */
+  nextCursor?: string;
 }
 
 type SearchLyricsResponse = ApiResponse<{
@@ -75,6 +77,7 @@ type SearchLyricsResponse = ApiResponse<{
 **字段说明：**
 - `ApiResponse<T>`: 全局泛型响应包装结构，详见 [ApiResponse 模型](overview#原生-api-响应模型-apiresponset)
 - `items`: 搜索到的歌曲列表，元素类型为 [SongItem 模型](overview#歌曲元数据与歌词模型-songitem)
+  - 包含 `createdAt` 创建时间戳
   - 搜索结果中每项的 `lyrics` 固定为 `undefined`
   - 仅在歌词正文包含搜索词时，`matchContext` 存在且包含 `snippet` 高亮代码片段
   - 长度不会超过 `pageSize`，末页可能少于 `pageSize`
@@ -97,6 +100,7 @@ type SearchLyricsResponse = ApiResponse<{
         {
           "id": 8713122671638320,
           "filename": "1702791169000-50747104-65652a93.ttml",
+          "createdAt": 1702791169000,
           "musicNames": [
             "ME! (feat. Brendon Urie of Panic! At The Disco)"
           ],
@@ -127,6 +131,7 @@ type SearchLyricsResponse = ApiResponse<{
         {
           "id": 8489623513658892,
           "filename": "1689481280000-132769718-1028454c.ttml",
+          "createdAt": 1689481280000,
           "musicNames": [
             "ME! (feat. Brendon Urie of Panic! At The Disco)"
           ],
@@ -160,6 +165,228 @@ type SearchLyricsResponse = ApiResponse<{
         "pageSize": 50,
         "total": 2,
         "totalPages": 1,
+        "hasMore": false
+      }
+    }
+  }
+  ```
+
+</details>
+
+---
+
+## 歌词列表
+
+遍历或浏览词库中的歌词条目，支持排序、精确结构化过滤、传统偏移分页与增量游标分页
+
+<ApiTrigger actionId="listLyrics" client:visible />
+
+### 过滤参数
+
+所有过滤参数均为可选，多个过滤参数之间为 **AND 交集关系**。空字符串参数视为未传入
+
+| 参数名           | 类型     | 匹配逻辑    | 说明                                                                                       |
+| ---------------- | -------- | ----------- | ------------------------------------------------------------------------------------------ |
+| `authorId`       | `string` | 严格全等    | TTML 贡献者的 GitHub ID                                                                    |
+| `authorUsername` | `string` | 严格全等    | TTML 贡献者的 GitHub 用户名                                                                |
+| `hasId`          | `string` | 集合包含    | 必须包含的外部平台 ID 或编码。多个取值用逗号分隔（如 `ncmMusicId,isrc`），必须同时具备     |
+| `missingId`      | `string` | 集合排除    | 必须缺失的外部平台 ID 或编码。多个取值用逗号分隔（如 `spotifyId,qqMusicId`），必须全部缺失 |
+| `since`          | `number` | 闭区间 `>=` | 条目创建时刻起始时间戳（Unix 毫秒），筛选 `createdAt >= since`                             |
+| `until`          | `number` | 闭区间 `<=` | 条目创建时刻截止时间戳（Unix 毫秒），筛选 `createdAt <= until`                             |
+
+**外部标识枚举值（适用于 `hasId` 与 `missingId`）：**
+- `ncmMusicId`: 网易云音乐歌曲 ID
+- `qqMusicId`: QQ 音乐歌曲 ID
+- `appleMusicId`: Apple Music 歌曲 ID
+- `spotifyId`: Spotify 歌曲 ID
+- `isrc`: 国际标准音像制品编码 (ISRC)
+
+:::caution[过滤参数校验规则]
+- `hasId` 与 `missingId` 之间**不允许包含相同的标识**（例如不能同时要求 `hasId=ncmMusicId` 与 `missingId=ncmMusicId`），否则返回 `400`
+- `since` 与 `until` 必须为非负整数；若同时传入，必须满足 `since <= until`，否则返回 `400`
+- 传入未知的标识名称或非法时间戳将返回 `400`
+:::
+
+### 排序参数
+
+| 参数名  | 类型     | 默认值      | 可选值                                                    | 说明                                  |
+| ------- | -------- | ----------- | --------------------------------------------------------- | ------------------------------------- |
+| `sort`  | `string` | `createdAt` | `createdAt`, `id`, `musicName`, `artistName`, `albumName` | 排序字段维度                          |
+| `order` | `string` | `desc`      | `desc`, `asc`                                             | 排序方向：`desc` 为降序，`asc` 为升序 |
+
+- 无论指定何种排序维度，底层均自动以 `id` 升序作为稳定二级排序，保证分页顺序的严格确定性
+- 传入未支持的 `sort` 或 `order` 取值将返回 `400`
+
+### 分页与游标
+
+接口支持两种分页模式：**传统偏移分页**与**增量游标分页**。两种模式**互斥**，不可混用
+
+| 参数名     | 类型     | 默认值 | 取值范围   | 说明                                                                    |
+| ---------- | -------- | ------ | ---------- | ----------------------------------------------------------------------- |
+| `page`     | `number` | `1`    | `>= 1`     | 页码，从 1 开始。**与 `cursor` / `before` 互斥**                        |
+| `pageSize` | `number` | `50`   | `1`–`100`  | 每页返回的条目数                                                        |
+| `cursor`   | `string` | 无     | 复合游标串 | 下一页游标，格式为 `<createdAt>_<id>`。**仅在 `sort=createdAt` 时可用** |
+| `before`   | `string` | 无     | 复合游标串 | `cursor` 的等价别名，两者行为完全一致                                   |
+
+#### 游标分页说明
+
+在词库持续更新的场景下，传统基于 `page` 的偏移分页（Offset Pagination）在翻到深页时，若有新歌词入库会导致后续数据整体后移，产生**深翻页漂移**（部分条目被重复读取或遗漏）。
+
+为了支持全量遍历与稳定同步，接口提供了基于创建时间戳与唯一 ID 的复合游标分页：
+1. 首次请求时无需传 `cursor`（或请求第 1 页），响应中的 `pagination.nextCursor` 会返回下一页的游标串（例如 `"1787382687321_1002"`）
+2. 后续请求携带 `cursor=<nextCursor>`（或 `before=<nextCursor>`）即可获取紧随其后的下一页数据
+3. 当 `hasMore` 为 `false` 时，表示已无后续数据，`nextCursor` 不再返回
+
+:::note[游标使用约束]
+- `page` 与 `cursor`（或 `before`）**不可同时传入**，否则返回 `400`
+- 若同时传入 `cursor` 与 `before`，两者的值必须一致，否则返回 `400`
+- 游标分页基于条目创建时刻排序，因此**仅支持在 `sort=createdAt`（默认排序）下使用**。指定其他 `sort` 维度并传入游标将返回 `400`
+- `createdAt` 是条目的创建时刻（由文件名派生），并非合入词库的时刻。使用 `since` 或游标增量同步时需留意此时间戳语义
+:::
+
+### 响应 Schema
+
+请求成功时返回 `200` 状态码及如下结构：
+
+```typescript
+type ListLyricsResponse = ApiResponse<{
+  items: SongItem[];
+  pagination: PaginationInfo;
+}>;
+```
+
+**字段说明：**
+- `ApiResponse<T>`: 全局泛型响应包装结构，详见 [ApiResponse 模型](overview#原生-api-响应模型-apiresponset)
+- `items`: 歌词条目列表，元素类型为 [SongItem 模型](overview#歌曲元数据与歌词模型-songitem)
+  - 列表结果中每项的 `lyrics` 和 `matchContext` 固定为 `undefined`
+  - 包含 `createdAt` 字段（条目创建时刻 Unix 毫秒时间戳）
+  - 长度不超过 `pageSize`
+- `pagination`: 分页元信息对象，详见 [PaginationInfo 模型](overview#分页元信息模型-paginationinfo)
+  - **传统偏移分页模式**：包含 `page`、`pageSize`、`total`、`totalPages`、`hasMore`；若 `hasMore` 为 `true`，同时提供 `nextCursor`
+  - **游标分页模式**：省略 `page` 与 `totalPages`；包含 `pageSize`、`total`、`hasMore`；若 `hasMore` 为 `true`，提供 `nextCursor`
+
+<details>
+  <summary>示例响应（传统偏移分页第 1 页，附带下一页游标）</summary>
+
+  ```json
+  {
+    "status": 200,
+    "data": {
+      "items": [
+        {
+          "id": 5440178231786117,
+          "filename": "1787382687321-330521690-test2.ttml",
+          "createdAt": 1787382687321,
+          "musicNames": [
+            "Test Song Two"
+          ],
+          "artistNames": [
+            "Artist Beta"
+          ],
+          "albumNames": [],
+          "ncmMusicIds": [
+            "1002"
+          ],
+          "qqMusicIds": [
+            "qq1002"
+          ],
+          "appleMusicIds": [],
+          "spotifyIds": [
+            "sp1002"
+          ],
+          "isrcs": [],
+          "authorIds": [
+            "330521690"
+          ],
+          "authorUsernames": [
+            "beta_author"
+          ]
+        },
+        {
+          "id": 699269132670751,
+          "filename": "1689087424000-108002475-test1.ttml",
+          "createdAt": 1689087424000,
+          "musicNames": [
+            "Test Song One"
+          ],
+          "artistNames": [
+            "Artist Alpha"
+          ],
+          "albumNames": [],
+          "ncmMusicIds": [
+            "1001"
+          ],
+          "qqMusicIds": [],
+          "appleMusicIds": [],
+          "spotifyIds": [
+            "sp1001"
+          ],
+          "isrcs": [
+            "USRC17607839"
+          ],
+          "authorIds": [
+            "108002475"
+          ],
+          "authorUsernames": [
+            "alpha_author"
+          ]
+        }
+      ],
+      "pagination": {
+        "page": 1,
+        "pageSize": 50,
+        "total": 2,
+        "totalPages": 1,
+        "hasMore": true,
+        "nextCursor": "1689087424000_699269132670751"
+      }
+    }
+  }
+  ```
+
+</details>
+
+<details>
+  <summary>示例响应（游标分页模式）</summary>
+
+  ```json
+  {
+    "status": 200,
+    "data": {
+      "items": [
+        {
+          "id": 699269132670751,
+          "filename": "1689087424000-108002475-test1.ttml",
+          "createdAt": 1689087424000,
+          "musicNames": [
+            "Test Song One"
+          ],
+          "artistNames": [
+            "Artist Alpha"
+          ],
+          "albumNames": [],
+          "ncmMusicIds": [
+            "1001"
+          ],
+          "qqMusicIds": [],
+          "appleMusicIds": [],
+          "spotifyIds": [
+            "sp1001"
+          ],
+          "isrcs": [
+            "USRC17607839"
+          ],
+          "authorIds": [
+            "108002475"
+          ],
+          "authorUsernames": [
+            "alpha_author"
+          ]
+        }
+      ],
+      "pagination": {
+        "pageSize": 1,
+        "total": 2,
         "hasMore": false
       }
     }
@@ -221,6 +448,7 @@ type GetLyricResponse = ApiResponse<SongItem>;
     "data": {
       "id": 269710089745311,
       "filename": "1768754400682-250306205-r6IrpmBd.ttml",
+      "createdAt": 1768754400682,
       "musicNames": [
         "ME!",
         "ME! (feat. Brendon Urie of Panic! At The Disco)"
