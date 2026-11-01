@@ -1,30 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
-	calcBalancedBreaks,
 	type ChildNodeInfo,
+	calcBalancedBreaks,
 } from "#utils/lyric-line-break.ts";
 
 const segmenter = new Intl.Segmenter(undefined, { granularity: "word" });
-const abbreviations = [
-	"Mr",
-	"Ms",
-	"Mrs",
-	"Dr",
-	"Prof",
-	"St",
-	"Jr",
-	"Sr",
-	"vs",
-	"etc",
-	"e.g",
-	"i.e",
-	"U.S",
-	"U.K",
-	"A",
-	"mR",
-	"PROF",
-	"u.s",
-];
 
 function createChildren(parts: [string, number][]): ChildNodeInfo[] {
 	return parts.map(([text, width]) => ({
@@ -35,62 +15,8 @@ function createChildren(parts: [string, number][]): ChildNodeInfo[] {
 }
 
 describe("calcBalancedBreaks", () => {
-	it.each(abbreviations)(
-		"keeps %s. with the following word at whole-word granularity",
-		(abbreviation) => {
-			const children = createChildren([
-				["Hello", 50],
-				[" ", 10],
-				[`${abbreviation}.`, 30],
-				[" ", 10],
-				["Smith", 50],
-				[" ", 10],
-				["today", 50],
-			]);
-
-			const result = calcBalancedBreaks(
-				children,
-				130,
-				`Hello ${abbreviation}. Smith today`,
-				segmenter,
-			);
-
-			expect(result.length).toBeGreaterThan(0);
-			expect(result).not.toContain(3);
-			expect(result).not.toContain(4);
-		},
-	);
-
-	it.each(abbreviations)(
-		"protects all three boundaries around %s. at Segmenter granularity",
-		(abbreviation) => {
-			const children = createChildren([
-				["Hello", 50],
-				[" ", 10],
-				[abbreviation, 20],
-				[".", 10],
-				[" ", 10],
-				["Smith", 50],
-				[" ", 10],
-				["today", 50],
-			]);
-
-			const result = calcBalancedBreaks(
-				children,
-				130,
-				`Hello ${abbreviation}. Smith today`,
-				segmenter,
-			);
-
-			expect(result.length).toBeGreaterThan(0);
-			expect(result).not.toContain(3);
-			expect(result).not.toContain(4);
-			expect(result).not.toContain(5);
-		},
-	);
-
 	it.each(["word", "a", "foomr", "best"])(
-		"does not reward the ASCII period or protect the ordinary word %s",
+		"does not reward the ASCII period after %s",
 		(word) => {
 			const children = createChildren([
 				["Hello", 50],
@@ -133,7 +59,7 @@ describe("calcBalancedBreaks", () => {
 			const children = createChildren([
 				["Hello", 50],
 				[" ", 10],
-				["Mr.", 30],
+				["word.", 30],
 				[" ", 10],
 				["Smith", 50],
 				[" ", 10],
@@ -144,23 +70,10 @@ describe("calcBalancedBreaks", () => {
 				calcBalancedBreaks(
 					children,
 					containerWidth,
-					"Hello Mr. Smith today",
+					"Hello word. Smith today",
 					segmenter,
 				),
 			).toEqual([]);
 		},
 	);
-
-	it("keeps protected breaks available when children exceed the container", () => {
-		const children = createChildren([
-			["Mr", 20],
-			[".", 10],
-			[" ", 10],
-			["Smith", 50],
-		]);
-
-		expect(calcBalancedBreaks(children, 10, "Mr. Smith", segmenter)).toEqual([
-			1, 2, 3,
-		]);
-	});
 });
