@@ -107,46 +107,9 @@ function stopFrameLoop() {
 
 ### 跳转
 
-在正常播放之外，播放进度有可能产生跳变，常见于：
+在正常播放之外，播放进度有可能产生跳变，歌词组件对这类进度变化会切换到另一套布局与动画行为。
 
-- 拖动进度条
-- 快进快退
-- 点击某一歌词行跳转
-- 循环播放时，进度从结尾跳至开头
-
-播放进度发生跳变时，需要把 `setCurrentTime` 的第二个参数设为 `true`：
-
-```ts
-function onSeeked() {
-	player.setCurrentTime(Math.round(audio.currentTime * 1000), true);
-}
-audio.addEventListener("seeked", onSeeked);
-```
-
-**这个参数表示本次同步是一次 seek。正常播放状态与 seek 状态的布局与动画行为是不同的：**
-
-- 正常播放时，组件会对视图内的每一行单独执行布局与弹簧动画，实现细腻的视觉效果
-- 调整进度时，组件会强制对齐歌词位置，对所有歌词行整体执行布局与弹簧动画效果，减小性能消耗且动画更加利落
-
-如果没有正确标记 seek 状态，可能出现布局异常，例如出现卡顿、歌词行从屏幕一端快速飞到另一端消失等等。你可以在 [issue #429](https://github.com/amll-dev/applemusic-like-lyrics/issues/429) 中看到截图。
-
-### 歌词行点击事件
-
-组件提供了 `line-click` 事件，在某一歌词行被点击时触发，其事件类型为 [`LyricLineMouseEvent`](/reference/core/classlyriclinemouseevent)。
-
-**组件本身不会响应歌词行的点击操作。** 宿主环境需要监听该事件，并作出音频进度跳转等操作。例如：
-
-```ts
-import type { LyricLineMouseEvent } from "@applemusic-like-lyrics/core";
-
-player.addEventListener("line-click", (event) => {
-	const lineEvent = event as LyricLineMouseEvent;
-	audio.currentTime = lineEvent.line.getLine().startTime / 1000;
-	player.setCurrentTime(lineEvent.line.getLine().startTime, true);
-});
-```
-
-值得一提：点击歌词行跳转时也属于 seek。
+有关更多信息，请转到 [跳转与进度对齐](./seeking)。
 
 ## 更换歌词
 
@@ -169,20 +132,7 @@ React 和 Vue 绑定会创建并销毁底层 Core 组件，也会在未禁用时
 | 当前播放进度 | `currentTime`        | 播放中用 `requestAnimationFrame` 从音频同步 |
 | 播放状态     | `playing`            | 控制歌词组件内部演出暂停或恢复              |
 
-React 绑定额外提供 `isSeeking` 属性，可以在跳转时传入：
-
-```tsx
-<LyricPlayer
-	lyricLines={lyricLines}
-	currentTime={currentTime}
-	isSeeking={isSeeking}
-	playing={playing}
-/>
-```
-
-`isSeeking` 不应长期保持为 `true`。通常在用户完成一次跳转时短暂置为 `true`，下一轮同步后再恢复为 `false`。
-
-Vue 绑定目前功能较为残缺，没有单独的 `isSeeking` 属性。一般场景下同步 `currentTime` 就可以工作。如果需要进一步控制状态，建议直接使用原生方式引入。我们将会在接下来的版本中逐步优化 Vue 绑定的功能与使用体验。
+React 绑定额外提供 `isSeeking` 属性，对应 `setCurrentTime` 的第二个参数；Vue 绑定目前功能较为残缺，没有对应的属性。两者的自动推导都默认启用，因此一般同步 `currentTime` 即可，详见 [跳转与进度对齐](./seeking#react-与-vue-绑定)。我们将会在接下来的版本中逐步优化 Vue 绑定的功能与使用体验。
 
 如果设置了 `disabled`，绑定将不再代管逐帧动画。此时你可以通过组件 ref 取得底层 `lyricPlayer`，并像原生方式一样自己调用 `update`。
 
@@ -215,5 +165,5 @@ player.dispose();
 - 播放时用 `requestAnimationFrame` 同步 `currentTime`。
 - 原生方式逐帧调用 `update(delta)`。
 - 暂停、恢复、结束播放时同步 `pause()` / `resume()` 或 `playing`。
-- 跳转使用 seek 标志对齐。
+- 跳转默认由组件自动识别；已知发生跳转时，可以额外用 seek 标志显式标识。
 - 卸载时取消动画帧、移除事件监听并释放组件。

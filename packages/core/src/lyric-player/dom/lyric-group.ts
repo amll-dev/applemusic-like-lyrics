@@ -39,19 +39,21 @@ export class LyricLineGroup extends LyricLineGroupBase<LyricLineEl> {
 		return this.element;
 	}
 
-	get isInSight(): boolean {
-		const t = this.posY.getCurrentPosition();
+	isInRenderRange(includeOverscan = true): boolean {
+		const top = this.posY.getCurrentPosition();
 
 		const index = this.lyricPlayer.currentLyricGroups.indexOf(this);
-		const h =
+		const height =
 			index !== -1
 				? this.lyricPlayer.getLineHeight(index)
 				: this.lyricPlayer.defaultLineHeight;
 
-		const pb = this.lyricPlayer.size[1];
-		const ov = this.lyricPlayer.getOverscanPx();
+		const viewportHeight = this.lyricPlayer.size[1];
+		if (viewportHeight <= 0 || height <= 0) return false;
 
-		return !(t > pb + h + ov || t < -h - ov);
+		const overscan = includeOverscan ? this.lyricPlayer.getOverscanPx() : 0;
+
+		return top < viewportHeight + overscan && top + height > -overscan;
 	}
 
 	show(): void {
@@ -84,6 +86,8 @@ export class LyricLineGroup extends LyricLineGroupBase<LyricLineEl> {
 
 	hide(): void {
 		if (this.element.parentElement) {
+			this.mainLine.hide();
+			this.bgLine?.hide();
 			this.lyricPlayer.resizeObserver.unobserve(this.element);
 			if (this.bgWrapper) {
 				this.lyricPlayer.resizeObserver.unobserve(this.bgWrapper);
@@ -97,7 +101,7 @@ export class LyricLineGroup extends LyricLineGroupBase<LyricLineEl> {
 	}
 
 	override commitChanges(): void {
-		if (this.isInSight) {
+		if (this.isInRenderRange()) {
 			this.show();
 			super.commitChanges();
 		} else {
@@ -106,7 +110,11 @@ export class LyricLineGroup extends LyricLineGroupBase<LyricLineEl> {
 	}
 
 	override onBgSizeChange(size: [number, number]): void {
-		if (this.bgWrapper && this.lastBgHeight !== size[1]) {
+		if (!this.bgWrapper) return;
+
+		this.bgLine?.onLineSizeChange(size);
+
+		if (this.lastBgHeight !== size[1]) {
 			this.lastBgHeight = size[1];
 			this.lastBgSlideYNum = -9999;
 			this.isUiDirty = true;
@@ -180,7 +188,7 @@ export class LyricLineGroup extends LyricLineGroupBase<LyricLineEl> {
 		const blurVal = Math.min(5, this.blur);
 		if (Math.abs(blurVal - this.lastBlurNum) >= 0.05) {
 			this.lastBlurNum = blurVal;
-			style.filter = blurVal > 0.01 ? `blur(${blurVal.toFixed(2)}px)` : "none";
+			style.filter = `blur(${blurVal.toFixed(2)}px)`;
 		}
 
 		if (this.bgWrapper) {

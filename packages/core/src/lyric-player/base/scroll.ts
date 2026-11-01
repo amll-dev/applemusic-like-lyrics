@@ -20,24 +20,10 @@ export interface ScrollEngineHooks {
 	 * 一般在此暂停模糊效果、暂停自动跟随等
 	 */
 	onInteractionStart: (type: ScrollInputType) => void;
-
-	/**
-	 * 手指松开且惯性滚动完全停止时触发
-	 *
-	 * 一般用于标记交互停止
-	 */
-	onInteractionEnd: () => void;
-
-	/**
-	 * 物理静止后，5秒定时器到期时触发
-	 *
-	 * 一般在此执行重置操作 (如 resetScroll) 并恢复自动排版
-	 */
-	onAutoAlignResume: () => void;
 }
 
-/** 滚动静止后恢复自动排版与对齐的等待时间（5秒） */
-const AUTO_ALIGN_RESUME_DELAY_MS = 5000;
+/** 滚动静止后允许在歌词焦点切换时恢复自动对齐的等待时间 */
+const AUTO_ALIGN_RESUME_DELAY_MS = 500;
 
 /** 滚轮交互结束防抖时间（150毫秒） */
 const WHEEL_IDLE_TIMEOUT_MS = 150;
@@ -77,7 +63,7 @@ export class ScrollInteractionEngine {
 	};
 
 	private inertiaRafId: number = 0;
-	private scrolledTimeoutId: number = 0;
+	private scrollEndTime: number | undefined;
 	private isInteracting: boolean = false;
 	private wheelEndTimeoutId: number = 0;
 
@@ -113,24 +99,19 @@ export class ScrollInteractionEngine {
 
 	//#region 生命周期控制
 	private startInteraction(type: ScrollInputType): void {
+		this.scrollEndTime = undefined;
 		if (!this.isInteracting) {
 			this.isInteracting = true;
 			this.hooks.onInteractionStart(type);
 		}
 	}
 
-	private endInteractionAndStartTimer(): void {
-		if (this.isInteracting) {
-			this.isInteracting = false;
-			this.hooks.onInteractionEnd();
-		}
+	private endInteraction(): void {
+		this.isInteracting = false;
 
 		this.clearTimers();
 
-		this.scrolledTimeoutId = window.setTimeout(() => {
-			this.scrolledTimeoutId = 0;
-			this.hooks.onAutoAlignResume();
-		}, AUTO_ALIGN_RESUME_DELAY_MS);
+		this.scrollEndTime = performance.now();
 	}
 	//#endregion
 
@@ -150,8 +131,7 @@ export class ScrollInteractionEngine {
 		}
 
 		this.interruptedState.hadInertia = this.inertiaRafId !== 0;
-		this.interruptedState.hadTimer =
-			this.scrolledTimeoutId !== 0 || this.wheelEndTimeoutId !== 0;
+		this.interruptedState.hadTimer = this.wheelEndTimeoutId !== 0;
 		this.interruptedState.wasInteracting = this.isInteracting;
 
 		this.clearTimers();
@@ -214,7 +194,7 @@ export class ScrollInteractionEngine {
 			const { hadInertia, hadTimer, wasInteracting } = this.interruptedState;
 
 			if (hadInertia || hadTimer || wasInteracting) {
-				this.endInteractionAndStartTimer();
+				this.endInteraction();
 			}
 
 			return;
@@ -223,7 +203,7 @@ export class ScrollInteractionEngine {
 		state.speed = 0;
 		state.startY = 0;
 
-		this.endInteractionAndStartTimer();
+		this.endInteraction();
 	};
 
 	private onTouchEnd = (evt: TouchEvent) => {
@@ -246,7 +226,7 @@ export class ScrollInteractionEngine {
 			const { hadInertia, hadTimer, wasInteracting } = this.interruptedState;
 
 			if (hadInertia || hadTimer || wasInteracting) {
-				this.endInteractionAndStartTimer();
+				this.endInteraction();
 			}
 
 			return;
@@ -292,13 +272,13 @@ export class ScrollInteractionEngine {
 					this.inertiaRafId = requestAnimationFrame(onScrollFrame);
 				} else {
 					this.inertiaRafId = 0;
-					this.endInteractionAndStartTimer();
+					this.endInteraction();
 				}
 			};
 
 			this.inertiaRafId = requestAnimationFrame(onScrollFrame);
 		} else {
-			this.endInteractionAndStartTimer();
+			this.endInteraction();
 		}
 	};
 
@@ -321,7 +301,7 @@ export class ScrollInteractionEngine {
 
 		this.wheelEndTimeoutId = window.setTimeout(() => {
 			this.wheelEndTimeoutId = 0;
-			this.endInteractionAndStartTimer();
+			this.endInteraction();
 		}, WHEEL_IDLE_TIMEOUT_MS);
 	};
 	//#endregion
@@ -338,6 +318,16 @@ export class ScrollInteractionEngine {
 	//#endregion
 
 	//#region 外部干预逻辑
+	/**
+	 * 滚动结束是否已超过 {@link AUTO_ALIGN_RESUME_DELAY_MS}
+	 */
+	public get canResumeAutoAlign(): boolean {
+		return (
+			this.scrollEndTime !== undefined &&
+			performance.now() - this.scrollEndTime >= AUTO_ALIGN_RESUME_DELAY_MS
+		);
+	}
+
 	/**
 	 * 更新允许的滚动边界，并返回钳制后的实际 offset
 	 *
@@ -358,10 +348,11 @@ export class ScrollInteractionEngine {
 	 *
 	 * @description
 	 * 当需要清空全部用户手势带来的临时滚动状态时，例如，用户点击了某行歌词触发了
-	 * Seek、歌曲切歌、或者 5 秒倒计时到期恢复自动对齐时，调用此方法重置滚动引擎
+	 * Seek、歌曲切歌、或者焦点切换时恢复自动对齐，调用此方法重置滚动引擎
 	 */
 	public resetScroll(targetOffset: number = 0): void {
 		this.clearTimers();
+		this.scrollEndTime = undefined;
 
 		this.isInteracting = false;
 		this.touchState.isIntentConfirmed = false;
@@ -380,10 +371,6 @@ export class ScrollInteractionEngine {
 			cancelAnimationFrame(this.inertiaRafId);
 			this.inertiaRafId = 0;
 		}
-		if (this.scrolledTimeoutId) {
-			clearTimeout(this.scrolledTimeoutId);
-			this.scrolledTimeoutId = 0;
-		}
 		if (this.wheelEndTimeoutId) {
 			window.clearTimeout(this.wheelEndTimeoutId);
 			this.wheelEndTimeoutId = 0;
@@ -393,6 +380,7 @@ export class ScrollInteractionEngine {
 	public dispose(): void {
 		this.abortController.abort();
 		this.clearTimers();
+		this.scrollEndTime = undefined;
 	}
 	//#endregion
 }

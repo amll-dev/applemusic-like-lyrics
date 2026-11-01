@@ -1,3 +1,13 @@
+## 1.1.0 (2026-09-19)
+
+### Minor Changes
+
+- **refactor(lyric):** 统一各个 LRC 格式的处理 ([#613](https://github.com/amll-dev/applemusic-like-lyrics/pull/613))
+
+### Contributors
+
+- apoint123 [@apoint123](https://github.com/apoint123)
+
 ## 1.0.2 (2026-07-09)
 
 ### Patch Changes

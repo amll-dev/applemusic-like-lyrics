@@ -70,12 +70,18 @@ export interface BackgroundRenderProps {
 	 */
 	staticMode?: boolean;
 	/**
-	 * 设置渲染器，如果为 `undefined` 则默认为 `PixiRenderer`
+	 * 设置渲染器，如果为 `undefined` 则默认为 `MeshGradientRenderer`
 	 * 默认渲染器有可能会随着版本更新而更换
 	 */
 	renderer?: {
 		new (...args: ConstructorParameters<typeof BaseRenderer>): BaseRenderer;
 	};
+	/**
+	 * 配置当前渲染器实例。
+	 *
+	 * 渲染器创建或回调变化后调用，可用于下发特定渲染器才支持的选项。
+	 */
+	configureRenderer?: (renderer: BaseRenderer) => void;
 }
 
 /**
@@ -114,40 +120,54 @@ export const BackgroundRender: ForwardRefExoticComponent<
 			lowFreqVolume,
 			hasLyric,
 			renderer,
+			configureRenderer,
 			style,
 			...props
 		},
 		ref,
 	) => {
-		const coreBGRenderRef = useRef<AbstractBaseRenderer>(null);
+		const coreBGRenderRef = useRef<CoreBackgroundRender<BaseRenderer>>(null);
 		const wrapperRef = useRef<HTMLDivElement>(null);
-		const lastRendererRef = useRef<{
-			new (canvas: HTMLCanvasElement): BaseRenderer;
-		}>(null);
+		const configureRendererRef = useRef(configureRenderer);
+		configureRendererRef.current = configureRenderer;
+		const rendererPropsRef = useRef({
+			album,
+			albumIsVideo,
+			fps,
+			playing,
+			flowSpeed,
+			renderScale,
+			staticMode,
+			lowFreqVolume,
+			hasLyric,
+		});
+		rendererPropsRef.current = {
+			album,
+			albumIsVideo,
+			fps,
+			playing,
+			flowSpeed,
+			renderScale,
+			staticMode,
+			lowFreqVolume,
+			hasLyric,
+		};
 		const curRenderer = renderer ?? MeshGradientRenderer;
 
 		useEffect(() => {
-			if (
-				lastRendererRef.current !== curRenderer ||
-				coreBGRenderRef.current === undefined
-			) {
-				lastRendererRef.current = curRenderer;
-				coreBGRenderRef.current?.dispose();
-				coreBGRenderRef.current = CoreBackgroundRender.new(curRenderer);
-			}
-		}, [curRenderer]);
+			const rendererInstance = coreBGRenderRef.current?.getRenderer();
+			if (rendererInstance) configureRenderer?.(rendererInstance);
+		}, [configureRenderer]);
 
 		useEffect(() => {
-			if (curRenderer && album)
-				coreBGRenderRef.current?.setAlbum(album, albumIsVideo);
-		}, [curRenderer, album, albumIsVideo]);
+			if (album) coreBGRenderRef.current?.setAlbum(album, albumIsVideo);
+		}, [album, albumIsVideo]);
 
 		useEffect(() => {
-			if (curRenderer && fps) coreBGRenderRef.current?.setFPS(fps);
-		}, [curRenderer, fps]);
+			if (fps !== undefined) coreBGRenderRef.current?.setFPS(fps);
+		}, [fps]);
 
 		useEffect(() => {
-			if (!curRenderer) return;
 			if (playing === undefined) {
 				coreBGRenderRef.current?.resume();
 			} else if (playing) {
@@ -155,54 +175,89 @@ export const BackgroundRender: ForwardRefExoticComponent<
 			} else {
 				coreBGRenderRef.current?.pause();
 			}
-		}, [curRenderer, playing]);
+		}, [playing]);
 
 		useEffect(() => {
-			if (!curRenderer) return;
-			if (flowSpeed) coreBGRenderRef.current?.setFlowSpeed(flowSpeed);
-		}, [curRenderer, flowSpeed]);
-
-		useEffect(() => {
-			if (!curRenderer) return;
-			coreBGRenderRef.current?.setStaticMode(staticMode ?? false);
-		}, [curRenderer, staticMode]);
-
-		useEffect(() => {
-			if (curRenderer && renderScale)
-				coreBGRenderRef.current?.setRenderScale(renderScale ?? 0.5);
-		}, [curRenderer, renderScale]);
-
-		useEffect(() => {
-			if (curRenderer && lowFreqVolume)
-				coreBGRenderRef.current?.setLowFreqVolume(lowFreqVolume ?? 1.0);
-		}, [curRenderer, lowFreqVolume]);
-
-		useEffect(() => {
-			if (curRenderer && hasLyric !== undefined)
-				coreBGRenderRef.current?.setHasLyric(hasLyric ?? true);
-		}, [curRenderer, hasLyric]);
-
-		// biome-ignore lint/correctness/useExhaustiveDependencies: coreBGRenderRef.current
-		useEffect(() => {
-			if (coreBGRenderRef.current) {
-				const el = coreBGRenderRef.current.getElement();
-				el.style.width = "100%";
-				el.style.height = "100%";
-				el.style.minHeight = "0";
-				el.style.minWidth = "0";
-				el.style.overflow = "hidden";
-				wrapperRef.current?.appendChild(el);
+			if (flowSpeed !== undefined) {
+				coreBGRenderRef.current?.setFlowSpeed(flowSpeed);
 			}
-		}, [coreBGRenderRef.current]);
+		}, [flowSpeed]);
 
-		// biome-ignore lint/correctness/useExhaustiveDependencies: wrapperRef.current, coreBGRenderRef.current
+		useEffect(() => {
+			coreBGRenderRef.current?.setStaticMode(staticMode ?? false);
+		}, [staticMode]);
+
+		useEffect(() => {
+			if (renderScale !== undefined) {
+				coreBGRenderRef.current?.setRenderScale(renderScale);
+			}
+		}, [renderScale]);
+
+		useEffect(() => {
+			if (lowFreqVolume !== undefined) {
+				coreBGRenderRef.current?.setLowFreqVolume(lowFreqVolume);
+			}
+		}, [lowFreqVolume]);
+
+		useEffect(() => {
+			if (hasLyric !== undefined) {
+				coreBGRenderRef.current?.setHasLyric(hasLyric);
+			}
+		}, [hasLyric]);
+
+		useEffect(() => {
+			const backgroundRender = CoreBackgroundRender.new(curRenderer);
+			coreBGRenderRef.current = backgroundRender;
+			configureRendererRef.current?.(backgroundRender.getRenderer());
+
+			const current = rendererPropsRef.current;
+			if (current.album) {
+				backgroundRender.setAlbum(current.album, current.albumIsVideo);
+			}
+			if (current.fps !== undefined) backgroundRender.setFPS(current.fps);
+			if (current.flowSpeed !== undefined) {
+				backgroundRender.setFlowSpeed(current.flowSpeed);
+			}
+			backgroundRender.setStaticMode(current.staticMode ?? false);
+			if (current.renderScale !== undefined) {
+				backgroundRender.setRenderScale(current.renderScale);
+			}
+			if (current.lowFreqVolume !== undefined) {
+				backgroundRender.setLowFreqVolume(current.lowFreqVolume);
+			}
+			if (current.hasLyric !== undefined) {
+				backgroundRender.setHasLyric(current.hasLyric);
+			}
+			if (current.playing === false) backgroundRender.pause();
+			else backgroundRender.resume();
+
+			const element = backgroundRender.getElement();
+			element.style.width = "100%";
+			element.style.height = "100%";
+			element.style.minHeight = "0";
+			element.style.minWidth = "0";
+			element.style.overflow = "hidden";
+			wrapperRef.current?.appendChild(element);
+
+			return () => {
+				backgroundRender.dispose();
+				if (coreBGRenderRef.current === backgroundRender) {
+					coreBGRenderRef.current = null;
+				}
+			};
+		}, [curRenderer]);
+
 		useImperativeHandle(
 			ref,
 			() => ({
-				wrapperEl: wrapperRef.current,
-				bgRender: coreBGRenderRef.current as AbstractBaseRenderer,
+				get wrapperEl() {
+					return wrapperRef.current;
+				},
+				get bgRender() {
+					return coreBGRenderRef.current ?? undefined;
+				},
 			}),
-			[wrapperRef.current, coreBGRenderRef.current],
+			[],
 		);
 
 		return (

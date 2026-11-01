@@ -126,6 +126,15 @@ function isReleasePlanPath(path) {
 
 const pullRequest = await requestJson(`/pulls/${prNumber}`);
 const labels = new Set((pullRequest.labels ?? []).map((label) => label.name));
+
+if (labels.has("skip-release-check")) {
+	console.log(
+		"Pull request has 'skip-release-check' label. Skipping release plan check.",
+	);
+	appendFileSync(outputPath, "requires_release_plan=false\n");
+	process.exit(0);
+}
+
 const changedFileEntries = await getAllChangedFiles();
 const changedFiles = changedFileEntries.map((item) => item.filename);
 const ignorePatternsForPlanCheck = loadIgnorePatternsForPlanCheck();

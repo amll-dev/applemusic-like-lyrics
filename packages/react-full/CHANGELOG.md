@@ -1,3 +1,20 @@
+## 0.5.0 (2026-09-19)
+
+### Minor Changes
+
+- **feat(react-full):** 添加 Isolation 背景渲染器 ([#605](https://github.com/amll-dev/applemusic-like-lyrics/pull/605))
+
+### Patch Changes
+
+- **fix(react-full):** 只为远程资源设置 crossOrigin 属性 ([#560](https://github.com/amll-dev/applemusic-like-lyrics/pull/560))
+- **chore(react-full):** 移除未使用的 SongData 类型 ([#559](https://github.com/amll-dev/applemusic-like-lyrics/pull/559))
+- **style:** 格式化 SVG 和 HTML 文件 ([#580](https://github.com/amll-dev/applemusic-like-lyrics/pull/580))
+
+### Contributors
+
+- apoint123 [@apoint123](https://github.com/apoint123)
+- ChouChiu [@ChouChiu](https://github.com/ChouChiu)
+
 ## 0.4.2 (2026-07-09)
 
 ### Patch Changes

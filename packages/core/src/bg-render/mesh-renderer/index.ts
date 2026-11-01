@@ -6,18 +6,21 @@
  */
 
 import { Mat4, Vec2, Vec3, Vec4 } from "gl-matrix";
+import { createOffscreenCanvas } from "#utils/canvas.ts";
+import { clamp01 } from "#utils/clamp.ts";
 import type { Disposable } from "../../interfaces.ts";
 import {
 	loadResourceFromElement,
 	loadResourceFromUrl,
 } from "../../utils/resource.ts";
 import { BaseRenderer } from "../base.ts";
+import { GLProgram } from "../gl-program.ts";
 import { blurImage } from "../img.ts";
+import { isWebGL1Supported } from "../support.ts";
 import { generateControlPoints } from "./cp-generate.ts";
 import { CONTROL_POINT_PRESETS } from "./cp-presets.ts";
 import meshFragShader from "./mesh.frag.glsl?raw";
 import meshVertShader from "./mesh.vert.glsl?raw";
-import { clamp01 } from "#utils/clamp.ts";
 
 const quadVertShader = `
 attribute vec2 a_pos;
@@ -44,105 +47,6 @@ function easeInOutSine(x: number): number {
 }
 
 type RenderingContext = WebGLRenderingContext;
-
-class GLProgram implements Disposable {
-	private gl: RenderingContext;
-	program: WebGLProgram;
-	private vertexShader: WebGLShader;
-	private fragmentShader: WebGLShader;
-	readonly attrs: { [name: string]: number };
-	constructor(
-		gl: RenderingContext,
-		vertexShaderSource: string,
-		fragmentShaderSource: string,
-		private readonly label = "unknown",
-	) {
-		this.gl = gl;
-		this.vertexShader = this.createShader(gl.VERTEX_SHADER, vertexShaderSource);
-		this.fragmentShader = this.createShader(
-			gl.FRAGMENT_SHADER,
-			fragmentShaderSource,
-		);
-		this.program = this.createProgram();
-
-		const num = gl.getProgramParameter(this.program, gl.ACTIVE_ATTRIBUTES);
-		const attrs: { [name: string]: number } = {};
-		for (let i = 0; i < num; i++) {
-			const info = gl.getActiveAttrib(this.program, i);
-			if (!info) continue;
-			const location = gl.getAttribLocation(this.program, info.name);
-			if (location === -1) continue;
-			attrs[info.name] = location;
-		}
-		this.attrs = attrs;
-	}
-	private createShader(type: number, source: string) {
-		const gl = this.gl;
-		const shader = gl.createShader(type);
-		if (!shader) throw new Error("Failed to create shader");
-		gl.shaderSource(shader, source);
-		gl.compileShader(shader);
-		if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-			throw new Error(
-				`Failed to compile shader for type ${type} "${
-					this.label
-				}": ${gl.getShaderInfoLog(shader)}`,
-			);
-		}
-		return shader;
-	}
-	private createProgram() {
-		const gl = this.gl;
-		const program = gl.createProgram();
-		if (!program) throw new Error("Failed to create program");
-		gl.attachShader(program, this.vertexShader);
-		gl.attachShader(program, this.fragmentShader);
-		gl.linkProgram(program);
-		gl.validateProgram(program);
-		if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-			const errLog = gl.getProgramInfoLog(program);
-			gl.deleteProgram(program);
-			throw new Error(`Failed to link program "${this.label}": ${errLog}`);
-		}
-		return program;
-	}
-	use() {
-		const gl = this.gl;
-		gl.useProgram(this.program);
-	}
-	private notFoundUniforms: Set<string> = new Set();
-	private warnUniformNotFound(name: string) {
-		if (this.notFoundUniforms.has(name)) return;
-		this.notFoundUniforms.add(name);
-		console.warn(
-			`Failed to get uniform location for program "${this.label}": ${name}`,
-		);
-	}
-	setUniform1f(name: string, value: number) {
-		const gl = this.gl;
-		const location = gl.getUniformLocation(this.program, name);
-		if (!location) this.warnUniformNotFound(name);
-		else gl.uniform1f(location, value);
-	}
-	setUniform2f(name: string, value1: number, value2: number) {
-		const gl = this.gl;
-		const location = gl.getUniformLocation(this.program, name);
-		if (!location) this.warnUniformNotFound(name);
-		else gl.uniform2f(location, value1, value2);
-	}
-	setUniform1i(name: string, value: number) {
-		const gl = this.gl;
-		const location = gl.getUniformLocation(this.program, name);
-		if (!location) this.warnUniformNotFound(name);
-		else gl.uniform1i(location, value);
-	}
-	dispose() {
-		const gl = this.gl;
-		gl.deleteShader(this.vertexShader);
-		gl.deleteShader(this.fragmentShader);
-		gl.deleteProgram(this.program);
-	}
-}
 
 class Mesh implements Disposable {
 	protected vertexWidth = 0;
@@ -763,14 +667,6 @@ class GLTexture implements Disposable {
 	}
 }
 
-function createOffscreenCanvas(width: number, height: number) {
-	if ("OffscreenCanvas" in window) return new OffscreenCanvas(width, height);
-	const canvas = document.createElement("canvas");
-	canvas.width = width;
-	canvas.height = height;
-	return canvas;
-}
-
 interface MeshState {
 	mesh: BHPMesh;
 	texture: GLTexture;
@@ -778,6 +674,13 @@ interface MeshState {
 }
 
 export class MeshGradientRenderer extends BaseRenderer {
+	/**
+	 * 当前环境是否支持此渲染器
+	 */
+	static isSupported(): boolean {
+		return isWebGL1Supported();
+	}
+
 	private gl: RenderingContext;
 	private contextLost = false;
 	private albumRequestId = 0;

@@ -6,13 +6,15 @@
 import classnames from "classnames";
 import { motion } from "framer-motion";
 import type React from "react";
-import type { HTMLProps } from "react";
+import type { HTMLProps, Ref } from "react";
+import { useMotionElementRef } from "../utils/useMotionElementRef";
 import styles from "./horizontal.module.css";
 
 export const HorizontalLayout: React.FC<
 	{
 		thumbSlot?: React.ReactNode;
 		coverSlot?: React.ReactNode;
+		coverFrameRef?: Ref<HTMLDivElement>;
 		controlsSlot?: React.ReactNode;
 		lyricSlot?: React.ReactNode;
 		backgroundSlot?: React.ReactNode;
@@ -23,6 +25,7 @@ export const HorizontalLayout: React.FC<
 > = ({
 	thumbSlot,
 	coverSlot,
+	coverFrameRef,
 	controlsSlot,
 	lyricSlot,
 	bottomControls,
@@ -31,6 +34,7 @@ export const HorizontalLayout: React.FC<
 	asChild,
 	...rest
 }) => {
+	const frameRef = useMotionElementRef(coverFrameRef);
 	return (
 		<div
 			className={classnames(
@@ -43,7 +47,12 @@ export const HorizontalLayout: React.FC<
 			<motion.div layout layoutId="amll-player-thumb" className={styles.thumb}>
 				{thumbSlot}
 			</motion.div>
-			<motion.div layout layoutId="amll-player-cover" className={styles.cover}>
+			<motion.div
+				layout
+				layoutId="amll-player-cover"
+				className={styles.cover}
+				ref={frameRef}
+			>
 				{coverSlot}
 			</motion.div>
 			<motion.div

@@ -1,8 +1,13 @@
 import {
+	type BaseRenderer,
 	DomLyricPlayer,
+	IsolationRenderer,
+	type IsolationRendererOptions,
 	type LyricPlayerBase,
 	MeshGradientRenderer,
 	PixiRenderer,
+	TitaniumRenderer,
+	type TitaniumRendererOptions,
 } from "@applemusic-like-lyrics/core";
 import type { BackgroundRenderProps } from "@applemusic-like-lyrics/react";
 import { atom, type PrimitiveAtom, type WritableAtom } from "jotai";
@@ -322,25 +327,123 @@ export type LyricBackgroundRenderer = {
 	renderer?: BackgroundRenderProps["renderer"] | string;
 };
 
-const getInitialBackgroundRenderer = (): LyricBackgroundRenderer => {
-	const savedRenderer = localStorage.getItem(
-		"amll-react-full.lyricBackgroundRenderer",
-	);
-	switch (savedRenderer) {
-		case "pixi":
-			return { renderer: PixiRenderer };
-		case "css-bg":
-			return { renderer: "css-bg" };
-		default:
-			return { renderer: MeshGradientRenderer };
-	}
+/** 一个可选背景渲染器的注册项。 */
+export interface BackgroundRendererEntry {
+	/** 渲染器类。 */
+	readonly renderer: {
+		new (canvas: HTMLCanvasElement): BaseRenderer;
+	};
+	/**
+	 * 当前环境是否支持，不支持时会按 {@link resolveBackgroundRenderer} 的顺序回落
+	 */
+	readonly isSupported: () => boolean;
+}
+
+export const CSS_BACKGROUND_RENDERER_ID = "css-bg";
+export const DEFAULT_BACKGROUND_RENDERER_ID = "mesh";
+
+/**
+ * 所有可选的背景渲染器。
+ *
+ * `"css-bg"` 不在表内，因为它不是渲染器，而是固定的纯色 CSS 背景
+ */
+export const BACKGROUND_RENDERERS: Readonly<
+	Record<string, BackgroundRendererEntry>
+> = {
+	mesh: {
+		renderer: MeshGradientRenderer,
+		isSupported: () => MeshGradientRenderer.isSupported(),
+	},
+	pixi: {
+		renderer: PixiRenderer,
+		isSupported: () => PixiRenderer.isSupported(),
+	},
+	isolation: {
+		renderer: IsolationRenderer,
+		isSupported: () => IsolationRenderer.isSupported(),
+	},
+	titanium: {
+		renderer: TitaniumRenderer,
+		isSupported: () => TitaniumRenderer.isSupported(),
+	},
 };
+
+/** 背景渲染器配置在 localStorage 中的键名。 */
+export const LYRIC_BACKGROUND_RENDERER_STORAGE_KEY =
+	"amll-react-full.lyricBackgroundRenderer";
+
+/**
+ * {@link resolveBackgroundRenderer} 的结果：可以直接使用的渲染器类，或
+ * {@link CSS_BACKGROUND_RENDERER_ID} 表示不需要加载背景渲染器
+ */
+export type ResolvedBackgroundRenderer =
+	| BackgroundRendererEntry["renderer"]
+	| typeof CSS_BACKGROUND_RENDERER_ID;
+
+/**
+ * 把字符串标识解析成渲染器
+ *
+ * 如果传入的渲染器标识在当前环境不支持，则会依次回退到 Mesh 渲染器和 CSS 背景
+ */
+export const resolveBackgroundRenderer = (
+	id: string,
+): ResolvedBackgroundRenderer => {
+	if (id === CSS_BACKGROUND_RENDERER_ID) return CSS_BACKGROUND_RENDERER_ID;
+	const entry = BACKGROUND_RENDERERS[id];
+	if (entry?.isSupported()) return entry.renderer;
+	const fallback = BACKGROUND_RENDERERS[DEFAULT_BACKGROUND_RENDERER_ID];
+	if (fallback?.isSupported()) return fallback.renderer;
+	return CSS_BACKGROUND_RENDERER_ID;
+};
+
+const getInitialBackgroundRenderer = (): LyricBackgroundRenderer => ({
+	renderer: resolveBackgroundRenderer(
+		localStorage.getItem(LYRIC_BACKGROUND_RENDERER_STORAGE_KEY) ??
+			DEFAULT_BACKGROUND_RENDERER_ID,
+	),
+});
 
 /**
  * 配置所使用的歌词背景渲染器
  */
 export const lyricBackgroundRendererAtom: PrimitiveAtom<LyricBackgroundRenderer> =
 	atom<LyricBackgroundRenderer>(getInitialBackgroundRenderer());
+
+/**
+ * Isolation 背景渲染器的专属选项
+ *
+ * 仅在背景渲染器为 Isolation 时生效
+ */
+export const isolationRendererOptionsAtom: WritableAtom<
+	IsolationRendererOptions,
+	[
+		| IsolationRendererOptions
+		| ((prev: IsolationRendererOptions) => IsolationRendererOptions)
+		| typeof RESET,
+	],
+	void
+> = atomWithStorage<IsolationRendererOptions>(
+	"amll-react-full.isolationRendererOptions",
+	{ ...IsolationRenderer.defaultOptions },
+);
+
+/**
+ * Titanium 背景渲染器的专属选项
+ *
+ * 仅在背景渲染器为 Titanium 时生效
+ */
+export const titaniumRendererOptionsAtom: WritableAtom<
+	TitaniumRendererOptions,
+	[
+		| TitaniumRendererOptions
+		| ((prev: TitaniumRendererOptions) => TitaniumRendererOptions)
+		| typeof RESET,
+	],
+	void
+> = atomWithStorage<TitaniumRendererOptions>(
+	"amll-react-full.titaniumRendererOptions",
+	{ ...TitaniumRenderer.defaultOptions },
+);
 
 /**
  * 当背景渲染器设置为纯色或CSS背景时，使用此值

@@ -1,5 +1,9 @@
 <script setup lang="ts">
-import { BrushIcon, MonitorPlayIcon } from "lucide-vue-next";
+import {
+	BrushIcon,
+	MonitorPlayIcon,
+	SlidersHorizontalIcon,
+} from "lucide-vue-next";
 import {
 	Select,
 	SelectContent,
@@ -49,6 +53,8 @@ const player = usePlayerStore();
 				<SelectContent>
 					<SelectItem value="mg">Mesh Gradient 渲染器</SelectItem>
 					<SelectItem value="pixi">Pixi 渲染器</SelectItem>
+					<SelectItem value="isolation">Isolation 渲染器</SelectItem>
+					<SelectItem value="titanium">Titanium 流沙渲染器</SelectItem>
 				</SelectContent>
 			</Select>
 
@@ -79,5 +85,105 @@ const player = usePlayerStore();
 				/>
 			</ControllerSliderGroup>
 		</section>
+
+		<template v-if="player.background.renderer === 'isolation'">
+			<Separator />
+
+			<section class="space-y-2.5">
+				<h3 class="text-sm font-bold flex items-center gap-1">
+					<SlidersHorizontalIcon :size="16" />
+					Isolation 选项
+				</h3>
+				<Select v-model="player.background.isolation.paletteAlgorithm">
+					<SelectTrigger class="w-full">
+						<SelectValue placeholder="取色算法" />
+					</SelectTrigger>
+					<SelectContent>
+						<SelectItem value="auto">自动择优（K-Means / 八叉树）</SelectItem>
+						<SelectItem value="kmeans">K-Means</SelectItem>
+						<SelectItem value="octtree">八叉树</SelectItem>
+					</SelectContent>
+				</Select>
+				<ControllerSwitch
+					v-model="player.background.isolation.lightWave"
+					title="光波效果"
+					description="让渐变的明度随时间波动"
+				/>
+				<ControllerSwitch
+					v-model="player.background.isolation.dithering"
+					title="抖动"
+					description="叠加极弱噪声消除渐变色带"
+				/>
+			</section>
+		</template>
+
+		<template v-if="player.background.renderer === 'titanium'">
+			<Separator />
+
+			<section class="space-y-2.5">
+				<h3 class="text-sm font-bold flex items-center gap-1">
+					<SlidersHorizontalIcon :size="16" />
+					Titanium 选项
+				</h3>
+				<Select v-model="player.background.titanium.paletteAlgorithm">
+					<SelectTrigger class="w-full">
+						<SelectValue placeholder="取色算法" />
+					</SelectTrigger>
+					<SelectContent>
+						<SelectItem value="auto">自动择优（K-Means / 八叉树）</SelectItem>
+						<SelectItem value="kmeans">K-Means</SelectItem>
+						<SelectItem value="octtree">八叉树</SelectItem>
+					</SelectContent>
+				</Select>
+				<ControllerSliderGroup>
+					<ControllerSlider
+						v-model="player.background.titanium.grain"
+						title="颗粒强度"
+						:min="0"
+						:max="1"
+						:step="0.01"
+						:precision="2"
+					/>
+					<ControllerSlider
+						v-model="player.background.titanium.sparkle"
+						title="闪粉强度"
+						:min="0"
+						:max="1"
+						:step="0.01"
+						:precision="2"
+					/>
+					<ControllerSlider
+						v-model="player.background.titanium.sheen"
+						title="金属高光"
+						:min="0"
+						:max="1"
+						:step="0.01"
+						:precision="2"
+					/>
+					<ControllerSlider
+						v-model="player.background.titanium.metalness"
+						title="金属化"
+						:min="0"
+						:max="1"
+						:step="0.01"
+						:precision="2"
+					/>
+					<ControllerSlider
+						v-model="player.background.titanium.crestShiftMs"
+						title="锋线迁移时长"
+						:min="300"
+						:max="6000"
+						:step="100"
+						:precision="0"
+						suffix="ms"
+					/>
+				</ControllerSliderGroup>
+				<ControllerSwitch
+					v-model="player.background.titanium.dithering"
+					title="抖动"
+					description="叠加极弱噪声消除颗粒产生的色带"
+				/>
+			</section>
+		</template>
 	</div>
 </template>

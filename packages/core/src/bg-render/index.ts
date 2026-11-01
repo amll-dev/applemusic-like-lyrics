@@ -5,8 +5,16 @@
  */
 
 export { AbstractBaseRenderer, BaseRenderer } from "./base.ts";
+export type { GLRenderingContext } from "./gl-program.ts";
+export { GLProgram } from "./gl-program.ts";
+export type { IsolationRendererOptions } from "./isolation/index.ts";
+export { IsolationRenderer } from "./isolation/index.ts";
 export { MeshGradientRenderer } from "./mesh-renderer/index.ts";
+export * from "./palette/index.ts";
 export { PixiRenderer } from "./pixi-renderer.ts";
+export type { TitaniumRendererOptions } from "./titanium/index.ts";
+export { TitaniumRenderer } from "./titanium/index.ts";
+
 import type { AbstractBaseRenderer, BaseRenderer } from "./base.ts";
 
 export class BackgroundRender<Renderer extends BaseRenderer>
@@ -21,6 +29,16 @@ export class BackgroundRender<Renderer extends BaseRenderer>
 		canvas.style.pointerEvents = "none";
 		canvas.style.zIndex = "-1";
 		canvas.style.contain = "strict";
+	}
+
+	/**
+	 * 获取被包装的渲染器实例。
+	 *
+	 * 各个渲染器有自己特有的可调项（例如 {@link IsolationRenderer.setOptions}），
+	 * 这些项没法通过统一的 `AbstractBaseRenderer` 接口下发，需要拿到实例本体。
+	 */
+	getRenderer(): Renderer {
+		return this.renderer;
 	}
 
 	static new<Renderer extends BaseRenderer>(type: {

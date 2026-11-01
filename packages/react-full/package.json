@@ -1,6 +1,6 @@
 {
 	"name": "@applemusic-like-lyrics/react-full",
-	"version": "0.4.2",
+	"version": "0.5.0",
 	"description": "AMLL 组件库的 React 绑定，但是更加完备且高度灵活",
 	"repository": {
 		"url": "https://github.com/amll-dev/applemusic-like-lyrics.git",
@@ -53,7 +53,9 @@
 		"build": "run-p typecheck \"build-only {@}\" --",
 		"build:dev": "tsdown",
 		"fmt": "biome format --write ./src",
-		"dev": "nx run @applemusic-like-lyrics/playground-react-full:dev"
+		"dev": "nx run @applemusic-like-lyrics/playground-react-full:dev",
+		"test": "vitest test",
+		"test:watch": "vitest test --watch"
 	},
 	"dependencies": {
 		"@applemusic-like-lyrics/core": "workspace:^",
@@ -79,10 +81,13 @@
 		"@types/react-dom": "catalog:",
 		"@types/ungap__structured-clone": "^1.2.0",
 		"babel-plugin-react-compiler": "^1.0.0",
+		"happy-dom": "^20.14.5",
 		"jotai-babel": "catalog:",
 		"react-compiler-runtime": "^1.0.0",
 		"tsdown": "catalog:",
 		"typedoc": "catalog:",
-		"typedoc-plugin-markdown": "catalog:"
+		"typedoc-plugin-markdown": "catalog:",
+		"vite-plugin-svgr": "^5.2.0",
+		"vitest": "catalog:"
 	}
 }

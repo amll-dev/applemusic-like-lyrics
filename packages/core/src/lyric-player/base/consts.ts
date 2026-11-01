@@ -1,3 +1,5 @@
+import { Duration } from "#utils/time.ts";
+
 type ValueOf<T extends Record<PropertyKey, unknown>> = T[keyof T];
 
 /** 歌词中不雅用语的掩码模式 */
@@ -52,8 +54,6 @@ export const LayoutReason = {
 	ContinuousScroll: "continuous-scroll",
 	/** 离散单步滚动（鼠标滚轮单次滚动） */
 	DiscreteScroll: "discrete-scroll",
-	/** 用户交互结束并恢复自动对齐 */
-	InteractionEnd: "interaction-end",
 	/** 跳转播放进度 */
 	Seek: "seek",
 	/** 重新构建歌词视图 */
@@ -90,24 +90,19 @@ export const LayoutReasonStrategyMap: Record<LayoutReason, LayoutStrategy> = {
 		resetInterlude: false,
 		snapPosY: false,
 	},
-	[LayoutReason.InteractionEnd]: {
-		disableStagger: false,
-		resetInterlude: false,
-		snapPosY: false,
-	},
 	[LayoutReason.ContinuousScroll]: {
 		disableStagger: true,
-		resetInterlude: true,
+		resetInterlude: false,
 		snapPosY: true,
 	},
 	[LayoutReason.DiscreteScroll]: {
 		disableStagger: true,
-		resetInterlude: true,
+		resetInterlude: false,
 		snapPosY: false,
 	},
 	[LayoutReason.InteractionStart]: {
 		disableStagger: true,
-		resetInterlude: true,
+		resetInterlude: false,
 		snapPosY: false,
 	},
 	[LayoutReason.Seek]: {
@@ -132,3 +127,10 @@ export const LayoutReasonStrategyMap: Record<LayoutReason, LayoutStrategy> = {
 		snapPosY: false,
 	},
 };
+
+/**
+ * 单帧动画时长的钳制上限，用于页面挂起等场景
+ *
+ * 此时首帧 update 的 delta 携带整个挂起时长，直接透传会导致动画以数秒的时长过冲
+ */
+export const MAX_FRAME_DELTA: Duration = Duration.fromMillis(100);

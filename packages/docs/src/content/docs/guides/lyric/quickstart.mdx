@@ -22,6 +22,7 @@ Lyric 包支持如下格式：
 | TTML              | `.ttml`          | [`parseTTML`](/reference/lyric/functionparsettml)   | [`stringifyTTML`](/reference/lyric/functionstringifyttml)   |
 | LRC               | `.lrc`           | [`parseLrc`](/reference/lyric/functionparselrc)     | [`stringifyLrc`](/reference/lyric/functionstringifylrc)     |
 | LRC A2 扩展       | `.lrc`, `.alrc`  | [`parseLrcA2`](/reference/lyric/functionparselrca2) | [`stringifyLrcA2`](/reference/lyric/functionstringifylrca2) |
+| SPL               | `.spl`           | [`parseSPL`](/reference/lyric/functionparsespl)     | [`stringifySPL`](/reference/lyric/functionstringifyspl)     |
 | 网易云逐字        | `.yrc`           | [`parseYrc`](/reference/lyric/functionparseyrc)     | [`stringifyYrc`](/reference/lyric/functionstringifyyrc)     |
 | QQ 音乐逐字       | `.qrc`           | [`parseQrc`](/reference/lyric/functionparseqrc)     | [`stringifyQrc`](/reference/lyric/functionstringifyqrc)     |
 | EsLyric           | `.lrc`, `.eslrc` | [`parseEslrc`](/reference/lyric/functionparseeslrc) | [`stringifyEslrc`](/reference/lyric/functionstringifyeslrc) |
@@ -32,7 +33,9 @@ Lyric 包支持如下格式：
 
 以上解析与生成方法均为同步函数。
 
-除 TTML 外，解析函数均接受一个字符串作为参数并返回歌词对象数组 [`LyricLine[]`](/reference/lyric/interfacelyricline)，生成函数均接受一个歌词对象数组并返回字符串。
+除 TTML 外，表中解析函数均接受一个字符串作为参数并返回歌词对象数组 [`LyricLine[]`](/reference/lyric/interfacelyricline)，生成函数均接受一个歌词对象数组并返回字符串。
+
+LRC 家族的几种格式同属一个语法家族，另提供 [`parseLrcLike`](/reference/lyric/functionparselrclike) 与 [`stringifyLrcLike`](/reference/lyric/functionstringifylrclike) 作为统一入口：前者解析全部 LRC 家族写法，并额外返回文件中的元数据（结果类型为 [`LyricParseResult`](/reference/lyric/typealiaslyricparseresult)）；后者可以配置生成模式与各类辅助行，也接受这样的解析结果。
 
 对于 TTML，解析结果和生成输入并非歌词对象数组，而是包含了元数据信息的 [`TTMLLyric`](/reference/lyric/interfacettmllyric) 对象。**并且 lyric 包的 TTML 正反解仅能在浏览器中使用，不支持 Node 环境**。**如果在 Node 中使用，或需要 TTML 中更多的信息或能力，请使用下一节介绍的 TTML 专用包**。
 

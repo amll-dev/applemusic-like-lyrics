@@ -21,6 +21,7 @@ import { LinkCard } from "@astrojs/starlight/components";
 | 端点名称                                     | HTTP 方法 | 请求路径              | 需要鉴权 | 接口说明                                    |
 | -------------------------------------------- | --------- | --------------------- | -------- | ------------------------------------------- |
 | [搜索歌词](native#搜索歌词)                  | `GET`     | `/v1/lyrics/search`   | 否       | 在词库中根据曲名、歌手或正文搜索歌词        |
+| [歌词列表](native#歌词列表)                  | `GET`     | `/v1/lyrics/list`     | 否       | 遍历词库、排序、结构化过滤与游标增量分页    |
 | [获取歌词](native#获取歌词)                  | `GET`     | `/v1/lyrics/get`      | 否       | 通过 ID、文件名或平台 ID 获取完整 TTML 歌词 |
 | [LrcLib 搜索](lrclib#搜索歌词)               | `GET`     | `/v1/lrclib/search`   | 否       | 兼容 LrcLib 协议的歌词搜索接口              |
 | [LrcLib 模糊匹配](lrclib#模糊匹配)           | `GET`     | `/v1/lrclib/get`      | 否       | 兼容 LrcLib 协议的模糊匹配与歌词获取接口    |
@@ -101,26 +102,28 @@ export interface ErrorResponse {
 export type ApiResponse<T> = SuccessResponse<T> | ErrorResponse;
 ```
 
-- `SuccessResponse<T>`: 成功响应模型，`data` 为泛型业务载荷。例如在 [搜索接口](native#搜索歌词) 中 `T` 为 `{ items: SongItem[]; pagination: PaginationInfo }`；在 [获取歌词接口](native#获取歌词) 中 `T` 为 [SongItem](#歌曲元数据与歌词模型-songitem)
+- `SuccessResponse<T>`: 成功响应模型，`data` 为泛型业务载荷。例如在 [搜索接口](native#搜索歌词) 与 [列表接口](native#歌词列表) 中 `T` 为 `{ items: SongItem[]; pagination: PaginationInfo }`；在 [获取歌词接口](native#获取歌词) 中 `T` 为 [SongItem](#歌曲元数据与歌词模型-songitem)
 
 ---
 
 ## 分页元信息模型 `PaginationInfo`
 
-原生搜索接口返回的分页信息模型，包含当前页码、每页条目数、总匹配数等元数据
+原生搜索与列表接口返回的分页信息模型，包含当前页码、每页条目数、总匹配数、下一页游标等元数据
 
 ```typescript
 export interface PaginationInfo {
-  /** 当前页码 */
-  page: number;
+  /** 当前页码（游标分页模式下省略） */
+  page?: number;
   /** 每页条目数 */
   pageSize: number;
   /** 当前查询条件匹配到的总条目数，不受 page / pageSize 影响 */
   total: number;
-  /** 总页数，total 为 0 时该值为 0 */
-  totalPages: number;
-  /** 当前页之后是否还有更多结果，等价于 page < totalPages */
+  /** 总页数，total 为 0 时该值为 0（游标分页模式下省略） */
+  totalPages?: number;
+  /** 当前页之后是否还有更多结果 */
   hasMore: boolean;
+  /** 下一页游标，格式为 `<createdAt>_<id>`，当还有更多结果时提供 */
+  nextCursor?: string;
 }
 ```
 
@@ -128,7 +131,7 @@ export interface PaginationInfo {
 
 ## 歌曲元数据与歌词模型 `SongItem`
 
-API 中最核心的资源模型，表示一首歌的完整元数据及歌词信息，适用于原生的搜索和获取歌词接口
+API 中最核心的资源模型，表示一首歌的完整元数据及歌词信息，适用于原生的搜索、列表和获取歌词接口
 
 ```typescript
 export interface SongItem {
@@ -136,6 +139,8 @@ export interface SongItem {
   id: number;
   /** 歌词文件名 */
   filename: string;
+  /** 本条歌词条目的创建时刻（Unix epoch 毫秒时间戳） */
+  createdAt: number;
   /** 歌曲名列表 */
   musicNames: string[];
   /** 歌手名列表 */
@@ -159,11 +164,15 @@ export interface SongItem {
   /** 
    * TTML 格式的歌词内容
    *
-   * 注意在搜索接口中为 undefined
+   * 注意在搜索与列表接口中为 undefined
    */
   lyrics?: string;
-  /** 歌词格式标识 */
-  format: "ttml";
+  /** 
+   * 歌词格式标识
+   *
+   * 仅在获取歌词接口 (/lyrics/get) 中返回，在搜索与列表接口中为 undefined
+   */
+  format?: "ttml";
   /**
    * 正文搜索命中上下文 
    * 
@@ -184,6 +193,7 @@ export interface SongItem {
     "data": {
       "id": 269710089745311,
       "filename": "1768754400682-250306205-r6IrpmBd.ttml",
+      "createdAt": 1768754400682,
       "musicNames": [
         "ME!",
         "ME! (feat. Brendon Urie of Panic! At The Disco)"

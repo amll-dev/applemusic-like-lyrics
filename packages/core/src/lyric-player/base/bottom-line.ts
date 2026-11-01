@@ -12,6 +12,16 @@ export interface BottomLineTransforms {
  */
 export interface BottomLine extends HasElement, Disposable {
 	/**
+	 * 将底栏放回重建歌词视图时的初始位置
+	 */
+	resetPosition(): void;
+
+	/**
+	 * 获取供外部插入内容的元素
+	 */
+	getContentElement?(): HTMLElement;
+
+	/**
 	 * 底栏当前测量得到的尺寸
 	 *
 	 * 由播放器的 ResizeObserver 回调写入

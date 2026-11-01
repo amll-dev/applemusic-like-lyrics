@@ -15,6 +15,7 @@ import { Duration } from "#utils/time.ts";
  */
 export class BottomLineEl implements BottomLine {
 	private element: HTMLElement = document.createElement("div");
+	private contentElement: HTMLElement = document.createElement("div");
 	private top = 0;
 	private isFocused = false;
 	private blur = 0;
@@ -36,14 +37,28 @@ export class BottomLineEl implements BottomLine {
 	constructor(private lyricPlayer: LyricPlayerBase) {
 		this.element.setAttribute(
 			"class",
+			`${styles.lyricLineWrapper} ${styles.bottomLineWrapper}`,
+		);
+		this.contentElement.setAttribute(
+			"class",
 			`${styles.lyricLine} ${styles.bottomLine}`,
 		);
-		this.element.dataset.bottomLine = "true";
+		this.contentElement.dataset.bottomLine = "true";
+		this.element.appendChild(this.contentElement);
 		this.rebuildStyle();
 	}
 
 	public getElement(): HTMLElement {
 		return this.element;
+	}
+
+	public getContentElement(): HTMLElement {
+		return this.contentElement;
+	}
+
+	public resetPosition(): void {
+		this.lineTransforms.posY.setPosition(window.innerHeight * 2);
+		this.rebuildStyle();
 	}
 
 	/**
@@ -54,6 +69,7 @@ export class BottomLineEl implements BottomLine {
 	public setFocused(focused: boolean): void {
 		if (this.isFocused !== focused) {
 			this.isFocused = focused;
+			this.contentElement.classList.toggle(styles.gradientMask, focused);
 			if (focused) {
 				this.element.dataset.focused = "true";
 			} else {

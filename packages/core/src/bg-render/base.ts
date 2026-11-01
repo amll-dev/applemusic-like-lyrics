@@ -144,8 +144,12 @@ export abstract class BaseRenderer extends AbstractBaseRenderer {
 		albumSource: string | HTMLImageElement | HTMLVideoElement,
 		isVideo?: boolean,
 	): Promise<void>;
-	dispose(): void {
+	/** 停止监听画板尺寸，供构造失败等尚未接管画板所有权的路径清理 */
+	protected disconnectResizeObserver(): void {
 		this.observer.disconnect();
+	}
+	dispose(): void {
+		this.disconnectResizeObserver();
 		this.canvas.remove();
 	}
 	override getElement(): HTMLElement {

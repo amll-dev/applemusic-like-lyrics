@@ -1,6 +1,6 @@
 {
 	"name": "@applemusic-like-lyrics/core",
-	"version": "0.5.2",
+	"version": "0.6.0",
 	"description": "AMLL 的纯 JS 核心组件框架，包括歌词显示组件和背景组件等其它可以复用的组件",
 	"repository": {
 		"url": "https://github.com/amll-dev/applemusic-like-lyrics.git",
@@ -67,6 +67,7 @@
 		"@types/deep-freeze": "^0.1.5",
 		"@types/stats.js": "^0.17.3",
 		"@types/ungap__structured-clone": "^1.2.0",
+		"happy-dom": "^20.14.5",
 		"lil-gui": "^0.21.0",
 		"stats.js": "^0.17.0",
 		"tsdown": "catalog:",

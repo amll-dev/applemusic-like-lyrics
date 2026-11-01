@@ -22,6 +22,7 @@ Supported formats in the Lyric package:
 | TTML                  | `.ttml`          | [`parseTTML`](/en/reference/lyric/functionparsettml)   | [`stringifyTTML`](/en/reference/lyric/functionstringifyttml)   |
 | LRC                   | `.lrc`           | [`parseLrc`](/en/reference/lyric/functionparselrc)     | [`stringifyLrc`](/en/reference/lyric/functionstringifylrc)     |
 | LRC A2                | `.lrc`, `.alrc`  | [`parseLrcA2`](/en/reference/lyric/functionparselrca2) | [`stringifyLrcA2`](/en/reference/lyric/functionstringifylrca2) |
+| SPL                   | `.spl`           | [`parseSPL`](/en/reference/lyric/functionparsespl)     | [`stringifySPL`](/en/reference/lyric/functionstringifyspl)     |
 | NetEase YRC           | `.yrc`           | [`parseYrc`](/en/reference/lyric/functionparseyrc)     | [`stringifyYrc`](/en/reference/lyric/functionstringifyyrc)     |
 | QQ QRC                | `.qrc`           | [`parseQrc`](/en/reference/lyric/functionparseqrc)     | [`stringifyQrc`](/en/reference/lyric/functionstringifyqrc)     |
 | EsLyric               | `.lrc`, `.eslrc` | [`parseEslrc`](/en/reference/lyric/functionparseeslrc) | [`stringifyEslrc`](/en/reference/lyric/functionstringifyeslrc) |
@@ -32,7 +33,9 @@ Supported formats in the Lyric package:
 
 All parse and stringify methods above are synchronous.
 
-Except TTML, parse functions take a string and return [`LyricLine[]`](/en/reference/lyric/interfacelyricline). Stringify functions take a lyric object array and return a string.
+Except TTML, the parse functions in the table take a string and return [`LyricLine[]`](/en/reference/lyric/interfacelyricline); the stringify functions take a lyric object array and return a string.
+
+The LRC family formats share the same syntax family, so [`parseLrcLike`](/en/reference/lyric/functionparselrclike) and [`stringifyLrcLike`](/en/reference/lyric/functionstringifylrclike) are also provided as unified entry points: the former parses every LRC-family notation and additionally returns the metadata found in the file (result type [`LyricParseResult`](/en/reference/lyric/typealiaslyricparseresult)), while the latter takes generation options such as the output mode and auxiliary lines, and also accepts such a parse result.
 
 For TTML, parse output and stringify input are not `LyricLine[]`, but a [`TTMLLyric`](/en/reference/lyric/interfacettmllyric) object with metadata. Also, TTML parse/stringify in the Lyric package is browser-only. For Node.js usage or advanced TTML data, use the dedicated TTML package below.
 

@@ -1,15 +1,3 @@
-@property --bright-mask-alpha {
-	syntax: "<number>";
-	inherits: true;
-	initial-value: 1;
-}
-
-@property --dark-mask-alpha {
-	syntax: "<number>";
-	inherits: true;
-	initial-value: 0.2;
-}
-
 .lyricLineWrapper {
 	position: absolute;
 	top: 0;
@@ -30,11 +18,11 @@
 		filter 0.4s ease,
 		background-color 0.25s ease;
 
-	&:hover {
+	&:not(.bottomLineWrapper):hover {
 		background-color: var(--amll-lp-hover-bg-color, #fff1);
 	}
 
-	&:active {
+	&:not(.bottomLineWrapper):active {
 		background-color: var(--amll-lp-hover-bg-color, #ffffff05);
 	}
 }
@@ -56,17 +44,13 @@
 	backface-visibility: hidden;
 	transform-origin: left;
 
-	--mask-alpha-duration: 0.45s;
 	--bright-mask-alpha: 0.2;
 	--dark-mask-alpha: 0.2;
 
-	transition:
-		box-shadow 0.25s,
-		--bright-mask-alpha var(--mask-alpha-duration) ease-out,
-		--dark-mask-alpha var(--mask-alpha-duration) ease-out;
+	transition: box-shadow 0.25s;
 
+	/* 作为高亮状态的降级兜底方案，若某行已进入高亮态但尚未生成亮度层，仍维持基础的对比度显示 */
 	&.gradientMask {
-		--mask-alpha-duration: 0.3s;
 		--bright-mask-alpha: 1;
 		--dark-mask-alpha: 0.4;
 	}
@@ -114,7 +98,6 @@
 	.wordBody {
 		display: flex;
 		flex-direction: column;
-		align-items: center;
 	}
 
 	.rubyBaseWord {
@@ -156,9 +139,7 @@
 	font-size: max(calc(1em * var(--amll-lp-bg-line-scale, 0.7)), 10px);
 	transition:
 		background-color 0.25s,
-		box-shadow 0.25s,
-		--bright-mask-alpha var(--mask-alpha-duration) ease-out,
-		--dark-mask-alpha var(--mask-alpha-duration) ease-out;
+		box-shadow 0.25s;
 
 	.lyricMainLine {
 		padding: 1.2em 1em;
@@ -166,11 +147,39 @@
 
 	&.active {
 		opacity: 0.4;
-		transition:
-			background-color 0.25s,
-			box-shadow 0.25s,
-			--bright-mask-alpha var(--mask-alpha-duration) ease-out,
-			--dark-mask-alpha var(--mask-alpha-duration) ease-out;
+	}
+}
+
+.lyricMainLineBright,
+.lyricMainLineDim {
+	transition: opacity 0.45s ease-out;
+	mix-blend-mode: plus-lighter;
+}
+
+.lyricMainLineBright {
+	--bright-mask-alpha: 1;
+	--dark-mask-alpha: 0.4;
+	opacity: 0;
+}
+
+.lyricMainLineDim {
+	position: absolute;
+	/* 四向偏移由 LineBrightness 根据原件的边框盒计算得出，已包含原件外边距 */
+	margin: 0;
+	opacity: 0.2;
+	pointer-events: none;
+	user-select: none;
+}
+
+.lyricLine.gradientMask {
+	& > .lyricMainLineBright {
+		opacity: 1;
+		transition-duration: 0.3s;
+	}
+
+	& > .lyricMainLineDim {
+		opacity: 0;
+		transition-duration: 0.3s;
 	}
 }
 
@@ -188,8 +197,15 @@
 .bottomLine {
 	padding-top: 0;
 	padding-bottom: 0;
+	font-size: var(--amll-lp-bottom-line-font-size, max(0.7em, 10px));
 	line-height: 1.8em;
 	cursor: default;
+	opacity: 0.2;
+	transition: opacity 0.4s ease;
+
+	&.gradientMask {
+		opacity: 0.85;
+	}
 
 	&:empty {
 		display: none;
@@ -243,32 +259,22 @@
 	position: absolute;
 	left: 0;
 	display: flex;
-	gap: 0.25em;
+	align-items: center;
+	/* gap 应和圆点直径保持 0.6:1 的比例 */
+	gap: 0.18em;
 	width: fit-content;
 	height: clamp(0.5em, 1vh, 3em);
-	padding: 2.5% 0.75em;
+	padding: 0.4em var(--lyric-line-padding-x);
 
-	opacity: 0;
 	transform-origin: center;
-	transition: opacity 0.25s;
-
-	&.enabled {
-		opacity: 1;
-	}
 
 	& > * {
 		display: inline-block;
-		width: clamp(0.5em, 1vh, 3em);
-		height: clamp(0.5em, 1vh, 3em);
-		margin-right: 4px;
+		width: 0.3em;
+		height: 0.3em;
 		border-radius: 50%;
 		background-color: var(--amll-lp-color, white);
 		aspect-ratio: 1 / 1;
-	}
-
-	&.duet {
-		right: 0;
-		transform-origin: center;
 	}
 }
 
