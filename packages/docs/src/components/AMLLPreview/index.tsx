@@ -76,15 +76,13 @@ export const AMLLPreview = () => {
 
 		const onFrame = (time: number) => {
 			if (canceled) return;
-			if (time - startTime > endTime) {
+			if (time - startTime > endTime - 150) {
 				const w = wRef.current;
 				if (!w) {
 					if (canceled) return;
 					return;
 				}
 				if (canceled) return;
-
-				setCurrentTime(0);
 
 				w.animate(
 					{
@@ -99,6 +97,7 @@ export const AMLLPreview = () => {
 				).onfinish = () => {
 					if (canceled) return;
 
+					setCurrentTime(0);
 					selectedDemo = (selectedDemo + 1) % DEMO_LYRICS.length;
 					setLyricLines(JSON.parse(JSON.stringify(DEMO_LYRICS[selectedDemo])));
 					endTime = DEMO_LYRICS[selectedDemo].reduce(
