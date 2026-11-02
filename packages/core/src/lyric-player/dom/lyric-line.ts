@@ -396,10 +396,9 @@ export class LyricLineEl extends LyricLineBase {
 			} as LyricWord,
 		);
 
-		let emp = chunk.some((word) => LyricLineBase.shouldEmphasize(word));
-		if (!isCJK(merged.word)) {
-			emp = emp || LyricLineBase.shouldEmphasize(merged);
-		}
+		const emp = isCJK(merged.word)
+			? chunk.some((word) => LyricLineBase.shouldEmphasize(word))
+			: LyricLineBase.shouldEmphasize(merged);
 
 		const wrapperWordEl = document.createElement("span");
 		wrapperWordEl.classList.add(styles.emphasizeWrapper);
