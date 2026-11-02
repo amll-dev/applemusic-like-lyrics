@@ -30,7 +30,7 @@ const SPACE_BREAK_REWARD_RATIO = 0.4;
  * 比空格更高以便优先一点在标点处换行
  */
 const PUNCTUATION_BREAK_REWARD_RATIO = 0.6;
-const PUNCTUATION_REGEX = /[,.;:!?，。；：！？、）】》」』’”)[\]}>~…]$/;
+const PUNCTUATION_REGEX = /[,;:!?，。；：！？、）】》」』’”)[\]}>~…]$/;
 
 /**
  * 计算平均行长度的断点位置
