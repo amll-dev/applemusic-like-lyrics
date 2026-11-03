@@ -278,7 +278,11 @@ export class LyricLineEl extends LyricLineBase {
 		);
 	}
 
-	private createWord(word: LyricWord, shouldEmphasize: boolean): RealWord {
+	private createWord(
+		word: LyricWord,
+		shouldEmphasize: boolean,
+		floatWord: LyricWord = word,
+	): RealWord {
 		const mainWordEl = document.createElement("span");
 		const subElements: HTMLSpanElement[] = [];
 		const romanWord = word.romanWord?.trim() ?? "";
@@ -354,7 +358,7 @@ export class LyricLineEl extends LyricLineBase {
 			subElements: subElements,
 			elementAnimations: [
 				createFloatAnimation(mainWordEl, {
-					word: word,
+					word: floatWord,
 					lineStartTime: this.lyricLine.startTime,
 					isBG: this.lyricLine.isBG,
 				}),
@@ -411,7 +415,7 @@ export class LyricLineEl extends LyricLineBase {
 				continue;
 			}
 
-			const realWord = this.createWord(word, emp);
+			const realWord = this.createWord(word, emp, emp ? merged : word);
 
 			if (emp) {
 				characterElements.push(...realWord.subElements);
