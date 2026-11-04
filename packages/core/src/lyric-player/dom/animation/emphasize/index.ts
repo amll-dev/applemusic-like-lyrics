@@ -175,13 +175,15 @@ function generateFloatKeyframes(isBG: boolean): Keyframe[] {
 	return new Array(ANIMATION_FRAME_QUANTITY).fill(0).map((_, j) => {
 		const x = (j + 1) / ANIMATION_FRAME_QUANTITY;
 		let y = Math.sin(x * Math.PI);
+		let up = 0.05;
 		if (isBG) {
 			y *= 2;
+			up *= 2;
 		}
 
 		return {
 			offset: x,
-			transform: `translateY(${-y * 0.05}em)`,
+			transform: `translateY(${-(y * 0.05 + x * up)}em)`,
 		};
 	});
 }
