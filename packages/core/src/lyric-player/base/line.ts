@@ -33,15 +33,6 @@ export abstract class LyricLineBase extends EventTarget implements Disposable {
 			? new Intl.Segmenter(undefined, { granularity: "word" })
 			: null;
 
-	/**
-	 * Unicode 标准的全局 Grapheme Cluster 分词器
-	 * 用于正确处理 emoji、复合字符等
-	 */
-	static readonly graphemeSegmenter: Intl.Segmenter | null =
-		typeof Intl !== "undefined" && Intl.Segmenter
-			? new Intl.Segmenter(undefined, { granularity: "grapheme" })
-			: null;
-
 	abstract getLine(): LyricLine;
 	abstract enable(time?: number, shouldPlay?: boolean): void;
 	abstract disable(): void;

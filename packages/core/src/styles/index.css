@@ -21,6 +21,7 @@
 		--amll-lp-line-width-aspect: 0.8;
 		--amll-lp-line-padding-x: 1em;
 		--amll-lp-bg-line-scale: 0.7;
+		--amll-lp-text-autospace: 0.125em;
 		user-select: none;
 		box-sizing: content-box;
 		z-index: 1;

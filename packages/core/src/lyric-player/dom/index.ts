@@ -6,7 +6,7 @@
 
 import "#styles/index.css";
 import type { BottomLine } from "#lyric/base/bottom-line.ts";
-import { MAX_FRAME_DELTA } from "#lyric/base/consts.ts";
+import { LayoutReason, MAX_FRAME_DELTA } from "#lyric/base/consts.ts";
 import { LyricPlayerBase } from "#lyric/base/index.ts";
 import type { LyricLineBase } from "#lyric/base/line.ts";
 import styles from "#styles/lyric-player.module.css";
@@ -67,7 +67,11 @@ export class DomLyricPlayer extends LyricPlayerBase {
 
 	override onResize(): void {
 		const computedStyles = getComputedStyle(this.element);
-		this._baseFontSize = Number.parseFloat(computedStyles.fontSize);
+		const fontSize = Number.parseFloat(computedStyles.fontSize);
+		if (this._baseFontSize !== fontSize) {
+			this._baseFontSize = fontSize;
+			this.refreshTextLayout();
+		}
 		this.rebuildStyle();
 	}
 
@@ -132,6 +136,14 @@ export class DomLyricPlayer extends LyricPlayerBase {
 		this.element.addEventListener("contextmenu", this.onMouseEventHandler, {
 			signal: this.abortController.signal,
 		});
+		document.fonts?.addEventListener(
+			"loadingdone",
+			() => {
+				this.refreshTextLayout();
+				this.calcLayout(LayoutReason.Resize);
+			},
+			{ signal: this.abortController.signal },
+		);
 	}
 
 	private rebuildStyle() {
@@ -149,6 +161,24 @@ export class DomLyricPlayer extends LyricPlayerBase {
 		for (const group of this.currentLyricGroups) {
 			group.mainLine.updateMaskImageSync();
 			group.bgLine?.updateMaskImageSync();
+		}
+	}
+
+	public override setEnableTextAutospace(enable = true): void {
+		if (this.enableTextAutospace === enable) return;
+		super.setEnableTextAutospace(enable);
+		this.element.style.setProperty(
+			"--amll-lp-text-autospace",
+			enable ? "0.125em" : "0em",
+		);
+		this.refreshTextLayout();
+		this.calcLayout(LayoutReason.ConfigChange);
+	}
+
+	private refreshTextLayout(): void {
+		for (const group of this.currentLyricGroups) {
+			group.mainLine.refreshTextAutospace();
+			group.bgLine?.refreshTextAutospace();
 		}
 	}
 

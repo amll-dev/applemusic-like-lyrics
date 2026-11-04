@@ -43,6 +43,7 @@
 	contain-intrinsic-size: auto 40px;
 	backface-visibility: hidden;
 	transform-origin: left;
+	text-autospace: no-autospace;
 
 	--bright-mask-alpha: 0.2;
 	--dark-mask-alpha: 0.2;
@@ -53,6 +54,18 @@
 	&.gradientMask {
 		--bright-mask-alpha: 1;
 		--dark-mask-alpha: 0.4;
+	}
+
+	& span {
+		--amll-node-autospace: 0px;
+	}
+
+	& .textAutospaceBefore {
+		--amll-node-autospace: var(--amll-lp-text-autospace, 0.125em);
+	}
+
+	& .textAutospaceLineStart {
+		--amll-node-autospace: 0px;
 	}
 }
 
@@ -71,6 +84,7 @@
 		display: inline-block;
 		text-align: start;
 		vertical-align: bottom;
+		margin-inline-start: var(--amll-node-autospace);
 	}
 
 	.romanWord {
@@ -111,6 +125,7 @@
 	span.emphasizeWrapper {
 		display: inline-block;
 		margin: -1em;
+		margin-inline-start: calc(-1em + var(--amll-node-autospace));
 		padding: 1em;
 		white-space: pre-wrap;
 		vertical-align: bottom;
@@ -118,6 +133,7 @@
 
 		& > span {
 			margin: -1em;
+			margin-inline-start: calc(-1em + var(--amll-node-autospace));
 			padding: 1em;
 		}
 
@@ -127,6 +143,7 @@
 
 			& > span {
 				margin: -1em;
+				margin-inline-start: calc(-1em + var(--amll-node-autospace));
 				padding: 1em;
 				backface-visibility: hidden;
 			}
@@ -192,6 +209,16 @@
 	@supports (mix-blend-mode: plus-lighter) {
 		opacity: 0.3;
 	}
+}
+
+/* Text fragments carry spacing only; they must not inherit word glow padding. */
+.lyricLine .textAutospaceRun {
+	display: inline;
+	margin: 0;
+	margin-inline-start: var(--amll-node-autospace);
+	padding: 0;
+	white-space: inherit;
+	contain: none;
 }
 
 .bottomLine {

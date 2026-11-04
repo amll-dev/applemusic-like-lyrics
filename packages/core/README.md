@@ -74,6 +74,20 @@ The main styles are provided by `@applemusic-like-lyrics/core/style.css`. Common
 }
 ```
 
+## Automatic mixed-script spacing
+
+The player adds a `0.125em` layout gap between CJK characters and Latin letters or halfwidth digits by default, including numeric boundaries next to `~`, `〜`, and `～`. Existing whitespace is not widened again; fullwidth alphanumerics and emoji receive no extra spacing.
+
+Spacing applies to timed and line-based lyrics, translations, romanization, background vocals, and duet lines. It never inserts spaces into the source or changes lyric timestamps. Disable it at runtime to preserve tightly set text:
+
+```typescript
+player.setEnableTextAutospace(false);
+player.setEnableTextAutospace(); // Restore the enabled default
+player.getEnableTextAutospace(); // true
+```
+
+The React and Vue bindings expose the default-enabled `enableTextAutospace` prop. Use the setter or prop rather than overriding the internal spacing CSS variable so line breaks and highlight masks stay synchronized.
+
 ## Development
 
 ```bash

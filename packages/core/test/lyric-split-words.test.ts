@@ -192,6 +192,23 @@ describe("chunkAndSplitLyricWords romanWord split", () => {
 		]);
 	});
 
+	it("keeps supplementary CJK graphemes intact and preserves their source interval", () => {
+		const result = chunkAndSplitLyricWords([
+			{ word: "𠀀好", startTime: 100, endTime: 400 },
+		]).flat();
+
+		expect(
+			result.map(({ word, startTime, endTime }) => ({
+				word,
+				startTime,
+				endTime,
+			})),
+		).toEqual([
+			{ word: "𠀀", startTime: 100, endTime: 300 },
+			{ word: "好", startTime: 300, endTime: 400 },
+		]);
+	});
+
 	it("handles ruby (phonetic notation) with leading/trailing spaces", () => {
 		const result = chunkAndSplitLyricWords([
 			{

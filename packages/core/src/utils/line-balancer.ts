@@ -1,5 +1,11 @@
+import styles from "#styles/lyric-player.module.css";
 import { clampPositive } from "./clamp.ts";
 import { type ChildNodeInfo, calcBalancedBreaks } from "./lyric-line-break.ts";
+import { getTextAutospaceOffsets } from "./text-autospace.ts";
+import {
+	appendTextWithAutospace,
+	getTextAutospaceWidth,
+} from "./text-autospace-dom.ts";
 
 let sharedCanvasCtx: CanvasRenderingContext2D | null = null;
 export function getMeasurementContext(): CanvasRenderingContext2D | null {
@@ -23,6 +29,7 @@ interface LineBalanceAdapter {
 export class LineBalancer {
 	private isBalancing = false;
 	private lastBalancedContainerWidth = -1;
+	private lastBalanceFont = "";
 
 	constructor(private mainElement: HTMLDivElement) {}
 
@@ -35,6 +42,11 @@ export class LineBalancer {
 		if (this.isBalancing || !this.mainElement) return;
 
 		const computedStyle = mainStyle ?? getComputedStyle(this.mainElement);
+		const font = `${computedStyle.font}|${computedStyle.letterSpacing}|${computedStyle.wordSpacing}|${computedStyle.getPropertyValue("--amll-lp-text-autospace")}`;
+		if (font !== this.lastBalanceFont) {
+			this.reset();
+			this.lastBalanceFont = font;
+		}
 		const containerWidth = this.computeContainerWidth(computedStyle);
 
 		if (containerWidth <= 0) return;
@@ -122,10 +134,16 @@ export class LineBalancer {
 				range.selectNodeContents(this.mainElement);
 				const visualWidth = range.getBoundingClientRect().width;
 
-				if (layoutWidth > 0 && visualWidth > 0) {
-					const scale = visualWidth / layoutWidth;
+				const spacingWidth = childInfos.reduce(
+					(sum, info) => sum + (info.spacingWidth ?? 0),
+					0,
+				);
+				const glyphWidth = layoutWidth - spacingWidth;
+				if (glyphWidth > 0 && visualWidth > spacingWidth) {
+					const scale = (visualWidth - spacingWidth) / glyphWidth;
 					for (const info of childInfos) {
-						info.width *= scale;
+						const spacing = info.spacingWidth ?? 0;
+						info.width = (info.width - spacing) * scale + spacing;
 					}
 				}
 				layoutWidth = visualWidth;
@@ -179,6 +197,11 @@ export class LineBalancer {
 				this.mainElement.querySelectorAll("br").forEach((br) => {
 					br.remove();
 				});
+				for (const el of this.mainElement.querySelectorAll(
+					`.${styles.textAutospaceLineStart}`,
+				)) {
+					el.classList.remove(styles.textAutospaceLineStart);
+				}
 			},
 			buildChildInfos: () => {
 				infoToNode.length = 0;
@@ -205,8 +228,11 @@ export class LineBalancer {
 						const marginRight = Number.parseFloat(elStyle.marginRight) || 0;
 						childInfos.push({
 							width: clampPositive(rect.width + marginLeft + marginRight),
-							text: el.textContent ?? "",
+							text: el.dataset.amllText ?? el.textContent ?? "",
 							isSpace: false,
+							leadingSpacing: el.classList.contains(styles.textAutospaceBefore)
+								? getTextAutospaceWidth(elStyle)
+								: 0,
 						});
 						infoToNode.push(node);
 					}
@@ -217,6 +243,10 @@ export class LineBalancer {
 				for (let i = breaks.length - 1; i >= 0; i--) {
 					const breakIndex = breaks[i];
 					if (breakIndex >= 0 && breakIndex < infoToNode.length) {
+						const node = infoToNode[breakIndex];
+						if (node instanceof HTMLElement) {
+							node.classList.add(styles.textAutospaceLineStart);
+						}
 						this.mainElement.insertBefore(
 							document.createElement("br"),
 							infoToNode[breakIndex],
@@ -240,8 +270,8 @@ export class LineBalancer {
 
 		const nonDynamicAdapter: LineBalanceAdapter = {
 			resetDOM: () => {
-				this.mainElement.innerHTML = "";
-				this.mainElement.textContent = fullText;
+				this.mainElement.replaceChildren();
+				appendTextWithAutospace(this.mainElement, fullText);
 			},
 			buildChildInfos: () => {
 				const ctx = getMeasurementContext();
@@ -269,11 +299,26 @@ export class LineBalancer {
 				}
 
 				const childInfos: ChildNodeInfo[] = [];
-				for (const { segment } of wordSegmenter.segment(fullText)) {
+				const offsets = getTextAutospaceOffsets(fullText);
+				const spacing = getTextAutospaceWidth(computedStyle);
+				let boundary = 0;
+				for (const { segment, index } of wordSegmenter.segment(fullText)) {
+					const leadingSpacing = offsets[boundary] === index ? spacing : 0;
+					let count = 0;
+					while (
+						boundary < offsets.length &&
+						offsets[boundary] < index + segment.length
+					) {
+						count++;
+						boundary++;
+					}
+					const spacingWidth = count * spacing;
 					childInfos.push({
-						width: ctx.measureText(segment).width,
+						width: ctx.measureText(segment).width + spacingWidth,
 						text: segment,
 						isSpace: segment.trim().length === 0,
+						leadingSpacing,
+						spacingWidth,
 					});
 				}
 
@@ -288,7 +333,11 @@ export class LineBalancer {
 					if (breakSet.has(i)) {
 						fragment.appendChild(document.createElement("br"));
 					}
-					fragment.appendChild(document.createTextNode(childInfos[i].text));
+					appendTextWithAutospace(
+						fragment,
+						childInfos[i].text,
+						!breakSet.has(i) && (childInfos[i].leadingSpacing ?? 0) > 0,
+					);
 				}
 				this.mainElement.appendChild(fragment);
 			},

@@ -6,6 +6,12 @@ import { clampPositive } from "#utils/clamp.ts";
 import { isCJK } from "#utils/is-cjk.ts";
 import { LineBalancer } from "#utils/line-balancer.ts";
 import { chunkAndSplitLyricWords } from "#utils/lyric-split-words.ts";
+import {
+	getTextAutospaceOffsets,
+	needsTextAutospace,
+	textGraphemes,
+} from "#utils/text-autospace.ts";
+import { appendTextWithAutospace } from "#utils/text-autospace-dom.ts";
 import { Duration } from "#utils/time.ts";
 import type { DomLyricPlayer } from ".";
 import {
@@ -58,6 +64,8 @@ export class LyricLineEl extends LyricLineBase {
 	 * 用于平衡换行、尽量减少各行长度差异的类
 	 */
 	private readonly balancer?: LineBalancer;
+	private translationBalancer?: LineBalancer;
+	private romanizationBalancer?: LineBalancer;
 
 	constructor(
 		private readonly lyricPlayer: DomLyricPlayer,
@@ -232,7 +240,10 @@ export class LyricLineEl extends LyricLineBase {
 		const roman = this.element.children[2] as HTMLDivElement;
 		// 非动态歌词，直接渲染整行与副行
 		if (this.lyricPlayer._getIsNonDynamic()) {
-			main.textContent = this.lyricLine.words.map((w) => w.word).join("");
+			appendTextWithAutospace(
+				main,
+				this.lyricLine.words.map((w) => w.word).join(""),
+			);
 			this.setSubLinesText(trans, roman);
 			this.syncMaskAfterRebuild();
 			return;
@@ -241,8 +252,9 @@ export class LyricLineEl extends LyricLineBase {
 		const chunkedWords = chunkAndSplitLyricWords(this.lyricLine.words);
 		main.innerHTML = "";
 
+		let previousText = "";
 		for (const chunk of chunkedWords) {
-			this.buildWord(chunk, main);
+			previousText = this.buildWord(chunk, main, previousText);
 		}
 
 		this.setSubLinesText(trans, roman);
@@ -261,8 +273,16 @@ export class LyricLineEl extends LyricLineBase {
 
 	/** 设置翻译与音译行文本 */
 	private setSubLinesText(trans: HTMLDivElement, roman: HTMLDivElement) {
-		trans.textContent = this.lyricLine.translatedLyric;
-		roman.textContent = this.lyricLine.romanLyric;
+		appendTextWithAutospace(trans, this.lyricLine.translatedLyric);
+		appendTextWithAutospace(roman, this.lyricLine.romanLyric);
+		if (LyricLineBase.wordSegmenter) {
+			this.translationBalancer = trans.childElementCount
+				? new LineBalancer(trans)
+				: undefined;
+			this.romanizationBalancer = roman.childElementCount
+				? new LineBalancer(roman)
+				: undefined;
+		}
 	}
 
 	private getRubyCharCount(word: LyricWord) {
@@ -296,12 +316,17 @@ export class LyricLineEl extends LyricLineBase {
 		if (this.lineHasRubyWords) {
 			const rubyWordEl = document.createElement("span");
 			const rubySegments = this.getRubySegments(word);
+			let previousRuby = "";
 			for (const ruby of rubySegments) {
 				const rubyPartEl = document.createElement("span");
-				rubyPartEl.textContent = ruby.word;
+				appendTextWithAutospace(rubyPartEl, ruby.word);
+				if (needsTextAutospace(previousRuby, ruby.word)) {
+					rubyPartEl.classList.add(styles.textAutospaceBefore);
+				}
 				rubyPartEl.dataset.startTime = String(ruby.startTime);
 				rubyPartEl.dataset.endTime = String(ruby.endTime);
 				rubyWordEl.appendChild(rubyPartEl);
+				previousRuby = ruby.word;
 			}
 			rubyWordEl.classList.add(styles.rubyWord);
 			mainWordEl.classList.add(styles.wordWithRuby);
@@ -318,36 +343,36 @@ export class LyricLineEl extends LyricLineBase {
 			mainWordEl.classList.add(styles.emphasize);
 			const trimmedWord = displayWord.trim();
 
-			if (LyricLineBase.graphemeSegmenter) {
-				for (const { segment } of LyricLineBase.graphemeSegmenter.segment(
-					trimmedWord,
-				)) {
-					const charEl = document.createElement("span");
-					charEl.textContent = segment;
-					subElements.push(charEl);
-					wordTextContainer.appendChild(charEl);
+			const offsets = getTextAutospaceOffsets(trimmedWord);
+			let offset = 0;
+			let boundary = 0;
+			for (const { segment } of textGraphemes(trimmedWord)) {
+				const charEl = document.createElement("span");
+				charEl.textContent = segment;
+				if (offsets[boundary] === offset) {
+					charEl.classList.add(styles.textAutospaceBefore);
+					boundary++;
 				}
-			} else {
-				for (const segment of Array.from(trimmedWord)) {
-					const charEl = document.createElement("span");
-					charEl.textContent = segment;
-					subElements.push(charEl);
-					wordTextContainer.appendChild(charEl);
-				}
+				subElements.push(charEl);
+				wordTextContainer.appendChild(charEl);
+				offset += segment.length;
 			}
 		} else {
 			if (this.lineHasRomanWords) {
 				const wordEl = document.createElement("span");
-				wordEl.textContent = displayWord.trim();
+				appendTextWithAutospace(wordEl, displayWord.trim());
 				wordTextContainer.appendChild(wordEl);
 			} else if (romanWord.length === 0) {
-				wordTextContainer.textContent = displayWord.trim();
+				appendTextWithAutospace(wordTextContainer, displayWord.trim());
 			}
 		}
 
 		if (this.lineHasRomanWords) {
 			const romanWordEl = document.createElement("span");
-			romanWordEl.textContent = romanWord.length > 0 ? romanWord : "\u00A0";
+			appendTextWithAutospace(
+				romanWordEl,
+				romanWord.length > 0 ? romanWord : "\u00A0",
+			);
 			romanWordEl.classList.add(styles.romanWord);
 			wordContainer.appendChild(romanWordEl);
 		}
@@ -372,15 +397,19 @@ export class LyricLineEl extends LyricLineBase {
 		return realWord;
 	}
 
-	private buildWord(input: LyricWord | LyricWord[], main: HTMLDivElement) {
+	private buildWord(
+		input: LyricWord | LyricWord[],
+		main: HTMLDivElement,
+		previousText: string,
+	): string {
 		const chunk = Array.isArray(input) ? input : [input];
-		if (chunk.length === 0) return;
+		if (chunk.length === 0) return previousText;
 
 		const isPureSpace = chunk.every((w) => !w.word.trim());
 		if (isPureSpace) {
 			const textContent = chunk.map((w) => w.word).join("");
 			main.appendChild(document.createTextNode(textContent));
-			return;
+			return textContent;
 		}
 
 		const merged = chunk.reduce(
@@ -406,16 +435,26 @@ export class LyricLineEl extends LyricLineBase {
 
 		const wrapperWordEl = document.createElement("span");
 		wrapperWordEl.classList.add(styles.emphasizeWrapper);
+		wrapperWordEl.dataset.amllText = merged.word;
+		if (needsTextAutospace(previousText, merged.word)) {
+			wrapperWordEl.classList.add(styles.textAutospaceBefore);
+		}
 
 		const characterElements: HTMLElement[] = [];
+		let previousWord = "";
 
 		for (const word of chunk) {
 			if (!word.word.trim()) {
 				wrapperWordEl.appendChild(document.createTextNode(word.word));
+				previousWord = word.word;
 				continue;
 			}
 
 			const realWord = this.createWord(word, emp, emp ? merged : word);
+			if (needsTextAutospace(previousWord, word.word)) {
+				realWord.mainElement.classList.add(styles.textAutospaceBefore);
+			}
+			previousWord = word.word;
 
 			if (emp) {
 				characterElements.push(...realWord.subElements);
@@ -451,6 +490,17 @@ export class LyricLineEl extends LyricLineBase {
 		}
 
 		main.appendChild(wrapperWordEl);
+		return merged.word;
+	}
+
+	/** Refresh spacing geometry without replacing timed word animations. */
+	refreshTextAutospace(): void {
+		if (!this.built) return;
+		this.balancer?.reset();
+		this.translationBalancer?.reset();
+		this.romanizationBalancer?.reset();
+		this.invalidateMask();
+		this.updateMaskImageSync();
 	}
 
 	override onLineSizeChange(size: [number, number]): void {
@@ -463,13 +513,7 @@ export class LyricLineEl extends LyricLineBase {
 			return;
 		}
 
-		const isInitialObservation =
-			!this.lastLineSize && Boolean(this.maskAnimator);
 		this.lastLineSize = [size[0], size[1]];
-
-		if (isInitialObservation) {
-			return;
-		}
 
 		this.updateMaskImageSync();
 	}
@@ -523,6 +567,18 @@ export class LyricLineEl extends LyricLineBase {
 		if (!this.element.isConnected) {
 			this.invalidateMask();
 			return false;
+		}
+		if (LyricLineBase.wordSegmenter) {
+			this.translationBalancer?.balanceLineBreaks(
+				true,
+				false,
+				LyricLineBase.wordSegmenter,
+			);
+			this.romanizationBalancer?.balanceLineBreaks(
+				true,
+				false,
+				LyricLineBase.wordSegmenter,
+			);
 		}
 
 		const mainStyle = getComputedStyle(this.element.children[0]);
@@ -668,6 +724,8 @@ export class LyricLineEl extends LyricLineBase {
 	private disposeElements() {
 		this.brightness.deactivate();
 		this.balancer?.reset();
+		this.translationBalancer = undefined;
+		this.romanizationBalancer = undefined;
 		this.invalidateMask();
 
 		for (const realWord of this.splittedWords) {

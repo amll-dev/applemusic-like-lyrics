@@ -284,3 +284,17 @@ onBeforeUnmount(() => cancelAnimationFrame(frameId));
 ```
 
 See [API Reference: Vue Bindings](/en/reference/vue) for detailed API documentation.
+
+## Automatic mixed-script spacing
+
+The player adds a narrow `0.125em` gap between CJK characters and Latin letters or halfwidth digits by default, including numeric boundaries next to `~`, `〜`, and `～`. Existing whitespace is not widened again; fullwidth alphanumerics and emoji receive no extra spacing. This applies to timed and line-based lyrics, translations, romanization, background vocals, and duet lines without changing source text or timestamps.
+
+To preserve intentionally tight typography, disable or re-enable spacing on the vanilla player at runtime:
+
+```typescript
+player.setEnableTextAutospace(false);
+player.setEnableTextAutospace(true);
+```
+
+In the React example above, add `enableTextAutospace={false}` to `LyricPlayer`; in Vue, add `:enable-text-autospace="false"`. Omitting or removing the prop restores the enabled default. Toggling it preserves playback position and refreshes line breaks and highlight masks together.
+

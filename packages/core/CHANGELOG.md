@@ -1,3 +1,10 @@
+## Unreleased
+
+### Minor Changes
+
+- **feat(core):** 默认为 CJK、拉丁字母、数字及数字/波浪号边界添加渲染间距，不修改歌词文字或时间；新增 `getEnableTextAutospace`、`setEnableTextAutospace`，支持运行时切换并同步断行和高亮遮罩 ([#460](https://github.com/amll-dev/applemusic-like-lyrics/issues/460))。
+- **feat(react/vue):** 新增默认开启的 `enableTextAutospace` 属性，支持关闭及恢复默认。
+
 ## 0.6.0 (2026-09-19)
 
 ### Minor Changes
