@@ -226,8 +226,8 @@ function createCharFloatAnimation(
 
 	const float = el.animate(frames, {
 		duration: params.animateDu * 1.4,
-		// 上浮动画比辉光动画提前 400ms 开始
-		delay: Number.isFinite(wordDelay) ? wordDelay - 400 : 0,
+		// 上浮动画
+		delay: Number.isFinite(wordDelay) ? wordDelay : 0,
 		id: "emphasize-word-float",
 		iterations: 1,
 		composite: "add",
