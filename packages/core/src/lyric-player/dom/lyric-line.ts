@@ -356,13 +356,15 @@ export class LyricLineEl extends LyricLineBase {
 			...word,
 			mainElement: mainWordEl,
 			subElements: subElements,
-			elementAnimations: [
-				createFloatAnimation(mainWordEl, {
-					word: floatWord,
-					lineStartTime: this.lyricLine.startTime,
-					isBG: this.lyricLine.isBG,
-				}),
-			],
+			elementAnimations: shouldEmphasize
+				? []
+				: [
+						createFloatAnimation(mainWordEl, {
+							word: floatWord,
+							lineStartTime: this.lyricLine.startTime,
+							isBG: this.lyricLine.isBG,
+						}),
+					],
 			width: 0,
 			height: 0,
 			padding: 0,
