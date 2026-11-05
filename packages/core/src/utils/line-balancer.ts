@@ -1,6 +1,10 @@
 import styles from "#styles/lyric-player.module.css";
 import { clampPositive } from "./clamp.ts";
-import { type ChildNodeInfo, calcBalancedBreaks } from "./lyric-line-break.ts";
+import {
+	type ChildNodeInfo,
+	calcBalancedBreaks,
+	segmentForLineBreaks,
+} from "./lyric-line-break.ts";
 import { getTextAutospaceOffsets } from "./text-autospace.ts";
 import {
 	appendTextWithAutospace,
@@ -36,7 +40,7 @@ export class LineBalancer {
 	public balanceLineBreaks(
 		isNonDynamic: boolean,
 		hasSplittedWords: boolean,
-		wordSegmenter: Intl.Segmenter,
+		wordSegmenter: Intl.Segmenter | null,
 		mainStyle?: CSSStyleDeclaration,
 	): void {
 		if (this.isBalancing || !this.mainElement) return;
@@ -92,7 +96,7 @@ export class LineBalancer {
 	private executeLineBalance(
 		containerWidth: number,
 		adapter: LineBalanceAdapter,
-		wordSegmenter: Intl.Segmenter,
+		wordSegmenter: Intl.Segmenter | null,
 	): void {
 		const existingBrs = this.mainElement.querySelectorAll("br");
 		if (
@@ -188,7 +192,7 @@ export class LineBalancer {
 
 	private balanceDynamicLineBreaks(
 		containerWidth: number,
-		wordSegmenter: Intl.Segmenter,
+		wordSegmenter: Intl.Segmenter | null,
 	): void {
 		const infoToNode: Node[] = [];
 
@@ -263,7 +267,7 @@ export class LineBalancer {
 	private balanceNonDynamicLineBreaks(
 		containerWidth: number,
 		computedStyle: CSSStyleDeclaration,
-		wordSegmenter: Intl.Segmenter,
+		wordSegmenter: Intl.Segmenter | null,
 	): void {
 		const fullText = this.mainElement.textContent ?? "";
 		if (fullText.trim().length === 0) return;
@@ -302,7 +306,10 @@ export class LineBalancer {
 				const offsets = getTextAutospaceOffsets(fullText);
 				const spacing = getTextAutospaceWidth(computedStyle);
 				let boundary = 0;
-				for (const { segment, index } of wordSegmenter.segment(fullText)) {
+				for (const { segment, index } of segmentForLineBreaks(
+					fullText,
+					wordSegmenter,
+				)) {
 					const leadingSpacing = offsets[boundary] === index ? spacing : 0;
 					let count = 0;
 					while (

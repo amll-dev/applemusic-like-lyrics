@@ -7,7 +7,7 @@ const graphemeSegmenter =
 		: null;
 
 const CJK_RE =
-	/^(?=[\p{Letter}\p{Number}])(?:\p{Script=Han}|\p{Script=Hiragana}|\p{Script=Katakana}|\p{Script=Hangul}|\u30FC|\uFF70)[\p{Mark}\uFF9E\uFF9F]*$/u;
+	/^(?=[\p{Letter}\p{Number}])(?:\p{Script=Han}|\p{Script=Hiragana}|\p{Script=Katakana}|\p{Script=Hangul}+|\u30FC|\uFF70)[\p{Mark}\uFF9E\uFF9F]*$/u;
 const LATIN_RE =
 	/^(?![\uFF21-\uFF3A\uFF41-\uFF5A])(?=\p{Letter})\p{Script=Latin}\p{Mark}*$/u;
 const NUMBER_RE = /^[0-9]\p{Mark}*$/u;

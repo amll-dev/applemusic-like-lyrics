@@ -61,7 +61,7 @@
 	}
 
 	& .textAutospaceBefore {
-		--amll-node-autospace: var(--amll-lp-text-autospace, 0.125em);
+		--amll-node-autospace: var(--amll-lp-text-autospace, 0px);
 	}
 
 	& .textAutospaceLineStart {

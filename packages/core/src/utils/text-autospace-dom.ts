@@ -1,8 +1,5 @@
 import styles from "#styles/lyric-player.module.css";
-import {
-	getTextAutospaceOffsets,
-	TEXT_AUTOSPACE_EM,
-} from "./text-autospace.ts";
+import { getTextAutospaceOffsets } from "./text-autospace.ts";
 
 /** Render spacing without adding characters or timed lyric words. */
 export function appendTextWithAutospace(
@@ -31,11 +28,11 @@ export function appendTextWithAutospace(
 	}
 }
 
-/** The inherited private length is expressed in em by the player setter. */
+/** The player initializes the inherited private length in em. */
 export function getTextAutospaceWidth(style: CSSStyleDeclaration): number {
 	const em = Number.parseFloat(
 		style.getPropertyValue("--amll-lp-text-autospace"),
 	);
 	const fontSize = Number.parseFloat(style.fontSize) || 0;
-	return (Number.isFinite(em) ? em : TEXT_AUTOSPACE_EM) * fontSize;
+	return Number.isFinite(em) ? em * fontSize : 0;
 }

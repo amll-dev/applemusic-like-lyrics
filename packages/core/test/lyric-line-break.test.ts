@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { calcBalancedBreaks } from "#utils/lyric-line-break.ts";
+import {
+	calcBalancedBreaks,
+	segmentForLineBreaks,
+} from "#utils/lyric-line-break.ts";
 
 const segmenter = new Intl.Segmenter("en", { granularity: "word" });
 
-describe("balanced line breaks with render-only spacing", () => {
+describe.each([segmenter, null])("line breaks with %s", (segmenter) => {
 	it("discards a leading gap only at the selected line start", () => {
 		const children = [
 			{ text: "aaa", width: 70, isSpace: false },
@@ -37,4 +40,23 @@ describe("balanced line breaks with render-only spacing", () => {
 			),
 		).toEqual([1]);
 	});
+});
+
+it("preserves words and graphemes in fallback line breaking", () => {
+	const text = "中文AMLL2026 e\u0301 \u{1F469}\u{1F3FD}\u200D\u{1F4BB}𠀀";
+	expect(
+		[...segmentForLineBreaks(text, null)].map(({ segment, index }) => [
+			segment,
+			index,
+		]),
+	).toEqual([
+		["中", 0],
+		["文", 1],
+		["AMLL2026", 2],
+		[" ", 10],
+		["e\u0301", 11],
+		[" ", 13],
+		["\u{1F469}\u{1F3FD}\u200D\u{1F4BB}", 14],
+		["𠀀", 21],
+	]);
 });

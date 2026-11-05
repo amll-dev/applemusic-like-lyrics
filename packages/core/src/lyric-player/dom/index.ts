@@ -10,6 +10,7 @@ import { LayoutReason, MAX_FRAME_DELTA } from "#lyric/base/consts.ts";
 import { LyricPlayerBase } from "#lyric/base/index.ts";
 import type { LyricLineBase } from "#lyric/base/line.ts";
 import styles from "#styles/lyric-player.module.css";
+import { TEXT_AUTOSPACE_EM } from "#utils/text-autospace.ts";
 import { Duration } from "#utils/time.ts";
 import { BottomLineEl } from "./bottom-line.ts";
 import { InterludeDotsEl } from "./interlude-dots.ts";
@@ -124,6 +125,10 @@ export class DomLyricPlayer extends LyricPlayerBase {
 	}
 	constructor() {
 		super();
+		this.element.style.setProperty(
+			"--amll-lp-text-autospace",
+			`${TEXT_AUTOSPACE_EM}em`,
+		);
 		this.onResize();
 		this.element.classList.add("amll-lyric-player", "dom");
 		if (this.disableSpring) {
@@ -169,7 +174,7 @@ export class DomLyricPlayer extends LyricPlayerBase {
 		super.setEnableTextAutospace(enable);
 		this.element.style.setProperty(
 			"--amll-lp-text-autospace",
-			enable ? "0.125em" : "0em",
+			`${enable ? TEXT_AUTOSPACE_EM : 0}em`,
 		);
 		this.refreshTextLayout();
 		this.calcLayout(LayoutReason.ConfigChange);
