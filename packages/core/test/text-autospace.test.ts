@@ -5,6 +5,29 @@ describe("text autospace", () => {
 	const autospace = nativeAutospace;
 
 	it.each([
+		["。", "A", false],
+		["「", "A", false],
+		["\u2F00", "A", false],
+		["\u32D0", "1", false],
+		["中", "Ａ", false],
+		["Ａ", "中", false],
+		["한", "A", true],
+		["A", "한", true],
+		["〇", "1", true],
+		["ｶﾞ", "A", true],
+		["\u1100\u1161\u11A8", "A", true],
+		["ー", "A", true],
+	] as const)(
+		"classifies base code points at the join of %s and %s",
+		(previous, next, expected) => {
+			expect(autospace.needsTextAutospace(previous, next)).toBe(expected);
+			expect(autospace.getTextAutospaceOffsets(previous + next)).toEqual(
+				expected ? [previous.length] : [],
+			);
+		},
+	);
+
+	it.each([
 		["してtake2だよ", [2, 7]],
 		["中文AMLL2026年", [2, 10]],
 		["かなAMLL", [2]],

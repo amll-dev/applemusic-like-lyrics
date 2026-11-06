@@ -3,24 +3,35 @@ import { graphemeSegmenter } from "./segmenter.ts";
 /** Render-only gap size, relative to the surrounding font size. */
 export const TEXT_AUTOSPACE_EM = 0.125;
 
-const CJK_RE =
-	/^(?=[\p{Letter}\p{Number}])(?:\p{Script=Han}|\p{Script=Hiragana}|\p{Script=Katakana}|\p{Script=Hangul}+|\u30FC|\uFF70)[\p{Mark}\uFF9E\uFF9F]*$/u;
-const LATIN_RE =
-	/^(?![\uFF21-\uFF3A\uFF41-\uFF5A])(?=\p{Letter})\p{Script=Latin}\p{Mark}*$/u;
-const NUMBER_RE = /^[0-9]\p{Mark}*$/u;
-const WAVE_RE = /^[~〜～]$/u;
+const AUTOSPACE_IDEOGRAPH_RE =
+	/[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}\u30FC\uFF70]/u;
+const ALNUM_RE = /[\p{Letter}\p{Number}]/u;
+const LETTER_RE = /\p{Letter}/u;
+const LATIN_LETTER_RE = /\p{Script=Latin}/u;
+const FULLWIDTH_LATIN_RE = /[\uFF21-\uFF3A\uFF41-\uFF5A]/u;
 const EMOJI_RE =
 	/[\u200D\u20E3]|\p{Extended_Pictographic}|\p{Regional_Indicator}|\p{Emoji_Modifier}/u;
 
 type GraphemeKind = "cjk" | "latin" | "number" | "wave" | "other";
 
+// Unlike isCJK (word splitting/emphasis), autospace excludes punctuation, radicals and symbols.
+function isAutospaceIdeograph(base: string): boolean {
+	return ALNUM_RE.test(base) && AUTOSPACE_IDEOGRAPH_RE.test(base);
+}
+
 function classifyGrapheme(grapheme: string): GraphemeKind {
 	// A keycap's ASCII digit and an emoji's joiner must never act as boundaries.
 	if (EMOJI_RE.test(grapheme)) return "other";
-	if (CJK_RE.test(grapheme)) return "cjk";
-	if (LATIN_RE.test(grapheme)) return "latin";
-	if (NUMBER_RE.test(grapheme)) return "number";
-	if (WAVE_RE.test(grapheme)) return "wave";
+	const base = String.fromCodePoint(grapheme.codePointAt(0) ?? 0);
+	if (isAutospaceIdeograph(base)) return "cjk";
+	if (
+		LETTER_RE.test(base) &&
+		LATIN_LETTER_RE.test(base) &&
+		!FULLWIDTH_LATIN_RE.test(base)
+	)
+		return "latin";
+	if (base >= "0" && base <= "9") return "number";
+	if (base === "~" || base === "〜" || base === "～") return "wave";
 	return "other";
 }
 
