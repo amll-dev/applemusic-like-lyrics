@@ -28,11 +28,11 @@ interface LineBalanceAdapter {
 export class LineBalancer {
 	private isBalancing = false;
 	private lastBalancedContainerWidth = -1;
-	private lastStyleKey = "";
 
 	constructor(
 		private mainElement: HTMLDivElement,
 		private autospaceClasses: Record<string, string>,
+		private getEnableTextAutospace: () => boolean = () => false,
 	) {}
 
 	public balanceLineBreaks(
@@ -44,11 +44,6 @@ export class LineBalancer {
 		if (this.isBalancing || !this.mainElement) return;
 
 		const computedStyle = mainStyle ?? getComputedStyle(this.mainElement);
-		const styleKey = `${computedStyle.font}|${computedStyle.letterSpacing}|${computedStyle.wordSpacing}|${computedStyle.getPropertyValue("--amll-lp-text-autospace")}`;
-		if (styleKey !== this.lastStyleKey) {
-			this.reset();
-			this.lastStyleKey = styleKey;
-		}
 		const containerWidth = this.computeContainerWidth(computedStyle);
 
 		if (containerWidth <= 0) return;
@@ -248,7 +243,10 @@ export class LineBalancer {
 					const breakIndex = breaks[i];
 					if (breakIndex >= 0 && breakIndex < infoToNode.length) {
 						const node = infoToNode[breakIndex];
-						if (node instanceof HTMLElement) {
+						if (
+							node instanceof HTMLElement &&
+							node.classList.contains(this.autospaceClasses.textAutospaceBefore)
+						) {
 							node.classList.add(this.autospaceClasses.textAutospaceLineStart);
 						}
 						this.mainElement.insertBefore(
@@ -271,11 +269,12 @@ export class LineBalancer {
 	): void {
 		const fullText = this.mainElement.textContent ?? "";
 		if (fullText.trim().length === 0) return;
+		const enabled = this.getEnableTextAutospace();
 
 		const nonDynamicAdapter: LineBalanceAdapter = {
 			resetDOM: () => {
 				this.mainElement.replaceChildren();
-				appendTextWithAutospace(this.mainElement, fullText);
+				appendTextWithAutospace(this.mainElement, fullText, false, enabled);
 			},
 			buildChildInfos: () => {
 				const ctx = getMeasurementContext();
@@ -303,8 +302,8 @@ export class LineBalancer {
 				}
 
 				const childInfos: ChildNodeInfo[] = [];
-				const offsets = getTextAutospaceOffsets(fullText);
-				const spacing = getTextAutospaceWidth(computedStyle);
+				const offsets = enabled ? getTextAutospaceOffsets(fullText) : [];
+				const spacing = enabled ? getTextAutospaceWidth(computedStyle) : 0;
 				let boundary = 0;
 				for (const { segment, index } of wordSegmenter.segment(fullText)) {
 					const leadingSpacing = offsets[boundary] === index ? spacing : 0;
@@ -342,6 +341,7 @@ export class LineBalancer {
 						fragment,
 						childInfos[i].text,
 						(childInfos[i].leadingSpacing ?? 0) > 0,
+						enabled,
 					);
 					const lineStart = previousNode?.nextSibling ?? fragment.firstChild;
 					if (breakSet.has(i) && lineStart instanceof HTMLElement) {

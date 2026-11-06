@@ -6,8 +6,9 @@ export function appendTextWithAutospace(
 	parent: Node,
 	text: string,
 	leading = false,
+	enabled = true,
 ): void {
-	const offsets = getTextAutospaceOffsets(text);
+	const offsets = enabled ? getTextAutospaceOffsets(text) : [];
 	let start = 0;
 	let spaced = leading;
 	for (let i = 0; i <= offsets.length; i++) {

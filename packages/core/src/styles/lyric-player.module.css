@@ -49,7 +49,6 @@
 	contain-intrinsic-size: auto 40px;
 	backface-visibility: hidden;
 	transform-origin: left;
-	text-autospace: no-autospace;
 
 	--bright-mask-alpha: 0.2;
 	--dark-mask-alpha: 0.2;
@@ -69,6 +68,10 @@
 	& .textAutospaceLineStart.textAutospaceLineStart {
 		--amll-node-autospace: 0px;
 	}
+}
+
+.enableTextAutospace .lyricLine {
+	text-autospace: no-autospace;
 }
 
 .lyricDuetLine {

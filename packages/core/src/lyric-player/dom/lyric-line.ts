@@ -37,6 +37,7 @@ export class LyricLineEl extends LyricLineBase {
 	private splittedWords: RealWord[] = [];
 	// 标记是否已经构建了行内的实际 DOM（单词与动画等）
 	private built = false;
+	private enableTextAutospace = false;
 
 	private renderMode: LyricLineRenderMode = LyricLineRenderMode.SOLID;
 	private maskAnimator?: LineMaskAnimator;
@@ -105,7 +106,11 @@ export class LyricLineEl extends LyricLineBase {
 		trans.setAttribute("class", styles.lyricSubLine);
 		roman.setAttribute("class", styles.lyricSubLine);
 		if (LyricLineBase.wordSegmenter) {
-			this.balancer = new LineBalancer(main, styles);
+			this.balancer = new LineBalancer(
+				main,
+				styles,
+				() => this.enableTextAutospace,
+			);
 		}
 		// 延迟构建具体行内容，进入可视区（含 overscan）时再构建
 		this.rebuildStyle();
@@ -232,15 +237,19 @@ export class LyricLineEl extends LyricLineBase {
 	}
 
 	override rebuildElement(): void {
+		this.enableTextAutospace = this.lyricPlayer.getEnableTextAutospace();
 		this.disposeElements();
 		const main = this.element.children[0] as HTMLDivElement;
 		const trans = this.element.children[1] as HTMLDivElement;
 		const roman = this.element.children[2] as HTMLDivElement;
 		// 非动态歌词，直接渲染整行与副行
 		if (this.lyricPlayer._getIsNonDynamic()) {
+			main.replaceChildren();
 			appendTextWithAutospace(
 				main,
 				this.lyricLine.words.map((w) => w.word).join(""),
+				false,
+				this.enableTextAutospace,
 			);
 			this.setSubLinesText(trans, roman);
 			this.syncMaskAfterRebuild();
@@ -328,7 +337,9 @@ export class LyricLineEl extends LyricLineBase {
 			mainWordEl.classList.add(styles.emphasize);
 			const trimmedWord = displayWord.trim();
 
-			const offsets = getTextAutospaceOffsets(trimmedWord);
+			const offsets = this.enableTextAutospace
+				? getTextAutospaceOffsets(trimmedWord)
+				: [];
 			let offset = 0;
 			let boundary = 0;
 			for (const { segment } of textGraphemes(trimmedWord)) {
@@ -345,10 +356,20 @@ export class LyricLineEl extends LyricLineBase {
 		} else {
 			if (this.lineHasRomanWords) {
 				const wordEl = document.createElement("span");
-				appendTextWithAutospace(wordEl, displayWord.trim());
+				appendTextWithAutospace(
+					wordEl,
+					displayWord.trim(),
+					false,
+					this.enableTextAutospace,
+				);
 				wordTextContainer.appendChild(wordEl);
 			} else if (romanWord.length === 0) {
-				appendTextWithAutospace(wordTextContainer, displayWord.trim());
+				appendTextWithAutospace(
+					wordTextContainer,
+					displayWord.trim(),
+					false,
+					this.enableTextAutospace,
+				);
 			}
 		}
 
@@ -418,8 +439,13 @@ export class LyricLineEl extends LyricLineBase {
 		const wrapperWordEl = document.createElement("span");
 		wrapperWordEl.classList.add(styles.emphasizeWrapper);
 		// Plain lyric text for balancing; textContent also includes ruby/roman text.
-		wrapperWordEl.dataset.amllText = merged.word;
-		if (needsTextAutospace(previousText, merged.word)) {
+		if (this.enableTextAutospace) {
+			wrapperWordEl.dataset.amllText = merged.word;
+		}
+		if (
+			this.enableTextAutospace &&
+			needsTextAutospace(previousText, merged.word)
+		) {
 			wrapperWordEl.classList.add(styles.textAutospaceBefore);
 		}
 
@@ -434,7 +460,10 @@ export class LyricLineEl extends LyricLineBase {
 			}
 
 			const realWord = this.createWord(word, emp, emp ? merged : word);
-			if (needsTextAutospace(previousWord, word.word)) {
+			if (
+				this.enableTextAutospace &&
+				needsTextAutospace(previousWord, word.word)
+			) {
 				realWord.mainElement.classList.add(styles.textAutospaceBefore);
 			}
 			previousWord = word.word;
@@ -474,14 +503,6 @@ export class LyricLineEl extends LyricLineBase {
 
 		main.appendChild(wrapperWordEl);
 		return merged.word;
-	}
-
-	/** Refresh spacing geometry without replacing timed word animations. */
-	refreshTextAutospace(): void {
-		if (!this.built) return;
-		this.balancer?.reset();
-		this.invalidateMask();
-		this.updateMaskImageSync();
 	}
 
 	override onLineSizeChange(size: [number, number]): void {

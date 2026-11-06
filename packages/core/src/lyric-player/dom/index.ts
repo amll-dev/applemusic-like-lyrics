@@ -121,10 +121,6 @@ export class DomLyricPlayer extends LyricPlayerBase {
 	}
 	constructor() {
 		super();
-		this.element.style.setProperty(
-			"--amll-lp-text-autospace",
-			`${this.enableTextAutospace ? TEXT_AUTOSPACE_EM : 0}em`,
-		);
 		this.onResize();
 		this.element.classList.add("amll-lyric-player", "dom");
 		if (this.disableSpring) {
@@ -163,16 +159,10 @@ export class DomLyricPlayer extends LyricPlayerBase {
 			"--amll-lp-text-autospace",
 			`${enable ? TEXT_AUTOSPACE_EM : 0}em`,
 		);
-		this.refreshTextLayout();
+		this.element.classList.toggle(styles.enableTextAutospace, enable);
+		this.rebuildLyricLines();
 		this.calcLayout(LayoutReason.ConfigChange);
 		return true;
-	}
-
-	private refreshTextLayout(): void {
-		for (const group of this.currentLyricGroups) {
-			group.mainLine.refreshTextAutospace();
-			group.bgLine?.refreshTextAutospace();
-		}
 	}
 
 	protected override createInterludeDots(): InterludeDotsEl {
