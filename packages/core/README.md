@@ -78,7 +78,7 @@ The main styles are provided by `@applemusic-like-lyrics/core/style.css`. Common
 
 When enabled, the player adds a `0.125em` layout gap between Chinese/Japanese characters and Latin letters or halfwidth digits, including numeric boundaries next to `~`, `〜`, and `～`. Existing whitespace is not widened again; fullwidth alphanumerics and emoji receive no extra spacing.
 
-Spacing applies to timed and line-based lyrics, translations, romanization, background vocals, and duet lines. It never inserts spaces into the source or changes lyric timestamps. It is disabled by default; enable it at runtime:
+Spacing applies to timed and line-based main lyrics, including their per-word ruby and romanization, background vocals, and duet lines. Translation and romanization sub-lines remain plain text without autospace. It never inserts spaces into the source or changes lyric timestamps. It is disabled by default; enable it at runtime:
 
 ```typescript
 player.setEnableTextAutospace(true);

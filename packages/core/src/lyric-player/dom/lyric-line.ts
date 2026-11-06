@@ -271,8 +271,8 @@ export class LyricLineEl extends LyricLineBase {
 
 	/** 设置翻译与音译行文本 */
 	private setSubLinesText(trans: HTMLDivElement, roman: HTMLDivElement) {
-		appendTextWithAutospace(trans, this.lyricLine.translatedLyric);
-		appendTextWithAutospace(roman, this.lyricLine.romanLyric);
+		trans.textContent = this.lyricLine.translatedLyric;
+		roman.textContent = this.lyricLine.romanLyric;
 	}
 
 	private getRubyCharCount(word: LyricWord) {
