@@ -1,7 +1,6 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from "vitest";
-import styles from "#styles/lyric-player.module.css";
 import { LineBalancer } from "#utils/line-balancer.ts";
 
 type BalanceAdapter = {
@@ -41,7 +40,7 @@ function fixture(needsCalibration = false) {
 		}),
 		applyBreaks,
 	};
-	const probe = new LineBalancer(main, styles) as unknown as {
+	const probe = new LineBalancer(main) as unknown as {
 		executeLineBalance(
 			width: number,
 			adapter: BalanceAdapter,

@@ -106,11 +106,7 @@ export class LyricLineEl extends LyricLineBase {
 		trans.setAttribute("class", styles.lyricSubLine);
 		roman.setAttribute("class", styles.lyricSubLine);
 		if (LyricLineBase.wordSegmenter) {
-			this.balancer = new LineBalancer(
-				main,
-				styles,
-				() => this.enableTextAutospace,
-			);
+			this.balancer = new LineBalancer(main, () => this.enableTextAutospace);
 		}
 		// 延迟构建具体行内容，进入可视区（含 overscan）时再构建
 		this.rebuildStyle();
@@ -434,10 +430,6 @@ export class LyricLineEl extends LyricLineBase {
 
 		const wrapperWordEl = document.createElement("span");
 		wrapperWordEl.classList.add(styles.emphasizeWrapper);
-		// Plain lyric text for balancing; textContent also includes ruby/roman text.
-		if (this.enableTextAutospace) {
-			wrapperWordEl.dataset.amllText = merged.word;
-		}
 		if (
 			this.enableTextAutospace &&
 			needsTextAutospace(previousText, merged.word)

@@ -74,16 +74,6 @@ The main styles are provided by `@applemusic-like-lyrics/core/style.css`. Common
 }
 ```
 
-## Automatic mixed-script spacing
-
-Optional autospace (default off) adds a render-only `0.125em` gap between Chinese/Japanese characters and Latin letters or halfwidth digits, and between digits and `~`, `〜`, or `～`, in main-line lyric text only. It does not change source text or timestamps. Ruby annotations, per-word romanization, and translation/romanization lines are not spaced.
-
-```typescript
-player.setEnableTextAutospace(true);
-```
-
-In React, use `enableTextAutospace={true}`; in Vue, use `:enable-text-autospace="true"`. The setter and props update line breaks and highlight masks together.
-
 ## Development
 
 ```bash

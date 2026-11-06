@@ -74,16 +74,6 @@ player.update(0) // 更新歌词组件动画（需要逐帧调用）
 }
 ```
 
-## 中西文自动间距
-
-自动间距默认关闭，仅在主歌词正文的中日文字与拉丁字母、半角数字之间，以及数字与 `~`、`〜`、`～` 之间添加 `0.125em` 的渲染间距，不修改原文或时间戳。注音、逐词音译、翻译与音译行不添加间距。
-
-```typescript
-player.setEnableTextAutospace(true);
-```
-
-React 使用 `enableTextAutospace={true}`，Vue 使用 `:enable-text-autospace="true"`。接口与属性会同步更新断行和高亮遮罩。
-
 ## 开发与构建
 
 ```bash

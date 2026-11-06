@@ -1,3 +1,4 @@
+import styles from "#styles/lyric-player.module.css";
 import { clampPositive } from "./clamp.ts";
 import { type ChildNodeInfo, calcBalancedBreaks } from "./lyric-line-break.ts";
 import { getTextAutospaceOffsets } from "./text-autospace.ts";
@@ -31,7 +32,6 @@ export class LineBalancer {
 
 	constructor(
 		private mainElement: HTMLDivElement,
-		private autospaceClasses: Record<string, string>,
 		private getEnableTextAutospace: () => boolean = () => false,
 	) {}
 
@@ -131,16 +131,10 @@ export class LineBalancer {
 				range.selectNodeContents(this.mainElement);
 				const visualWidth = range.getBoundingClientRect().width;
 
-				const spacingWidth = childInfos.reduce(
-					(sum, info) => sum + (info.spacingWidth ?? 0),
-					0,
-				);
-				const glyphWidth = layoutWidth - spacingWidth;
-				if (glyphWidth > 0 && visualWidth > spacingWidth) {
-					const scale = (visualWidth - spacingWidth) / glyphWidth;
+				if (layoutWidth > 0 && visualWidth > 0) {
+					const scale = visualWidth / layoutWidth;
 					for (const info of childInfos) {
-						const spacing = info.spacingWidth ?? 0;
-						info.width = (info.width - spacing) * scale + spacing;
+						info.width *= scale;
 					}
 				}
 				layoutWidth = visualWidth;
@@ -195,9 +189,9 @@ export class LineBalancer {
 					br.remove();
 				});
 				for (const el of this.mainElement.querySelectorAll(
-					`.${this.autospaceClasses.textAutospaceLineStart}`,
+					`.${styles.textAutospaceLineStart}`,
 				)) {
-					el.classList.remove(this.autospaceClasses.textAutospaceLineStart);
+					el.classList.remove(styles.textAutospaceLineStart);
 				}
 			},
 			buildChildInfos: () => {
@@ -225,11 +219,9 @@ export class LineBalancer {
 						const marginRight = Number.parseFloat(elStyle.marginRight) || 0;
 						childInfos.push({
 							width: clampPositive(rect.width + marginLeft + marginRight),
-							text: el.dataset.amllText ?? el.textContent ?? "",
+							text: el.textContent ?? "",
 							isSpace: false,
-							leadingSpacing: el.classList.contains(
-								this.autospaceClasses.textAutospaceBefore,
-							)
+							leadingSpacing: el.classList.contains(styles.textAutospaceBefore)
 								? getTextAutospaceWidth(elStyle)
 								: 0,
 						});
@@ -245,9 +237,9 @@ export class LineBalancer {
 						const node = infoToNode[breakIndex];
 						if (
 							node instanceof HTMLElement &&
-							node.classList.contains(this.autospaceClasses.textAutospaceBefore)
+							node.classList.contains(styles.textAutospaceBefore)
 						) {
-							node.classList.add(this.autospaceClasses.textAutospaceLineStart);
+							node.classList.add(styles.textAutospaceLineStart);
 						}
 						this.mainElement.insertBefore(
 							document.createElement("br"),
@@ -309,13 +301,11 @@ export class LineBalancer {
 					const count = offsets.filter(
 						(offset) => offset >= index && offset < index + segment.length,
 					).length;
-					const spacingWidth = count * spacing;
 					childInfos.push({
-						width: ctx.measureText(segment).width + spacingWidth,
+						width: ctx.measureText(segment).width + count * spacing,
 						text: segment,
 						isSpace: segment.trim().length === 0,
 						leadingSpacing,
-						spacingWidth,
 					});
 				}
 
@@ -339,9 +329,7 @@ export class LineBalancer {
 					);
 					const lineStart = previousNode?.nextSibling ?? fragment.firstChild;
 					if (breakSet.has(i) && lineStart instanceof HTMLElement) {
-						lineStart.classList.add(
-							this.autospaceClasses.textAutospaceLineStart,
-						);
+						lineStart.classList.add(styles.textAutospaceLineStart);
 					}
 				}
 				this.mainElement.appendChild(fragment);

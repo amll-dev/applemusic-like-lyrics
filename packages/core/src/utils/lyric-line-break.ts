@@ -6,8 +6,6 @@ export interface ChildNodeInfo {
 	isSpace: boolean;
 	/** Layout-only spacing discarded when this node starts a visual line. */
 	leadingSpacing?: number;
-	/** Total layout-only spacing, excluded from glyph-width calibration. */
-	spacingWidth?: number;
 }
 
 /**

@@ -15,7 +15,7 @@ function fixture(text: string, enabled = true) {
 	const main = document.createElement("div");
 	main.textContent = text;
 	let adapter: Adapter | undefined;
-	const balancer = new LineBalancer(main, styles, () => enabled) as unknown as {
+	const balancer = new LineBalancer(main, () => enabled) as unknown as {
 		balanceNonDynamicLineBreaks(
 			width: number,
 			style: CSSStyleDeclaration,
