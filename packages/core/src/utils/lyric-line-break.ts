@@ -132,7 +132,7 @@ export function calcBalancedBreaks(
 				// 优先级：标点 > 空格 > CJK 词界 > 普通文本
 				if (
 					(isMixed &&
-						!children[j].isSpace &&
+						prevChild.isSpace &&
 						previousScripts[j] !== 0 &&
 						nextScripts[j] !== 0 &&
 						previousScripts[j] !== nextScripts[j]) ||
