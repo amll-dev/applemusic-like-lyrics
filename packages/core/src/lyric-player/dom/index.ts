@@ -153,8 +153,9 @@ export class DomLyricPlayer extends LyricPlayerBase {
 		}
 	}
 
-	public override setEnableTextAutospace(enable = false): boolean {
-		if (!super.setEnableTextAutospace(enable)) return false;
+	public override setEnableTextAutospace(enable = false): void {
+		if (this.getEnableTextAutospace() === enable) return;
+		super.setEnableTextAutospace(enable);
 		this.element.style.setProperty(
 			"--amll-lp-text-autospace",
 			`${enable ? TEXT_AUTOSPACE_EM : 0}em`,
@@ -162,7 +163,6 @@ export class DomLyricPlayer extends LyricPlayerBase {
 		this.element.classList.toggle(styles.enableTextAutospace, enable);
 		this.rebuildLyricLines();
 		this.calcLayout(LayoutReason.ConfigChange);
-		return true;
 	}
 
 	protected override createInterludeDots(): InterludeDotsEl {

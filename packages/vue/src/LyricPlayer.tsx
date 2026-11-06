@@ -364,9 +364,7 @@ export const LyricPlayer = defineComponent({
 		});
 
 		watchEffect(() => {
-			playerRef.value?.setEnableTextAutospace(
-				props.enableTextAutospace ?? false,
-			);
+			playerRef.value?.setEnableTextAutospace(props.enableTextAutospace);
 		});
 
 		watchEffect(() => {

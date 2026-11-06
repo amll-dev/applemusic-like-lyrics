@@ -518,7 +518,10 @@ export class LyricLineEl extends LyricLineBase {
 		const isInitialObservation =
 			!this.lastLineSize && Boolean(this.maskAnimator);
 		this.lastLineSize = [size[0], size[1]];
-		if (isInitialObservation) return;
+
+		if (isInitialObservation) {
+			return;
+		}
 
 		this.updateMaskImageSync();
 	}

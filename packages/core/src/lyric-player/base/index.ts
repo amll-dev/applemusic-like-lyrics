@@ -383,10 +383,9 @@ export abstract class LyricPlayerBase
 	 * 设置主歌词正文的自动间距，默认关闭；中日文字与拉丁字母、半角数字及数字与波浪号边界间距为 0.125em。
 	 * 仅影响显示，不修改歌词文本、时间或播放进度。
 	 */
-	public setEnableTextAutospace(enable = false): boolean {
-		if (this.enableTextAutospace === enable) return false;
+	public setEnableTextAutospace(enable = false): void {
+		if (this.enableTextAutospace === enable) return;
 		this.enableTextAutospace = enable;
-		return true;
 	}
 
 	/**

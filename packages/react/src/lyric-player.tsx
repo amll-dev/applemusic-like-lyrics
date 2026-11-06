@@ -324,7 +324,7 @@ export const LyricPlayer: ForwardRefExoticComponent<
 		}, [corePlayer, enableBlur]);
 
 		useEffect(() => {
-			corePlayer?.setEnableTextAutospace(enableTextAutospace ?? false);
+			corePlayer?.setEnableTextAutospace(enableTextAutospace);
 		}, [corePlayer, enableTextAutospace]);
 
 		// isSeeking 只标注本次 currentTime 推送是否为跳转，不作为推送的触发源

@@ -62,18 +62,24 @@ describe("player text autospace", () => {
 		const player = new DomLyricPlayer();
 		const spacing = () =>
 			player.getElement().style.getPropertyValue("--amll-lp-text-autospace");
+		const rebuild = vi.spyOn(player, "rebuildLyricLines");
 		try {
 			expect(player.getEnableTextAutospace()).toBe(false);
 			expect(spacing()).toBe("");
-			expect(player.setEnableTextAutospace()).toBe(false);
-			expect(player.setEnableTextAutospace(true)).toBe(true);
+			player.setEnableTextAutospace();
+			expect(rebuild).not.toHaveBeenCalled();
+			player.setEnableTextAutospace(true);
+			expect(rebuild).toHaveBeenCalledTimes(1);
 			expect(player.getEnableTextAutospace()).toBe(true);
 			expect(spacing()).toBe("0.125em");
-			expect(player.setEnableTextAutospace(true)).toBe(false);
-			expect(player.setEnableTextAutospace()).toBe(true);
+			player.setEnableTextAutospace(true);
+			expect(rebuild).toHaveBeenCalledTimes(1);
+			player.setEnableTextAutospace();
+			expect(rebuild).toHaveBeenCalledTimes(2);
 			expect(player.getEnableTextAutospace()).toBe(false);
 			expect(spacing()).toBe("0em");
 		} finally {
+			rebuild.mockRestore();
 			player.dispose();
 		}
 	});
