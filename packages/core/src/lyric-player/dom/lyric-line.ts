@@ -63,9 +63,7 @@ export class LyricLineEl extends LyricLineBase {
 	/**
 	 * 用于平衡换行、尽量减少各行长度差异的类
 	 */
-	private readonly balancer: LineBalancer;
-	private translationBalancer?: LineBalancer;
-	private romanizationBalancer?: LineBalancer;
+	private readonly balancer?: LineBalancer;
 
 	constructor(
 		private readonly lyricPlayer: DomLyricPlayer,
@@ -106,7 +104,9 @@ export class LyricLineEl extends LyricLineBase {
 		);
 		trans.setAttribute("class", styles.lyricSubLine);
 		roman.setAttribute("class", styles.lyricSubLine);
-		this.balancer = new LineBalancer(main);
+		if (LyricLineBase.wordSegmenter) {
+			this.balancer = new LineBalancer(main, styles);
+		}
 		// 延迟构建具体行内容，进入可视区（含 overscan）时再构建
 		this.rebuildStyle();
 	}
@@ -273,12 +273,6 @@ export class LyricLineEl extends LyricLineBase {
 	private setSubLinesText(trans: HTMLDivElement, roman: HTMLDivElement) {
 		appendTextWithAutospace(trans, this.lyricLine.translatedLyric);
 		appendTextWithAutospace(roman, this.lyricLine.romanLyric);
-		this.translationBalancer = trans.childElementCount
-			? new LineBalancer(trans)
-			: undefined;
-		this.romanizationBalancer = roman.childElementCount
-			? new LineBalancer(roman)
-			: undefined;
 	}
 
 	private getRubyCharCount(word: LyricWord) {
@@ -431,6 +425,7 @@ export class LyricLineEl extends LyricLineBase {
 
 		const wrapperWordEl = document.createElement("span");
 		wrapperWordEl.classList.add(styles.emphasizeWrapper);
+		// Plain lyric text for balancing; textContent also includes ruby/roman text.
 		wrapperWordEl.dataset.amllText = merged.word;
 		if (needsTextAutospace(previousText, merged.word)) {
 			wrapperWordEl.classList.add(styles.textAutospaceBefore);
@@ -492,9 +487,7 @@ export class LyricLineEl extends LyricLineBase {
 	/** Refresh spacing geometry without replacing timed word animations. */
 	refreshTextAutospace(): void {
 		if (!this.built) return;
-		this.balancer.reset();
-		this.translationBalancer?.reset();
-		this.romanizationBalancer?.reset();
+		this.balancer?.reset();
 		this.invalidateMask();
 		this.updateMaskImageSync();
 	}
@@ -509,7 +502,10 @@ export class LyricLineEl extends LyricLineBase {
 			return;
 		}
 
+		const isInitialObservation =
+			!this.lastLineSize && Boolean(this.maskAnimator);
 		this.lastLineSize = [size[0], size[1]];
+		if (isInitialObservation) return;
 
 		this.updateMaskImageSync();
 	}
@@ -564,16 +560,6 @@ export class LyricLineEl extends LyricLineBase {
 			this.invalidateMask();
 			return false;
 		}
-		this.translationBalancer?.balanceLineBreaks(
-			true,
-			false,
-			LyricLineBase.wordSegmenter,
-		);
-		this.romanizationBalancer?.balanceLineBreaks(
-			true,
-			false,
-			LyricLineBase.wordSegmenter,
-		);
 
 		const mainStyle = getComputedStyle(this.element.children[0]);
 
@@ -589,7 +575,7 @@ export class LyricLineEl extends LyricLineBase {
 			this.lyricLine.endTime,
 		);
 
-		const containerWidth = this.balancer.getContainerWidth(mainStyle);
+		const containerWidth = this.balancer?.getContainerWidth(mainStyle) ?? 0;
 		const signature = this.computeMaskSignature(containerWidth, maxEndTime);
 
 		// 若输入未发生变更，则直接复用现有动画。由于销毁并重建逐词动画是该调用路径上性能开销最高的操作，
@@ -597,12 +583,14 @@ export class LyricLineEl extends LyricLineBase {
 		if (this.maskAnimator && signature === this.maskSignature) return false;
 		this.maskSignature = signature;
 
-		this.balancer.balanceLineBreaks(
-			this.lyricPlayer._getIsNonDynamic(),
-			this.splittedWords.length > 0,
-			LyricLineBase.wordSegmenter,
-			mainStyle,
-		);
+		if (this.balancer && LyricLineBase.wordSegmenter) {
+			this.balancer.balanceLineBreaks(
+				this.lyricPlayer._getIsNonDynamic(),
+				this.splittedWords.length > 0,
+				LyricLineBase.wordSegmenter,
+				mainStyle,
+			);
+		}
 
 		this.maskAnimator?.dispose();
 
@@ -715,9 +703,7 @@ export class LyricLineEl extends LyricLineBase {
 
 	private disposeElements() {
 		this.brightness.deactivate();
-		this.balancer.reset();
-		this.translationBalancer = undefined;
-		this.romanizationBalancer = undefined;
+		this.balancer?.reset();
 		this.invalidateMask();
 
 		for (const realWord of this.splittedWords) {

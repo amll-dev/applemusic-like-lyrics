@@ -1,10 +1,5 @@
-import styles from "#styles/lyric-player.module.css";
 import { clampPositive } from "./clamp.ts";
-import {
-	type ChildNodeInfo,
-	calcBalancedBreaks,
-	segmentForLineBreaks,
-} from "./lyric-line-break.ts";
+import { type ChildNodeInfo, calcBalancedBreaks } from "./lyric-line-break.ts";
 import { getTextAutospaceOffsets } from "./text-autospace.ts";
 import {
 	appendTextWithAutospace,
@@ -33,23 +28,26 @@ interface LineBalanceAdapter {
 export class LineBalancer {
 	private isBalancing = false;
 	private lastBalancedContainerWidth = -1;
-	private lastBalanceFont = "";
+	private lastStyleKey = "";
 
-	constructor(private mainElement: HTMLDivElement) {}
+	constructor(
+		private mainElement: HTMLDivElement,
+		private autospaceClasses: Record<string, string>,
+	) {}
 
 	public balanceLineBreaks(
 		isNonDynamic: boolean,
 		hasSplittedWords: boolean,
-		wordSegmenter: Intl.Segmenter | null,
+		wordSegmenter: Intl.Segmenter,
 		mainStyle?: CSSStyleDeclaration,
 	): void {
 		if (this.isBalancing || !this.mainElement) return;
 
 		const computedStyle = mainStyle ?? getComputedStyle(this.mainElement);
-		const font = `${computedStyle.font}|${computedStyle.letterSpacing}|${computedStyle.wordSpacing}|${computedStyle.getPropertyValue("--amll-lp-text-autospace")}`;
-		if (font !== this.lastBalanceFont) {
+		const styleKey = `${computedStyle.font}|${computedStyle.letterSpacing}|${computedStyle.wordSpacing}|${computedStyle.getPropertyValue("--amll-lp-text-autospace")}`;
+		if (styleKey !== this.lastStyleKey) {
 			this.reset();
-			this.lastBalanceFont = font;
+			this.lastStyleKey = styleKey;
 		}
 		const containerWidth = this.computeContainerWidth(computedStyle);
 
@@ -96,7 +94,7 @@ export class LineBalancer {
 	private executeLineBalance(
 		containerWidth: number,
 		adapter: LineBalanceAdapter,
-		wordSegmenter: Intl.Segmenter | null,
+		wordSegmenter: Intl.Segmenter,
 	): void {
 		const existingBrs = this.mainElement.querySelectorAll("br");
 		if (
@@ -192,7 +190,7 @@ export class LineBalancer {
 
 	private balanceDynamicLineBreaks(
 		containerWidth: number,
-		wordSegmenter: Intl.Segmenter | null,
+		wordSegmenter: Intl.Segmenter,
 	): void {
 		const infoToNode: Node[] = [];
 
@@ -202,9 +200,9 @@ export class LineBalancer {
 					br.remove();
 				});
 				for (const el of this.mainElement.querySelectorAll(
-					`.${styles.textAutospaceLineStart}`,
+					`.${this.autospaceClasses.textAutospaceLineStart}`,
 				)) {
-					el.classList.remove(styles.textAutospaceLineStart);
+					el.classList.remove(this.autospaceClasses.textAutospaceLineStart);
 				}
 			},
 			buildChildInfos: () => {
@@ -234,7 +232,9 @@ export class LineBalancer {
 							width: clampPositive(rect.width + marginLeft + marginRight),
 							text: el.dataset.amllText ?? el.textContent ?? "",
 							isSpace: false,
-							leadingSpacing: el.classList.contains(styles.textAutospaceBefore)
+							leadingSpacing: el.classList.contains(
+								this.autospaceClasses.textAutospaceBefore,
+							)
 								? getTextAutospaceWidth(elStyle)
 								: 0,
 						});
@@ -249,7 +249,7 @@ export class LineBalancer {
 					if (breakIndex >= 0 && breakIndex < infoToNode.length) {
 						const node = infoToNode[breakIndex];
 						if (node instanceof HTMLElement) {
-							node.classList.add(styles.textAutospaceLineStart);
+							node.classList.add(this.autospaceClasses.textAutospaceLineStart);
 						}
 						this.mainElement.insertBefore(
 							document.createElement("br"),
@@ -267,7 +267,7 @@ export class LineBalancer {
 	private balanceNonDynamicLineBreaks(
 		containerWidth: number,
 		computedStyle: CSSStyleDeclaration,
-		wordSegmenter: Intl.Segmenter | null,
+		wordSegmenter: Intl.Segmenter,
 	): void {
 		const fullText = this.mainElement.textContent ?? "";
 		if (fullText.trim().length === 0) return;
@@ -306,10 +306,7 @@ export class LineBalancer {
 				const offsets = getTextAutospaceOffsets(fullText);
 				const spacing = getTextAutospaceWidth(computedStyle);
 				let boundary = 0;
-				for (const { segment, index } of segmentForLineBreaks(
-					fullText,
-					wordSegmenter,
-				)) {
+				for (const { segment, index } of wordSegmenter.segment(fullText)) {
 					const leadingSpacing = offsets[boundary] === index ? spacing : 0;
 					let count = 0;
 					while (
@@ -340,11 +337,18 @@ export class LineBalancer {
 					if (breakSet.has(i)) {
 						fragment.appendChild(document.createElement("br"));
 					}
+					const previousNode = fragment.lastChild;
 					appendTextWithAutospace(
 						fragment,
 						childInfos[i].text,
-						!breakSet.has(i) && (childInfos[i].leadingSpacing ?? 0) > 0,
+						(childInfos[i].leadingSpacing ?? 0) > 0,
 					);
+					const lineStart = previousNode?.nextSibling ?? fragment.firstChild;
+					if (breakSet.has(i) && lineStart instanceof HTMLElement) {
+						lineStart.classList.add(
+							this.autospaceClasses.textAutospaceLineStart,
+						);
+					}
 				}
 				this.mainElement.appendChild(fragment);
 			},

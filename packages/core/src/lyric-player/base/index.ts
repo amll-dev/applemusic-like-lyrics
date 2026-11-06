@@ -383,9 +383,10 @@ export abstract class LyricPlayerBase
 	 * 设置是否启用中西文与数字边界的渲染间距，默认启用。
 	 * 仅影响显示，不修改歌词文本、时间或播放进度。
 	 */
-	public setEnableTextAutospace(enable = true): void {
-		if (this.enableTextAutospace === enable) return;
+	public setEnableTextAutospace(enable = true): boolean {
+		if (this.enableTextAutospace === enable) return false;
 		this.enableTextAutospace = enable;
+		return true;
 	}
 
 	/**

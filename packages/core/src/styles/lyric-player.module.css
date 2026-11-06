@@ -1,3 +1,9 @@
+@property --amll-node-autospace {
+	syntax: "<length>";
+	inherits: false;
+	initial-value: 0px;
+}
+
 .lyricLineWrapper {
 	position: absolute;
 	top: 0;
@@ -54,10 +60,6 @@
 	&.gradientMask {
 		--bright-mask-alpha: 1;
 		--dark-mask-alpha: 0.4;
-	}
-
-	& span {
-		--amll-node-autospace: 0px;
 	}
 
 	& .textAutospaceBefore {

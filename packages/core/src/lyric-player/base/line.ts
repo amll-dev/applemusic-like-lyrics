@@ -1,5 +1,6 @@
 import type { Disposable, LyricLine, LyricWord } from "#interfaces";
 import { isCJK } from "#utils/is-cjk.ts";
+import { wordSegmenter } from "#utils/segmenter.ts";
 import { Spring } from "#utils/spring.ts";
 import { Duration } from "#utils/time.ts";
 import { LyricLineRenderMode } from "./consts.ts";
@@ -28,10 +29,7 @@ export abstract class LyricLineBase extends EventTarget implements Disposable {
 	/**
 	 * 用于 CJK 词语边界检测的分词器
 	 */
-	static readonly wordSegmenter: Intl.Segmenter | null =
-		typeof Intl !== "undefined" && Intl.Segmenter
-			? new Intl.Segmenter(undefined, { granularity: "word" })
-			: null;
+	static readonly wordSegmenter: Intl.Segmenter | null = wordSegmenter;
 
 	abstract getLine(): LyricLine;
 	abstract enable(time?: number, shouldPlay?: boolean): void;

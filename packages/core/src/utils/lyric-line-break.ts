@@ -1,5 +1,4 @@
 import { isCJK } from "./is-cjk.ts";
-import { textGraphemes } from "./text-autospace.ts";
 
 export interface ChildNodeInfo {
 	width: number;
@@ -9,51 +8,6 @@ export interface ChildNodeInfo {
 	leadingSpacing?: number;
 	/** Total layout-only spacing, excluded from glyph-width calibration. */
 	spacingWidth?: number;
-}
-
-const LATIN_RUN_RE = /^[\p{Script=Latin}\p{Number}\p{Mark}_]+$/u;
-const WHITESPACE_RE = /^\s+$/u;
-const WORD_START_RE = /^[\p{Letter}\p{Number}]/u;
-
-/** Keep word runs and whitespace together when native word segmentation is absent. */
-export function* segmentForLineBreaks(
-	text: string,
-	segmenter: Intl.Segmenter | null,
-): Generator<{ segment: string; index: number; isWordLike?: boolean }> {
-	if (segmenter) {
-		yield* segmenter.segment(text);
-		return;
-	}
-
-	let start = 0;
-	let end = 0;
-	let previousKind = "";
-	for (const { segment, index } of textGraphemes(text)) {
-		const kind = LATIN_RUN_RE.test(segment)
-			? "word"
-			: WHITESPACE_RE.test(segment)
-				? "space"
-				: "";
-		if (end > start && (!kind || kind !== previousKind)) {
-			const value = text.slice(start, end);
-			yield {
-				segment: value,
-				index: start,
-				isWordLike: WORD_START_RE.test(value),
-			};
-			start = index;
-		}
-		end = index + segment.length;
-		previousKind = kind;
-	}
-	if (end > start) {
-		const value = text.slice(start, end);
-		yield {
-			segment: value,
-			index: start,
-			isWordLike: WORD_START_RE.test(value),
-		};
-	}
 }
 
 /**
@@ -94,7 +48,7 @@ export function calcBalancedBreaks(
 	children: ChildNodeInfo[],
 	containerWidth: number,
 	fullText: string,
-	segmenter: Intl.Segmenter | null,
+	segmenter: Intl.Segmenter,
 ): number[] {
 	const n = children.length;
 	if (n === 0 || containerWidth <= 0) {
@@ -104,10 +58,7 @@ export function calcBalancedBreaks(
 	// 计算哪里是 CJK 词组的边界
 	const cjkBoundaries = new Set<number>();
 	let offset = 0;
-	for (const { segment, isWordLike } of segmentForLineBreaks(
-		fullText,
-		segmenter,
-	)) {
+	for (const { segment, isWordLike } of segmenter.segment(fullText)) {
 		if (offset > 0 && isWordLike) {
 			if ([...segment].some((ch) => isCJK(ch))) {
 				cjkBoundaries.add(offset);

@@ -68,11 +68,7 @@ export class DomLyricPlayer extends LyricPlayerBase {
 
 	override onResize(): void {
 		const computedStyles = getComputedStyle(this.element);
-		const fontSize = Number.parseFloat(computedStyles.fontSize);
-		if (this._baseFontSize !== fontSize) {
-			this._baseFontSize = fontSize;
-			this.refreshTextLayout();
-		}
+		this._baseFontSize = Number.parseFloat(computedStyles.fontSize);
 		this.rebuildStyle();
 	}
 
@@ -141,14 +137,6 @@ export class DomLyricPlayer extends LyricPlayerBase {
 		this.element.addEventListener("contextmenu", this.onMouseEventHandler, {
 			signal: this.abortController.signal,
 		});
-		document.fonts?.addEventListener(
-			"loadingdone",
-			() => {
-				this.refreshTextLayout();
-				this.calcLayout(LayoutReason.Resize);
-			},
-			{ signal: this.abortController.signal },
-		);
 	}
 
 	private rebuildStyle() {
@@ -169,15 +157,15 @@ export class DomLyricPlayer extends LyricPlayerBase {
 		}
 	}
 
-	public override setEnableTextAutospace(enable = true): void {
-		if (this.enableTextAutospace === enable) return;
-		super.setEnableTextAutospace(enable);
+	public override setEnableTextAutospace(enable = true): boolean {
+		if (!super.setEnableTextAutospace(enable)) return false;
 		this.element.style.setProperty(
 			"--amll-lp-text-autospace",
 			`${enable ? TEXT_AUTOSPACE_EM : 0}em`,
 		);
 		this.refreshTextLayout();
 		this.calcLayout(LayoutReason.ConfigChange);
+		return true;
 	}
 
 	private refreshTextLayout(): void {

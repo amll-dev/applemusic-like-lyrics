@@ -1,10 +1,7 @@
+import { graphemeSegmenter } from "./segmenter.ts";
+
 /** Render-only gap size, relative to the surrounding font size. */
 export const TEXT_AUTOSPACE_EM = 0.125;
-
-const graphemeSegmenter =
-	typeof Intl !== "undefined" && Intl.Segmenter
-		? new Intl.Segmenter(undefined, { granularity: "grapheme" })
-		: null;
 
 const CJK_RE =
 	/^(?=[\p{Letter}\p{Number}])(?:\p{Script=Han}|\p{Script=Hiragana}|\p{Script=Katakana}|\p{Script=Hangul}+|\u30FC|\uFF70)[\p{Mark}\uFF9E\uFF9F]*$/u;
@@ -14,9 +11,6 @@ const NUMBER_RE = /^[0-9]\p{Mark}*$/u;
 const WAVE_RE = /^[~〜～]$/u;
 const EMOJI_RE =
 	/[\u200D\u20E3]|\p{Extended_Pictographic}|\p{Regional_Indicator}|\p{Emoji_Modifier}/u;
-const EXTEND_RE =
-	/[\p{Mark}\uFF9E\uFF9F\u{E0020}-\u{E007F}]|\p{Emoji_Modifier}/u;
-const REGIONAL_INDICATOR_RE = /\p{Regional_Indicator}/u;
 
 type GraphemeKind = "cjk" | "latin" | "number" | "wave" | "other";
 
@@ -39,56 +33,17 @@ function needsGap(previous: GraphemeKind, next: GraphemeKind): boolean {
 	);
 }
 
-/**
- * Conservative code-point fallback for engines without Intl.Segmenter. Keep
- * combining/variation marks, halfwidth voicing marks, emoji modifiers, tags,
- * flag pairs and ZWJ sequences together rather than exposing false boundaries.
- */
-function* fallbackGraphemes(
-	text: string,
-): Generator<{ segment: string; index: number }> {
-	let start = 0;
-	let offset = 0;
-	let joinNext = false;
-	let regionalCount = 0;
-
-	for (const point of text) {
-		const extend = EXTEND_RE.test(point);
-		const joiner = point === "\u200D";
-		const regional = REGIONAL_INDICATOR_RE.test(point);
-		if (
-			offset > start &&
-			!extend &&
-			!joiner &&
-			!joinNext &&
-			!(regional && regionalCount % 2 === 1)
-		) {
-			yield { segment: text.slice(start, offset), index: start };
-			start = offset;
-			regionalCount = 0;
-		}
-
-		joinNext = joiner || (extend && joinNext);
-		if (regional) {
-			regionalCount++;
-		} else if (!extend) {
-			regionalCount = 0;
-		}
-		offset += point.length;
-	}
-
-	if (offset > start) {
-		yield { segment: text.slice(start, offset), index: start };
-	}
-}
-
-/** Shared grapheme traversal for spacing, word rendering and CJK splitting. */
+/** Shared traversal for spacing and word rendering. */
 export function textGraphemes(
 	text: string,
 ): Iterable<{ segment: string; index: number }> {
-	return graphemeSegmenter
-		? graphemeSegmenter.segment(text)
-		: fallbackGraphemes(text);
+	if (graphemeSegmenter) return graphemeSegmenter.segment(text);
+	let index = 0;
+	return Array.from(text, (segment) => {
+		const point = { segment, index };
+		index += segment.length;
+		return point;
+	});
 }
 
 /**
@@ -115,12 +70,8 @@ function boundaryGrapheme(text: string, last: boolean): string {
 		);
 	}
 
-	let boundary = "";
-	for (const { segment } of fallbackGraphemes(text)) {
-		boundary = segment;
-		if (!last) break;
-	}
-	return boundary;
+	const points = Array.from(text);
+	return points[last ? points.length - 1 : 0] ?? "";
 }
 
 /** Check only the last/first grapheme at the join between two source strings. */

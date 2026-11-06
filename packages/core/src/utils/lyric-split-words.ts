@@ -1,6 +1,5 @@
 import type { LyricWord } from "../interfaces.ts";
 import { isCJK } from "./is-cjk.ts";
-import { textGraphemes } from "./text-autospace.ts";
 
 const SPLIT_WHITESPACE_RE = /(\s+)/;
 const WHITESPACE_RE = /\s/g;
@@ -135,16 +134,17 @@ export function chunkAndSplitLyricWords(
 			nonSpaceIndex++;
 
 			if (isCJK(part) && part.length > 1 && romanTrimmed.length === 0) {
-				for (const { segment: char } of textGraphemes(part)) {
+				const chars = part.split("");
+				for (const char of chars) {
 					const startTime = w.startTime + currentOffset * timePerUnit;
 					processAtom({
 						word: char,
 						romanWord: "",
 						startTime: startTime,
-						endTime: startTime + char.length * timePerUnit,
+						endTime: startTime + timePerUnit,
 						obscene: obscene,
 					});
-					currentOffset += char.length;
+					currentOffset += 1;
 				}
 			} else {
 				const partRealLen = part.length;
