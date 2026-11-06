@@ -147,7 +147,7 @@ export abstract class LyricPlayerBase
 	protected bottomLine: BottomLine;
 	protected enableBlur = true;
 	protected enableScale = true;
-	/** 是否启用中西文与数字边界的渲染间距，默认关闭，不修改歌词文本或时间 */
+	/** 是否启用主歌词正文的自动间距，默认关闭 */
 	protected enableTextAutospace = false;
 	protected hidePassedLines = false;
 
@@ -374,13 +374,13 @@ export abstract class LyricPlayerBase
 		return this.enableScale;
 	}
 
-	/** 获取是否启用了中西文与数字边界的渲染间距 */
+	/** 获取是否启用了主歌词正文的自动间距 */
 	public getEnableTextAutospace(): boolean {
 		return this.enableTextAutospace;
 	}
 
 	/**
-	 * 设置是否启用中西文与数字边界的渲染间距，默认关闭。
+	 * 设置主歌词正文的自动间距，默认关闭；中日文字与拉丁字母、半角数字及数字与波浪号边界间距为 0.125em。
 	 * 仅影响显示，不修改歌词文本、时间或播放进度。
 	 */
 	public setEnableTextAutospace(enable = false): boolean {

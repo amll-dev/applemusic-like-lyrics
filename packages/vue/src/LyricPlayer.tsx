@@ -93,7 +93,7 @@ const lyricPlayerProps = {
 		default: true,
 	},
 	/**
-	 * 设置是否启用中西文与数字边界的渲染间距，默认为 `false`，不修改歌词文本或时间
+	 * 设置是否启用主歌词正文的 0.125em 自动间距，默认关闭，不修改歌词文本或时间
 	 */
 	enableTextAutospace: {
 		type: Boolean,

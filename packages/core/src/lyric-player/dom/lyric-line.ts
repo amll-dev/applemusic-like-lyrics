@@ -306,17 +306,12 @@ export class LyricLineEl extends LyricLineBase {
 		if (this.lineHasRubyWords) {
 			const rubyWordEl = document.createElement("span");
 			const rubySegments = this.getRubySegments(word);
-			let previousRuby = "";
 			for (const ruby of rubySegments) {
 				const rubyPartEl = document.createElement("span");
-				appendTextWithAutospace(rubyPartEl, ruby.word);
-				if (needsTextAutospace(previousRuby, ruby.word)) {
-					rubyPartEl.classList.add(styles.textAutospaceBefore);
-				}
+				rubyPartEl.textContent = ruby.word;
 				rubyPartEl.dataset.startTime = String(ruby.startTime);
 				rubyPartEl.dataset.endTime = String(ruby.endTime);
 				rubyWordEl.appendChild(rubyPartEl);
-				previousRuby = ruby.word;
 			}
 			rubyWordEl.classList.add(styles.rubyWord);
 			mainWordEl.classList.add(styles.wordWithRuby);
@@ -359,10 +354,7 @@ export class LyricLineEl extends LyricLineBase {
 
 		if (this.lineHasRomanWords) {
 			const romanWordEl = document.createElement("span");
-			appendTextWithAutospace(
-				romanWordEl,
-				romanWord.length > 0 ? romanWord : "\u00A0",
-			);
+			romanWordEl.textContent = romanWord.length > 0 ? romanWord : "\u00A0";
 			romanWordEl.classList.add(styles.romanWord);
 			wordContainer.appendChild(romanWordEl);
 		}

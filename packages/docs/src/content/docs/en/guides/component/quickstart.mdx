@@ -287,13 +287,10 @@ See [API Reference: Vue Bindings](/en/reference/vue) for detailed API documentat
 
 ## Automatic mixed-script spacing
 
-When enabled, the player adds a narrow `0.125em` gap between Chinese/Japanese characters and Latin letters or halfwidth digits, including numeric boundaries next to `~`, `〜`, and `～`. Existing whitespace is not widened again; fullwidth alphanumerics and emoji receive no extra spacing. This applies to timed and line-based main lyrics, including their per-word ruby and romanization, background vocals, and duet lines without changing source text or timestamps. Translation and romanization sub-lines remain plain text without autospace.
-
-Spacing is disabled by default. Enable it on the vanilla player at runtime:
+Optional autospace (default off) adds a render-only `0.125em` gap between Chinese/Japanese characters and Latin letters or halfwidth digits, and between digits and `~`, `〜`, or `～`, in main-line lyric text only. It does not change source text or timestamps. Ruby annotations, per-word romanization, and translation/romanization lines are not spaced.
 
 ```typescript
 player.setEnableTextAutospace(true);
-player.setEnableTextAutospace(); // Restore the disabled default
 ```
 
-In the React example above, add `enableTextAutospace={true}` to `LyricPlayer`; in Vue, add `:enable-text-autospace="true"`. Omitting or removing the prop restores the disabled default. Toggling it preserves playback position and refreshes line breaks and highlight masks together.
+In React, use `enableTextAutospace={true}`; in Vue, use `:enable-text-autospace="true"`. The setter and props update line breaks and highlight masks together.

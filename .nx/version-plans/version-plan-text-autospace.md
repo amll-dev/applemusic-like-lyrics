@@ -2,8 +2,6 @@
 core-bundle: minor
 ---
 
-feat(core): add default-disabled render-only Chinese/Japanese/Latin/numeric autospace with main-line balancing and synchronized highlight masks (#460)
+feat(core): add optional (default off) render-only 0.125em autospace for Chinese/Japanese–Latin/halfwidth-digit and digit–wave boundaries in main-line lyric text, with synchronized balancing and highlights and unchanged text/timestamps (#460)
 
-Translation and romanization sub-lines remain plain text; autospace includes per-word ruby and romanization within the main line.
-
-feat(react/vue): expose the enableTextAutospace prop with runtime opt-in and default restoration
+feat(react/vue): expose the default-off enableTextAutospace prop

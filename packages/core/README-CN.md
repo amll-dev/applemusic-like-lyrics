@@ -76,17 +76,13 @@ player.update(0) // 更新歌词组件动画（需要逐帧调用）
 
 ## 中西文自动间距
 
-启用后在中日文字与拉丁字母、半角数字之间添加 `0.125em` 的显示间距，并处理数字与 `~`、`〜`、`～` 的相邻边界。已有空白不重复加宽，全角字母数字和 Emoji 不额外加宽。
-
-间距覆盖逐字及非逐字主歌词（含逐词注音与音译）、背景及对唱歌词；翻译与音译副行保持纯文本，不添加自动间距。仅改变布局，不向原文插入空格，也不修改歌词时间戳。默认关闭，可在运行时开启：
+自动间距默认关闭，仅在主歌词正文的中日文字与拉丁字母、半角数字之间，以及数字与 `~`、`〜`、`～` 之间添加 `0.125em` 的渲染间距，不修改原文或时间戳。注音、逐词音译、翻译与音译行不添加间距。
 
 ```typescript
 player.setEnableTextAutospace(true);
-player.setEnableTextAutospace(); // 恢复默认关闭
-player.getEnableTextAutospace(); // false
 ```
 
-React 和 Vue 绑定提供默认关闭的 `enableTextAutospace` 属性。请通过接口控制开关，而不是直接覆写内部间距 CSS 变量，以确保断行与高亮遮罩同步更新。
+React 使用 `enableTextAutospace={true}`，Vue 使用 `:enable-text-autospace="true"`。接口与属性会同步更新断行和高亮遮罩。
 
 ## 开发与构建
 
