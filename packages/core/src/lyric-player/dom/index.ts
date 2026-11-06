@@ -123,7 +123,7 @@ export class DomLyricPlayer extends LyricPlayerBase {
 		super();
 		this.element.style.setProperty(
 			"--amll-lp-text-autospace",
-			`${TEXT_AUTOSPACE_EM}em`,
+			`${this.enableTextAutospace ? TEXT_AUTOSPACE_EM : 0}em`,
 		);
 		this.onResize();
 		this.element.classList.add("amll-lyric-player", "dom");
@@ -157,7 +157,7 @@ export class DomLyricPlayer extends LyricPlayerBase {
 		}
 	}
 
-	public override setEnableTextAutospace(enable = true): boolean {
+	public override setEnableTextAutospace(enable = false): boolean {
 		if (!super.setEnableTextAutospace(enable)) return false;
 		this.element.style.setProperty(
 			"--amll-lp-text-autospace",

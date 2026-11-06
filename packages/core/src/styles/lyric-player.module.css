@@ -62,11 +62,11 @@
 		--dark-mask-alpha: 0.4;
 	}
 
-	& .textAutospaceBefore {
+	& .textAutospaceBefore.textAutospaceBefore {
 		--amll-node-autospace: var(--amll-lp-text-autospace, 0px);
 	}
 
-	& .textAutospaceLineStart {
+	& .textAutospaceLineStart.textAutospaceLineStart {
 		--amll-node-autospace: 0px;
 	}
 }
@@ -83,6 +83,7 @@
 	contain: layout style;
 
 	& span {
+		--amll-node-autospace: 0px;
 		display: inline-block;
 		text-align: start;
 		vertical-align: bottom;
@@ -215,6 +216,7 @@
 
 /* Text fragments carry spacing only; they must not inherit word glow padding. */
 .lyricLine .textAutospaceRun {
+	--amll-node-autospace: 0px;
 	display: inline;
 	margin: 0;
 	margin-inline-start: var(--amll-node-autospace);

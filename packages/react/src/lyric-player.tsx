@@ -73,7 +73,7 @@ export interface LyricPlayerProps {
 	 */
 	enableScale?: boolean;
 	/**
-	 * 设置是否启用中西文与数字边界的渲染间距，默认为 `true`，不修改歌词文本或时间
+	 * 设置是否启用中西文与数字边界的渲染间距，默认为 `false`，不修改歌词文本或时间
 	 */
 	enableTextAutospace?: boolean;
 	/**
@@ -324,7 +324,7 @@ export const LyricPlayer: ForwardRefExoticComponent<
 		}, [corePlayer, enableBlur]);
 
 		useEffect(() => {
-			corePlayer?.setEnableTextAutospace(enableTextAutospace ?? true);
+			corePlayer?.setEnableTextAutospace(enableTextAutospace ?? false);
 		}, [corePlayer, enableTextAutospace]);
 
 		// isSeeking 只标注本次 currentTime 推送是否为跳转，不作为推送的触发源

@@ -93,11 +93,11 @@ const lyricPlayerProps = {
 		default: true,
 	},
 	/**
-	 * 设置是否启用中西文与数字边界的渲染间距，默认为 `true`，不修改歌词文本或时间
+	 * 设置是否启用中西文与数字边界的渲染间距，默认为 `false`，不修改歌词文本或时间
 	 */
 	enableTextAutospace: {
 		type: Boolean,
-		default: true,
+		default: false,
 	},
 	/**
 	 * 设置是否隐藏已经播放过的歌词行，默认不隐藏
@@ -364,7 +364,9 @@ export const LyricPlayer = defineComponent({
 		});
 
 		watchEffect(() => {
-			playerRef.value?.setEnableTextAutospace(props.enableTextAutospace ?? true);
+			playerRef.value?.setEnableTextAutospace(
+				props.enableTextAutospace ?? false,
+			);
 		});
 
 		watchEffect(() => {

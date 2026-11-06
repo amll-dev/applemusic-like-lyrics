@@ -147,8 +147,8 @@ export abstract class LyricPlayerBase
 	protected bottomLine: BottomLine;
 	protected enableBlur = true;
 	protected enableScale = true;
-	/** 是否启用中西文与数字边界的渲染间距，默认启用，不修改歌词文本或时间 */
-	protected enableTextAutospace = true;
+	/** 是否启用中西文与数字边界的渲染间距，默认关闭，不修改歌词文本或时间 */
+	protected enableTextAutospace = false;
 	protected hidePassedLines = false;
 
 	protected scrollEngine: ScrollInteractionEngine;
@@ -380,10 +380,10 @@ export abstract class LyricPlayerBase
 	}
 
 	/**
-	 * 设置是否启用中西文与数字边界的渲染间距，默认启用。
+	 * 设置是否启用中西文与数字边界的渲染间距，默认关闭。
 	 * 仅影响显示，不修改歌词文本、时间或播放进度。
 	 */
-	public setEnableTextAutospace(enable = true): boolean {
+	public setEnableTextAutospace(enable = false): boolean {
 		if (this.enableTextAutospace === enable) return false;
 		this.enableTextAutospace = enable;
 		return true;

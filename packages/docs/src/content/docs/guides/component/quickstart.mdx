@@ -287,13 +287,13 @@ onBeforeUnmount(() => cancelAnimationFrame(frameId));
 
 ## 中西文自动间距
 
-组件默认在中日韩文字与拉丁字母、半角数字之间添加 `0.125em` 的窄间距，也处理数字与 `~`、`〜`、`～` 的边界。已有空白不重复加宽；全角字母数字和 Emoji 不额外加宽。功能覆盖逐字和非逐字歌词、翻译、音译、背景及对唱行，不修改原文或时间戳。
+组件启用后在中日文字与拉丁字母、半角数字之间添加 `0.125em` 的窄间距，也处理数字与 `~`、`〜`、`～` 的边界。已有空白不重复加宽；全角字母数字和 Emoji 不额外加宽。功能覆盖逐字和非逐字歌词、翻译、音译、背景及对唱行，不修改原文或时间戳。
 
-若歌词作者刻意保持紧排，可通过原生实例在运行时关闭或重新开启：
+默认关闭，可通过原生实例在运行时开启：
 
 ```typescript
-player.setEnableTextAutospace(false);
 player.setEnableTextAutospace(true);
+player.setEnableTextAutospace(); // 恢复默认关闭
 ```
 
-React 为上面的 `LyricPlayer` 添加 `enableTextAutospace={false}`；Vue 添加 `:enable-text-autospace="false"`。属性省略时默认开启，移除属性后恢复默认。切换不重置播放进度，组件会同步刷新断行与高亮遮罩。
+React 为上面的 `LyricPlayer` 添加 `enableTextAutospace={true}`；Vue 添加 `:enable-text-autospace="true"`。属性省略时默认关闭，移除属性后恢复默认。切换不重置播放进度，组件会同步刷新断行与高亮遮罩。

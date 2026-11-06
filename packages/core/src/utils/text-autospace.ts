@@ -4,7 +4,7 @@ import { graphemeSegmenter } from "./segmenter.ts";
 export const TEXT_AUTOSPACE_EM = 0.125;
 
 const AUTOSPACE_IDEOGRAPH_RE =
-	/[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}\u30FC\uFF70]/u;
+	/[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\u30FC\uFF70]/u;
 const ALNUM_RE = /[\p{Letter}\p{Number}]/u;
 const LETTER_RE = /\p{Letter}/u;
 const LATIN_LETTER_RE = /\p{Script=Latin}/u;
