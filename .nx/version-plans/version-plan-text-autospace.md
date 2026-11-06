@@ -2,6 +2,6 @@
 core-bundle: minor
 ---
 
-feat(core): add optional (default off) render-only 0.125em autospace for Chinese/Japanese–Latin/halfwidth-digit and digit–wave boundaries in main-line lyric text, with synchronized balancing and highlights and unchanged text/timestamps (#460)
-
-feat(react/vue): expose the default-off enableTextAutospace prop
+feat(core): add opt-in render-only autospace between CJK and Latin/digits (#460)
+feat(react): add enableTextAutospace prop
+feat(vue): add enableTextAutospace prop

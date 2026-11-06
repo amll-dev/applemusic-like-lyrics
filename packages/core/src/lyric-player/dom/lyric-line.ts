@@ -4,14 +4,13 @@ import { LyricLineBase } from "#lyric/base/line.ts";
 import styles from "#styles/lyric-player.module.css";
 import { clampPositive } from "#utils/clamp.ts";
 import { isCJK } from "#utils/is-cjk.ts";
-import { LineBalancer } from "#utils/line-balancer.ts";
+import { appendTextWithAutospace, LineBalancer } from "#utils/line-balancer.ts";
 import { chunkAndSplitLyricWords } from "#utils/lyric-split-words.ts";
 import {
 	getTextAutospaceOffsets,
 	needsTextAutospace,
 	textGraphemes,
 } from "#utils/text-autospace.ts";
-import { appendTextWithAutospace } from "#utils/text-autospace-dom.ts";
 import { Duration } from "#utils/time.ts";
 import type { DomLyricPlayer } from ".";
 import {

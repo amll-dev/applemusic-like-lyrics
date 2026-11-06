@@ -64,7 +64,8 @@
 	}
 }
 
-.enableTextAutospace .lyricLine {
+.enableTextAutospace {
+	--amll-lp-text-autospace: 0.125em;
 	text-autospace: no-autospace;
 }
 

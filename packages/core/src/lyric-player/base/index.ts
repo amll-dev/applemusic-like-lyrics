@@ -386,6 +386,8 @@ export abstract class LyricPlayerBase
 	public setEnableTextAutospace(enable = false): void {
 		if (this.enableTextAutospace === enable) return;
 		this.enableTextAutospace = enable;
+		this.rebuildLyricLines();
+		this.calcLayout(LayoutReason.ConfigChange);
 	}
 
 	/**

@@ -6,11 +6,10 @@
 
 import "#styles/index.css";
 import type { BottomLine } from "#lyric/base/bottom-line.ts";
-import { LayoutReason, MAX_FRAME_DELTA } from "#lyric/base/consts.ts";
+import { MAX_FRAME_DELTA } from "#lyric/base/consts.ts";
 import { LyricPlayerBase } from "#lyric/base/index.ts";
 import type { LyricLineBase } from "#lyric/base/line.ts";
 import styles from "#styles/lyric-player.module.css";
-import { TEXT_AUTOSPACE_EM } from "#utils/text-autospace.ts";
 import { Duration } from "#utils/time.ts";
 import { BottomLineEl } from "./bottom-line.ts";
 import { InterludeDotsEl } from "./interlude-dots.ts";
@@ -154,15 +153,8 @@ export class DomLyricPlayer extends LyricPlayerBase {
 	}
 
 	public override setEnableTextAutospace(enable = false): void {
-		if (this.getEnableTextAutospace() === enable) return;
-		super.setEnableTextAutospace(enable);
-		this.element.style.setProperty(
-			"--amll-lp-text-autospace",
-			`${enable ? TEXT_AUTOSPACE_EM : 0}em`,
-		);
 		this.element.classList.toggle(styles.enableTextAutospace, enable);
-		this.rebuildLyricLines();
-		this.calcLayout(LayoutReason.ConfigChange);
+		super.setEnableTextAutospace(enable);
 	}
 
 	protected override createInterludeDots(): InterludeDotsEl {

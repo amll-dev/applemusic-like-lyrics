@@ -7,13 +7,17 @@ import type { ChildNodeInfo } from "#utils/lyric-line-break.ts";
 
 interface Adapter {
 	resetDOM(): void;
+	buildChildInfos(): unknown;
 	applyBreaks(breaks: number[], children: ChildNodeInfo[]): void;
 }
 
-function fixture(enabled: boolean) {
+function fixture(enabled: boolean, dynamic = false) {
 	const main = document.createElement("div");
 	main.textContent = "中A";
+	if (dynamic)
+		main.innerHTML = `<span>中</span><span class="${styles.textAutospaceBefore}">A</span>`;
 	const balancer = new LineBalancer(main, () => enabled) as unknown as {
+		balanceDynamicLineBreaks(width: number, segmenter: Intl.Segmenter): void;
 		balanceNonDynamicLineBreaks(
 			width: number,
 			style: CSSStyleDeclaration,
@@ -24,12 +28,15 @@ function fixture(enabled: boolean) {
 	const execute = vi
 		.spyOn(balancer, "executeLineBalance")
 		.mockImplementation(() => {});
-	balancer.balanceNonDynamicLineBreaks(
-		100,
-		getComputedStyle(main),
-		new Intl.Segmenter(),
-	);
+	if (dynamic) balancer.balanceDynamicLineBreaks(100, new Intl.Segmenter());
+	else
+		balancer.balanceNonDynamicLineBreaks(
+			100,
+			getComputedStyle(main),
+			new Intl.Segmenter(),
+		);
 	const adapter = execute.mock.calls[0][1];
+	if (dynamic) adapter.buildChildInfos();
 	const children = [
 		{ text: "中", width: 50, isSpace: false },
 		{ text: "A", width: 60, isSpace: false, leadingSpacing: enabled ? 10 : 0 },
@@ -50,9 +57,20 @@ it("keeps disabled text plain before and after balancing", () => {
 });
 
 it("marks the line start without removing its boundary class", () => {
-	const { main, adapter, children } = fixture(true);
+	const { main, adapter, children } = fixture(true, true);
 	adapter.applyBreaks([1], children);
 	const start = main.querySelector("br")?.nextSibling as HTMLElement;
 	expect(start.classList.contains(styles.textAutospaceBefore)).toBe(true);
 	expect(start.classList.contains(styles.textAutospaceLineStart)).toBe(true);
+	adapter.resetDOM();
+	expect(start.classList.contains(styles.textAutospaceLineStart)).toBe(false);
+	expect(start.classList.contains(styles.textAutospaceBefore)).toBe(true);
+});
+
+it("omits a non-dynamic leading gap at a break", () => {
+	const { main, adapter, children } = fixture(true);
+	adapter.applyBreaks([], children);
+	expect(main.querySelector(`.${styles.textAutospaceBefore}`)).not.toBeNull();
+	adapter.applyBreaks([1], children);
+	expect(main.innerHTML).toBe("中<br>A");
 });
