@@ -699,7 +699,7 @@ export const PrebuiltLyricPlayer: FC<PrebuiltLyricPlayerProps> = ({
 						coverUrl={musicCover}
 						coverIsVideo={musicCoverIsVideo}
 						musicPaused={
-							!musicIsPlaying && !musicCoverIsVideo && verticalImmerseCover
+							!musicIsPlaying && !musicCoverIsVideo && !verticalImmerseCover
 						}
 					/>
 				}
