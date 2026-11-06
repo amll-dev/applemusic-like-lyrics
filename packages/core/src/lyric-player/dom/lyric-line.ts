@@ -337,21 +337,17 @@ export class LyricLineEl extends LyricLineBase {
 			mainWordEl.classList.add(styles.emphasize);
 			const trimmedWord = displayWord.trim();
 
-			const offsets = this.enableTextAutospace
-				? getTextAutospaceOffsets(trimmedWord)
-				: [];
-			let offset = 0;
-			let boundary = 0;
-			for (const { segment } of textGraphemes(trimmedWord)) {
+			const offsets = new Set(
+				this.enableTextAutospace ? getTextAutospaceOffsets(trimmedWord) : [],
+			);
+			for (const { segment, index } of textGraphemes(trimmedWord)) {
 				const charEl = document.createElement("span");
 				charEl.textContent = segment;
-				if (offsets[boundary] === offset) {
+				if (offsets.has(index)) {
 					charEl.classList.add(styles.textAutospaceBefore);
-					boundary++;
 				}
 				subElements.push(charEl);
 				wordTextContainer.appendChild(charEl);
-				offset += segment.length;
 			}
 		} else {
 			if (this.lineHasRomanWords) {

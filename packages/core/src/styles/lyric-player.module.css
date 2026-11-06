@@ -1,9 +1,3 @@
-@property --amll-node-autospace {
-	syntax: "<length>";
-	inherits: false;
-	initial-value: 0px;
-}
-
 .lyricLineWrapper {
 	position: absolute;
 	top: 0;
@@ -61,11 +55,11 @@
 		--dark-mask-alpha: 0.4;
 	}
 
-	& .textAutospaceBefore.textAutospaceBefore {
+	& .textAutospaceBefore {
 		--amll-node-autospace: var(--amll-lp-text-autospace, 0px);
 	}
 
-	& .textAutospaceLineStart.textAutospaceLineStart {
+	& .textAutospaceLineStart {
 		--amll-node-autospace: 0px;
 	}
 }
@@ -85,8 +79,11 @@
 	transition: opacity 0.3s 0.1s;
 	contain: layout style;
 
-	& span {
+	& :where(span) {
 		--amll-node-autospace: 0px;
+	}
+
+	& span {
 		display: inline-block;
 		text-align: start;
 		vertical-align: bottom;
@@ -131,7 +128,6 @@
 	span.emphasizeWrapper {
 		display: inline-block;
 		margin: -1em;
-		margin-inline-start: calc(-1em + var(--amll-node-autospace));
 		padding: 1em;
 		white-space: pre-wrap;
 		vertical-align: bottom;
@@ -139,7 +135,6 @@
 
 		& > span {
 			margin: -1em;
-			margin-inline-start: calc(-1em + var(--amll-node-autospace));
 			padding: 1em;
 		}
 
@@ -149,10 +144,15 @@
 
 			& > span {
 				margin: -1em;
-				margin-inline-start: calc(-1em + var(--amll-node-autospace));
 				padding: 1em;
 				backface-visibility: hidden;
 			}
+		}
+
+		&,
+		& > span,
+		:is(&.emphasize, & span.emphasize) > span {
+			margin-inline-start: calc(-1em + var(--amll-node-autospace));
 		}
 	}
 }
@@ -219,7 +219,6 @@
 
 /* Text fragments carry spacing only; they must not inherit word glow padding. */
 .lyricLine .textAutospaceRun {
-	--amll-node-autospace: 0px;
 	display: inline;
 	margin: 0;
 	margin-inline-start: var(--amll-node-autospace);

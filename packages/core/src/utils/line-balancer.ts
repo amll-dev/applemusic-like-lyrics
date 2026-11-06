@@ -304,17 +304,11 @@ export class LineBalancer {
 				const childInfos: ChildNodeInfo[] = [];
 				const offsets = enabled ? getTextAutospaceOffsets(fullText) : [];
 				const spacing = enabled ? getTextAutospaceWidth(computedStyle) : 0;
-				let boundary = 0;
 				for (const { segment, index } of wordSegmenter.segment(fullText)) {
-					const leadingSpacing = offsets[boundary] === index ? spacing : 0;
-					let count = 0;
-					while (
-						boundary < offsets.length &&
-						offsets[boundary] < index + segment.length
-					) {
-						count++;
-						boundary++;
-					}
+					const leadingSpacing = offsets.includes(index) ? spacing : 0;
+					const count = offsets.filter(
+						(offset) => offset >= index && offset < index + segment.length,
+					).length;
 					const spacingWidth = count * spacing;
 					childInfos.push({
 						width: ctx.measureText(segment).width + spacingWidth,

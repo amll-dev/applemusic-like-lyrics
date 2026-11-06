@@ -74,15 +74,12 @@ export function getTextAutospaceOffsets(text: string): number[] {
 }
 
 function boundaryGrapheme(text: string, last: boolean): string {
-	if (graphemeSegmenter) {
-		return (
-			graphemeSegmenter.segment(text).containing(last ? text.length - 1 : 0)
-				?.segment ?? ""
-		);
+	let boundary = "";
+	for (const { segment } of textGraphemes(text)) {
+		boundary = segment;
+		if (!last) break;
 	}
-
-	const points = Array.from(text);
-	return points[last ? points.length - 1 : 0] ?? "";
+	return boundary;
 }
 
 /** Check only the last/first grapheme at the join between two source strings. */
