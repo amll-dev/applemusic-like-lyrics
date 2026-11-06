@@ -354,13 +354,13 @@ export class LineBrightness implements Disposable {
 	 * 瞬时切换通过临时抑制 CSS 过渡实现：
 	 * 1. 先将原件样式的 `transition` 显式设为 `none`。
 	 * 2. 切换 CSS 类名，使 `opacity` 目标值发生变更时因缺失过渡定义而跳过过渡动画。
+	 * 3. 等该变更完成一次样式重算后，再恢复 `transition` 定义。
 	 *
-	 * 该抑制状态无法在当前帧内立即同步解除：
-	 * - 若在同一帧内恢复 `transition`，样式变更会被浏览器合并处理，依然会按恢复后的规则建立过渡动画。
-	 * - 若通过读取计算样式强制触发重排以使样式变更立即生效，会导致整页在构建帧中重复执行样式解析。
-	 *
-	 * 因此，过渡抑制的恢复推迟至下一帧（通过 `requestAnimationFrame`）执行。此时目标样式已在本帧常规渲染流程中
-	 * 完成提交，恢复 `transition` 属性不会变更任何已渲染的样式，从而避免触发非预期的过渡动画。
+	 * 恢复必须推迟到「类名切换已被样式重算提交之后」的那一帧之后，单次 `requestAnimationFrame` 不够：
+	 * 类名切换可能发生在 rAF 之外的普通任务里（宿主由事件回调直接推送播放进度时就是如此），
+	 * 此时下一帧的执行顺序是「rAF 回调（恢复 transition）→ 样式重算」，恢复先于提交发生，
+	 * 过渡定义已经回来了，切换照样会带动画 —— 表现就是刚进入窗口的行先过亮再暗回去。
+	 * 因此这里连续推迟两帧：第一帧让切换在抑制状态下完成样式重算，再下一帧才恢复。
 	 * @param enabled 是否开启亮层形态
 	 */
 	private setMainBright(enabled: boolean): void {
@@ -379,13 +379,16 @@ export class LineBrightness implements Disposable {
 
 		this.main.style.transition = "none";
 		this.transitionRestore = requestAnimationFrame(() => {
-			this.transitionRestore = undefined;
-			// 异步回调执行时进行守卫：若对象已销毁或节点已脱离 DOM，则不继续执行抑制解除
-			if (this.isDisposed || !this.main.isConnected) {
-				this.main.style.transition = "";
-				return;
-			}
-			this.releaseTransitionSuppression();
+			// 第一帧只负责让类名切换在抑制状态下被样式重算提交，恢复留到再下一帧
+			this.transitionRestore = requestAnimationFrame(() => {
+				this.transitionRestore = undefined;
+				// 异步回调执行时进行守卫：若对象已销毁或节点已脱离 DOM，则不继续执行抑制解除
+				if (this.isDisposed || !this.main.isConnected) {
+					this.main.style.transition = "";
+					return;
+				}
+				this.releaseTransitionSuppression();
+			});
 		});
 	}
 
