@@ -125,7 +125,7 @@
 		justify-content: center;
 	}
 
-	& > span,
+	& > span:not(.textAutospaceRun),
 	span.emphasizeWrapper {
 		display: inline-block;
 		margin: -1em;
