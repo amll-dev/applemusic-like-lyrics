@@ -39,12 +39,18 @@ yarn add @applemusic-like-lyrics/vue # 使用 yarn
 一个测试用途的程序可以在 [../playground/vue/src/test.ts](../playground/vue/src/test.ts) 里找到。
 
 ```vue
-<tamplate>
-    <LyricPlayer :lyric-lines="[]" :current-time="0" />
-</tamplate>
+<template>
+    <LyricPlayer :lyric-lines="lyricLines" :current-time="0" />
+</template>
 
 <script setup lang="ts">
+import type { LyricLine } from "@applemusic-like-lyrics/core";
 import { LyricPlayer } from "@applemusic-like-lyrics/vue";
+import { ref } from "vue";
 
+const lyricLines = ref<LyricLine[]>([]);
 </script>
 ```
+
+`lyricLines` 可以使用 Vue 的普通 `ref`。Vue 绑定会在将数据传递给 Core
+组件前解除响应式代理。
