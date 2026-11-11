@@ -73,6 +73,10 @@ export interface LyricPlayerProps {
 	 */
 	enableScale?: boolean;
 	/**
+	 * 设置是否启用主歌词正文的 0.125em 自动间距，默认关闭，不修改歌词文本或时间
+	 */
+	enableTextAutospace?: boolean;
+	/**
 	 * 设置是否隐藏已经播放过的歌词行，默认不隐藏
 	 */
 	hidePassedLines?: boolean;
@@ -192,6 +196,7 @@ export const LyricPlayer: ForwardRefExoticComponent<
 			enableSpring,
 			enableBlur,
 			enableScale,
+			enableTextAutospace,
 			maskObsceneWordsMode,
 			maskObsceneWordChar,
 			hidePassedLines,
@@ -317,6 +322,10 @@ export const LyricPlayer: ForwardRefExoticComponent<
 		useEffect(() => {
 			corePlayer?.setEnableBlur(enableBlur ?? true);
 		}, [corePlayer, enableBlur]);
+
+		useEffect(() => {
+			corePlayer?.setEnableTextAutospace(enableTextAutospace);
+		}, [corePlayer, enableTextAutospace]);
 
 		// isSeeking 只标注本次 currentTime 推送是否为跳转，不作为推送的触发源
 		//

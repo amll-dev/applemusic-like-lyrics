@@ -4,6 +4,8 @@ export interface ChildNodeInfo {
 	width: number;
 	text: string;
 	isSpace: boolean;
+	/** Layout-only spacing discarded when this node starts a visual line. */
+	leadingSpacing?: number;
 }
 
 /**
@@ -87,7 +89,8 @@ export function calcBalancedBreaks(
 
 	for (let i = n - 1; i >= 0; i--) {
 		for (let j = i + 1; j <= n; j++) {
-			const w = prefixWidth[j] - prefixWidth[i];
+			const w =
+				prefixWidth[j] - prefixWidth[i] - (children[i].leadingSpacing ?? 0);
 
 			let lineCost = 0;
 
