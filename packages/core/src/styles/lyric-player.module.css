@@ -301,12 +301,6 @@
 		--lyric-line-padding-x: 20px;
 	}
 
-	&:hover .lyricLine,
-	&:hover .lyricLineWrapper {
-		/* biome-ignore lint/complexity/noImportantStyles: 覆盖内联样式 */
-		filter: unset !important;
-	}
-
 	&:not(.playing) .bgWrapper {
 		position: relative;
 		top: auto;
@@ -337,4 +331,23 @@
 			}
 		}
 	}
+}
+
+/*
+ * 悬停时临时取消所有歌词行的模糊。
+ *
+ * filter 是播放器写在每个歌词组内联样式上的（见 dom/lyric-group.ts 的 renderStyles），
+ * 所以这里必须用 !important 才能盖过内联样式。
+ *
+ * 这条规则刻意拍平、不写成上面 :global(.amll-lyric-player) 里的
+ * `&:hover .lyricLine, &:hover .lyricLineWrapper`：当构建目标不支持原生 CSS 嵌套时
+ * （例如 Tauri 模板里的 chrome105 / safari16），esbuild 0.21 会把「带逗号的
+ * & + 后代选择器」错误降级成 `.amll-lyric-player:is(:hover .lyricLine, …)`，
+ * 要求同一个元素既是播放器又是歌词行，规则永远不会命中 —— 发行构建里悬停取消
+ * 模糊的行为会整个消失。拍平后 esbuild 只做选择器替换，开发/发行构建行为一致。
+ */
+:global(.amll-lyric-player):hover .lyricLine,
+:global(.amll-lyric-player):hover .lyricLineWrapper {
+	/* biome-ignore lint/complexity/noImportantStyles: 覆盖内联样式 */
+	filter: unset !important;
 }
