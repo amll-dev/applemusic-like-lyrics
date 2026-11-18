@@ -75,13 +75,15 @@ export function calcBalancedBreaks(
 		return [];
 	}
 
+	const isCJKOrHangul = (ch: string) =>
+		isCJK(ch) || /\p{Script=Hangul}/u.test(ch);
 	const isMixed =
-		/\p{Script=Latin}/u.test(fullText) && [...fullText].some(isCJK);
+		/\p{Script=Latin}/u.test(fullText) && [...fullText].some(isCJKOrHangul);
 	const previousScripts = new Int8Array(n + 1);
 	const nextScripts = new Int8Array(n + 1);
 	if (isMixed) {
 		const scriptOf = (ch: string) =>
-			isCJK(ch) ? 2 : /\p{Script=Latin}/u.test(ch) ? 1 : 0;
+			isCJKOrHangul(ch) ? 2 : /\p{Script=Latin}/u.test(ch) ? 1 : 0;
 		for (let i = 0; i < n; i++) {
 			previousScripts[i + 1] = previousScripts[i];
 			for (const ch of children[i].text) {
