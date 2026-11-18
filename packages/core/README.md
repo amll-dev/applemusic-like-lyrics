@@ -74,6 +74,18 @@ The main styles are provided by `@applemusic-like-lyrics/core/style.css`. Common
 }
 ```
 
+Each line container exposes a `data-lyric-type` attribute with `main`, `translation`, or `romanization`, so the translation and romanization lines can be styled independently:
+
+```css
+[data-lyric-type="translation"] {
+  font-family: "Noto Serif", serif;
+}
+
+[data-lyric-type="romanization"] {
+  font-size: 0.45em;
+}
+```
+
 ## Development
 
 ```bash

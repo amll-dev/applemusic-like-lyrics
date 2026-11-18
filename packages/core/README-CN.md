@@ -74,6 +74,18 @@ player.update(0) // 更新歌词组件动画（需要逐帧调用）
 }
 ```
 
+每个歌词行容器都带有 `data-lyric-type` 属性，取值为 `main`、`translation` 或 `romanization`，因此可以分别定制翻译行与音译行的样式：
+
+```css
+[data-lyric-type="translation"] {
+  font-family: "Noto Serif", serif;
+}
+
+[data-lyric-type="romanization"] {
+  font-size: 0.45em;
+}
+```
+
 ## 开发与构建
 
 ```bash
