@@ -36,9 +36,9 @@ describe("LyricLineEl styling hooks", () => {
 		const translation = element.children[1] as HTMLElement;
 		const romanization = element.children[2] as HTMLElement;
 
-		expect(main.dataset.lyricType).toBe("main");
-		expect(translation.dataset.lyricType).toBe("translation");
-		expect(romanization.dataset.lyricType).toBe("romanization");
+		expect(main.dataset.amllRole).toBe("main");
+		expect(translation.dataset.amllRole).toBe("translation");
+		expect(romanization.dataset.amllRole).toBe("romanization");
 		expect(translation.textContent).toBe("translation");
 		expect(romanization.textContent).toBe("romanization");
 	});
