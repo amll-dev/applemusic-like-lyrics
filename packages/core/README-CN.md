@@ -74,14 +74,24 @@ player.update(0) // 更新歌词组件动画（需要逐帧调用）
 }
 ```
 
-每个歌词行容器都带有 `data-lyric-type` 属性，取值为 `main`、`translation` 或 `romanization`，因此可以分别定制翻译行与音译行的样式：
+组件渲染的主要元素都带有 `data-amll-role` 属性，可作为稳定的样式钩子，常用的属性值如下：
+
+| 属性值                                       | 说明                     |
+| -------------------------------------------- | ------------------------ |
+| `line-wrapper`                               | 歌词行组容器             |
+| `line`                                       | 歌词行                   |
+| `main` / `translation` / `romanization`      | 主行、翻译行与音译行     |
+| `interlude-dot-container` / `interlude-dot`  | 间奏点容器与间奏点       |
+| `bottom-line-wrapper` / `bottom-line`        | 底部行容器与底部行       |
+
+例如可以分别定制翻译行与音译行的样式：
 
 ```css
-[data-lyric-type="translation"] {
+[data-amll-role="translation"] {
   font-family: "Noto Serif", serif;
 }
 
-[data-lyric-type="romanization"] {
+[data-amll-role="romanization"] {
   font-size: 0.45em;
 }
 ```
