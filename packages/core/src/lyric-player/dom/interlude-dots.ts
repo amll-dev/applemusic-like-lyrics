@@ -17,6 +17,10 @@ export class InterludeDotsEl extends InterludeDotsBase implements HasElement {
 		super();
 
 		this.element.className = styles.interludeDots;
+		this.element.dataset.amllRole = "interlude-dot-container";
+		[this.dot0, this.dot1, this.dot2].forEach((dot) => {
+			dot.dataset.amllRole = "interlude-dot";
+		});
 		this.element.appendChild(this.dot0);
 		this.element.appendChild(this.dot1);
 		this.element.appendChild(this.dot2);

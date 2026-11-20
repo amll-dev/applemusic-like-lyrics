@@ -79,6 +79,7 @@ export class LyricLineEl extends LyricLineBase {
 			(word) => (word.romanWord?.trim().length ?? 0) > 0,
 		);
 		this.element.setAttribute("class", styles.lyricLine);
+		this.element.dataset.amllRole = "line";
 		if (this.lyricLine.isBG) {
 			this.element.classList.add(styles.lyricBgLine);
 		}
@@ -92,12 +93,15 @@ export class LyricLineEl extends LyricLineBase {
 		const trans = this.element.children[1] as HTMLDivElement;
 		const roman = this.element.children[2] as HTMLDivElement;
 		main.setAttribute("class", styles.lyricMainLine);
+		main.dataset.amllRole = "main";
 		this.brightness = new LineBrightness(
 			main,
 			!this.lyricPlayer._getIsNonDynamic(),
 		);
 		trans.setAttribute("class", styles.lyricSubLine);
+		trans.dataset.amllRole = "translation";
 		roman.setAttribute("class", styles.lyricSubLine);
+		roman.dataset.amllRole = "romanization";
 		if (LyricLineBase.wordSegmenter) {
 			this.balancer = new LineBalancer(main);
 		}

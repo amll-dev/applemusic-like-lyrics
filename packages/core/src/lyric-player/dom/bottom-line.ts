@@ -39,10 +39,12 @@ export class BottomLineEl implements BottomLine {
 			"class",
 			`${styles.lyricLineWrapper} ${styles.bottomLineWrapper}`,
 		);
+		this.element.dataset.amllRole = "bottom-line-wrapper";
 		this.contentElement.setAttribute(
 			"class",
 			`${styles.lyricLine} ${styles.bottomLine}`,
 		);
+		this.contentElement.dataset.amllRole = "bottom-line";
 		this.contentElement.dataset.bottomLine = "true";
 		this.element.appendChild(this.contentElement);
 		this.rebuildStyle();

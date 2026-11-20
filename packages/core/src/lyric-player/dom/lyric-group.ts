@@ -24,6 +24,7 @@ export class LyricLineGroup extends LyricLineGroupBase<LyricLineEl> {
 		super(mainLine);
 		this.element = document.createElement("div");
 		this.element.className = styles.lyricLineWrapper;
+		this.element.dataset.amllRole = "line-wrapper";
 
 		if (mainLine.getLine().isDuet) {
 			this.element.classList.add(styles.isDuetWrapper);

@@ -74,6 +74,28 @@ The main styles are provided by `@applemusic-like-lyrics/core/style.css`. Common
 }
 ```
 
+The main elements rendered by the lyric player expose a stable `data-amll-role` attribute that can be used as a styling hook. Common values:
+
+| Value                                      | Element                              |
+| ------------------------------------------ | ------------------------------------ |
+| `line-wrapper`                             | Lyric line group container           |
+| `line`                                     | Lyric line                           |
+| `main` / `translation` / `romanization`    | Main, translation and romanization   |
+| `interlude-dot-container` / `interlude-dot` | Interlude dots container and dots   |
+| `bottom-line-wrapper` / `bottom-line`      | Bottom line container and line       |
+
+For example, the translation and romanization lines can be styled independently:
+
+```css
+[data-amll-role="translation"] {
+  font-family: "Noto Serif", serif;
+}
+
+[data-amll-role="romanization"] {
+  font-size: 0.45em;
+}
+```
+
 ## Development
 
 ```bash
