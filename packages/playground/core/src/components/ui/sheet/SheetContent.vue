@@ -3,7 +3,7 @@ import type { DialogContentEmits, DialogContentProps } from 'reka-ui'
 
 import type { HTMLAttributes } from 'vue'
 import { reactiveOmit } from '@vueuse/core'
-import { XIcon } from 'lucide-vue-next'
+import { XIcon } from '@lucide/vue'
 import {
   DialogClose,
   DialogContent,
