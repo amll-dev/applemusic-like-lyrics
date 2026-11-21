@@ -30,6 +30,13 @@ export interface SliderProps {
 	active?: boolean;
 	/** 换歌标识；变化时先淡出已播放部分，再在不可见状态下跳回开头。 */
 	resetKey?: string;
+	/**
+	 * 是否正在等待音频数据。
+	 *
+	 * 为 true 时不再自行推进进度（否则拖动进度后会「假装」还在播），
+	 * 并在轨道上画一道流动的加载高光。
+	 */
+	buffering?: boolean;
 }
 
 const MAX_HEIGHT = 20;
@@ -54,6 +61,7 @@ export const BouncingSlider: React.FC<SliderProps> = ({
 	changeOnDrag = false,
 	active = true,
 	resetKey,
+	buffering = false,
 }) => {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const innerRef = useRef<HTMLDivElement>(null);
@@ -144,7 +152,7 @@ export const BouncingSlider: React.FC<SliderProps> = ({
 		const tick = (now: number) => {
 			const delta = Math.min(now - last, 64);
 			last = now;
-			if (!isDraggingRef.current && !resettingRef.current) {
+			if (!isDraggingRef.current && !resettingRef.current && !buffering) {
 				localTimeRef.current = Math.min(max, localTimeRef.current + delta);
 				const span = max - min;
 				const newProgress =
@@ -157,7 +165,7 @@ export const BouncingSlider: React.FC<SliderProps> = ({
 		};
 		frame = requestAnimationFrame(tick);
 		return () => cancelAnimationFrame(frame);
-	}, [active, isPlaying, min, max, progressMv]);
+	}, [active, isPlaying, min, max, progressMv, buffering]);
 
 	const expand = () => {
 		animate(insetMv, 0, { type: "tween", ease: "easeOut", duration: 0.28 });
@@ -299,6 +307,7 @@ export const BouncingSlider: React.FC<SliderProps> = ({
 						opacity: thumbOpacity,
 					}}
 				/>
+				{buffering && <div className={styles.bufferingSheen} />}
 			</motion.div>
 
 			{afterIcon}

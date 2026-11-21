@@ -1,3 +1,12 @@
+@keyframes buffering-sheen {
+	from {
+		transform: translateX(-100%);
+	}
+	to {
+		transform: translateX(100%);
+	}
+}
+
 .nowPlayingSlider {
 	touch-action: none;
 	cursor: pointer;
@@ -14,6 +23,7 @@
 
 		height: 20px;
 
+		position: relative;
 		background-color: #ffffff26;
 
 		& > .thumb {
@@ -22,6 +32,27 @@
 			/* 用 rgba 而不是 opacity，透明度留给换歌时的淡出动画 */
 			background-color: rgba(255, 255, 255, 0.4);
 			transform-origin: left center;
+		}
+	}
+
+	/* 等待音频数据时轨道上划过的加载高光 */
+	.bufferingSheen {
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+		background: linear-gradient(
+			100deg,
+			transparent 20%,
+			rgba(255, 255, 255, 0.34) 50%,
+			transparent 80%
+		);
+		animation: buffering-sheen 1.25s linear infinite;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.bufferingSheen {
+			animation: none;
+			opacity: 0.35;
 		}
 	}
 

@@ -99,6 +99,13 @@ export const musicPlayingAtom: PrimitiveAtom<boolean> = atom(false);
 export const musicPlayingPositionAtom: PrimitiveAtom<number> = atom(0);
 
 /**
+ * 当前音频是否正在等待数据（拖动进度 / 网络加载中）。
+ *
+ * 进度条据此暂停自身的插值，并显示一个流动的加载高光。
+ */
+export const musicBufferingAtom: PrimitiveAtom<boolean> = atom(false);
+
+/**
  * 当前播放的音乐音量大小，范围在 [0.0-1.0] 之间
  */
 export const musicVolumeAtom: WritableAtom<
