@@ -13,13 +13,6 @@
 			"library"
 		],
 		"targets": {
-			"test": {
-				"executor": "nx:run-commands",
-				"options": {
-					"command": "vitest test",
-					"cwd": "packages/lyric"
-				}
-			},
 			"nx-release-publish": {
 				"executor": "@nx/js:release-publish",
 				"dependsOn": []
