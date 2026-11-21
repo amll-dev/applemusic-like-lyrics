@@ -1,5 +1,12 @@
+const imageInFlight = new Map<string, Promise<HTMLImageElement>>();
+
 export function loadImage(imageUrl: string): Promise<HTMLImageElement> {
-	return new Promise((resolve, reject) => {
+	// 同一张封面常被多个渲染器同时请求，共用加载中的 Promise 可以省掉重复解码；
+	// 完成后立刻移除，不长期持有解码后的图片。
+	const inFlight = imageInFlight.get(imageUrl);
+	if (inFlight) return inFlight;
+
+	const task = new Promise<HTMLImageElement>((resolve, reject) => {
 		const img = document.createElement("img");
 		img.onload = () => resolve(img);
 		img.onerror = reject;
@@ -7,6 +14,14 @@ export function loadImage(imageUrl: string): Promise<HTMLImageElement> {
 		img.crossOrigin = "anonymous";
 		img.loading = "eager";
 	});
+
+	imageInFlight.set(imageUrl, task);
+	// 用 then 的拒绝分支而不是 finally，避免派生出一个未处理的拒绝
+	task.then(
+		() => imageInFlight.delete(imageUrl),
+		() => imageInFlight.delete(imageUrl),
+	);
+	return task;
 }
 
 export function loadVideo(videoUrl: string): Promise<HTMLVideoElement> {
