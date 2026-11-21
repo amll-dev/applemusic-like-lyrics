@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useColorMode } from "@vueuse/core";
-import { ContrastIcon, MoonIcon, SunIcon } from "lucide-vue-next";
+import { ContrastIcon, MoonIcon, SunIcon } from "@lucide/vue";
 import { computed } from "vue";
 import { Button } from "@/components/ui/button";
 import {

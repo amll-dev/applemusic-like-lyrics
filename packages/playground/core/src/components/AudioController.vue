@@ -5,7 +5,7 @@ import {
 	PauseIcon,
 	PlayIcon,
 	TextAlignStartIcon,
-} from "lucide-vue-next";
+} from "@lucide/vue";
 import { computed } from "vue";
 import { extractCoverBlob } from "@/lib/extract-cover";
 import { usePlayerStore } from "@/stores/player";

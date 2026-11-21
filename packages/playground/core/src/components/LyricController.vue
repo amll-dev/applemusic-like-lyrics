@@ -1,10 +1,5 @@
 <script setup lang="ts">
-import {
-	ArrowDownUpIcon,
-	ExpandIcon,
-	TypeIcon,
-	WandIcon,
-} from "lucide-vue-next";
+import { ArrowDownUpIcon, ExpandIcon, TypeIcon, WandIcon } from "@lucide/vue";
 import { Separator } from "@/components/ui/separator";
 import { usePlayerStore } from "@/stores/player";
 import ControllerSlider from "./ControllerSlider.vue";
