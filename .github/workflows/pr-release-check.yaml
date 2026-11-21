@@ -36,7 +36,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: "24"
+          node-version: 26
 
       - name: Decide whether a release plan is required
         id: release-requirements
@@ -50,7 +50,6 @@ jobs:
         if: steps.release-requirements.outputs.requires_release_plan == 'true'
         uses: pnpm/action-setup@v6
         with:
-          version: 12
           cache: true
 
       - name: Install dependencies
@@ -83,12 +82,11 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: "24"
+          node-version: 26
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
         with:
-          version: 12
           cache: true
 
       - name: Install dependencies
