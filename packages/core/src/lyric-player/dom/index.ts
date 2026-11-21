@@ -152,6 +152,11 @@ export class DomLyricPlayer extends LyricPlayerBase {
 		}
 	}
 
+	public override setEnableTextAutospace(enable = false): void {
+		this.element.classList.toggle(styles.enableTextAutospace, enable);
+		super.setEnableTextAutospace(enable);
+	}
+
 	protected override createInterludeDots(): InterludeDotsEl {
 		return new InterludeDotsEl();
 	}

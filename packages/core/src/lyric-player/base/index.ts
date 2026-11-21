@@ -147,6 +147,8 @@ export abstract class LyricPlayerBase
 	protected bottomLine: BottomLine;
 	protected enableBlur = true;
 	protected enableScale = true;
+	/** 是否启用主歌词正文的自动间距，默认关闭 */
+	protected enableTextAutospace = false;
 	protected hidePassedLines = false;
 
 	protected scrollEngine: ScrollInteractionEngine;
@@ -370,6 +372,22 @@ export abstract class LyricPlayerBase
 	 */
 	getEnableScale(): boolean {
 		return this.enableScale;
+	}
+
+	/** 获取是否启用了主歌词正文的自动间距 */
+	public getEnableTextAutospace(): boolean {
+		return this.enableTextAutospace;
+	}
+
+	/**
+	 * 设置主歌词正文的自动间距，默认关闭；中日文字与拉丁字母、半角数字及数字与波浪号边界间距为 0.125em。
+	 * 仅影响显示，不修改歌词文本、时间或播放进度。
+	 */
+	public setEnableTextAutospace(enable = false): void {
+		if (this.enableTextAutospace === enable) return;
+		this.enableTextAutospace = enable;
+		this.rebuildLyricLines();
+		this.calcLayout(LayoutReason.ConfigChange);
 	}
 
 	/**

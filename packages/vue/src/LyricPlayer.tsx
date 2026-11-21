@@ -93,6 +93,13 @@ const lyricPlayerProps = {
 		default: true,
 	},
 	/**
+	 * 设置是否启用主歌词正文的 0.125em 自动间距，默认关闭，不修改歌词文本或时间
+	 */
+	enableTextAutospace: {
+		type: Boolean,
+		default: false,
+	},
+	/**
 	 * 设置是否隐藏已经播放过的歌词行，默认不隐藏
 	 */
 	hidePassedLines: {
@@ -354,6 +361,10 @@ export const LyricPlayer = defineComponent({
 			if (props.enableScale !== undefined)
 				playerRef.value?.setEnableScale(props.enableScale);
 			else playerRef.value?.setEnableScale(true);
+		});
+
+		watchEffect(() => {
+			playerRef.value?.setEnableTextAutospace(props.enableTextAutospace);
 		});
 
 		watchEffect(() => {

@@ -54,6 +54,19 @@
 		--bright-mask-alpha: 1;
 		--dark-mask-alpha: 0.4;
 	}
+
+	& .textAutospaceBefore {
+		--amll-node-autospace: var(--amll-lp-text-autospace, 0px);
+	}
+
+	& .textAutospaceLineStart {
+		--amll-node-autospace: 0px;
+	}
+}
+
+.enableTextAutospace {
+	--amll-lp-text-autospace: 0.125em;
+	text-autospace: no-autospace;
 }
 
 .lyricDuetLine {
@@ -67,10 +80,15 @@
 	transition: opacity 0.3s 0.1s;
 	contain: layout style;
 
+	& :where(span) {
+		--amll-node-autospace: 0px;
+	}
+
 	& span {
 		display: inline-block;
 		text-align: start;
 		vertical-align: bottom;
+		margin-inline-start: var(--amll-node-autospace);
 	}
 
 	.romanWord {
@@ -107,7 +125,7 @@
 		justify-content: center;
 	}
 
-	& > span,
+	& > span:not(.textAutospaceRun),
 	span.emphasizeWrapper {
 		display: inline-block;
 		margin: -1em;
@@ -130,6 +148,12 @@
 				padding: 1em;
 				backface-visibility: hidden;
 			}
+		}
+
+		&,
+		& > span,
+		:is(&.emphasize, & span.emphasize) > span {
+			margin-inline-start: calc(-1em + var(--amll-node-autospace));
 		}
 	}
 }
@@ -192,6 +216,16 @@
 	@supports (mix-blend-mode: plus-lighter) {
 		opacity: 0.3;
 	}
+}
+
+/* Text fragments carry spacing only; they must not inherit word glow padding. */
+.lyricLine .textAutospaceRun {
+	display: inline;
+	margin: 0;
+	margin-inline-start: var(--amll-node-autospace);
+	padding: 0;
+	white-space: inherit;
+	contain: none;
 }
 
 .bottomLine {
