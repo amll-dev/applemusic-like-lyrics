@@ -12,6 +12,7 @@ on:
         options:
           - dry-run
           - publish
+          - publish-only
 
 permissions:
   contents: write
@@ -28,7 +29,7 @@ jobs:
 
     steps:
       - name: Ensure publish runs from main
-        if: github.event.inputs.mode == 'publish' && github.ref_name != 'main'
+        if: github.event.inputs.mode != 'dry-run' && github.ref_name != 'main'
         run: |
           echo "Publishing must be dispatched from the main branch. Use dry-run mode to test from other branches."
           exit 1
@@ -61,21 +62,24 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
       - name: Ensure release plans exist
+        if: github.event.inputs.mode != 'publish-only'
         run: bash .github/scripts/ensure-release-plans-exist.sh
 
       - name: Print Environment Info
         run: pnpm nx report
 
       - name: Create release commit and tags
+        if: github.event.inputs.mode != 'publish-only'
         run: pnpm nx release --skip-publish --preid alpha
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Format package.json files and amend release commit
+        if: github.event.inputs.mode != 'publish-only'
         run: bash .github/scripts/format-package-json-and-amend.sh
 
       - name: Publish packages to npm
-        if: github.event.inputs.mode == 'publish'
+        if: github.event.inputs.mode == 'publish' || github.event.inputs.mode == 'publish-only'
         run: pnpm nx release publish --excludeTaskDependencies
         env:
           NPM_CONFIG_PROVENANCE: true
