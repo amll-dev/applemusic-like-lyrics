@@ -301,12 +301,6 @@
 		--lyric-line-padding-x: 20px;
 	}
 
-	&:hover .lyricLine,
-	&:hover .lyricLineWrapper {
-		/* biome-ignore lint/complexity/noImportantStyles: 覆盖内联样式 */
-		filter: unset !important;
-	}
-
 	&:not(.playing) .bgWrapper {
 		position: relative;
 		top: auto;
@@ -337,4 +331,18 @@
 			}
 		}
 	}
+}
+
+/*
+ * 悬停时临时取消所有歌词行的模糊。filter 写在歌词组的内联样式上（见
+ * dom/lyric-group.ts 的 renderStyles），所以必须用 !important 才能盖过。
+ *
+ * 这条规则刻意拍平：目标不支持原生嵌套时（Tauri 模板的 chrome105 / safari16），
+ * esbuild 0.21 会把带逗号的 `&` + 后代选择器降级成 `.amll-lyric-player:is(:hover
+ * .lyricLine, …)`，规则永远不命中，发行构建里悬停取消模糊会整个失效。
+ */
+:global(.amll-lyric-player):hover .lyricLine,
+:global(.amll-lyric-player):hover .lyricLineWrapper {
+	/* biome-ignore lint/complexity/noImportantStyles: 覆盖内联样式 */
+	filter: unset !important;
 }

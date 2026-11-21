@@ -192,10 +192,12 @@ describe("LineBrightness", () => {
 			expect(main.classList.contains(styles.lyricMainLineBright)).toBe(true);
 			expect(main.style.transition).toBe("none");
 
-			// 前进一帧 (requestAnimationFrame)
+			// 第一帧只让类名切换在抑制状态下完成样式重算，此时仍需保持抑制
 			vi.advanceTimersToNextFrame();
+			expect(main.style.transition).toBe("none");
 
-			// 过渡抑制已恢复为空
+			// 第二帧才恢复过渡，避免恢复先于样式重算导致重新起过渡动画
+			vi.advanceTimersToNextFrame();
 			expect(main.style.transition).toBe("");
 		});
 
@@ -212,7 +214,9 @@ describe("LineBrightness", () => {
 			// 退出时同样需要抑制过渡以防图层剥离闪烁
 			expect(main.style.transition).toBe("none");
 
-			// 前进一帧以恢复过渡
+			// 前进两帧以恢复过渡（第一帧提交样式，第二帧才恢复）
+			vi.advanceTimersToNextFrame();
+			expect(main.style.transition).toBe("none");
 			vi.advanceTimersToNextFrame();
 			expect(main.style.transition).toBe("");
 		});
@@ -267,7 +271,8 @@ describe("LineBrightness", () => {
 			parent.remove();
 			expect(main.isConnected).toBe(false);
 
-			// 推进到下一帧触发回调，守卫应直接将 transition 置空
+			// 推进两帧触发回调，守卫应直接将 transition 置空
+			vi.advanceTimersToNextFrame();
 			vi.advanceTimersToNextFrame();
 			expect(main.style.transition).toBe("");
 		});
