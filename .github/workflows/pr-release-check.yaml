@@ -50,6 +50,7 @@ jobs:
         if: steps.release-requirements.outputs.requires_release_plan == 'true'
         uses: pnpm/action-setup@v6
         with:
+          version: 12
           cache: true
 
       - name: Install dependencies
@@ -87,6 +88,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
         with:
+          version: 12
           cache: true
 
       - name: Install dependencies
