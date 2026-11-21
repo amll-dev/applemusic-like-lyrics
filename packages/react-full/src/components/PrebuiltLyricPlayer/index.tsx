@@ -641,6 +641,9 @@ export const PrebuiltLyricPlayer: FC<PrebuiltLyricPlayerProps> = ({
 		lyricBackgroundRenderScaleAtom,
 	);
 	const onClickControlThumb = useAtomValue(onClickControlThumbAtom).onEmit;
+	const onRequestPrevSong = useAtomValue(onRequestPrevSongAtom).onEmit;
+	const onRequestNextSong = useAtomValue(onRequestNextSongAtom).onEmit;
+	const onPlayOrResume = useAtomValue(onPlayOrResumeAtom).onEmit;
 	const [isVertical, setIsVertical] = useState(false);
 	const [alignPosition, setAlignPosition] = useState(0.25);
 	const [alignAnchor, setAlignAnchor] = useState<"center" | "bottom" | "top">(
@@ -725,6 +728,10 @@ export const PrebuiltLyricPlayer: FC<PrebuiltLyricPlayerProps> = ({
 						musicPaused={
 							!musicIsPlaying && !musicCoverIsVideo && !verticalImmerseCover
 						}
+						playing={musicIsPlaying}
+						onPrevious={coverProps?.onPrevious ?? onRequestPrevSong}
+						onNext={coverProps?.onNext ?? onRequestNextSong}
+						onTogglePlay={coverProps?.onTogglePlay ?? onPlayOrResume}
 					/>
 				}
 				thumbSlot={
