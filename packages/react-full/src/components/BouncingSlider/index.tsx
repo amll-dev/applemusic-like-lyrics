@@ -3,7 +3,6 @@ import {
 	animate,
 	motion,
 	type PanInfo,
-	useAnimationFrame,
 	useMotionTemplate,
 	useMotionValue,
 	useSpring,
@@ -27,6 +26,8 @@ export interface SliderProps {
 	beforeIcon?: React.ReactNode;
 	afterIcon?: React.ReactNode;
 	changeOnDrag?: boolean;
+	/** 是否推进进度；歌词页收起时传 `false`，组件仍挂在 DOM 里但不跑帧循环。 */
+	active?: boolean;
 }
 
 const MAX_HEIGHT = 20;
@@ -49,6 +50,7 @@ export const BouncingSlider: React.FC<SliderProps> = ({
 	beforeIcon,
 	afterIcon,
 	changeOnDrag = false,
+	active = true,
 }) => {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const innerRef = useRef<HTMLDivElement>(null);
@@ -75,19 +77,29 @@ export const BouncingSlider: React.FC<SliderProps> = ({
 		progressMv.set(newProgress);
 	}, [value, min, max, progressMv]);
 
-	useAnimationFrame((_time, delta) => {
-		if (isPlaying && !isDraggingRef.current) {
-			localTimeRef.current += delta;
-
-			if (localTimeRef.current > max) localTimeRef.current = max;
-
-			const newProgress = Math.max(
-				0,
-				Math.min(1, (localTimeRef.current - min) / (max - min)),
-			);
-			progressMv.set(newProgress);
-		}
-	});
+	// 不用 framer-motion 的 `useAnimationFrame`：它会从挂载起就永久订阅帧循环，
+	// 即使歌曲暂停或歌词页已经隐藏。这里用普通 rAF，只在真正需要推进时启动。
+	useEffect(() => {
+		if (!active || !isPlaying) return;
+		let frame = 0;
+		let last = performance.now();
+		const tick = (now: number) => {
+			const delta = Math.min(now - last, 64);
+			last = now;
+			if (!isDraggingRef.current) {
+				localTimeRef.current = Math.min(max, localTimeRef.current + delta);
+				const span = max - min;
+				const newProgress =
+					span > 0
+						? Math.max(0, Math.min(1, (localTimeRef.current - min) / span))
+						: 0;
+				progressMv.set(newProgress);
+			}
+			frame = requestAnimationFrame(tick);
+		};
+		frame = requestAnimationFrame(tick);
+		return () => cancelAnimationFrame(frame);
+	}, [active, isPlaying, min, max, progressMv]);
 
 	const expand = () => {
 		animate(insetMv, 0, { type: "tween", ease: "easeOut", duration: 0.28 });

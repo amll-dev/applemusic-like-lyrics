@@ -1,6 +1,7 @@
 import type { LyricLine } from "@applemusic-like-lyrics/core";
-import { atom, type PrimitiveAtom, type WritableAtom } from "jotai";
+import { type Atom, atom, type PrimitiveAtom, type WritableAtom } from "jotai";
 import { atomWithStorage, type RESET } from "jotai/utils";
+import { isLyricPageOpenedAtom } from "./configAtoms";
 
 /**
  * 一位艺术家的信息
@@ -155,4 +156,22 @@ export const fftDataAtom: PrimitiveAtom<number[]> = atom<number[]>([]);
  * 部分渲染器会根据音量大小调整背景效果（例如根据鼓点跳动）。如果无法获取到类似的数据，请传入 1.0 作为默认值，或不做任何处理。
  */
 export const lowFreqVolumeAtom: PrimitiveAtom<number> = atom<number>(1);
+//#endregion
+
+//#region 可见性过滤
+/**
+ * 只在歌词页打开时跟随播放进度，关闭时固定为 0。
+ *
+ * 播放位置以 60fps 插值，隐藏的歌词页若直接订阅，整棵歌词 / 进度条组件树
+ * 都会在看不见的地方逐帧重渲染。派生 atom 关闭时不再读取源 atom，值稳定在
+ * 0，订阅者也就不会被唤醒。
+ */
+export const visibleMusicPlayingPositionAtom: Atom<number> = atom((get) =>
+	get(isLyricPageOpenedAtom) ? get(musicPlayingPositionAtom) : 0,
+);
+
+/** 同上：歌词页关闭后低频跳动的更新不再驱动隐藏的背景组件。 */
+export const visibleLowFreqVolumeAtom: Atom<number> = atom((get) =>
+	get(isLyricPageOpenedAtom) ? get(lowFreqVolumeAtom) : 0,
+);
 //#endregion
