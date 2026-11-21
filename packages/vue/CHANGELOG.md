@@ -1,3 +1,32 @@
+## 0.7.0 (2026-11-21)
+
+### Minor Changes
+
+- **feat(core):** 新增 Titanium 流沙背景渲染器 ([#627](https://github.com/amll-dev/applemusic-like-lyrics/pull/627))
+
+### Patch Changes
+
+- **feat(core):** 为歌词组件主要元素添加 data-amll-role 样式钩子 ([#642](https://github.com/amll-dev/applemusic-like-lyrics/pull/642))
+- **fix(core):** refresh background line layout after wrapper resize ([#620](https://github.com/amll-dev/applemusic-like-lyrics/pull/620), [#612](https://github.com/amll-dev/applemusic-like-lyrics/issues/612))
+- **fix(core):** fix the glow word float position ([#636](https://github.com/amll-dev/applemusic-like-lyrics/pull/636))
+- **fix(core):** 断行平衡不再优先断在英文句点后 ([#629](https://github.com/amll-dev/applemusic-like-lyrics/pull/629))
+- **fix(core):** remove the 400ms advance from the glow float animation ([#635](https://github.com/amll-dev/applemusic-like-lyrics/pull/635))
+- **fix(core):** 修复辉光词拆分音节后的上浮错位 ([#634](https://github.com/amll-dev/applemusic-like-lyrics/pull/634))
+- **fix(core):** apply the emphasis length limit to complete words split into syllables ([#632](https://github.com/amll-dev/applemusic-like-lyrics/pull/632))
+- **perf(core):** 避免在滚动时逐帧更新遮罩样式以优化性能 ([#619](https://github.com/amll-dev/applemusic-like-lyrics/pull/619))
+
+### Contributors
+
+- apoint123 [@apoint123](https://github.com/apoint123)
+- Kaito [@kid141252010](https://github.com/kid141252010)
+- karaaslanz [@karaaslanz](https://github.com/karaaslanz)
+- karlmoriaty [@karlmoriaty](https://github.com/karlmoriaty)
+- kid141252010 [@kid141252010](https://github.com/kid141252010)
+- Linho [@Linho1219](https://github.com/Linho1219)
+- Ömer Karaaslan
+- SteveXMH [@Steve-xmh](https://github.com/Steve-xmh)
+- Watercooling480 [@watercooling480](https://github.com/watercooling480)
+
 ## 0.6.0 (2026-09-19)
 
 ### Minor Changes

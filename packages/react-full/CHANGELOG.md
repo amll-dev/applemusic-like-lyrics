@@ -1,3 +1,22 @@
+## 0.6.0 (2026-11-21)
+
+### Minor Changes
+
+- **feat(core):** 新增 Titanium 流沙背景渲染器 ([#627](https://github.com/amll-dev/applemusic-like-lyrics/pull/627))
+- **feat(react-full):** 公开预置播放器共享元素与控件接入接口 ([#618](https://github.com/amll-dev/applemusic-like-lyrics/pull/618))
+
+### Patch Changes
+
+- **fix(react-full):** 修复非沉浸布局下暂停时专辑封面不缩小的问题 ([#640](https://github.com/amll-dev/applemusic-like-lyrics/pull/640))
+
+### Contributors
+
+- Claude Opus 5.5
+- Devin AI [@devin-ai-integration[bot]](https://github.com/devin-ai-integration[bot])
+- JoyLin [@JoyElliot](https://github.com/JoyElliot)
+- Kaito [@kid141252010](https://github.com/kid141252010)
+- SteveXMH [@Steve-xmh](https://github.com/Steve-xmh)
+
 ## 0.5.0 (2026-09-19)
 
 ### Minor Changes
