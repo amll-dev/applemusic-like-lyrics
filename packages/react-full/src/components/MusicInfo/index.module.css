@@ -11,6 +11,23 @@
 	overflow: hidden;
 	/* 固定行高，否则文字变化时有可能产生布局抖动 */
 	line-height: 1.25em;
+	/*
+	 * 上面的 overflow: hidden 会连模糊的光晕一起裁掉，
+	 * 这里用等量的内/负外边距把裁切框放大：布局尺寸不变，但模糊不会在上下被切成一条。
+	 */
+	padding-block: 0.45em;
+	margin-block: -0.45em;
+}
+
+/* 换歌时新旧两份文字叠在同一格里，容器高度不变 */
+.line {
+	display: grid;
+	min-width: 0;
+}
+
+.lineInner {
+	grid-area: 1 / 1;
+	min-width: 0;
 }
 
 .name {

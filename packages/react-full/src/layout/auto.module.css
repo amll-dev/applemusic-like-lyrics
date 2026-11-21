@@ -5,13 +5,3 @@
 	width: 100%;
 	transition: 0.5s ease-in-out;
 }
-
-.background::after {
-	width: 100vw;
-	height: 100vh;
-	content: "";
-	position: absolute;
-	top: 0px;
-	left: 0px;
-	background-image: linear-gradient(#00000000 60%, #0000001a 100%);
-}

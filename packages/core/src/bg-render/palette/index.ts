@@ -40,10 +40,19 @@ export type {
 } from "./types.ts";
 
 import { createAutoPalette } from "./auto.ts";
-import { buildColorHistogram, type HistogramSource } from "./histogram.ts";
+import {
+	buildColorHistogram,
+	buildColorHistogramAsync,
+	type HistogramSource,
+} from "./histogram.ts";
 import { createKMeansPalette, createThemeColor } from "./kmeans.ts";
 import { createOctTreePalette } from "./octtree.ts";
-import type { PaletteIntent, PaletteResult } from "./types.ts";
+import type {
+	ColorCount,
+	ColorVec3,
+	PaletteIntent,
+	PaletteResult,
+} from "./types.ts";
 
 /** 取色算法。 */
 export type PaletteAlgorithm = "auto" | "kmeans" | "octtree";
@@ -64,17 +73,133 @@ export interface CreatePaletteOptions {
 	sampleSize?: number;
 }
 
+/** 调色板结果是小对象，可以比直方图多留一些。 */
+const PALETTE_CACHE_LIMIT = 32;
+
+const paletteCache = new Map<string, PaletteResult>();
+const paletteInFlight = new Map<string, Promise<PaletteResult>>();
+
+function getPaletteCacheKey(
+	source: HistogramSource,
+	clusterCount: number,
+	options: CreatePaletteOptions,
+): string | null {
+	if (!(source instanceof HTMLImageElement)) return null;
+	const url = source.currentSrc || source.src;
+	if (!url) return null;
+	return [
+		url,
+		clusterCount,
+		options.algorithm ?? "auto",
+		options.ignoreWhite ? 1 : 0,
+		options.toLab ? 1 : 0,
+		options.useKMeansPP ? 1 : 0,
+		options.intent ?? "accent",
+		options.sampleSize ?? 64,
+	].join("|");
+}
+
+function getCachedPalette(key: string): PaletteResult | null {
+	const cached = paletteCache.get(key);
+	if (!cached) return null;
+	paletteCache.delete(key);
+	paletteCache.set(key, cached);
+	return cached;
+}
+
+function setCachedPalette(key: string, result: PaletteResult): void {
+	paletteCache.set(key, result);
+	while (paletteCache.size > PALETTE_CACHE_LIMIT) {
+		const oldest = paletteCache.keys().next().value;
+		if (oldest === undefined) break;
+		paletteCache.delete(oldest);
+	}
+}
+
+/** 返回副本：调用方原地改调色板不应污染缓存。 */
+function clonePaletteResult(result: PaletteResult): PaletteResult {
+	return {
+		palette: result.palette.map(
+			([red, green, blue]): ColorVec3 => [red, green, blue],
+		),
+		paletteIsDark: result.paletteIsDark,
+		themeColor: {
+			color: [
+				result.themeColor.color[0],
+				result.themeColor.color[1],
+				result.themeColor.color[2],
+			],
+			colorIsDark: result.themeColor.colorIsDark,
+		},
+	};
+}
+
 /**
  * 从图像资源提取指定数量的主色。
  *
  * 整个流程是同步的：封面会先被缩到 64×64 再统计，因此在主线程上通常只需要几
- * 毫秒，不值得为它单独开一个 Worker。
+ * 毫秒。
+ *
+ * 换歌 / 动画路径上请改用 {@link createPaletteFromImageAsync}，两者的取色
+ * 结果一致，但异步版不会卡主线程。
  *
  * @param source 图像资源，可以是 img/video 元素、`ImageBitmap` 或 `ImageData`
  * @param clusterCount 需要的颜色数量，返回的调色板长度恒等于该值
  */
 export function createPaletteFromImage(
 	source: HistogramSource,
+	clusterCount: number,
+	options: CreatePaletteOptions = {},
+): PaletteResult {
+	const key = getPaletteCacheKey(source, clusterCount, options);
+	if (key) {
+		const cached = getCachedPalette(key);
+		if (cached) return clonePaletteResult(cached);
+	}
+
+	const entries = buildColorHistogram(source, options.sampleSize);
+	const result = createPaletteFromEntries(entries, clusterCount, options);
+	if (key) setCachedPalette(key, clonePaletteResult(result));
+	return result;
+}
+
+/** {@link createPaletteFromImage} 的异步版本，用于换歌等会掉帧的路径。 */
+export function createPaletteFromImageAsync(
+	source: HistogramSource,
+	clusterCount: number,
+	options: CreatePaletteOptions = {},
+): Promise<PaletteResult> {
+	const key = getPaletteCacheKey(source, clusterCount, options);
+	if (key) {
+		const cached = getCachedPalette(key);
+		if (cached) return Promise.resolve(clonePaletteResult(cached));
+
+		const inFlight = paletteInFlight.get(key);
+		if (inFlight) return inFlight.then(clonePaletteResult);
+	}
+
+	const task = buildColorHistogramAsync(source, options.sampleSize).then(
+		(entries) => {
+			const result = createPaletteFromEntries(entries, clusterCount, options);
+			if (key) setCachedPalette(key, clonePaletteResult(result));
+			return result;
+		},
+	);
+
+	if (key) {
+		paletteInFlight.set(key, task);
+		task.then(
+			() => paletteInFlight.delete(key),
+			() => paletteInFlight.delete(key),
+		);
+		return task.then(clonePaletteResult);
+	}
+
+	return task;
+}
+
+function createPaletteFromEntries(
+	entries: ColorCount[],
 	clusterCount: number,
 	options: CreatePaletteOptions = {},
 ): PaletteResult {
@@ -85,10 +210,8 @@ export function createPaletteFromImage(
 		toLab = false,
 		useKMeansPP = false,
 		intent = "accent",
-		sampleSize,
 	} = options;
 
-	const entries = buildColorHistogram(source, sampleSize);
 	if (entries.length === 0) {
 		const themeColor = {
 			color: [0, 0, 0] as [number, number, number],

@@ -25,6 +25,50 @@
 	justify-content: space-between;
 }
 
+/* FFT 可视化与控制按钮的交叉淡入淡出 */
+.fftControls {
+	position: relative;
+}
+
+.fftVisualizer {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	opacity: 1;
+	transition: opacity 160ms ease;
+}
+
+.fftMediaButtons {
+	position: relative;
+	z-index: 1;
+	width: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	opacity: 0;
+	pointer-events: none;
+	transition: opacity 160ms ease;
+}
+
+.fftControls:hover .fftVisualizer,
+.fftControls:focus-within .fftVisualizer {
+	opacity: 0;
+}
+
+.fftControls:hover .fftMediaButtons,
+.fftControls:focus-within .fftMediaButtons {
+	opacity: 1;
+	pointer-events: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.fftVisualizer,
+	.fftMediaButtons {
+		transition: none;
+	}
+}
+
 .bigControls {
 	padding: 2vh min(2vw, 2vh);
 	padding-bottom: 0;

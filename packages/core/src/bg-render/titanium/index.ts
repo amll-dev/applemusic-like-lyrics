@@ -15,7 +15,7 @@ import { BaseRenderer } from "../base.ts";
 import { GLProgram } from "../gl-program.ts";
 import {
 	type ColorVec3,
-	createPaletteFromImage,
+	createPaletteFromImageAsync,
 	type PaletteAlgorithm,
 	srgbToOkLab,
 } from "../palette/index.ts";
@@ -140,6 +140,8 @@ export class TitaniumRenderer extends BaseRenderer {
 
 	private albumRequestId = 0;
 	private albumSource?: HTMLImageElement | HTMLVideoElement;
+	/** 调色板异步任务代次；新封面 / 新算法会丢弃旧的取色结果。 */
+	private paletteRequestId = 0;
 
 	/** 调色板过渡已过的毫秒数，与渲染时钟共用时间。 */
 	private paletteTransitionElapsed = PALETTE_TRANSITION_MS;
@@ -322,27 +324,32 @@ export class TitaniumRenderer extends BaseRenderer {
 		immediate = false,
 	): void {
 		this.rollPaletteOrder();
-		let palette: [number, number, number][];
-		try {
-			palette = createPaletteFromImage(source, COLOR_COUNT, {
-				algorithm: this.options.paletteAlgorithm,
-				// 背景要的是封面本身的颜色跨度，不是和界面的对比度
-				intent: "dominant",
-			}).palette;
-		} catch (error) {
-			// 跨域封面会让 getImageData 抛安全错误，此时保持现有配色
-			console.warn("Failed to extract palette from album", error);
-			return;
-		}
-		for (let i = 0; i < COLOR_COUNT; i++) {
-			const [red, green, blue] = palette[this.paletteOrder[i]];
-			this.nextColors.set(
-				srgbToOkLab([red / 255, green / 255, blue / 255]),
-				i * 3,
-			);
-		}
-		this.transitionToColors(this.nextColors, immediate);
-		this.requestTick();
+		const requestId = ++this.paletteRequestId;
+		// 采样与缩放放在异步路径里：同步 getImageData 会在换封面时阻塞
+		// 一整帧（几十毫秒），这也是 setAlbum 卡顿的主要来源。
+		void createPaletteFromImageAsync(source, COLOR_COUNT, {
+			algorithm: this.options.paletteAlgorithm,
+			// 背景要的是封面本身的颜色跨度，不是和界面的对比度
+			intent: "dominant",
+		})
+			.then((result) => {
+				if (requestId !== this.paletteRequestId || this._disposed) return;
+				const palette = result.palette;
+				for (let i = 0; i < COLOR_COUNT; i++) {
+					const [red, green, blue] = palette[this.paletteOrder[i]];
+					this.nextColors.set(
+						srgbToOkLab([red / 255, green / 255, blue / 255]),
+						i * 3,
+					);
+				}
+				this.transitionToColors(this.nextColors, immediate);
+				this.requestTick();
+			})
+			.catch((error) => {
+				if (requestId !== this.paletteRequestId) return;
+				// 跨域封面会让采样抛安全错误，此时保持现有配色
+				console.warn("Failed to extract palette from album", error);
+			});
 	}
 
 	private transitionToColors(next: Float32Array, immediate: boolean): void {
@@ -538,6 +545,8 @@ export class TitaniumRenderer extends BaseRenderer {
 			(typeof albumSource === "string" && albumSource.trim().length === 0)
 		) {
 			this.albumSource = undefined;
+			// 取消还在路上的取色任务，避免旧封面的颜色晚到后盖回来
+			this.paletteRequestId++;
 			this.transitionToColors(DEFAULT_OKLAB_COLORS, false);
 			this.requestTick();
 			return;
