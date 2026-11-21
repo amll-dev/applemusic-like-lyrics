@@ -113,7 +113,6 @@ import {
 	toggleShuffleActionAtom,
 } from "../../states/controlsAtoms";
 import {
-	fftDataAtom,
 	lowFreqVolumeAtom,
 	musicAlbumNameAtom,
 	musicArtistsAtom,
@@ -496,20 +495,24 @@ const PrebuiltMusicControls: FC<
 	} & HTMLProps<HTMLDivElement>
 > = ({ className, showOtherButtons, ...props }) => {
 	const playerControlsType = useAtomValue(playerControlsTypeAtom);
-	const fftData = useAtomValue(fftDataAtom);
+	const isFFT = playerControlsType === PlayerControlsType.FFT;
 	return (
-		<div className={classNames(styles.controls, className)} {...props}>
+		<div
+			className={classNames(styles.controls, className, {
+				[styles.fftControls]: isFFT,
+			})}
+			{...props}
+		>
 			{playerControlsType === PlayerControlsType.Controls && (
 				<PrebuiltMediaButtons showOtherButtons={showOtherButtons} />
 			)}
-			{playerControlsType === PlayerControlsType.FFT && (
-				<AudioFFTVisualizer
-					style={{
-						width: "100%",
-						height: "8vh",
-					}}
-					fftData={fftData}
-				/>
+			{isFFT && (
+				<>
+					<AudioFFTVisualizer className={styles.fftVisualizer} />
+					<div className={styles.fftMediaButtons}>
+						<PrebuiltMediaButtons showOtherButtons={showOtherButtons} />
+					</div>
+				</>
 			)}
 		</div>
 	);
