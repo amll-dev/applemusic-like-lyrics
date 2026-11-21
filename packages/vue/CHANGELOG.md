@@ -1,3 +1,13 @@
+## 0.7.2 (2026-11-21)
+
+### Patch Changes
+
+- **fix:** 修复版本发布错误导致的空包 ([#649](https://github.com/amll-dev/applemusic-like-lyrics/pull/649))
+
+### Contributors
+
+- Linho [@Linho1219](https://github.com/Linho1219)
+
 ## 0.7.1 (2026-11-21)
 
 ### Patch Changes
