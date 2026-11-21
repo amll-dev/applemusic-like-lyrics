@@ -2,6 +2,7 @@ import type React from "react";
 import type { HTMLProps, Ref } from "react";
 import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import styles from "./auto.module.css";
+import { DitherScrim } from "./dither-scrim";
 import { HorizontalLayout } from "./horizontal";
 import { VerticalLayout } from "./vertical";
 
@@ -79,7 +80,10 @@ export const AutoLyricLayout: React.FC<
 
 	return (
 		<div {...rest} ref={setRefs}>
-			<div className={styles.background}>{backgroundSlot}</div>
+			<div className={styles.background}>
+				{backgroundSlot}
+				<DitherScrim />
+			</div>
 			{isVertical ? (
 				<VerticalLayout
 					thumbSlot={thumbSlot}
