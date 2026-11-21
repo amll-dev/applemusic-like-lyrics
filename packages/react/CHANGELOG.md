@@ -1,3 +1,13 @@
+## 0.7.1 (2026-11-21)
+
+### Patch Changes
+
+- **build:** 整理依赖并移除无效依赖与代码 ([#643](https://github.com/amll-dev/applemusic-like-lyrics/pull/643))
+
+### Contributors
+
+- Linho [@Linho1219](https://github.com/Linho1219)
+
 ## 0.7.0 (2026-11-21)
 
 ### Minor Changes
