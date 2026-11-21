@@ -22,5 +22,11 @@ export default defineConfig({
 	],
 	test: {
 		environment: "happy-dom",
+		execArgv:
+			Number.parseInt(process.versions.node, 10) >= 25
+				? ["--no-webstorage"]
+				: [],
+		// Node 25+ 默认在 globalThis 上声明了 localStorage，但是不额外配置的话是 undefined
+		// 这导致 happy-dom 的 localStorage 也无法使用，所以手动关掉
 	},
 });

@@ -21,3 +21,4 @@ target/
 .million/
 **/dist
 .playwright*/
+.pnpm-store

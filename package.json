@@ -3,12 +3,13 @@
 	"private": true,
 	"license": "AGPL-3.0-only",
 	"type": "module",
+	"packageManager": "pnpm@12.21.0",
 	"devDependencies": {
 		"@biomejs/biome": "catalog:",
-		"@nx/js": "=22.7.2",
+		"@nx/js": "^24.0.6",
 		"@typescript/native-preview": "7.0.0-dev.20260707.2",
 		"npm-run-all2": "^9.0.3",
-		"nx": "=22.7.2",
+		"nx": "^24.0.6",
 		"swc-node": "^1.0.0",
 		"tsdown": "catalog:",
 		"typescript": "catalog:"
