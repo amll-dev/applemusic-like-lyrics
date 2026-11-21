@@ -17,6 +17,10 @@ const OVERFLOW_PENALTY_MULTIPLIER = 1000;
  */
 const CJK_BREAK_PENALTY_RATIO = 0.15;
 /**
+ * 相邻词组含单字 CJK 词时的惩罚比例
+ */
+const SINGLE_CHAR_CJK_BREAK_PENALTY_RATIO = 0.35;
+/**
  * 截断普通文本（非空格、非 CJK 词界）的惩罚比例
  */
 const NORMAL_BREAK_PENALTY_RATIO = 0.5;
@@ -53,14 +57,23 @@ export function calcBalancedBreaks(
 
 	// 计算哪里是 CJK 词组的边界
 	const cjkBoundaries = new Set<number>();
+	const singleCharCjkBoundaries = new Set<number>();
 	let offset = 0;
+	let prevIsSingleCjkWord = false;
 	for (const { segment, isWordLike } of segmenter.segment(fullText)) {
+		const chars = [...segment];
+		const isSingleCjkWord =
+			!!isWordLike && chars.length === 1 && isCJK(chars[0]);
 		if (offset > 0 && isWordLike) {
-			if ([...segment].some((ch) => isCJK(ch))) {
+			if (chars.some((ch) => isCJK(ch))) {
 				cjkBoundaries.add(offset);
+				if (prevIsSingleCjkWord || isSingleCjkWord) {
+					singleCharCjkBoundaries.add(offset);
+				}
 			}
 		}
 		offset += segment.length;
+		prevIsSingleCjkWord = isSingleCjkWord;
 	}
 
 	// 计算前缀宽和字符偏移量用于快速查询
@@ -83,6 +96,8 @@ export function calcBalancedBreaks(
 	dp[n] = 0;
 
 	const PENALTY_CJK = (containerWidth * CJK_BREAK_PENALTY_RATIO) ** 2;
+	const PENALTY_SINGLE_CHAR_CJK =
+		(containerWidth * SINGLE_CHAR_CJK_BREAK_PENALTY_RATIO) ** 2;
 	const PENALTY_NORMAL = (containerWidth * NORMAL_BREAK_PENALTY_RATIO) ** 2;
 
 	for (let i = n - 1; i >= 0; i--) {
@@ -108,7 +123,7 @@ export function calcBalancedBreaks(
 			if (j < n) {
 				const prevChild = children[j - 1];
 
-				// 优先级：标点 > 空格 > CJK 词界 > 普通文本
+				// 优先级：标点 > 空格 > CJK 词界 > 单字相邻 CJK 词界 > 普通文本
 				if (PUNCTUATION_REGEX.test(prevChild.text)) {
 					breakPenalty = -(
 						(containerWidth * PUNCTUATION_BREAK_REWARD_RATIO) **
@@ -117,7 +132,9 @@ export function calcBalancedBreaks(
 				} else if (prevChild.isSpace) {
 					breakPenalty = -((containerWidth * SPACE_BREAK_REWARD_RATIO) ** 2);
 				} else if (cjkBoundaries.has(charOffsets[j])) {
-					breakPenalty = PENALTY_CJK;
+					breakPenalty = singleCharCjkBoundaries.has(charOffsets[j])
+						? PENALTY_SINGLE_CHAR_CJK
+						: PENALTY_CJK;
 				} else {
 					breakPenalty = PENALTY_NORMAL;
 				}
