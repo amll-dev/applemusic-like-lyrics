@@ -1,6 +1,11 @@
-import DefaultChangelogRenderer, {
+import ChangelogRendererModule, {
 	type ChangelogChange,
 } from "nx/release/changelog-renderer";
+
+const DefaultChangelogRenderer =
+	// biome-ignore lint/suspicious/noExplicitAny: nx 提供的是 CJS 模块，出现双层 default 导出，此为 workaround
+	((ChangelogRendererModule as any)
+		.default as typeof ChangelogRendererModule) ?? ChangelogRendererModule;
 
 export default class CustomChangelogRenderer extends DefaultChangelogRenderer {
 	protected renderChangesByType(): string[] {

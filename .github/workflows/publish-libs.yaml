@@ -70,7 +70,6 @@ jobs:
         run: pnpm nx release --skip-publish --preid alpha
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NX_PREFER_NODE_STRIP_TYPES: false
 
       - name: Format package.json files and amend release commit
         run: bash .github/scripts/format-package-json-and-amend.sh
@@ -80,7 +79,6 @@ jobs:
         run: pnpm nx release publish --excludeTaskDependencies
         env:
           NPM_CONFIG_PROVENANCE: true
-          NX_PREFER_NODE_STRIP_TYPES: false
 
       - name: Push release commit and tags
         if: github.event.inputs.mode == 'publish'
