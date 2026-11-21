@@ -29,6 +29,7 @@
 		"build": "run-p typecheck \"build-only {@}\" --",
 		"build:dev": "tsdown",
 		"fmt": "biome format --write ./src",
+		"test": "vitest test",
 		"dev": "nx run @applemusic-like-lyrics/playground-vue:dev"
 	},
 	"main": "./dist/amll-vue.cjs",
@@ -66,6 +67,7 @@
 		"tsdown": "catalog:",
 		"typedoc": "^0.28.17",
 		"typedoc-plugin-markdown": "catalog:",
-		"vue": "^3.5.41"
+		"vue": "^3.5.41",
+		"vitest": "catalog:"
 	}
 }
