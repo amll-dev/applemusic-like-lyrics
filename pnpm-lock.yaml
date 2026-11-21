@@ -126,15 +126,9 @@ importers:
       bezier-easing:
         specifier: ^3.0.1
         version: 3.0.1
-      deep-freeze:
-        specifier: ^0.0.1
-        version: 0.0.1
       gl-matrix:
         specifier: 4.0.0-beta.2
         version: 4.0.0-beta.2
-      vitest:
-        specifier: 'catalog:'
-        version: 4.1.10(@types/node@26.2.0)(happy-dom@20.14.5)(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(stylus@0.57.0(supports-color@7.2.0))(yaml@2.9.0))
     devDependencies:
       '@biomejs/biome':
         specifier: 'catalog:'
@@ -142,9 +136,6 @@ importers:
       '@tsdown/css':
         specifier: 'catalog:'
         version: 0.22.14(jiti@2.7.0)(postcss@8.5.26)(tsdown@0.22.14)(yaml@2.9.0)
-      '@types/deep-freeze':
-        specifier: ^0.1.5
-        version: 0.1.5
       '@types/stats.js':
         specifier: ^0.17.3
         version: 0.17.4
@@ -169,6 +160,9 @@ importers:
       typedoc-plugin-markdown:
         specifier: 'catalog:'
         version: 4.12.0(typedoc@0.28.20(typescript@6.0.3))
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.10(@types/node@26.2.0)(happy-dom@20.14.5)(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(stylus@0.57.0(supports-color@7.2.0))(yaml@2.9.0))
 
   packages/docs:
     dependencies:
@@ -276,6 +270,9 @@ importers:
       '@applemusic-like-lyrics/lyric':
         specifier: workspace:^
         version: link:../../lyric
+      '@lucide/vue':
+        specifier: ^1.77.0
+        version: 1.77.0(vue@3.5.41(typescript@6.0.3))
       '@pixi/app':
         specifier: ^7.4.3
         version: 7.4.3(@pixi/core@7.4.3)(@pixi/display@7.4.3(@pixi/core@7.4.3))
@@ -312,9 +309,6 @@ importers:
       jss-preset-default:
         specifier: ^10.10.0
         version: 10.10.0
-      lucide-vue-next:
-        specifier: ^1.0.0
-        version: 1.0.0(vue@3.5.41(typescript@6.0.3))
       music-metadata:
         specifier: ^11.14.0
         version: 11.14.0(supports-color@7.2.0)
@@ -2198,6 +2192,11 @@ packages:
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
 
+  '@lucide/vue@1.77.0':
+    resolution: {integrity: sha512-B+okr/d8qC2imLzNPJ5tW8Nf7uKC19DgiOafxU0bOMfLnkd5Tkss4GW640+s5FierTJjgl99LpuO40u+yni0qQ==}
+    peerDependencies:
+      vue: '>=3.0.1'
+
   '@mdx-js/mdx@3.1.1':
     resolution: {integrity: sha512-f6ZO2ifpwAQIpzGWaBQT2TXxPv6z3RBzQKpVftEWN78Vl/YweF1uwussDx8ECAXVtr3Rs89fKyG9YlzUs9DyGQ==}
 
@@ -3758,9 +3757,6 @@ packages:
   '@types/deep-eql@4.0.2':
     resolution: {integrity: sha512-c9h9dVVMigMPc4bwTvC5dxqtqJZwQPePsWjPlpSOnojbor6pGqdk541lfA7AqFQr5pB1BRdq0juY9db81BwyFw==}
 
-  '@types/deep-freeze@0.1.5':
-    resolution: {integrity: sha512-KZtR+jtmgkCpgE0f+We/QEI2Fi0towBV/tTkvHVhMzx+qhUVGXMx7pWvAtDp6vEWIjdKLTKpqbI/sORRCo8TKg==}
-
   '@types/earcut@2.1.4':
     resolution: {integrity: sha512-qp3m9PPz4gULB9MhjGID7wpo3gJ4bTGXm7ltNDsmOvsPduTeHp8wSW9YckBj3mljeOh4F0m2z/0JKAALRKbmLQ==}
 
@@ -4786,9 +4782,6 @@ packages:
   deep-diff@1.0.2:
     resolution: {integrity: sha512-aWS3UIVH+NPGCD1kki+DCU9Dua032iSsO43LqQpcs4R3+dVv7tX0qBGjiVHJHjplsoUM2XRO/KB92glqc68awg==}
     deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
-
-  deep-freeze@0.0.1:
-    resolution: {integrity: sha512-Z+z8HiAvsGwmjqlphnHW5oz6yWlOwu6EQfFTjmeTWlDeda3FS2yv3jhq35TX/ewmsnqB+RX2IdsIOyjJCQN5tg==}
 
   deep-is@0.1.4:
     resolution: {integrity: sha512-oIPzksmTg4/MriiaYGO+okXDT7ztn/w3Eptv/+gSIdMdKsJo0u4CfYNFJPy+4SKMuCqGw2wxnA+URMg3t8a/bQ==}
@@ -6017,12 +6010,6 @@ packages:
     resolution: {integrity: sha512-G8u2eEtoHUnUa9f8lbvqDhCiORMnYLdUEo06EEG9MQvHQrInKcX3Pa2TH39MM5qyzRcWETxB0+aOwAPI1g1kEg==}
     peerDependencies:
       react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
-
-  lucide-vue-next@1.0.0:
-    resolution: {integrity: sha512-V6SPvx1IHTj/UY+FrIYWV5faISsPSb8BnWSFDxAtezWKvWc9ZZ40PDrdu1/Qb5vg4lHWr1hs1BAMGVGm6V1Xdg==}
-    deprecated: Package deprecated. Please use @lucide/vue instead.
-    peerDependencies:
-      vue: '>=3.0.1'
 
   lunr@2.3.9:
     resolution: {integrity: sha512-zTU3DaZaF3Rt9rhN3uBMGQD3dD2/vFQqnvZCDv4dl5iOzq2IZQqTxu90r4E5J+nP70J3ilqVCrbho2eWaeW8Ow==}
@@ -9599,6 +9586,10 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
 
+  '@lucide/vue@1.77.0(vue@3.5.41(typescript@6.0.3))':
+    dependencies:
+      vue: 3.5.41(typescript@6.0.3)
+
   '@mdx-js/mdx@3.1.1(supports-color@7.2.0)':
     dependencies:
       '@types/estree': 1.0.9
@@ -11164,8 +11155,6 @@ snapshots:
 
   '@types/deep-eql@4.0.2': {}
 
-  '@types/deep-freeze@0.1.5': {}
-
   '@types/earcut@2.1.4': {}
 
   '@types/esrecurse@4.3.1': {}
@@ -12243,8 +12232,6 @@ snapshots:
       babel-plugin-macros: 3.1.0
 
   deep-diff@1.0.2: {}
-
-  deep-freeze@0.0.1: {}
 
   deep-is@0.1.4: {}
 
@@ -13551,10 +13538,6 @@ snapshots:
   lucide-react@1.31.0(react@19.2.8):
     dependencies:
       react: 19.2.8
-
-  lucide-vue-next@1.0.0(vue@3.5.41(typescript@6.0.3)):
-    dependencies:
-      vue: 3.5.41(typescript@6.0.3)
 
   lunr@2.3.9: {}
 

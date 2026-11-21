@@ -4,7 +4,7 @@ import {
 	ExpandIcon,
 	TypeIcon,
 	WandIcon,
-} from "lucide-vue-next";
+} from "@lucide/vue";
 import { Separator } from "@/components/ui/separator";
 import { usePlayerStore } from "@/stores/player";
 import ControllerSlider from "./ControllerSlider.vue";

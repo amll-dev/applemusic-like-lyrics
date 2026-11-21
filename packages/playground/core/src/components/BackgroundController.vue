@@ -3,7 +3,7 @@ import {
 	BrushIcon,
 	MonitorPlayIcon,
 	SlidersHorizontalIcon,
-} from "lucide-vue-next";
+} from "@lucide/vue";
 import {
 	Select,
 	SelectContent,

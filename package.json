@@ -22,6 +22,5 @@
 		"lint": "biome lint . --fix",
 		"ci:lint": "biome lint . --error-on-warnings",
 		"release:plan:check": "nx release plan:check"
-	},
-	"packageManager": "pnpm@11.21.0"
+	}
 }

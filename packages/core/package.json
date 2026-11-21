@@ -42,8 +42,7 @@
 		"#interfaces": "./src/interfaces.ts",
 		"#utils/*": "./src/utils/*",
 		"#styles/*": "./src/styles/*",
-		"#lyric/*": "./src/lyric-player/*",
-		"#bg/*": "./src/bg-player/*"
+		"#lyric/*": "./src/lyric-player/*"
 	},
 	"exports": {
 		".": {
@@ -64,7 +63,6 @@
 	"devDependencies": {
 		"@biomejs/biome": "catalog:",
 		"@tsdown/css": "catalog:",
-		"@types/deep-freeze": "^0.1.5",
 		"@types/stats.js": "^0.17.3",
 		"@types/ungap__structured-clone": "^1.2.0",
 		"happy-dom": "^20.14.5",
@@ -72,7 +70,8 @@
 		"stats.js": "^0.17.0",
 		"tsdown": "catalog:",
 		"typedoc": "catalog:",
-		"typedoc-plugin-markdown": "catalog:"
+		"typedoc-plugin-markdown": "catalog:",
+		"vitest": "catalog:"
 	},
 	"peerDependencies": {
 		"@pixi/app": "*",
@@ -86,8 +85,6 @@
 	"dependencies": {
 		"@ungap/structured-clone": "catalog:",
 		"bezier-easing": "^3.0.1",
-		"deep-freeze": "^0.0.1",
-		"gl-matrix": "4.0.0-beta.2",
-		"vitest": "catalog:"
+		"gl-matrix": "4.0.0-beta.2"
 	}
 }

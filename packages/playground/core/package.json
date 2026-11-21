@@ -12,6 +12,7 @@
 	"dependencies": {
 		"@applemusic-like-lyrics/core": "workspace:^",
 		"@applemusic-like-lyrics/lyric": "workspace:^",
+		"@lucide/vue": "^1.77.0",
 		"@pixi/app": "^7.4.3",
 		"@pixi/core": "^7.4.3",
 		"@pixi/display": "^7.4.3",
@@ -24,7 +25,6 @@
 		"clsx": "^2.1.1",
 		"jss": "^10.10.0",
 		"jss-preset-default": "^10.10.0",
-		"lucide-vue-next": "^1.0.0",
 		"music-metadata": "^11.14.0",
 		"pinia": "^4.0.2",
 		"reka-ui": "^2.10.3",
