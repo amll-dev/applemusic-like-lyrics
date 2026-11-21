@@ -28,6 +28,8 @@ export interface SliderProps {
 	changeOnDrag?: boolean;
 	/** 是否推进进度；歌词页收起时传 `false`，组件仍挂在 DOM 里但不跑帧循环。 */
 	active?: boolean;
+	/** 换歌标识；变化时先淡出已播放部分，再在不可见状态下跳回开头。 */
+	resetKey?: string;
 }
 
 const MAX_HEIGHT = 20;
@@ -51,6 +53,7 @@ export const BouncingSlider: React.FC<SliderProps> = ({
 	afterIcon,
 	changeOnDrag = false,
 	active = true,
+	resetKey,
 }) => {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const innerRef = useRef<HTMLDivElement>(null);
@@ -59,6 +62,15 @@ export const BouncingSlider: React.FC<SliderProps> = ({
 
 	const progressMv = useMotionValue(0);
 	const scaleX = useTransform(progressMv, [0, 1], [0, 1]);
+
+	// 已播放部分的透明度：换歌时先淡出旧进度，再在透明状态下从零开始
+	const thumbOpacity = useMotionValue(1);
+	const resettingRef = useRef(false);
+	const resetKeyRef = useRef(resetKey);
+	const resetTokenRef = useRef<symbol | null>(null);
+	// 动画回调里需要最新的值，直接从最新一次渲染取
+	const latestRef = useRef({ value, min, max });
+	latestRef.current = { value, min, max };
 
 	const insetMv = useMotionValue(INITIAL_INSET);
 
@@ -69,8 +81,54 @@ export const BouncingSlider: React.FC<SliderProps> = ({
 	const isDraggingRef = useRef(false);
 	const localTimeRef = useRef(value);
 
+	// 换歌：已播放部分快速淡出 → 在透明状态下跳回开头 → 再淡入
 	useEffect(() => {
-		if (isDraggingRef.current) return;
+		if (!resetKey || resetKey === resetKeyRef.current) return;
+		resetKeyRef.current = resetKey;
+
+		// 连续快速切歌时，只有最后一次的重置可以写回进度
+		const token = Symbol("slider-reset");
+		resetTokenRef.current = token;
+		resettingRef.current = true;
+		const fadeOut = animate(thumbOpacity, 0, {
+			type: "tween",
+			duration: 0.12,
+			ease: "easeOut",
+		});
+		void fadeOut.then(() => {
+			if (resetTokenRef.current !== token) return;
+			const {
+				value: nextValue,
+				min: nextMin,
+				max: nextMax,
+			} = latestRef.current;
+			const span = nextMax - nextMin;
+			localTimeRef.current = nextValue;
+			progressMv.set(
+				span > 0 ? Math.max(0, Math.min(1, (nextValue - nextMin) / span)) : 0,
+			);
+			resettingRef.current = false;
+			animate(thumbOpacity, 1, {
+				type: "tween",
+				duration: 0.3,
+				delay: 0.04,
+				ease: "easeOut",
+			});
+		});
+
+		return () => {
+			fadeOut.stop();
+			if (resetTokenRef.current === token) {
+				resetTokenRef.current = null;
+				resettingRef.current = false;
+				// 连续快速切歌时不要把进度条永久留在不可见状态
+				thumbOpacity.set(1);
+			}
+		};
+	}, [resetKey, thumbOpacity, progressMv]);
+
+	useEffect(() => {
+		if (isDraggingRef.current || resettingRef.current) return;
 
 		localTimeRef.current = value;
 		const newProgress = Math.max(0, Math.min(1, (value - min) / (max - min)));
@@ -86,7 +144,7 @@ export const BouncingSlider: React.FC<SliderProps> = ({
 		const tick = (now: number) => {
 			const delta = Math.min(now - last, 64);
 			last = now;
-			if (!isDraggingRef.current) {
+			if (!isDraggingRef.current && !resettingRef.current) {
 				localTimeRef.current = Math.min(max, localTimeRef.current + delta);
 				const span = max - min;
 				const newProgress =
@@ -238,6 +296,7 @@ export const BouncingSlider: React.FC<SliderProps> = ({
 					style={{
 						scaleX: scaleX,
 						originX: 0,
+						opacity: thumbOpacity,
 					}}
 				/>
 			</motion.div>

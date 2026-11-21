@@ -19,8 +19,8 @@
 		& > .thumb {
 			width: 100%;
 			height: 100%;
-			background-color: white;
-			opacity: 0.4;
+			/* 用 rgba 而不是 opacity，透明度留给换歌时的淡出动画 */
+			background-color: rgba(255, 255, 255, 0.4);
 			transform-origin: left center;
 		}
 	}

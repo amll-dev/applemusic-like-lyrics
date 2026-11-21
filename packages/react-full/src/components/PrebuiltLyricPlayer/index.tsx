@@ -119,6 +119,7 @@ import {
 	musicCoverAtom,
 	musicCoverIsVideoAtom,
 	musicDurationAtom,
+	musicIdAtom,
 	musicLyricLinesAtom,
 	musicNameAtom,
 	musicPlayingAtom,
@@ -269,6 +270,7 @@ const PrebuiltProgressBar: FC = React.memo(() => {
 	const musicDuration = useAtomValue(musicDurationAtom);
 	const musicPosition = useAtomValue(visibleMusicPlayingPositionAtom);
 	const musicIsPlaying = useAtomValue(musicPlayingAtom);
+	const musicId = useAtomValue(musicIdAtom);
 	const isLyricPageOpened = useAtomValue(isLyricPageOpenedAtom);
 	const musicQualityTag = useAtomValue(musicQualityTagAtom);
 	const onClickAudioQualityTag = useAtomValue(
@@ -306,6 +308,8 @@ const PrebuiltProgressBar: FC = React.memo(() => {
 				max={musicDuration}
 				value={musicPosition}
 				onChange={handleSeek}
+				/* 换歌时已播放部分先淡出，再从开头重新开始 */
+				resetKey={musicId}
 			/>
 			<div className={styles.progressBarLabels}>
 				<div style={fontStyle}>
