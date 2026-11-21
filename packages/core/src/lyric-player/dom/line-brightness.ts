@@ -124,13 +124,10 @@ export class LineBrightness implements Disposable {
 
 		this.cancelActivationAnimation();
 
-		const dimAnim = this.dim.animate(
-			[{ opacity: 0.2 }, { opacity: 0 }],
-			{
-				duration: 300,
-				easing: "ease-out",
-			},
-		);
+		const dimAnim = this.dim.animate([{ opacity: 0.2 }, { opacity: 0 }], {
+			duration: 300,
+			easing: "ease-out",
+		});
 		this.dimAnimation = dimAnim;
 		dimAnim.onfinish = () => {
 			if (this.dimAnimation === dimAnim) {
@@ -138,13 +135,10 @@ export class LineBrightness implements Disposable {
 			}
 		};
 
-		const mainAnim = this.main.animate(
-			[{ opacity: 0 }, { opacity: 1 }],
-			{
-				duration: 300,
-				easing: "ease-out",
-			},
-		);
+		const mainAnim = this.main.animate([{ opacity: 0 }, { opacity: 1 }], {
+			duration: 300,
+			easing: "ease-out",
+		});
 		this.mainAnimation = mainAnim;
 		mainAnim.onfinish = () => {
 			if (this.mainAnimation === mainAnim) {

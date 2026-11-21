@@ -525,9 +525,7 @@ export class TitaniumRenderer extends BaseRenderer {
 	}
 
 	private isCurrentAlbumRequest(requestId: number): boolean {
-		return (
-			!this._disposed && requestId === this.albumRequestId
-		);
+		return !this._disposed && requestId === this.albumRequestId;
 	}
 
 	override async setAlbum(

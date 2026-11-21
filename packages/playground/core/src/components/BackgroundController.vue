@@ -1,9 +1,5 @@
 <script setup lang="ts">
-import {
-	BrushIcon,
-	MonitorPlayIcon,
-	SlidersHorizontalIcon,
-} from "@lucide/vue";
+import { BrushIcon, MonitorPlayIcon, SlidersHorizontalIcon } from "@lucide/vue";
 import {
 	Select,
 	SelectContent,
