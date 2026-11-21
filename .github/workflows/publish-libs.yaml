@@ -75,12 +75,12 @@ jobs:
       - name: Format package.json files and amend release commit
         run: bash .github/scripts/format-package-json-and-amend.sh
 
-      - name: Push release commit and tags
-        if: github.event.inputs.mode == 'publish'
-        run: git push origin HEAD:main --follow-tags
-
       - name: Publish packages to npm
         if: github.event.inputs.mode == 'publish'
         run: pnpm nx release publish --excludeTaskDependencies
         env:
           NPM_CONFIG_PROVENANCE: true
+
+      - name: Push release commit and tags
+        if: github.event.inputs.mode == 'publish'
+        run: git push origin HEAD:main --follow-tags
