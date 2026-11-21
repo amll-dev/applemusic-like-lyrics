@@ -3,7 +3,7 @@ import type { DropdownMenuRadioItemEmits, DropdownMenuRadioItemProps } from 'rek
 
 import type { HTMLAttributes } from 'vue'
 import { reactiveOmit } from '@vueuse/core'
-import { CheckIcon } from 'lucide-vue-next'
+import { CheckIcon } from '@lucide/vue'
 import {
   DropdownMenuItemIndicator,
   DropdownMenuRadioItem,

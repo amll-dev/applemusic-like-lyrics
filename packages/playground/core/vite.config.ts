@@ -39,7 +39,7 @@ export default defineConfig({
 					groups: [
 						{
 							name: "ui",
-							test: /node_modules[\\/](vue|@vue|pinia|@vueuse|reka-ui|@floating-ui|tailwind|lucide-vue-next)/,
+							test: /node_modules[\\/](vue|@vue|pinia|@vueuse|reka-ui|@floating-ui|tailwind|@lucide)/,
 							priority: 20,
 						},
 						{
