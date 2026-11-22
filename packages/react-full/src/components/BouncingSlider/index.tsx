@@ -3,7 +3,6 @@ import {
 	animate,
 	motion,
 	type PanInfo,
-	useAnimationFrame,
 	useMotionTemplate,
 	useMotionValue,
 	useSpring,
@@ -27,6 +26,17 @@ export interface SliderProps {
 	beforeIcon?: React.ReactNode;
 	afterIcon?: React.ReactNode;
 	changeOnDrag?: boolean;
+	/** 是否推进进度；歌词页收起时传 `false`，组件仍挂在 DOM 里但不跑帧循环。 */
+	active?: boolean;
+	/** 换歌标识；变化时先淡出已播放部分，再在不可见状态下跳回开头。 */
+	resetKey?: string;
+	/**
+	 * 是否正在等待音频数据。
+	 *
+	 * 为 true 时不再自行推进进度（否则拖动进度后会「假装」还在播），
+	 * 并在轨道上画一道流动的加载高光。
+	 */
+	buffering?: boolean;
 }
 
 const MAX_HEIGHT = 20;
@@ -49,6 +59,9 @@ export const BouncingSlider: React.FC<SliderProps> = ({
 	beforeIcon,
 	afterIcon,
 	changeOnDrag = false,
+	active = true,
+	resetKey,
+	buffering = false,
 }) => {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const innerRef = useRef<HTMLDivElement>(null);
@@ -57,6 +70,15 @@ export const BouncingSlider: React.FC<SliderProps> = ({
 
 	const progressMv = useMotionValue(0);
 	const scaleX = useTransform(progressMv, [0, 1], [0, 1]);
+
+	// 已播放部分的透明度：换歌时先淡出旧进度，再在透明状态下从零开始
+	const thumbOpacity = useMotionValue(1);
+	const resettingRef = useRef(false);
+	const resetKeyRef = useRef(resetKey);
+	const resetTokenRef = useRef<symbol | null>(null);
+	// 动画回调里需要最新的值，直接从最新一次渲染取
+	const latestRef = useRef({ value, min, max });
+	latestRef.current = { value, min, max };
 
 	const insetMv = useMotionValue(INITIAL_INSET);
 
@@ -67,27 +89,83 @@ export const BouncingSlider: React.FC<SliderProps> = ({
 	const isDraggingRef = useRef(false);
 	const localTimeRef = useRef(value);
 
+	// 换歌：已播放部分快速淡出 → 在透明状态下跳回开头 → 再淡入
 	useEffect(() => {
-		if (isDraggingRef.current) return;
+		if (!resetKey || resetKey === resetKeyRef.current) return;
+		resetKeyRef.current = resetKey;
+
+		// 连续快速切歌时，只有最后一次的重置可以写回进度
+		const token = Symbol("slider-reset");
+		resetTokenRef.current = token;
+		resettingRef.current = true;
+		const fadeOut = animate(thumbOpacity, 0, {
+			type: "tween",
+			duration: 0.12,
+			ease: "easeOut",
+		});
+		void fadeOut.then(() => {
+			if (resetTokenRef.current !== token) return;
+			const {
+				value: nextValue,
+				min: nextMin,
+				max: nextMax,
+			} = latestRef.current;
+			const span = nextMax - nextMin;
+			localTimeRef.current = nextValue;
+			progressMv.set(
+				span > 0 ? Math.max(0, Math.min(1, (nextValue - nextMin) / span)) : 0,
+			);
+			resettingRef.current = false;
+			animate(thumbOpacity, 1, {
+				type: "tween",
+				duration: 0.3,
+				delay: 0.04,
+				ease: "easeOut",
+			});
+		});
+
+		return () => {
+			fadeOut.stop();
+			if (resetTokenRef.current === token) {
+				resetTokenRef.current = null;
+				resettingRef.current = false;
+				// 连续快速切歌时不要把进度条永久留在不可见状态
+				thumbOpacity.set(1);
+			}
+		};
+	}, [resetKey, thumbOpacity, progressMv]);
+
+	useEffect(() => {
+		if (isDraggingRef.current || resettingRef.current) return;
 
 		localTimeRef.current = value;
 		const newProgress = Math.max(0, Math.min(1, (value - min) / (max - min)));
 		progressMv.set(newProgress);
 	}, [value, min, max, progressMv]);
 
-	useAnimationFrame((_time, delta) => {
-		if (isPlaying && !isDraggingRef.current) {
-			localTimeRef.current += delta;
-
-			if (localTimeRef.current > max) localTimeRef.current = max;
-
-			const newProgress = Math.max(
-				0,
-				Math.min(1, (localTimeRef.current - min) / (max - min)),
-			);
-			progressMv.set(newProgress);
-		}
-	});
+	// 不用 framer-motion 的 `useAnimationFrame`：它会从挂载起就永久订阅帧循环，
+	// 即使歌曲暂停或歌词页已经隐藏。这里用普通 rAF，只在真正需要推进时启动。
+	useEffect(() => {
+		if (!active || !isPlaying) return;
+		let frame = 0;
+		let last = performance.now();
+		const tick = (now: number) => {
+			const delta = Math.min(now - last, 64);
+			last = now;
+			if (!isDraggingRef.current && !resettingRef.current && !buffering) {
+				localTimeRef.current = Math.min(max, localTimeRef.current + delta);
+				const span = max - min;
+				const newProgress =
+					span > 0
+						? Math.max(0, Math.min(1, (localTimeRef.current - min) / span))
+						: 0;
+				progressMv.set(newProgress);
+			}
+			frame = requestAnimationFrame(tick);
+		};
+		frame = requestAnimationFrame(tick);
+		return () => cancelAnimationFrame(frame);
+	}, [active, isPlaying, min, max, progressMv, buffering]);
 
 	const expand = () => {
 		animate(insetMv, 0, { type: "tween", ease: "easeOut", duration: 0.28 });
@@ -226,8 +304,10 @@ export const BouncingSlider: React.FC<SliderProps> = ({
 					style={{
 						scaleX: scaleX,
 						originX: 0,
+						opacity: thumbOpacity,
 					}}
 				/>
+				{buffering && <div className={styles.bufferingSheen} />}
 			</motion.div>
 
 			{afterIcon}

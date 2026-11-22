@@ -97,9 +97,17 @@
 	--hide-lyric-left: 61.111111%;
 
 	.thumb,
-	.cover,
 	.controls {
 		transition: left 0.5s cubic-bezier(0.5, 0, 0.5, 1);
+		left: 0%;
+	}
+
+	/* 封面的尺寸变化（窗口缩放）用 CSS 过渡代替 JS 布局动画 */
+	.cover {
+		transition:
+			left 0.5s cubic-bezier(0.5, 0, 0.5, 1),
+			width 0.3s ease,
+			height 0.3s ease;
 		left: 0%;
 	}
 

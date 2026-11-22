@@ -86,6 +86,7 @@ import {
 	lyricBackgroundRendererAtom,
 	lyricBackgroundRenderScaleAtom,
 	lyricBackgroundStaticModeAtom,
+	lyricBackgroundStaticModeOverrideAtom,
 	lyricFontFamilyAtom,
 	lyricFontWeightAtom,
 	lyricLetterSpacingAtom,
@@ -113,19 +114,20 @@ import {
 	toggleShuffleActionAtom,
 } from "../../states/controlsAtoms";
 import {
-	fftDataAtom,
-	lowFreqVolumeAtom,
 	musicAlbumNameAtom,
 	musicArtistsAtom,
+	musicBufferingAtom,
 	musicCoverAtom,
 	musicCoverIsVideoAtom,
 	musicDurationAtom,
+	musicIdAtom,
 	musicLyricLinesAtom,
 	musicNameAtom,
 	musicPlayingAtom,
-	musicPlayingPositionAtom,
 	musicQualityTagAtom,
 	musicVolumeAtom,
+	visibleLowFreqVolumeAtom,
+	visibleMusicPlayingPositionAtom,
 } from "../../states/dataAtoms";
 import styles from "./index.module.css";
 
@@ -241,7 +243,7 @@ const PrebuiltMediaButtons: FC<{
 };
 
 const TimeLabel: FC<{ isRemaining?: boolean }> = ({ isRemaining }) => {
-	const currentPosition = useAtomValue(musicPlayingPositionAtom);
+	const currentPosition = useAtomValue(visibleMusicPlayingPositionAtom);
 	const duration = useAtomValue(musicDurationAtom);
 	const time = useMemo(
 		() =>
@@ -267,8 +269,11 @@ const manualSeekTriggerAtom = atom<{ time: number; timestamp: number } | null>(
 
 const PrebuiltProgressBar: FC = React.memo(() => {
 	const musicDuration = useAtomValue(musicDurationAtom);
-	const musicPosition = useAtomValue(musicPlayingPositionAtom);
+	const musicPosition = useAtomValue(visibleMusicPlayingPositionAtom);
 	const musicIsPlaying = useAtomValue(musicPlayingAtom);
+	const musicId = useAtomValue(musicIdAtom);
+	const musicBuffering = useAtomValue(musicBufferingAtom);
+	const isLyricPageOpened = useAtomValue(isLyricPageOpenedAtom);
 	const musicQualityTag = useAtomValue(musicQualityTagAtom);
 	const onClickAudioQualityTag = useAtomValue(
 		onClickAudioQualityTagAtom,
@@ -300,10 +305,14 @@ const PrebuiltProgressBar: FC = React.memo(() => {
 		<div>
 			<BouncingSlider
 				isPlaying={musicIsPlaying}
+				active={isLyricPageOpened}
 				min={0}
 				max={musicDuration}
 				value={musicPosition}
 				onChange={handleSeek}
+				/* 换歌时已播放部分先淡出，再从开头重新开始 */
+				resetKey={musicId}
+				buffering={musicBuffering}
 			/>
 			<div className={styles.progressBarLabels}>
 				<div style={fontStyle}>
@@ -362,7 +371,7 @@ const PrebuiltCoreLyricPlayer: FC<{
 	const musicIsPlaying = useAtomValue(musicPlayingAtom);
 	const lyricLines = useAtomValue(musicLyricLinesAtom);
 	const isLyricPageOpened = useAtomValue(isLyricPageOpenedAtom);
-	const musicPlayingPosition = useAtomValue(musicPlayingPositionAtom);
+	const musicPlayingPosition = useAtomValue(visibleMusicPlayingPositionAtom);
 
 	const lyricFontFamily = useAtomValue(lyricFontFamilyAtom);
 	const lyricFontWeight = useAtomValue(lyricFontWeightAtom);
@@ -496,20 +505,39 @@ const PrebuiltMusicControls: FC<
 	} & HTMLProps<HTMLDivElement>
 > = ({ className, showOtherButtons, ...props }) => {
 	const playerControlsType = useAtomValue(playerControlsTypeAtom);
-	const fftData = useAtomValue(fftDataAtom);
+	const isLyricPageOpened = useAtomValue(isLyricPageOpenedAtom);
+	const isFFT = playerControlsType === PlayerControlsType.FFT;
+	// 歌词页关闭时外壳会先淡出（约 750ms），这期间继续画才不会被看出冻结；
+	// 完全滚出视野后再停掉绘制循环。
+	const [visualizerPaused, setVisualizerPaused] = useState(!isLyricPageOpened);
+	useEffect(() => {
+		if (isLyricPageOpened) {
+			setVisualizerPaused(false);
+			return;
+		}
+		const timer = setTimeout(() => setVisualizerPaused(true), 800);
+		return () => clearTimeout(timer);
+	}, [isLyricPageOpened]);
 	return (
-		<div className={classNames(styles.controls, className)} {...props}>
+		<div
+			className={classNames(styles.controls, className, {
+				[styles.fftControls]: isFFT,
+			})}
+			{...props}
+		>
 			{playerControlsType === PlayerControlsType.Controls && (
 				<PrebuiltMediaButtons showOtherButtons={showOtherButtons} />
 			)}
-			{playerControlsType === PlayerControlsType.FFT && (
-				<AudioFFTVisualizer
-					style={{
-						width: "100%",
-						height: "8vh",
-					}}
-					fftData={fftData}
-				/>
+			{isFFT && (
+				<>
+					<AudioFFTVisualizer
+						className={styles.fftVisualizer}
+						paused={visualizerPaused}
+					/>
+					<div className={styles.fftMediaButtons}>
+						<PrebuiltMediaButtons showOtherButtons={showOtherButtons} />
+					</div>
+				</>
 			)}
 		</div>
 	);
@@ -584,7 +612,7 @@ export interface PrebuiltLyricPlayerProps extends HTMLProps<HTMLDivElement> {
 const LowFreqBackgroundRender: FC<
 	Omit<ComponentPropsWithRef<typeof BackgroundRender>, "lowFreqVolume">
 > = (props) => {
-	const lowFreqVolume = useAtomValue(lowFreqVolumeAtom);
+	const lowFreqVolume = useAtomValue(visibleLowFreqVolumeAtom);
 	return <BackgroundRender {...props} lowFreqVolume={lowFreqVolume} />;
 };
 
@@ -613,10 +641,16 @@ export const PrebuiltLyricPlayer: FC<PrebuiltLyricPlayerProps> = ({
 	const lyricBackgroundFPS = useAtomValue(lyricBackgroundFPSAtom);
 	const verticalCoverLayout = useAtomValue(verticalCoverLayoutAtom);
 	const lyricBackgroundStaticMode = useAtomValue(lyricBackgroundStaticModeAtom);
+	const lyricBackgroundStaticModeOverride = useAtomValue(
+		lyricBackgroundStaticModeOverrideAtom,
+	);
 	const lyricBackgroundRenderScale = useAtomValue(
 		lyricBackgroundRenderScaleAtom,
 	);
 	const onClickControlThumb = useAtomValue(onClickControlThumbAtom).onEmit;
+	const onRequestPrevSong = useAtomValue(onRequestPrevSongAtom).onEmit;
+	const onRequestNextSong = useAtomValue(onRequestNextSongAtom).onEmit;
+	const onPlayOrResume = useAtomValue(onPlayOrResumeAtom).onEmit;
 	const [isVertical, setIsVertical] = useState(false);
 	const [alignPosition, setAlignPosition] = useState(0.25);
 	const [alignAnchor, setAlignAnchor] = useState<"center" | "bottom" | "top">(
@@ -701,6 +735,10 @@ export const PrebuiltLyricPlayer: FC<PrebuiltLyricPlayerProps> = ({
 						musicPaused={
 							!musicIsPlaying && !musicCoverIsVideo && !verticalImmerseCover
 						}
+						playing={musicIsPlaying}
+						onPrevious={coverProps?.onPrevious ?? onRequestPrevSong}
+						onNext={coverProps?.onNext ?? onRequestNextSong}
+						onTogglePlay={coverProps?.onTogglePlay ?? onPlayOrResume}
 					/>
 				}
 				thumbSlot={
@@ -737,7 +775,11 @@ export const PrebuiltLyricPlayer: FC<PrebuiltLyricPlayerProps> = ({
 							renderScale={lyricBackgroundRenderScale}
 							fps={lyricBackgroundFPS}
 							renderer={resolvedBackgroundRenderer}
-							staticMode={lyricBackgroundStaticMode || !isLyricPageOpened}
+							staticMode={
+								lyricBackgroundStaticMode ||
+								lyricBackgroundStaticModeOverride ||
+								!isLyricPageOpened
+							}
 							configureRenderer={configureBackgroundRenderer}
 							style={{
 								zIndex: -1,

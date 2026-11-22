@@ -2,6 +2,7 @@
 	--base-box-shadow-v-0: rgba(0, 0, 0, 0.19);
 	--base-box-shadow-y-0: 1em;
 	--base-box-shadow-r-0: 1.2em;
+	position: relative;
 	aspect-ratio: 1 / 1;
 	width: 100%;
 	height: 100%;
@@ -10,26 +11,74 @@
 	background-position: center;
 	background-size: cover;
 	/* border-radius: max(2%, 0.7vh); */
-	filter: drop-shadow(
-		var(--base-box-shadow-v-0) 0px var(--base-box-shadow-y-0)
-			var(--base-box-shadow-r-0)
-	);
-	transform: scale(1);
-	transition:
-		background-image 0.5s linear,
-		filter 0.5s ease,
-		transform 0.5s cubic-bezier(0.3, 0.2, 0.2, 1.4);
+	touch-action: pan-y;
 
 	&.musicPaused {
 		--base-box-shadow-v-0: rgba(0, 0, 0, 0.19);
 		--base-box-shadow-y-0: 0.8em;
 		--base-box-shadow-r-0: 0.8em;
-		transform: scale(var(--scale-level));
-		transition:
-			background-image 0.5s linear,
-			filter 0.5s ease,
-			transform 0.6s cubic-bezier(0.4, 0.2, 0.1, 1);
 	}
+}
+
+/* 光标吸附 / 暂停缩放作用在整组封面上 */
+.assembly {
+	position: absolute;
+	inset: 0;
+	perspective: 1200px;
+	will-change: transform;
+}
+
+/* 主封面单独一层：预窥时只让它反向避让，侧封面才能真的露出来 */
+.mainCover {
+	position: absolute;
+	inset: 0;
+	z-index: 2;
+	perspective: 1200px;
+	will-change: transform;
+}
+
+.coverSwap {
+	position: absolute;
+	inset: 0;
+	/*
+	 * 这里刻意不放 filter / backface-visibility：
+	 * 带 drop-shadow 或 backface-visibility 的图层在 WebKit 上与 transform 动画叠在一起时，
+	 * 会出现 contentsScale 计算错误——内容按一半光栅画在图层左上角（Retina 上就是「缩小到左上角」）。
+	 * 阴影改由下面不参与动画的那层 box-shadow 负责。
+	 */
+}
+
+/* 封面阴影：静止层，不参与换图动画 */
+.coverShadow {
+	position: absolute;
+	inset: 0;
+	z-index: 0;
+	pointer-events: none;
+	border-radius: max(2%, 0.7vh);
+	box-shadow: 0 var(--base-box-shadow-y-0) var(--base-box-shadow-r-0)
+		var(--base-box-shadow-v-0);
+	transition: box-shadow 0.5s ease;
+}
+
+.sideCover {
+	position: absolute;
+	inset: 0;
+	z-index: 1;
+	background-color: #000;
+	background-position: center;
+	background-size: cover;
+	border-radius: max(2%, 0.7vh);
+	pointer-events: none;
+	will-change: transform, opacity;
+	box-shadow: 0 0.6em 1.4em rgba(0, 0, 0, 0.28);
+}
+
+.sidePrevious {
+	transform-origin: center right;
+}
+
+.sideNext {
+	transform-origin: center left;
 }
 
 .coverInner {
@@ -39,4 +88,49 @@
 	background-size: cover;
 	background-color: black;
 	transition: background-image 0.5s linear;
+}
+
+/* 三个透明点击区：左 / 中 / 右 */
+.zone {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	z-index: 3;
+	margin: 0;
+	padding: 0;
+	border: none;
+	background: transparent;
+	cursor: pointer;
+	outline: none;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.zonePrevious {
+	left: 0;
+	width: 33.333%;
+	cursor: w-resize;
+}
+
+.zoneCenter {
+	left: 33.333%;
+	width: 33.334%;
+}
+
+.zoneNext {
+	right: 0;
+	width: 33.333%;
+	cursor: e-resize;
+}
+
+.zone:focus-visible {
+	border-radius: max(2%, 0.7vh);
+	outline: 2px solid var(--keyColor, #6ea8fe);
+	outline-offset: -4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.assembly,
+	.mainCover {
+		will-change: auto;
+	}
 }
