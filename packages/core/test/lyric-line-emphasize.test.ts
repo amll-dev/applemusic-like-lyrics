@@ -205,14 +205,30 @@ describe("LyricLineEl disable", () => {
 		return { emphasis, float };
 	}
 
-	it("keeps the float's sink speed and eases emphasis back within 250 ms", () => {
-		const { emphasis, float } = disableAt((a) => a.delay + a.duration / 2);
+	it("keeps the float's sink speed and eases emphasis before its peak back within 250 ms", () => {
+		const { emphasis, float } = disableAt((a) => a.delay + a.duration / 4);
 		for (const a of float) {
 			expect(a.playbackRate).toBe(-1);
 			expect(a.play).toHaveBeenCalledOnce();
 		}
 		for (const a of emphasis) {
-			expect(a.playbackRate).toBeCloseTo(-Math.max(1, a.duration / 2 / 250));
+			expect(a.playbackRate).toBeCloseTo(-Math.max(1, a.duration / 4 / 250));
+			expect(a.play).toHaveBeenCalledOnce();
+		}
+	});
+
+	it("lets emphasis past its peak finish forward instead of growing back through it", () => {
+		const { emphasis } = disableAt((a) => a.delay + a.duration * 0.75);
+		for (const a of emphasis) {
+			expect(a.playbackRate).toBeCloseTo(Math.max(1, a.duration / 4 / 250));
+			expect(a.play).toHaveBeenCalledOnce();
+		}
+	});
+
+	it("lets nearly finished emphasis end at normal speed", () => {
+		const { emphasis } = disableAt((a) => a.delay + a.duration - 100);
+		for (const a of emphasis) {
+			expect(a.playbackRate).toBe(1);
 			expect(a.play).toHaveBeenCalledOnce();
 		}
 	});

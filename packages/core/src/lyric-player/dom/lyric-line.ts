@@ -176,14 +176,19 @@ export class LyricLineEl extends LyricLineBase {
 				}
 				// 强调动画结束时已回到原状，无需处理
 				if (isEmphasize && currentTime >= endTime) continue;
-				// 上浮保持原有的回落速度；强调动画加速回落，避免辉光在非活跃行上长时间残留
+				// 强调动画的峰值位于中点：越过峰值后正向播完即可回到原状，
+				// 反向则会重新经过峰值、让单词再次放大
+				const forward =
+					isEmphasize && currentTime - delay > (endTime - delay) / 2;
+				const remaining = forward ? endTime - currentTime : currentTime - delay;
+				// 上浮保持原有的回落速度；强调动画加速，避免辉光在非活跃行上长时间残留
 				const rate = isEmphasize
-					? Math.max(1, (currentTime - delay) / EMPHASIZE_SETTLE_MS)
+					? Math.max(1, remaining / EMPHASIZE_SETTLE_MS)
 					: 1;
-				a.playbackRate = -rate;
+				a.playbackRate = forward ? rate : -rate;
 				a.play();
 				settling.push(a);
-				settleMs = Math.max(settleMs, (currentTime - delay) / rate);
+				settleMs = Math.max(settleMs, remaining / rate);
 			}
 		}
 		if (settling.length > 0) {
