@@ -16,6 +16,9 @@ import {
 } from "./animation/index.ts";
 import { LineBrightness } from "./line-brightness.ts";
 
+/** 歌词行被禁用后，强调动画回落到原状所用的最长时长（毫秒） */
+const EMPHASIZE_SETTLE_MS = 250;
+
 interface RealWord extends LyricWord {
 	mainElement: HTMLSpanElement;
 	subElements: HTMLSpanElement[];
@@ -48,6 +51,8 @@ export class LyricLineEl extends LyricLineBase {
 	private maskSignature = "";
 	/** 上次接收到的行尺寸，用于在尺寸未变化时跳过冗余的二次测量 */
 	private lastLineSize?: [number, number];
+	/** 禁用后等待单词动画回落完成、再将其停止的计时器 */
+	private wordSettleTimer = 0;
 
 	private lastScaleNum = -1;
 
@@ -115,6 +120,7 @@ export class LyricLineEl extends LyricLineBase {
 		shouldPlay: boolean = this.lyricPlayer.getIsPlaying(),
 	): Promise<void> {
 		this.isEnabled = true;
+		window.clearTimeout(this.wordSettleTimer);
 		this.element.classList.add(styles.active);
 		const main = this.element.children[0] as HTMLDivElement;
 
@@ -147,16 +153,46 @@ export class LyricLineEl extends LyricLineBase {
 
 		const main = this.element.children[0] as HTMLDivElement;
 
+		// 反向回落只需经过动画的可见部分：原先会继续倒退经过整段延迟，
+		// 强调动画则完全未处理，会在非活跃行上残留辉光缩放、或在延迟结束后才触发。
+		// 未开始的直接停止，已开始的回落到原状，全部回落完成后统一停止
+		window.clearTimeout(this.wordSettleTimer);
+		const settling: Animation[] = [];
+		let settleMs = 0;
 		for (const word of this.splittedWords) {
 			for (const a of word.elementAnimations) {
-				if (
-					a.id === "float-word" ||
-					a.id.includes("emphasize-word-float-only")
-				) {
-					a.playbackRate = -1;
-					a.play();
+				const timing = a.effect?.getComputedTiming();
+				const delay = Number(timing?.delay ?? 0);
+				const endTime = delay + Number(timing?.duration ?? 0);
+				// 反向 play() 会把超出结尾的进度拉回结尾，回落时长按结尾计算
+				const currentTime = Math.min(Number(a.currentTime ?? 0), endTime);
+				const isEmphasize =
+					a.id.startsWith("emphasize-word") &&
+					!a.id.includes("emphasize-word-float-only");
+				if (currentTime <= delay) {
+					a.pause();
+					a.currentTime = 0;
+					continue;
 				}
+				// 强调动画结束时已回到原状，无需处理
+				if (isEmphasize && currentTime >= endTime) continue;
+				// 上浮保持原有的回落速度；强调动画加速回落，避免辉光在非活跃行上长时间残留
+				const rate = isEmphasize
+					? Math.max(1, (currentTime - delay) / EMPHASIZE_SETTLE_MS)
+					: 1;
+				a.playbackRate = -rate;
+				a.play();
+				settling.push(a);
+				settleMs = Math.max(settleMs, (currentTime - delay) / rate);
 			}
+		}
+		if (settling.length > 0) {
+			this.wordSettleTimer = window.setTimeout(() => {
+				for (const a of settling) {
+					a.pause();
+					a.currentTime = 0;
+				}
+			}, settleMs);
 		}
 
 		this.maskAnimator?.pause();
@@ -672,6 +708,8 @@ export class LyricLineEl extends LyricLineBase {
 	}
 
 	private disposeElements() {
+		// 计时器若在动画被取消后触发，暂停操作会让已取消的动画重新生效
+		window.clearTimeout(this.wordSettleTimer);
 		this.brightness.deactivate();
 		this.balancer?.reset();
 		this.invalidateMask();

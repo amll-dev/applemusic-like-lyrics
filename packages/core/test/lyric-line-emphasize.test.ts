@@ -137,3 +137,145 @@ describe("LyricLineEl word emphasis", () => {
 		expect(emphasized[0].textContent).toBe("\u597d");
 	});
 });
+describe("LyricLineEl disable", () => {
+	type FakeAnimation = {
+		id: string;
+		playbackRate: number;
+		currentTime: number | null;
+		delay: number;
+		duration: number;
+		effect: { getComputedTiming: () => ComputedEffectTiming };
+		play: ReturnType<typeof vi.fn>;
+		pause: ReturnType<typeof vi.fn>;
+		cancel: ReturnType<typeof vi.fn>;
+	};
+	let animations: FakeAnimation[] = [];
+
+	beforeEach(() => {
+		animations = [];
+		vi.spyOn(HTMLElement.prototype, "animate").mockImplementation(
+			(_frames, options) => {
+				const timing = typeof options === "object" ? options : {};
+				const animation: FakeAnimation = {
+					id: timing.id ?? "",
+					playbackRate: 1,
+					currentTime: 0,
+					delay: Number(timing.delay ?? 0),
+					duration: Number(timing.duration ?? 0),
+					effect: {
+						getComputedTiming: () => ({
+							delay: animation.delay,
+							duration: animation.duration,
+						}),
+					},
+					play: vi.fn(),
+					pause: vi.fn(),
+					cancel: vi.fn(),
+				};
+				animations.push(animation);
+				return animation as unknown as Animation;
+			},
+		);
+	});
+
+	afterEach(() => {
+		for (const line of lines) line.dispose();
+		lines.length = 0;
+		vi.restoreAllMocks();
+		vi.useRealTimers();
+	});
+
+	function disableAt(progress: (animation: FakeAnimation) => number) {
+		renderWords([
+			{ word: "Hi ", startTime: 0, endTime: 300 },
+			{ word: "forever", startTime: 300, endTime: 1500 },
+		]);
+		const emphasis = animations.filter((a) =>
+			a.id.startsWith("emphasize-word"),
+		);
+		const float = animations.filter((a) => a.id === "float-word");
+		expect(emphasis.length).toBeGreaterThan(0);
+		expect(float.length).toBeGreaterThan(0);
+		for (const a of animations) {
+			a.currentTime = progress(a);
+			a.play.mockClear();
+			a.pause.mockClear();
+		}
+		lines[lines.length - 1].disable();
+		return { emphasis, float };
+	}
+
+	it("keeps the float's sink speed and eases emphasis back within 250 ms", () => {
+		const { emphasis, float } = disableAt((a) => a.delay + a.duration / 2);
+		for (const a of float) {
+			expect(a.playbackRate).toBe(-1);
+			expect(a.play).toHaveBeenCalledOnce();
+		}
+		for (const a of emphasis) {
+			expect(a.playbackRate).toBeCloseTo(-Math.max(1, a.duration / 2 / 250));
+			expect(a.play).toHaveBeenCalledOnce();
+		}
+	});
+
+	it("stops every animation once the slowest one is back at rest instead of rewinding through delays", () => {
+		vi.useFakeTimers();
+		const { emphasis, float } = disableAt((a) => a.delay + a.duration / 2);
+		// The float is the slowest: half of its 1000 ms, reversed at normal speed.
+		vi.advanceTimersByTime(499);
+		for (const a of [...emphasis, ...float]) {
+			expect(a.pause).not.toHaveBeenCalled();
+		}
+		vi.advanceTimersByTime(1);
+		for (const a of [...emphasis, ...float]) {
+			expect(a.pause).toHaveBeenCalledOnce();
+			expect(a.currentTime).toBe(0);
+		}
+	});
+
+	it("does not stop animations after the line is enabled again", () => {
+		vi.useFakeTimers();
+		const { emphasis, float } = disableAt((a) => a.delay + a.duration / 2);
+		void lines[lines.length - 1].enable(500, true);
+		for (const a of animations) a.pause.mockClear();
+		vi.advanceTimersByTime(2000);
+		for (const a of [...emphasis, ...float]) {
+			expect(a.pause).not.toHaveBeenCalled();
+		}
+	});
+
+	it("stops animations that have not started so they cannot fire later", () => {
+		disableAt(() => 0);
+		for (const a of animations) {
+			expect(a.play).not.toHaveBeenCalled();
+			expect(a.pause).toHaveBeenCalledOnce();
+			expect(a.currentTime).toBe(0);
+		}
+	});
+
+	it("leaves finished emphasis at rest and still sinks a finished float", () => {
+		const { emphasis, float } = disableAt((a) => a.delay + a.duration);
+		for (const a of emphasis) {
+			expect(a.play).not.toHaveBeenCalled();
+			expect(a.pause).not.toHaveBeenCalled();
+			expect(a.playbackRate).toBe(1);
+		}
+		for (const a of float) {
+			expect(a.playbackRate).toBe(-1);
+			expect(a.play).toHaveBeenCalledOnce();
+		}
+	});
+
+	it("times the stop from the end for a float paused past its end", () => {
+		// Reverse play() moves a time past the end back to the end, so only the 1000 ms sink remains.
+		vi.useFakeTimers();
+		const { float } = disableAt((a) => a.delay + a.duration + 2000);
+		for (const a of float) {
+			expect(a.playbackRate).toBe(-1);
+			expect(a.play).toHaveBeenCalledOnce();
+		}
+		vi.advanceTimersByTime(999);
+		for (const a of float) expect(a.pause).not.toHaveBeenCalled();
+		vi.advanceTimersByTime(1);
+		for (const a of float) expect(a.pause).toHaveBeenCalledOnce();
+	});
+});
