@@ -51,8 +51,6 @@ export class LyricLineEl extends LyricLineBase {
 	private maskSignature = "";
 	/** 上次接收到的行尺寸，用于在尺寸未变化时跳过冗余的二次测量 */
 	private lastLineSize?: [number, number];
-	/** 禁用后等待单词动画回落完成、再将其停止的计时器 */
-	private wordSettleTimer = 0;
 
 	private lastScaleNum = -1;
 
@@ -120,7 +118,6 @@ export class LyricLineEl extends LyricLineBase {
 		shouldPlay: boolean = this.lyricPlayer.getIsPlaying(),
 	): Promise<void> {
 		this.isEnabled = true;
-		window.clearTimeout(this.wordSettleTimer);
 		this.element.classList.add(styles.active);
 		const main = this.element.children[0] as HTMLDivElement;
 
@@ -153,51 +150,37 @@ export class LyricLineEl extends LyricLineBase {
 
 		const main = this.element.children[0] as HTMLDivElement;
 
-		// 反向回落只需经过动画的可见部分：原先会继续倒退经过整段延迟，
-		// 强调动画则完全未处理，会在非活跃行上残留辉光缩放、或在延迟结束后才触发。
-		// 未开始的直接停止，已开始的回落到原状，全部回落完成后统一停止
-		window.clearTimeout(this.wordSettleTimer);
-		const settling: Animation[] = [];
-		let settleMs = 0;
+		// 非活跃行上不应再有动画推进：未开始的停在原状，已开始的按各自语义回落，
+		// 辉光则要从当前相位单调地回到原状
 		for (const word of this.splittedWords) {
 			for (const a of word.elementAnimations) {
 				const timing = a.effect?.getComputedTiming();
 				const delay = Number(timing?.delay ?? 0);
 				const endTime = delay + Number(timing?.duration ?? 0);
-				// 反向 play() 会把超出结尾的进度拉回结尾，回落时长按结尾计算
-				const currentTime = Math.min(Number(a.currentTime ?? 0), endTime);
-				const isEmphasize =
-					a.id.startsWith("emphasize-word") &&
-					!a.id.includes("emphasize-word-float-only");
+				const currentTime = Number(a.currentTime ?? 0);
+				// 未进入活动区间的直接停下，否则延迟结束后会在非活跃行上触发
 				if (currentTime <= delay) {
 					a.pause();
 					a.currentTime = 0;
 					continue;
 				}
-				// 强调动画结束时已回到原状，无需处理
-				if (isEmphasize && currentTime >= endTime) continue;
-				// 强调动画的峰值位于中点：越过峰值后正向播完即可回到原状，
-				// 反向则会重新经过峰值、让单词再次放大
-				const forward =
-					isEmphasize && currentTime - delay > (endTime - delay) / 2;
-				const remaining = forward ? endTime - currentTime : currentTime - delay;
-				// 上浮保持原有的回落速度；强调动画加速，避免辉光在非活跃行上长时间残留
-				const rate = isEmphasize
-					? Math.max(1, remaining / EMPHASIZE_SETTLE_MS)
-					: 1;
-				a.playbackRate = forward ? rate : -rate;
-				a.play();
-				settling.push(a);
-				settleMs = Math.max(settleMs, remaining / rate);
-			}
-		}
-		if (settling.length > 0) {
-			this.wordSettleTimer = window.setTimeout(() => {
-				for (const a of settling) {
-					a.pause();
-					a.currentTime = 0;
+				// 上浮类动画的终点即原状，保持原有的回落速度
+				// 强调词的上浮 id 是 emphasize-word-float，不带 -only 后缀
+				if (a.id === "float-word" || a.id === "emphasize-word-float") {
+					a.playbackRate = -1;
+					a.play();
+					continue;
 				}
-			}, settleMs);
+				// 辉光的峰值位于中点、终点才是原状：反向会重新经过峰值再次放大，
+				// 而已经播完的本就停在原状
+				if (currentTime >= endTime) continue;
+				const forward = currentTime - delay > (endTime - delay) / 2;
+				const remaining = forward ? endTime - currentTime : currentTime - delay;
+				// 用速率本身表达回落上限：播放到自身边界就结束，无需外部计时器
+				a.playbackRate =
+					(forward ? 1 : -1) * Math.max(1, remaining / EMPHASIZE_SETTLE_MS);
+				a.play();
+			}
 		}
 
 		this.maskAnimator?.pause();
@@ -713,8 +696,6 @@ export class LyricLineEl extends LyricLineBase {
 	}
 
 	private disposeElements() {
-		// 计时器若在动画被取消后触发，暂停操作会让已取消的动画重新生效
-		window.clearTimeout(this.wordSettleTimer);
 		this.brightness.deactivate();
 		this.balancer?.reset();
 		this.invalidateMask();
