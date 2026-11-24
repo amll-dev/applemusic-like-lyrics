@@ -5,6 +5,34 @@ const SPLIT_WHITESPACE_RE = /(\s+)/;
 const WHITESPACE_RE = /\s/g;
 
 /**
+ * 用于按 Unicode 字素簇拆分文本的分词器
+ *
+ * CJK 文本内部仍可能存在组合字符（如日文假名加浊点、代理对表示的扩展区汉字、
+ * 变体选择符序列等），必须作为整体保留，否则浏览器无法正确塑形，
+ * 会渲染出虚线圆圈等错误字形。
+ *
+ * 注意：不支持 Intl.Segmenter 的旧环境会回退到按码点拆分，
+ * 此时代理对不会被拆散，但假名浊点等组合序列仍可能被分开。
+ */
+const graphemeSegmenter: Intl.Segmenter | null =
+	typeof Intl !== "undefined" && Intl.Segmenter
+		? new Intl.Segmenter(undefined, { granularity: "grapheme" })
+		: null;
+
+/**
+ * 按字素簇（Grapheme Cluster）拆分字符串
+ * @param text 待拆分的字符串
+ * @returns 拆分后的字素簇数组
+ */
+function splitGraphemes(text: string): string[] {
+	if (graphemeSegmenter) {
+		return Array.from(graphemeSegmenter.segment(text), (s) => s.segment);
+	}
+	// 回退到按码点拆分，至少不会拆散代理对
+	return Array.from(text);
+}
+
+/**
  * 将输入的单词重新分组，之间没有空格的单词将会组合成一个单词数组
  *
  * 例如输入：`["Life", " ", "is", " a", " su", "gar so", "sweet"]`
@@ -134,17 +162,17 @@ export function chunkAndSplitLyricWords(
 			nonSpaceIndex++;
 
 			if (isCJK(part) && part.length > 1 && romanTrimmed.length === 0) {
-				const chars = part.split("");
-				for (const char of chars) {
+				const graphemes = splitGraphemes(part);
+				for (const grapheme of graphemes) {
 					const startTime = w.startTime + currentOffset * timePerUnit;
 					processAtom({
-						word: char,
+						word: grapheme,
 						romanWord: "",
 						startTime: startTime,
-						endTime: startTime + timePerUnit,
+						endTime: startTime + grapheme.length * timePerUnit,
 						obscene: obscene,
 					});
-					currentOffset += 1;
+					currentOffset += grapheme.length;
 				}
 			} else {
 				const partRealLen = part.length;
