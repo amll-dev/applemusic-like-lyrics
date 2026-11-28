@@ -226,4 +226,84 @@ describe("chunkAndSplitLyricWords romanWord split", () => {
 			},
 		]);
 	});
+
+	it("does not split Devanagari words with combining marks", () => {
+		const words = [
+			{ word: "जैसे, ", startTime: 0, endTime: 500 },
+			{ word: "जैसे, ", startTime: 500, endTime: 1000 },
+			{ word: "बंदूक ", startTime: 1000, endTime: 1500 },
+			{ word: "की ", startTime: 1500, endTime: 2000 },
+			{ word: "गोली", startTime: 2000, endTime: 2500 },
+		];
+
+		const result = chunkAndSplitLyricWords(words);
+		const atoms = result.flatMap((chunk) =>
+			Array.isArray(chunk) ? chunk : [chunk],
+		);
+
+		expect(atoms.map((atom) => atom.word).join("")).toBe(
+			words.map((word) => word.word).join(""),
+		);
+		expect(atoms.some((atom) => atom.word === "बंदूक")).toBe(true);
+		expect(atoms.some((atom) => atom.word === "की")).toBe(true);
+		expect(atoms.some((atom) => atom.word === "गोली")).toBe(true);
+		expect(atoms.every((atom) => !/^\p{M}/u.test(atom.word))).toBe(true);
+	});
+
+	it("splits CJK words by grapheme clusters instead of UTF-16 code units", () => {
+		const result = chunkAndSplitLyricWords([
+			{
+				word: "𠀀𠀁",
+				romanWord: "",
+				startTime: 0,
+				endTime: 400,
+			},
+		]);
+
+		expect(result).toEqual([
+			{
+				word: "𠀀",
+				romanWord: "",
+				startTime: 0,
+				endTime: 200,
+				obscene: false,
+			},
+			{
+				word: "𠀁",
+				romanWord: "",
+				startTime: 200,
+				endTime: 400,
+				obscene: false,
+			},
+		]);
+	});
+
+	it("keeps a kana combining mark attached to its base character", () => {
+		const combiningDakuten = String.fromCharCode(0x3099);
+		const result = chunkAndSplitLyricWords([
+			{
+				word: `か${combiningDakuten}き`,
+				romanWord: "",
+				startTime: 0,
+				endTime: 300,
+			},
+		]);
+
+		expect(result).toEqual([
+			{
+				word: `か${combiningDakuten}`,
+				romanWord: "",
+				startTime: 0,
+				endTime: 200,
+				obscene: false,
+			},
+			{
+				word: "き",
+				romanWord: "",
+				startTime: 200,
+				endTime: 300,
+				obscene: false,
+			},
+		]);
+	});
 });
