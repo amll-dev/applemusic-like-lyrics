@@ -137,3 +137,123 @@ describe("LyricLineEl word emphasis", () => {
 		expect(emphasized[0].textContent).toBe("\u597d");
 	});
 });
+describe("LyricLineEl disable", () => {
+	type FakeAnimation = {
+		id: string;
+		playbackRate: number;
+		currentTime: number | null;
+		delay: number;
+		duration: number;
+		effect: { getComputedTiming: () => ComputedEffectTiming };
+		play: ReturnType<typeof vi.fn>;
+		pause: ReturnType<typeof vi.fn>;
+		cancel: ReturnType<typeof vi.fn>;
+	};
+	let animations: FakeAnimation[] = [];
+
+	beforeEach(() => {
+		animations = [];
+		vi.spyOn(HTMLElement.prototype, "animate").mockImplementation(
+			(_frames, options) => {
+				const timing = typeof options === "object" ? options : {};
+				const animation: FakeAnimation = {
+					id: timing.id ?? "",
+					playbackRate: 1,
+					currentTime: 0,
+					delay: Number(timing.delay ?? 0),
+					duration: Number(timing.duration ?? 0),
+					effect: {
+						getComputedTiming: () => ({
+							delay: animation.delay,
+							duration: animation.duration,
+						}),
+					},
+					play: vi.fn(),
+					pause: vi.fn(),
+					cancel: vi.fn(),
+				};
+				animations.push(animation);
+				return animation as unknown as Animation;
+			},
+		);
+	});
+
+	afterEach(() => {
+		for (const line of lines) line.dispose();
+		lines.length = 0;
+		vi.restoreAllMocks();
+	});
+
+	const isFloat = (a: FakeAnimation) =>
+		a.id === "float-word" || a.id === "emphasize-word-float";
+
+	/** 按语义分组：上浮与辉光的回落方式不同，不能共用一套断言 */
+	function disableAt(progress: (animation: FakeAnimation) => number) {
+		renderWords([
+			{ word: "Hi ", startTime: 0, endTime: 300 },
+			{ word: "forever", startTime: 300, endTime: 1500 },
+		]);
+		for (const a of animations) {
+			a.currentTime = progress(a);
+			a.play.mockClear();
+			a.pause.mockClear();
+		}
+		lines[lines.length - 1].disable();
+		return {
+			wordFloats: animations.filter((a) => a.id === "float-word"),
+			emphasisFloats: animations.filter((a) => a.id === "emphasize-word-float"),
+			glows: animations.filter(
+				(a) => a.id.startsWith("emphasize-word") && !isFloat(a),
+			),
+		};
+	}
+
+	it("stops animations that have not started so they cannot fire later", () => {
+		disableAt(() => 0);
+		for (const a of animations) {
+			expect(a.play).not.toHaveBeenCalled();
+			expect(a.pause).toHaveBeenCalledOnce();
+		}
+	});
+
+	it("sinks every float animation at its original speed", () => {
+		const { wordFloats, emphasisFloats } = disableAt(
+			(a) => a.delay + a.duration / 2,
+		);
+		expect(wordFloats.length).toBeGreaterThan(0);
+		expect(emphasisFloats.length).toBeGreaterThan(0);
+		for (const a of [...wordFloats, ...emphasisFloats]) {
+			expect(a.playbackRate).toBe(-1);
+			expect(a.play).toHaveBeenCalledOnce();
+		}
+	});
+
+	it("eases emphasis before its peak back to rest within 250 ms", () => {
+		const { glows } = disableAt((a) => a.delay + a.duration / 4);
+		expect(glows.length).toBeGreaterThan(0);
+		for (const a of glows) {
+			expect(a.playbackRate).toBeLessThan(0);
+			// 剩余的四分之一进度被压进 250ms，允许浮点误差
+			expect(a.duration / 4 / -a.playbackRate).toBeLessThanOrEqual(250 + 1e-9);
+		}
+	});
+
+	it("lets emphasis past its peak finish forward within 250 ms", () => {
+		const { glows } = disableAt((a) => a.delay + a.duration * 0.75);
+		expect(glows.length).toBeGreaterThan(0);
+		for (const a of glows) {
+			expect(a.playbackRate).toBeGreaterThan(0);
+			// 剩余的四分之一进度被压进 250ms，允许浮点误差
+			expect(a.duration / 4 / a.playbackRate).toBeLessThanOrEqual(250 + 1e-9);
+		}
+	});
+
+	it("leaves emphasis that already finished at rest", () => {
+		const { glows } = disableAt((a) => a.delay + a.duration);
+		expect(glows.length).toBeGreaterThan(0);
+		for (const a of glows) {
+			expect(a.play).not.toHaveBeenCalled();
+			expect(a.pause).not.toHaveBeenCalled();
+		}
+	});
+});

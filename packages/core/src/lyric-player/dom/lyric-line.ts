@@ -16,6 +16,9 @@ import {
 } from "./animation/index.ts";
 import { LineBrightness } from "./line-brightness.ts";
 
+/** 歌词行被禁用后，强调动画回落到原状所用的最长时长（毫秒） */
+const EMPHASIZE_SETTLE_MS = 250;
+
 interface RealWord extends LyricWord {
 	mainElement: HTMLSpanElement;
 	subElements: HTMLSpanElement[];
@@ -147,15 +150,36 @@ export class LyricLineEl extends LyricLineBase {
 
 		const main = this.element.children[0] as HTMLDivElement;
 
+		// 非活跃行上不应再有动画推进：未开始的停在原状，已开始的按各自语义回落，
+		// 辉光则要从当前相位单调地回到原状
 		for (const word of this.splittedWords) {
 			for (const a of word.elementAnimations) {
-				if (
-					a.id === "float-word" ||
-					a.id.includes("emphasize-word-float-only")
-				) {
+				const timing = a.effect?.getComputedTiming();
+				const delay = Number(timing?.delay ?? 0);
+				const endTime = delay + Number(timing?.duration ?? 0);
+				const currentTime = Number(a.currentTime ?? 0);
+				// 未进入活动区间的直接停下，否则延迟结束后会在非活跃行上触发
+				if (currentTime <= delay) {
+					a.pause();
+					a.currentTime = 0;
+					continue;
+				}
+				// 上浮类动画的终点即原状，保持原有的回落速度
+				// 强调词的上浮 id 是 emphasize-word-float，不带 -only 后缀
+				if (a.id === "float-word" || a.id === "emphasize-word-float") {
 					a.playbackRate = -1;
 					a.play();
+					continue;
 				}
+				// 辉光的峰值位于中点、终点才是原状：反向会重新经过峰值再次放大，
+				// 而已经播完的本就停在原状
+				if (currentTime >= endTime) continue;
+				const forward = currentTime - delay > (endTime - delay) / 2;
+				const remaining = forward ? endTime - currentTime : currentTime - delay;
+				// 用速率本身表达回落上限：播放到自身边界就结束，无需外部计时器
+				a.playbackRate =
+					(forward ? 1 : -1) * Math.max(1, remaining / EMPHASIZE_SETTLE_MS);
+				a.play();
 			}
 		}
 
